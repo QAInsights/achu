@@ -1,4 +1,5 @@
 import { useAppContext } from '../AppContext';
+import InspectorSection from './InspectorSection';
 
 export default function LayoutSettings() {
   const {
@@ -20,7 +21,7 @@ export default function LayoutSettings() {
   } = useAppContext();
 
   return (
-    <>
+    <InspectorSection title="Layout">
       {/* Position Layout */}
       <div className="control-group">
         <span className="control-label">Position</span>
@@ -86,7 +87,7 @@ export default function LayoutSettings() {
         />
         {showAdvancedInset && (
           <div className="color-picker-row" style={{ marginTop: '0.25rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Color:</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Color:</span>
             <input 
               type="color" 
               value={insetColor.startsWith('rgba') ? '#ffffff' : insetColor} 
@@ -118,7 +119,7 @@ export default function LayoutSettings() {
           </span>
         </div>
         <div className="switch-container" style={{ marginBottom: '0.25rem' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Shadow Enabled</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Shadow Enabled</span>
           <label className="switch">
             <input 
               type="checkbox" 
@@ -142,7 +143,7 @@ export default function LayoutSettings() {
         />
         {showAdvancedShadow && shadowEnabled && (
           <div className="color-picker-row" style={{ marginTop: '0.25rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Color:</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Color:</span>
             <input 
               type="color" 
               value={shadowColor.startsWith('rgba') ? '#000000' : shadowColor} 
@@ -199,7 +200,7 @@ export default function LayoutSettings() {
         />
         {showAdvancedBorder && (
           <div className="color-picker-row" style={{ marginTop: '0.25rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Color:</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Color:</span>
             <input 
               type="color" 
               value={borderColor} 
@@ -221,6 +222,6 @@ export default function LayoutSettings() {
           </div>
         )}
       </div>
-    </>
+    </InspectorSection>
   );
 }

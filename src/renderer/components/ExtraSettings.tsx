@@ -1,4 +1,5 @@
 import { useAppContext } from '../AppContext';
+import InspectorSection from './InspectorSection';
 
 export default function ExtraSettings() {
   const {
@@ -13,7 +14,7 @@ export default function ExtraSettings() {
   } = useAppContext();
 
   return (
-    <>
+    <InspectorSection title="Extras">
       {/* Browser Chrome Overlay */}
       <div className="control-group">
         <span className="control-label">Browser Mockup</span>
@@ -27,15 +28,15 @@ export default function ExtraSettings() {
         </select>
 
         {chromeStyle !== 'none' && (
-          <div style={{ display: 'flex', gap: '1px', background: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', marginTop: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '1px', background: 'var(--border)', borderRadius: '6px', overflow: 'hidden', marginTop: '0.5rem' }}>
             <button 
               className="btn btn-secondary" 
               style={{ 
                 flex: 1, 
                 border: 'none', 
                 borderRadius: '0', 
-                backgroundColor: chromeTheme === 'dark' ? 'var(--color-primary)' : 'var(--bg-card)',
-                color: chromeTheme === 'dark' ? 'white' : 'var(--text-muted)',
+                backgroundColor: chromeTheme === 'dark' ? 'var(--accent)' : 'var(--surface-2)',
+                color: chromeTheme === 'dark' ? 'white' : 'var(--text-secondary)',
                 padding: '0.3rem',
                 fontSize: '0.8rem'
               }}
@@ -52,8 +53,8 @@ export default function ExtraSettings() {
                 flex: 1, 
                 border: 'none', 
                 borderRadius: '0', 
-                backgroundColor: chromeTheme === 'light' ? 'var(--color-primary)' : 'var(--bg-card)',
-                color: chromeTheme === 'light' ? 'white' : 'var(--text-muted)',
+                backgroundColor: chromeTheme === 'light' ? 'var(--accent)' : 'var(--surface-2)',
+                color: chromeTheme === 'light' ? 'white' : 'var(--text-secondary)',
                 padding: '0.3rem',
                 fontSize: '0.8rem'
               }}
@@ -72,7 +73,7 @@ export default function ExtraSettings() {
       <div className="control-group">
         <span className="control-label">Annotation Style</span>
         <div className="color-picker-row">
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Color:</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Color:</span>
           <input 
             type="color" 
             value={annotationColor} 
@@ -88,7 +89,7 @@ export default function ExtraSettings() {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           <div className="control-label-container">
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Size</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Size</span>
             <span className="control-value">{annotationStrokeWidth}px</span>
           </div>
           <input 
@@ -142,6 +143,6 @@ export default function ExtraSettings() {
           />
         )}
       </div>
-    </>
+    </InspectorSection>
   );
 }

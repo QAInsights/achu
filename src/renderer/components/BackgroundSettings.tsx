@@ -1,5 +1,6 @@
 import { useAppContext } from '../AppContext';
 import { Sparkles, Plus, Trash2 } from 'lucide-react';
+import InspectorSection from './InspectorSection';
 import { 
   disneyHollywoodGradients, 
   disneyHollywoodMeshPalettes, 
@@ -31,7 +32,7 @@ export default function BackgroundSettings() {
   } = useAppContext();
 
   return (
-    <>
+    <InspectorSection title="Background">
       {/* Background Mode Selector */}
       <div className="control-group">
         <span className="control-label">Background Mode</span>
@@ -77,7 +78,7 @@ export default function BackgroundSettings() {
           
           {backgroundType === 'color' && (
             <div className="color-picker-row" style={{ marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Custom:</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Custom:</span>
               <input 
                 type="color" 
                 value={backgroundValue.startsWith('linear') ? '#ffffff' : backgroundValue} 
@@ -153,20 +154,8 @@ export default function BackgroundSettings() {
 
           {backgroundType === 'gradient' && (
             <button
-              className="btn btn-secondary"
-              style={{
-                marginTop: '0.5rem',
-                width: '100%',
-                padding: '0.4rem',
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.4rem',
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%)',
-                borderColor: 'var(--border-color)',
-                color: 'var(--text-main)',
-              }}
+              className="btn btn-ghost"
+              style={{ marginTop: '0.5rem', width: '100%' }}
               onClick={() => {
                 const nextVal = !showHollywoodPalettes;
                 setShowHollywoodPalettes(nextVal);
@@ -177,8 +166,8 @@ export default function BackgroundSettings() {
                 }
               }}
             >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              {showHollywoodPalettes ? 'Hide Movie Palettes' : '✨ Load Hollywood & Disney Palettes'}
+              <Sparkles className="w-3.5 h-3.5" />
+              {showHollywoodPalettes ? 'Hide Movie Palettes' : 'Load Hollywood & Disney Palettes'}
             </button>
           )}
         </div>
@@ -191,7 +180,7 @@ export default function BackgroundSettings() {
             <span className="control-label">Better Gradient Designer</span>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.25rem' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Curated Palettes:</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Curated Palettes:</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                 {curatedMeshPalettes.map((pal: any) => (
                   <button
@@ -204,36 +193,27 @@ export default function BackgroundSettings() {
                   </button>
                 ))}
                 <button
-                  className="btn btn-secondary"
-                  style={{
-                    padding: '0.2rem 0.5rem',
-                    fontSize: '0.75rem',
-                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%)',
-                    borderColor: 'var(--border-color)',
-                  }}
+                  className="btn btn-ghost"
+                  style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
                   onClick={() => setShowHollywoodMeshPalettes(!showHollywoodMeshPalettes)}
                 >
-                  {showHollywoodMeshPalettes ? 'Hide Movie' : '✨ + Movie Palettes'}
+                  {showHollywoodMeshPalettes ? 'Hide Movie' : '+ Movie Palettes'}
                 </button>
                 {showHollywoodMeshPalettes && disneyHollywoodMeshPalettes.map((pal: any) => (
                   <button
                     key={pal.name}
                     className="btn btn-secondary"
-                    style={{
-                      padding: '0.2rem 0.5rem',
-                      fontSize: '0.75rem',
-                      borderColor: 'rgba(139, 92, 246, 0.4)',
-                    }}
+                    style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
                     onClick={() => applyMeshPalette(pal.colors)}
                     title={`${pal.category.toUpperCase()}: ${pal.colors.join(', ')}`}
                   >
-                    🎬 {pal.name}
+                    {pal.name}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Color Spots</span>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -297,8 +277,8 @@ export default function BackgroundSettings() {
                       height: '24px',
                       borderRadius: '50%',
                       backgroundColor: pt.color,
-                      border: idx === activePointIdx ? '2.5px solid #ffffff' : '1px solid var(--border-color)',
-                      boxShadow: idx === activePointIdx ? '0 0 0 2px var(--color-primary)' : 'none',
+                      border: idx === activePointIdx ? '2.5px solid #ffffff' : '1px solid var(--border)',
+                      boxShadow: idx === activePointIdx ? '0 0 0 2px var(--accent)' : 'none',
                       cursor: 'pointer',
                     }}
                     title={`Point ${idx + 1}`}
@@ -309,7 +289,7 @@ export default function BackgroundSettings() {
               {meshPoints[activePointIdx] && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', backgroundColor: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: '6px' }}>
                   <div className="color-picker-row">
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Color:</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Color:</span>
                     <input
                       type="color"
                       value={meshPoints[activePointIdx].color}
@@ -336,7 +316,7 @@ export default function BackgroundSettings() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                     <div className="control-label-container">
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Spot Radius</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Spot Radius</span>
                       <span className="control-value">{meshPoints[activePointIdx].radius}px</span>
                     </div>
                     <input
@@ -355,7 +335,7 @@ export default function BackgroundSettings() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                     <div className="control-label-container">
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Position X</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Position X</span>
                       <span className="control-value">{Math.round(meshPoints[activePointIdx].x * 100)}%</span>
                     </div>
                     <input
@@ -374,7 +354,7 @@ export default function BackgroundSettings() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                     <div className="control-label-container">
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Position Y</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Position Y</span>
                       <span className="control-value">{Math.round(meshPoints[activePointIdx].y * 100)}%</span>
                     </div>
                     <input
@@ -417,7 +397,7 @@ export default function BackgroundSettings() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 <div className="control-label-container">
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Blur (Blending)</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Blur (Blending)</span>
                   <span className="control-value">{meshBlur}px</span>
                 </div>
                 <input
@@ -432,7 +412,7 @@ export default function BackgroundSettings() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 <div className="control-label-container">
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Grain (Noise)</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Grain (Noise)</span>
                   <span className="control-value">{meshGrain}%</span>
                 </div>
                 <input
@@ -447,7 +427,7 @@ export default function BackgroundSettings() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 <div className="control-label-container">
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Opacity</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Opacity</span>
                   <span className="control-value">{meshOpacity}%</span>
                 </div>
                 <input
@@ -462,7 +442,7 @@ export default function BackgroundSettings() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 <div className="control-label-container">
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Spread (Radius)</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Spread (Radius)</span>
                   <span className="control-value">{meshSpread}%</span>
                 </div>
                 <input
@@ -508,7 +488,7 @@ export default function BackgroundSettings() {
               }} 
               style={{ padding: '0.4rem', textAlign: 'center' }} 
             />
-            <span style={{ color: 'var(--text-muted)' }}>×</span>
+            <span style={{ color: 'var(--text-secondary)' }}>×</span>
             <input 
               type="number" 
               placeholder="Height" 
@@ -523,7 +503,7 @@ export default function BackgroundSettings() {
         )}
         {aspectRatio !== 'Auto' && (
           <div className="switch-container" style={{ marginTop: '0.5rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Padding Mode</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Padding Mode</span>
             <select 
               value={paddingMode} 
               onChange={(e) => {
@@ -538,6 +518,6 @@ export default function BackgroundSettings() {
           </div>
         )}
       </div>
-    </>
+    </InspectorSection>
   );
 }

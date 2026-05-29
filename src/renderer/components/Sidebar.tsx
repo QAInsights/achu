@@ -20,21 +20,10 @@ export default function Sidebar() {
   } = useAppContext();
 
   return (
-    <div 
-      className="sidebar"
-      style={{
-        width: sidebarVisible ? 'var(--sidebar-width)' : '0px',
-        minWidth: sidebarVisible ? 'var(--sidebar-width)' : '0px',
-        opacity: sidebarVisible ? 1 : 0,
-        pointerEvents: sidebarVisible ? 'auto' : 'none',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        borderRight: sidebarVisible ? '1px solid var(--border-color)' : 'none',
-        boxShadow: sidebarVisible ? '4px 0 24px rgba(0, 0, 0, 0.35)' : 'none',
-      }}
-    >
+    <div className={`sidebar ${sidebarVisible ? '' : 'collapsed'}`}>
       <div className="sidebar-header">
         <div className="sidebar-title">
-          <Sparkles className="w-5 h-5 text-indigo-400" />
+          <Sparkles className="w-5 h-5" style={{ color: 'var(--accent)' }} />
           <span>SnapFrame</span>
         </div>
         <button className="preset-delete-btn" onClick={() => {
@@ -47,9 +36,8 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-content">
-        
         {/* Snap / Change Actions */}
-        <div className="btn-group">
+        <div className="sidebar-actions">
           <button className="btn btn-primary" style={{ flex: 1 }} onClick={selectFile}>
             <Plus className="w-4 h-4" /> New snap
           </button>
@@ -63,16 +51,16 @@ export default function Sidebar() {
           <div className="presets-header">
             <span className="control-label">User Presets</span>
           </div>
-          
+
           <div className="color-picker-row">
-            <input 
-              type="text" 
-              placeholder="Preset name..." 
-              value={newPresetName} 
-              onChange={(e) => setNewPresetName(e.target.value)} 
-              style={{ flex: 1, padding: '0.4rem 0.6rem', fontSize: '0.8rem' }}
+            <input
+              type="text"
+              placeholder="Preset name..."
+              value={newPresetName}
+              onChange={(e) => setNewPresetName(e.target.value)}
+              style={{ flex: 1 }}
             />
-            <button className="btn btn-secondary" style={{ padding: '0.4rem' }} onClick={saveCustomPreset} title="Save current background">
+            <button className="btn btn-secondary" onClick={saveCustomPreset} title="Save current background">
               <Plus className="w-4 h-4" />
             </button>
           </div>

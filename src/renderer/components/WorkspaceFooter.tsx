@@ -1,4 +1,4 @@
-import { Download, Copy, Share2 } from 'lucide-react';
+import { Download, Copy } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 
 export default function WorkspaceFooter() {
@@ -15,28 +15,16 @@ export default function WorkspaceFooter() {
 
   return (
     <div className="workspace-footer">
-      {/* Select Export Options */}
-      <div style={{ display: 'flex', gap: '1px', background: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
-        <button 
-          className="btn btn-secondary" 
-          style={{ 
-            border: 'none', 
-            borderRadius: '0', 
-            backgroundColor: exportFormat === 'png' ? 'var(--color-primary)' : 'var(--bg-card)',
-            color: exportFormat === 'png' ? 'white' : 'var(--text-muted)'
-          }}
+      {/* Format Toggle */}
+      <div className="format-toggle">
+        <button
+          className={`format-toggle-btn ${exportFormat === 'png' ? 'active' : ''}`}
           onClick={() => setExportFormat('png')}
         >
           PNG
         </button>
-        <button 
-          className="btn btn-secondary" 
-          style={{ 
-            border: 'none', 
-            borderRadius: '0', 
-            backgroundColor: exportFormat === 'jpeg' ? 'var(--color-primary)' : 'var(--bg-card)',
-            color: exportFormat === 'jpeg' ? 'white' : 'var(--text-muted)'
-          }}
+        <button
+          className={`format-toggle-btn ${exportFormat === 'jpeg' ? 'active' : ''}`}
           onClick={() => setExportFormat('jpeg')}
         >
           JPG
@@ -44,35 +32,27 @@ export default function WorkspaceFooter() {
       </div>
 
       {exportFormat === 'jpeg' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Quality:</span>
-          <input 
-            type="range" 
-            min="30" 
-            max="100" 
-            value={jpegQuality} 
+        <div className="quality-control">
+          <span className="toolbar-control-label">Quality</span>
+          <input
+            type="range"
+            min="30"
+            max="100"
+            value={jpegQuality}
             onChange={(e) => setJpegQuality(parseInt(e.target.value, 10))}
-            style={{ width: '70px', height: '4px' }}
           />
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{jpegQuality}%</span>
+          <span className="quality-label">{jpegQuality}%</span>
         </div>
       )}
 
-      <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 0.5rem' }}></div>
+      <div className="toolbar-divider" />
 
       <button className="btn btn-primary" onClick={triggerExport}>
-        <Download className="w-4 h-4" /> Save Image
-      </button>
-      
-      <button className="btn btn-secondary" onClick={copyBeautifiedImage}>
-        <Copy className="w-4 h-4" /> Copy to Clipboard
+        <Download className="w-4 h-4" /> Export
       </button>
 
-      <button className="btn btn-secondary" onClick={() => {
-        alert('Shared link placeholder triggered! Image copied to clipboard as share item.');
-        copyBeautifiedImage();
-      }}>
-        <Share2 className="w-4 h-4" /> Share
+      <button className="btn btn-secondary" onClick={copyBeautifiedImage}>
+        <Copy className="w-4 h-4" /> Copy
       </button>
     </div>
   );

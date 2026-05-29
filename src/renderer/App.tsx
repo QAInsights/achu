@@ -8,7 +8,7 @@ import PromptModal from './components/PromptModal';
 function AppContent() {
   const { handleDragOver, handleDragLeave, handleDrop } = useAppContext();
   return (
-    <div className="app-container" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+    <div className="app-container app-load" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
       <Sidebar />
       <div className="workspace">
         <WorkspaceToolbar />

@@ -43,6 +43,7 @@ export default function CanvasPreview() {
     getCurrentConfig,
     selectFile,
     getZoomStyle,
+    zoomLevel, setZoomLevel,
     customPrompt,
     handlePointerDown,
     handlePointerMove,
@@ -50,7 +51,7 @@ export default function CanvasPreview() {
   } = useAppContext();
 
   return (
-    <div className="workspace-canvas-container workspace-grid">
+    <div className="workspace-canvas-container">
       {(imageSrc || noImageMode) ? (
         <div className="preview-card-wrapper" style={getZoomStyle()}>
           
@@ -209,7 +210,7 @@ export default function CanvasPreview() {
           </div>
         </div>
       ) : (
-        
+
         /* File Dropzone Empty State */
         <div className="empty-state">
           <div onClick={selectFile} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -218,8 +219,8 @@ export default function CanvasPreview() {
             <p className="empty-state-subtitle">Or click to select an image, or copy-paste directly (Ctrl+V)</p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginTop: '1.2rem' }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>— OR —</div>
+          <div className="empty-state-actions">
+            <div className="empty-state-divider">— OR —</div>
             <button
               className="btn btn-primary"
               onClick={(e) => {
@@ -238,9 +239,24 @@ export default function CanvasPreview() {
             </button>
           </div>
 
-          <div className="empty-state-hotkey" style={{ marginTop: '1.5rem' }}>
-            Hotkey: <code>Ctrl + Alt + V</code> to snap from clipboard instantly
+          <div className="empty-state-hotkeys">
+            <span>Hotkey:</span> <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>V</kbd> <span>to snap from clipboard</span>
           </div>
+        </div>
+      )}
+
+      {/* Zoom Cluster */}
+      {(imageSrc || noImageMode) && (
+        <div className="zoom-cluster">
+          {['Zoom to fit', '50%', '100%', '200%'].map((z) => (
+            <button
+              key={z}
+              className={`zoom-btn ${zoomLevel === z ? 'active' : ''}`}
+              onClick={() => setZoomLevel(z)}
+            >
+              {z === 'Zoom to fit' ? 'Fit' : z}
+            </button>
+          ))}
         </div>
       )}
     </div>
