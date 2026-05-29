@@ -13,7 +13,9 @@ import {
   Pencil,
   Smile,
   Palette,
-  HelpCircle
+  HelpCircle,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 
@@ -27,7 +29,8 @@ export default function WorkspaceToolbar() {
     annotationColor, setAnnotationColor,
     annotationStrokeWidth, setAnnotationStrokeWidth,
     zoomLevel, setZoomLevel,
-    pushHistory, getCurrentConfig, selectFile, setImageSrc, colorInputRef
+    pushHistory, getCurrentConfig, selectFile, setImageSrc, colorInputRef,
+    appTheme, setAppTheme
   } = useAppContext();
 
   return (
@@ -217,6 +220,14 @@ export default function WorkspaceToolbar() {
           <option>100%</option>
           <option>200%</option>
         </select>
+        <button 
+          className="btn btn-secondary" 
+          style={{ padding: '0.4rem' }}
+          onClick={() => setAppTheme(appTheme === 'dark' ? 'light' : 'dark')}
+          title={appTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {appTheme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+        </button>
         <button className="btn btn-secondary" style={{ padding: '0.4rem' }}>
           <HelpCircle className="w-4 h-4" />
         </button>

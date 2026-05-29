@@ -19,6 +19,27 @@
   --sidebar-width: 320px;
 }
 
+body.light-theme {
+  --bg-main: #f8fafc;
+  --bg-sidebar: #ffffff;
+  --bg-workspace: #f1f5f9;
+  --bg-card: #f1f5f9;
+  --bg-input: #e2e8f0;
+  --bg-input-hover: #cbd5e1;
+  --border-color: #cbd5e1;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --color-primary: #7c3aed;
+  --color-primary-hover: #6d28d9;
+  --color-secondary: #4f46e5;
+}
+
+body.light-theme .workspace-grid {
+  background-image: 
+    linear-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

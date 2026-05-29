@@ -64,6 +64,8 @@ interface AppContextType {
   showHollywoodPalettes: boolean; setShowHollywoodPalettes: React.Dispatch<React.SetStateAction<boolean>>;
   selectedGradientCategory: 'classic' | 'disney' | 'marvel' | 'hollywood'; setSelectedGradientCategory: React.Dispatch<React.SetStateAction<'classic' | 'disney' | 'marvel' | 'hollywood'>>;
   showHollywoodMeshPalettes: boolean; setShowHollywoodMeshPalettes: React.Dispatch<React.SetStateAction<boolean>>;
+  appTheme: 'dark' | 'light'; setAppTheme: React.Dispatch<React.SetStateAction<'dark' | 'light'>>;
+
 
   // Refs
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -158,6 +160,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [showHollywoodMeshPalettes, setShowHollywoodMeshPalettes] = useState<boolean>(false);
 
   const colorInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [appTheme, setAppTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('snapframe-app-theme');
+    return (saved as 'dark' | 'light') || 'dark';
+  });
+
 
   const getCurrentConfig = (): RenderConfig => ({
     padding, rounded, shadow, shadowColor, shadowEnabled,
@@ -292,6 +300,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     initApp();
   }, []);
+
+  // Sync appTheme to localStorage and toggle body class
+  useEffect(() => {
+    localStorage.setItem('snapframe-app-theme', appTheme);
+    if (appTheme === 'light') {
+      document.body.classList.add('light-theme');
+    } else {
+      document.body.classList.remove('light-theme');
+    }
+  }, [appTheme]);
+
 
   // Settings sync effect
   useEffect(() => {
@@ -429,6 +448,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       exportFormat, setExportFormat, jpegQuality, setJpegQuality, zoomLevel, setZoomLevel, history, setHistory,
       historyIndex, setHistoryIndex, showHollywoodPalettes, setShowHollywoodPalettes, selectedGradientCategory, setSelectedGradientCategory,
       showHollywoodMeshPalettes, setShowHollywoodMeshPalettes,
+      appTheme, setAppTheme,
       fileInputRef, colorInputRef,
       getCurrentConfig, pushHistory, applyConfig, handleUndo, handleRedo, selectFile, handleHTMLFileInput,
       pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport,
