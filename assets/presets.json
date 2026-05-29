@@ -1,0 +1,92 @@
+[
+  {
+    "id": "warm-sunset",
+    "name": "Warm Sunset",
+    "gradient": "linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "cool-ocean",
+    "name": "Cool Ocean",
+    "gradient": "linear-gradient(135deg, #3a7bd5 0%, #3a6073 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "purple-haze",
+    "name": "Purple Haze",
+    "gradient": "linear-gradient(135deg, #7f00ff 0%, #e100ff 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "cosmic-dust",
+    "name": "Cosmic Dust",
+    "gradient": "linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "northern-lights",
+    "name": "Northern Lights",
+    "gradient": "linear-gradient(135deg, #0575e6 0%, #00f260 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "cotton-candy",
+    "name": "Cotton Candy",
+    "gradient": "linear-gradient(135deg, #ff9a9e 0%, #a1c4fd 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "electric-lavender",
+    "name": "Electric Lavender",
+    "gradient": "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "neon-glow",
+    "name": "Neon Glow",
+    "gradient": "linear-gradient(135deg, #ec008c 0%, #fc6767 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "emerald-mint",
+    "name": "Emerald Mint",
+    "gradient": "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "cyberpunk",
+    "name": "Cyberpunk",
+    "gradient": "linear-gradient(135deg, #f857a6 0%, #ff5858 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "mesh-aurora",
+    "name": "Mesh Aurora",
+    "gradient": "radial-gradient(circle at 20% 20%, #ff8a00 0%, transparent 50%), radial-gradient(circle at 80% 80%, #da00ff 0%, transparent 50%), linear-gradient(135deg, #00b4db 0%, #0083b0 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "sunrise-rose",
+    "name": "Sunrise Rose",
+    "gradient": "linear-gradient(135deg, #ffc3a0 0%, #ffafbd 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "midnight-steel",
+    "name": "Midnight Steel",
+    "gradient": "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "coral-reef",
+    "name": "Coral Reef",
+    "gradient": "linear-gradient(135deg, #ff9966 0%, #ff5e62 100%)",
+    "type": "gradient"
+  },
+  {
+    "id": "peach-sherbet",
+    "name": "Peach Sherbet",
+    "gradient": "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
+    "type": "gradient"
+  }
+]

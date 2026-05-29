@@ -1,0 +1,47 @@
+{
+  "name": "snapframe",
+  "version": "1.0.0",
+  "description": "A lightweight Windows desktop application for beautifying screenshots.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "build": "node scripts/build.js",
+    "test": "esbuild tests/renderer.test.ts --bundle --platform=node --outfile=app-bundle/test.js && node app-bundle/test.js",
+    "package": "npm run build && electron-builder --win portable"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "lucide-react": "^0.435.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^31.3.1",
+    "electron-builder": "^24.13.3",
+    "esbuild": "^0.23.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2"
+  },
+  "build": {
+    "appId": "com.navee.snapframe",
+    "productName": "SnapFrame",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      {
+        "from": "app-bundle",
+        "to": "."
+      },
+      "package.json"
+    ],
+    "win": {
+      "target": "portable"
+    }
+  }
+}
