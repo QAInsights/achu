@@ -29,7 +29,6 @@ export default function AnnotationsLayer({
   annotations,
   setAnnotations,
   activeTool,
-  setActiveTool,
   color,
   strokeWidth,
   onSaveHistory,

@@ -1,10 +1,33 @@
+import gradientPresetsImport from '../../assets/presets.json';
+
 export interface GradientPreset {
   id: string;
   name: string;
   gradient: string;
   type: 'gradient' | 'color';
-  category: 'classic' | 'disney' | 'marvel' | 'hollywood';
+  category?: 'classic' | 'disney' | 'marvel' | 'hollywood';
 }
+
+export const defaultGradients: GradientPreset[] = gradientPresetsImport as GradientPreset[];
+
+export const curatedMeshPalettes = [
+  { name: 'Sunset', colors: ['#ff5f6d', '#ffc371', '#ff7e5f', '#feb47b'] },
+  { name: 'Ocean', colors: ['#00c6ff', '#0072ff', '#0a2540', '#00d2ff'] },
+  { name: 'Neon', colors: ['#f72585', '#7209b7', '#3f37c9', '#4cc9f0'] },
+  { name: 'Forest', colors: ['#11998e', '#38ef7d', '#134e5e', '#71b280'] },
+  { name: 'Aurora', colors: ['#0575e6', '#00f260', '#0f2027', '#203a43'] }
+];
+
+export const solidPresets = [
+  { id: 'white', name: 'White', color: '#ffffff', type: 'color' as const },
+  { id: 'black', name: 'Black', color: '#090d16', type: 'color' as const },
+  { id: 'slate', name: 'Slate', color: '#475569', type: 'color' as const },
+  { id: 'indigo', name: 'Indigo', color: '#6366f1', type: 'color' as const },
+  { id: 'emerald', name: 'Emerald', color: '#10b981', type: 'color' as const },
+  { id: 'rose', name: 'Rose', color: '#f43f5e', type: 'color' as const },
+  { id: 'amber', name: 'Amber', color: '#f59e0b', type: 'color' as const },
+  { id: 'sky', name: 'Sky', color: '#0ea5e9', type: 'color' as const },
+];
 
 export const disneyHollywoodGradients: GradientPreset[] = [
   // FANTASY & ANIMATION THEMES (Inspired by classics)

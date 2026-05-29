@@ -8,7 +8,10 @@ export interface Annotation {
   text?: string;
   color: string;
   strokeWidth: number; // relative to 1000px viewBox
+  points?: Array<{ x: number; y: number }>;
+  rotation?: number;
 }
+
 
 export interface RenderConfig {
   padding: number;
@@ -302,7 +305,7 @@ function drawChrome(
   x: number,
   y: number,
   w: number,
-  h: number,
+  _h: number,
   style: 'mac' | 'windows',
   theme: 'dark' | 'light',
   scaleFactor: number

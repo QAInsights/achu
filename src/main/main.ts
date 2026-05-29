@@ -222,7 +222,7 @@ ipcMain.handle('file:open-dialog', async () => {
   return `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
 });
 
-ipcMain.handle('file:save-dialog', async (_event, { base64Data, type, quality }) => {
+ipcMain.handle('file:save-dialog', async (_event, { base64Data, type }) => {
   if (!mainWindow) return false;
 
   const ext = type === 'jpeg' ? 'jpg' : 'png';
