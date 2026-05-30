@@ -122,6 +122,16 @@ html, body {
   background-color: var(--surface-0);
 }
 
+.workspace-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  -webkit-app-region: drag;
+  z-index: 10;
+}
+
 /* === SIDEBAR / INSPECTOR === */
 .sidebar {
   width: var(--sidebar-width);
@@ -157,6 +167,12 @@ html, body {
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.platform-darwin .sidebar-header {
+  padding-left: 80px;
 }
 
 .sidebar-title {
@@ -478,6 +494,7 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   box-shadow: var(--elev-2);
   max-width: calc(100% - var(--space-5));
   flex-wrap: nowrap;
+  -webkit-app-region: no-drag;
 }
 
 .toolbar-group {

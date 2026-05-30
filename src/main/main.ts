@@ -119,7 +119,12 @@ function createWindow(settings: AppSettings) {
       contextIsolation: true,
       nodeIntegration: false,
     },
-    titleBarStyle: 'default',
+    titleBarStyle: process.platform === 'darwin' || process.platform === 'win32' ? 'hidden' : 'default',
+    titleBarOverlay: process.platform === 'win32' ? {
+      color: '#0b0f19',
+      symbolColor: '#9699a3',
+      height: 32
+    } : false,
   });
 
   // Open external links in user's default browser
@@ -266,6 +271,18 @@ app.on('window-all-closed', () => {
 });
 
 // IPC IPC Main Handlers
+ipcMain.on('theme:changed', (_event, theme) => {
+  if (!mainWindow) return;
+  if (process.platform === 'win32' && typeof (mainWindow as any).setTitleBarOverlay === 'function') {
+    const isDark = theme === 'dark';
+    (mainWindow as any).setTitleBarOverlay({
+      color: isDark ? '#0b0f19' : '#f7f7f7',
+      symbolColor: isDark ? '#9699a3' : '#454953',
+      height: 32
+    });
+  }
+});
+
 ipcMain.handle('settings:get', () => {
   return loadSettings();
 });

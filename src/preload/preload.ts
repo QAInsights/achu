@@ -2,6 +2,9 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 // Expose safe IPC channels to the renderer process
 contextBridge.exposeInMainWorld('snapFrameAPI', {
+  platform: process.platform,
+  setTheme: (theme: 'dark' | 'light') => ipcRenderer.send('theme:changed', theme),
+
   // Settings API
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (settings: any) => ipcRenderer.invoke('settings:set', settings),

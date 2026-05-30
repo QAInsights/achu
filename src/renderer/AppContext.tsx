@@ -321,6 +321,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else {
       document.body.classList.remove('light-theme');
     }
+    if (window.snapFrameAPI && typeof window.snapFrameAPI.setTheme === 'function') {
+      window.snapFrameAPI.setTheme(appTheme);
+    }
   }, [appTheme]);
 
 
