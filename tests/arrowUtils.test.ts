@@ -1,102 +1,83 @@
+import { describe, it, expect } from 'vitest';
 import {
   getCurvedArrowPoints,
   getTaperedCurvedArrowPoints,
   drawArrowOnCanvas,
 } from '../src/renderer/arrowUtils';
 import { makeMockCtx, makeArrowAnnotation } from './shared';
-import * as assert from 'assert';
 
-export function testCurvedArrowPoints() {
-  console.log('Testing getCurvedArrowPoints...');
-  const res = getCurvedArrowPoints(0, 0, 100, 100, 4);
-  assert.ok(res !== null);
-  assert.strictEqual(res!.x0, 0);
-  assert.strictEqual(res!.y0, 0);
-  assert.strictEqual(res!.x1, 100);
-  assert.strictEqual(res!.y1, 100);
-  assert.ok(res!.cx !== 50 || res!.cy !== 50, 'Control point should be offset');
-  assert.ok(typeof res!.arrow1X === 'number');
-  assert.ok(typeof res!.arrow2X === 'number');
-  assert.strictEqual(getCurvedArrowPoints(0, 0, 0.5, 0.5, 4), null);
-  console.log('✓ getCurvedArrowPoints');
-}
+describe('Arrow Utils', () => {
+  describe('getCurvedArrowPoints', () => {
+    it('calculates curved arrow points', () => {
+      const res = getCurvedArrowPoints(0, 0, 100, 100, 4);
+      expect(res).not.toBeNull();
+      expect(res!.x0).toBe(0);
+      expect(res!.y0).toBe(0);
+      expect(res!.x1).toBe(100);
+      expect(res!.y1).toBe(100);
+      expect(res!.cx !== 50 || res!.cy !== 50).toBe(true);
+      expect(typeof res!.arrow1X).toBe('number');
+      expect(typeof res!.arrow2X).toBe('number');
+    });
 
-export function testCurvedArrowLargeStroke() {
-  console.log('Testing getCurvedArrowPoints with large stroke width...');
-  const res = getCurvedArrowPoints(0, 0, 200, 0, 20);
-  assert.ok(res !== null);
-  assert.ok(typeof res!.cx === 'number');
-  console.log('✓ getCurvedArrowPoints large stroke');
-}
+    it('returns null for short distance', () => {
+      expect(getCurvedArrowPoints(0, 0, 0.5, 0.5, 4)).toBeNull();
+    });
 
-export function testTaperedArrowPoints() {
-  console.log('Testing getTaperedCurvedArrowPoints...');
-  const res = getTaperedCurvedArrowPoints(0, 0, 100, 100, 4);
-  assert.ok(res !== null);
-  assert.ok(res!.leftPoints.length > 0);
-  assert.ok(res!.rightPoints.length > 0);
-  assert.strictEqual(res!.tip.x, 100);
-  assert.strictEqual(res!.tip.y, 100);
-  assert.ok(typeof res!.H_left.x === 'number');
-  assert.ok(typeof res!.H_right.x === 'number');
-  assert.strictEqual(getTaperedCurvedArrowPoints(0, 0, 0.5, 0.5, 4), null);
-  console.log('✓ getTaperedCurvedArrowPoints');
-}
+    it('handles large stroke width', () => {
+      const res = getCurvedArrowPoints(0, 0, 200, 0, 20);
+      expect(res).not.toBeNull();
+      expect(typeof res!.cx).toBe('number');
+    });
+  });
 
-export function testTaperedArrowMinimalStroke() {
-  console.log('Testing getTaperedCurvedArrowPoints minimal stroke...');
-  const res = getTaperedCurvedArrowPoints(0, 0, 50, 50, 1);
-  assert.ok(res !== null);
-  assert.ok(res!.leftPoints.length === 16, 'Should have steps+1 = 16 points');
-  assert.ok(res!.rightPoints.length === 16);
-  console.log('✓ getTaperedCurvedArrowPoints minimal stroke');
-}
+  describe('getTaperedCurvedArrowPoints', () => {
+    it('calculates tapered arrow points', () => {
+      const res = getTaperedCurvedArrowPoints(0, 0, 100, 100, 4);
+      expect(res).not.toBeNull();
+      expect(res!.leftPoints.length).toBeGreaterThan(0);
+      expect(res!.rightPoints.length).toBeGreaterThan(0);
+      expect(res!.tip.x).toBe(100);
+      expect(res!.tip.y).toBe(100);
+      expect(typeof res!.H_left.x).toBe('number');
+      expect(typeof res!.H_right.x).toBe('number');
+    });
 
-export function testDrawArrowClassic() {
-  console.log('Testing drawArrowOnCanvas: classic...');
-  drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('classic'), 50, 30, 4);
-  console.log('✓ drawArrowOnCanvas classic (no throw)');
-}
+    it('returns null for short distance', () => {
+      expect(getTaperedCurvedArrowPoints(0, 0, 0.5, 0.5, 4)).toBeNull();
+    });
 
-export function testDrawArrowDashed() {
-  console.log('Testing drawArrowOnCanvas: dashed...');
-  drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('dashed'), 50, 30, 4);
-  console.log('✓ drawArrowOnCanvas dashed (no throw)');
-}
+    it('handles minimal stroke', () => {
+      const res = getTaperedCurvedArrowPoints(0, 0, 50, 50, 1);
+      expect(res).not.toBeNull();
+      expect(res!.leftPoints.length).toBe(16);
+      expect(res!.rightPoints.length).toBe(16);
+    });
+  });
 
-export function testDrawArrowTapered() {
-  console.log('Testing drawArrowOnCanvas: tapered...');
-  drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('tapered'), 50, 30, 4);
-  console.log('✓ drawArrowOnCanvas tapered (no throw)');
-}
+  describe('drawArrowOnCanvas', () => {
+    it('draws classic arrow without throwing', () => {
+      expect(() => drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('classic'), 50, 30, 4)).not.toThrow();
+    });
 
-export function testDrawArrowCurved() {
-  console.log('Testing drawArrowOnCanvas: curved...');
-  drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('curved'), 50, 30, 4);
-  console.log('✓ drawArrowOnCanvas curved (no throw)');
-}
+    it('draws dashed arrow without throwing', () => {
+      expect(() => drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('dashed'), 50, 30, 4)).not.toThrow();
+    });
 
-export function testDrawArrowTaperedShortDistance() {
-  console.log('Testing drawArrowOnCanvas: tapered short distance (early return)...');
-  drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('tapered'), 0.3, 0.2, 4);
-  console.log('✓ drawArrowOnCanvas tapered short distance (early return)');
-}
+    it('draws tapered arrow without throwing', () => {
+      expect(() => drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('tapered'), 50, 30, 4)).not.toThrow();
+    });
 
-export function testDrawArrowCurvedShortDistance() {
-  console.log('Testing drawArrowOnCanvas: curved short distance (early return)...');
-  drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('curved'), 0.3, 0.2, 4);
-  console.log('✓ drawArrowOnCanvas curved short distance (early return)');
-}
+    it('draws curved arrow without throwing', () => {
+      expect(() => drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('curved'), 50, 30, 4)).not.toThrow();
+    });
 
-export function runArrowUtilsTests() {
-  testCurvedArrowPoints();
-  testCurvedArrowLargeStroke();
-  testTaperedArrowPoints();
-  testTaperedArrowMinimalStroke();
-  testDrawArrowClassic();
-  testDrawArrowDashed();
-  testDrawArrowTapered();
-  testDrawArrowCurved();
-  testDrawArrowTaperedShortDistance();
-  testDrawArrowCurvedShortDistance();
-}
+    it('handles tapered short distance early return', () => {
+      expect(() => drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('tapered'), 0.3, 0.2, 4)).not.toThrow();
+    });
+
+    it('handles curved short distance early return', () => {
+      expect(() => drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('curved'), 0.3, 0.2, 4)).not.toThrow();
+    });
+  });
+});

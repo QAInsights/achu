@@ -4,6 +4,7 @@ import {
   Image as ImageIcon,
   Undo2,
   Redo2,
+  RotateCcw,
   MousePointer,
   Square,
   Circle,
@@ -26,11 +27,12 @@ export default function WorkspaceToolbar() {
     noImageMode, setNoImageMode,
     historyIndex, history,
     handleUndo, handleRedo,
+    setImageSrc, setHistory, setHistoryIndex,
     activeTool, setActiveTool,
     arrowStyle, setArrowStyle,
     annotationColor, setAnnotationColor,
     annotationStrokeWidth, setAnnotationStrokeWidth,
-    pushHistory, getCurrentConfig, selectFile, setImageSrc, colorInputRef,
+    pushHistory, getCurrentConfig, selectFile, colorInputRef,
     appTheme, setAppTheme,
     settingsVisible, setSettingsVisible
   } = useAppContext();
@@ -92,6 +94,17 @@ export default function WorkspaceToolbar() {
         </button>
         <button className="tool-btn" onClick={handleRedo} disabled={historyIndex >= history.length - 1} title="Redo (Ctrl+Y)">
           <Redo2 className="w-4 h-4" />
+        </button>
+        <button
+          className="tool-btn"
+          onClick={() => {
+            setImageSrc(null);
+            setHistory([]);
+            setHistoryIndex(-1);
+          }}
+          title="Clear workspace"
+        >
+          <RotateCcw className="w-4 h-4" />
         </button>
       </div>
 

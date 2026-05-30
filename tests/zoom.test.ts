@@ -1,57 +1,53 @@
-import * as assert from 'assert';
+import { describe, it, expect } from 'vitest';
+import { zoomIn, zoomOut } from '../src/renderer/utils/layoutUtils';
 
-function zoomIn(zoomLevel: string): string {
-  if (zoomLevel === 'Zoom to fit') return '110%';
-  const currentVal = parseInt(zoomLevel, 10);
-  if (isNaN(currentVal)) return '100%';
-  const nextVal = Math.min(500, Math.floor(currentVal / 10) * 10 + 10);
-  return `${nextVal}%`;
-}
+describe('Zoom', () => {
+  describe('zoomIn', () => {
+    it('increments zoom level', () => {
+      expect(zoomIn('100%')).toBe('110%');
+      expect(zoomIn('200%')).toBe('210%');
+    });
 
-function zoomOut(zoomLevel: string): string {
-  if (zoomLevel === 'Zoom to fit') return '90%';
-  const currentVal = parseInt(zoomLevel, 10);
-  if (isNaN(currentVal)) return '100%';
-  const nextVal = Math.max(10, Math.ceil(currentVal / 10) * 10 - 10);
-  return `${nextVal}%`;
-}
+    it('clamps at max 500%', () => {
+      expect(zoomIn('500%')).toBe('500%');
+      expect(zoomIn('490%')).toBe('500%');
+    });
 
-export function testZoomIn() {
-  console.log('Testing zoom-in logic...');
-  assert.strictEqual(zoomIn('100%'), '110%', '100 → 110');
-  assert.strictEqual(zoomIn('200%'), '210%', '200 → 210');
-  assert.strictEqual(zoomIn('500%'), '500%', '500 is max (clamped)');
-  assert.strictEqual(zoomIn('490%'), '500%', '490 → 500');
-  assert.strictEqual(zoomIn('Zoom to fit'), '110%', 'Fit → 110');
-  assert.strictEqual(zoomIn('invalid'), '100%', 'NaN → 100');
-  console.log('✓ Zoom in');
-}
+    it('handles special values', () => {
+      expect(zoomIn('Zoom to fit')).toBe('110%');
+      expect(zoomIn('invalid')).toBe('100%');
+    });
+  });
 
-export function testZoomOut() {
-  console.log('Testing zoom-out logic...');
-  assert.strictEqual(zoomOut('100%'), '90%', '100 → 90');
-  assert.strictEqual(zoomOut('200%'), '190%', '200 → 190');
-  assert.strictEqual(zoomOut('10%'), '10%', '10 is min (clamped)');
-  assert.strictEqual(zoomOut('20%'), '10%', '20 → 10');
-  assert.strictEqual(zoomOut('Zoom to fit'), '90%', 'Fit → 90');
-  assert.strictEqual(zoomOut('invalid'), '100%', 'NaN → 100');
-  console.log('✓ Zoom out');
-}
+  describe('zoomOut', () => {
+    it('decrements zoom level', () => {
+      expect(zoomOut('100%')).toBe('90%');
+      expect(zoomOut('200%')).toBe('190%');
+    });
 
-export function testZoomBoundary() {
-  console.log('Testing zoom boundary conditions...');
-  assert.strictEqual(zoomIn('105%'), '110%', '105 floors to 100 then +10 = 110');
-  assert.strictEqual(zoomOut('105%'), '100%', '105 ceils to 110 then -10 = 100');
-  let z = 'Zoom to fit';
-  z = zoomIn(z);
-  assert.strictEqual(z, '110%');
-  z = zoomOut(z);
-  assert.strictEqual(z, '100%');
-  console.log('✓ Zoom boundary conditions');
-}
+    it('clamps at min 10%', () => {
+      expect(zoomOut('10%')).toBe('10%');
+      expect(zoomOut('20%')).toBe('10%');
+    });
 
-export function runZoomTests() {
-  testZoomIn();
-  testZoomOut();
-  testZoomBoundary();
-}
+    it('handles special values', () => {
+      expect(zoomOut('Zoom to fit')).toBe('90%');
+      expect(zoomOut('invalid')).toBe('100%');
+    });
+  });
+
+  describe('boundary conditions', () => {
+    it('handles non-round values', () => {
+      expect(zoomIn('105%')).toBe('110%');
+      expect(zoomOut('105%')).toBe('100%');
+    });
+
+    it('chains zoom operations', () => {
+      let z = 'Zoom to fit';
+      z = zoomIn(z);
+      expect(z).toBe('110%');
+      z = zoomOut(z);
+      expect(z).toBe('100%');
+    });
+  });
+});

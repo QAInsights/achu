@@ -1,5 +1,6 @@
-import { Plus, Trash2, RotateCcw, Sparkles, Clipboard } from 'lucide-react';
+import { Plus, Trash2, Clipboard } from 'lucide-react';
 import { useAppContext } from '../AppContext';
+import logoUrl from '../../../assets/logo.svg';
 import LayoutSettings from './LayoutSettings';
 import BackgroundSettings from './BackgroundSettings';
 import ExtraSettings from './ExtraSettings';
@@ -9,9 +10,6 @@ export default function Sidebar() {
     sidebarVisible,
     customPresets,
     newPresetName, setNewPresetName,
-    setImageSrc,
-    setHistory,
-    setHistoryIndex,
     selectFile,
     pasteFromClipboard,
     saveCustomPreset,
@@ -23,16 +21,9 @@ export default function Sidebar() {
     <div className={`sidebar ${sidebarVisible ? '' : 'collapsed'}`}>
       <div className="sidebar-header">
         <div className="sidebar-title">
-          <Sparkles className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+          <img src={logoUrl} alt="Achu" className="sidebar-logo" />
           <span>Achu</span>
         </div>
-        <button className="preset-delete-btn" onClick={() => {
-          setImageSrc(null);
-          setHistory([]);
-          setHistoryIndex(-1);
-        }}>
-          <RotateCcw className="w-4 h-4" />
-        </button>
       </div>
 
       <div className="sidebar-content">

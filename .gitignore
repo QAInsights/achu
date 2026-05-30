@@ -5,6 +5,8 @@ node_modules/
 app-bundle/
 release/
 dist/
+coverage/
+.nyc_output/
 
 # Log files
 npm-debug.log*

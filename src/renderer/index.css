@@ -169,6 +169,12 @@ html, body {
   letter-spacing: -0.01em;
 }
 
+.sidebar-logo {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
 .sidebar-content {
   flex: 1;
   overflow-y: auto;

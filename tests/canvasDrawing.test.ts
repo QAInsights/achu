@@ -1,17 +1,16 @@
+import { describe, it, expect } from 'vitest';
 import { drawRoundedRectPath } from '../src/renderer/canvasRenderer';
 import { makeMockCtx } from './shared';
 
-export function testDrawRoundedRectPath() {
-  console.log('Testing drawRoundedRectPath...');
-  const ctx = makeMockCtx();
-  drawRoundedRectPath(ctx, 0, 0, 100, 100, 10);
+describe('Canvas Drawing', () => {
+  it('draws rounded rect path with roundRect available', () => {
+    const ctx = makeMockCtx();
+    expect(() => drawRoundedRectPath(ctx, 0, 0, 100, 100, 10)).not.toThrow();
+  });
 
-  const ctxNoRoundRect = makeMockCtx();
-  (ctxNoRoundRect as any).roundRect = undefined;
-  drawRoundedRectPath(ctxNoRoundRect, 0, 0, 100, 100, 10);
-  console.log('✓ drawRoundedRectPath (both code paths)');
-}
-
-export function runCanvasDrawingTests() {
-  testDrawRoundedRectPath();
-}
+  it('draws rounded rect path with manual fallback', () => {
+    const ctx = makeMockCtx();
+    (ctx as any).roundRect = undefined;
+    expect(() => drawRoundedRectPath(ctx, 0, 0, 100, 100, 10)).not.toThrow();
+  });
+});
