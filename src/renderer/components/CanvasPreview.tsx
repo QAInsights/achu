@@ -193,14 +193,14 @@ export default function CanvasPreview() {
             {/* Draggable Point Handles for Mesh Gradient */}
             {backgroundType === 'mesh' && (
               <div
-                onPointerMove={activeTool === 'pointer' ? handlePointerMove : undefined}
-                onPointerUp={activeTool === 'pointer' ? handlePointerUp : undefined}
                 style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 10 }}
               >
                 {meshPoints.map((pt, idx) => (
                   <Tooltip key={pt.id} position="top">
                     <div
                       onPointerDown={activeTool === 'pointer' ? (e) => handlePointerDown(e, idx) : undefined}
+                      onPointerMove={activeTool === 'pointer' ? handlePointerMove : undefined}
+                      onPointerUp={activeTool === 'pointer' ? handlePointerUp : undefined}
                       style={{
                         position: 'absolute',
                         left: `${pt.x * 100}%`,
@@ -234,7 +234,7 @@ export default function CanvasPreview() {
             {/* Main Screenshot card box */}
             {!noImageMode && imageSrc ? (
               <div
-                className="preview-container-box"
+                className={`preview-container-box ${chromeStyle !== 'none' ? `mockup-${chromeTheme}` : ''}`}
                 style={{
                   borderRadius: `${rounded}px`,
                   boxShadow: shadowEnabled ? `0 ${shadow * 0.8}px ${shadow * 1.5}px ${shadowColor}` : 'none',
@@ -251,13 +251,7 @@ export default function CanvasPreview() {
 
                 {/* macOS Title Bar Mockup */}
                 {chromeStyle === 'mac' && (
-                  <div
-                    className="preview-chrome-mac"
-                    style={{
-                      backgroundColor: chromeTheme === 'light' ? '#f3f3f3' : '#21252b',
-                      borderBottom: chromeTheme === 'light' ? '1px solid #e1e1e1' : 'none'
-                    }}
-                  >
+                  <div className={`preview-chrome-mac ${chromeTheme}`}>
                     <div className="dot dot-red" />
                     <div className="dot dot-yellow" />
                     <div className="dot dot-green" />
@@ -266,14 +260,7 @@ export default function CanvasPreview() {
 
                 {/* Windows Title Bar Mockup */}
                 {chromeStyle === 'windows' && (
-                  <div
-                    className="preview-chrome-win"
-                    style={{
-                      backgroundColor: chromeTheme === 'light' ? '#ffffff' : '#1e1e1e',
-                      borderBottom: chromeTheme === 'light' ? '1px solid #e5e5e5' : 'none',
-                      ['--win-icon-color' as any]: chromeTheme === 'light' ? '#333333' : '#cccccc'
-                    }}
-                  >
+                  <div className={`preview-chrome-win ${chromeTheme}`}>
                     <div className="win-min" />
                     <div className="win-icon" />
                     <div className="win-close" />

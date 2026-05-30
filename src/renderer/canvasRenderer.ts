@@ -620,8 +620,10 @@ export function renderCanvas(
   drawRoundedRectPath(ctx, contentX, contentY, contentW, contentH, config.rounded);
   ctx.clip();
 
-  ctx.fillStyle = '#1e1e24';
-  ctx.fillRect(contentX, contentY, contentW, contentH);
+  if (config.chromeStyle !== 'none') {
+    ctx.fillStyle = config.chromeTheme === 'light' ? '#ffffff' : '#1e1e24';
+    ctx.fillRect(contentX, contentY, contentW, contentH);
+  }
 
   const scaledChromeHeight = chromeHeight * scale;
   if (config.chromeStyle !== 'none') {

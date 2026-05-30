@@ -424,10 +424,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handlePointerDown = (e: React.PointerEvent, idx: number) => {
     e.preventDefault(); setActivePointIdx(idx);
-    const container = e.currentTarget.parentElement;
+    const handle = e.currentTarget as HTMLDivElement;
+    const container = handle.parentElement;
     if (container) {
       dragStartRef.current = { idx, rect: container.getBoundingClientRect() };
-      container.setPointerCapture(e.pointerId);
+      try { handle.setPointerCapture(e.pointerId); } catch (err) {}
     }
   };
 
@@ -443,8 +444,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handlePointerUp = (e: React.PointerEvent) => {
     if (dragStartRef.current) {
-      const container = e.currentTarget as HTMLDivElement;
-      try { container.releasePointerCapture(e.pointerId); } catch (err) {}
+      const handle = e.currentTarget as HTMLDivElement;
+      try { handle.releasePointerCapture(e.pointerId); } catch (err) {}
       dragStartRef.current = null; pushHistory(getCurrentConfig());
     }
   };
