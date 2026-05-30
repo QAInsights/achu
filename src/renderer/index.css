@@ -261,6 +261,10 @@ html, body {
 }
 
 .control-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
   font-size: var(--fs-label);
   color: var(--text-tertiary);
   text-decoration: none;
@@ -302,10 +306,11 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); box-s
 /* === TEXT INPUTS & SELECTS === */
 select, input[type="text"], input[type="number"] {
   width: 100%;
+  height: 36px;
   background-color: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.55rem 0.7rem;
+  padding: 0 0.7rem;
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: var(--fs-body);
@@ -318,13 +323,20 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   background-color: var(--surface-3);
 }
 
+.input-sm {
+  height: 28px !important;
+  padding: 0 0.5rem !important;
+  font-size: var(--fs-label) !important;
+}
+
 /* === BUTTONS === */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: 0.55rem 0.9rem;
+  height: 36px;
+  padding: 0 0.9rem;
   font-size: var(--fs-body);
   font-weight: 500;
   font-family: var(--font-sans);
@@ -335,6 +347,12 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   background: none;
   color: var(--text-primary);
   line-height: 1.2;
+}
+
+.btn-sm {
+  height: 28px !important;
+  padding: 0 0.5rem !important;
+  font-size: var(--fs-label) !important;
 }
 
 .btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -452,6 +470,8 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--elev-2);
+  max-width: calc(100% - var(--space-5));
+  flex-wrap: nowrap;
 }
 
 .toolbar-group {
@@ -490,7 +510,9 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 .toolbar-control {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
+  padding: 0 var(--space-1);
 }
 
 .toolbar-control-label {
@@ -499,12 +521,34 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   white-space: nowrap;
 }
 
+.toolbar-control input[type="range"] {
+  width: 80px;
+  min-width: 60px;
+}
+
 .toolbar-control-value {
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
   min-width: 24px;
+}
+
+@media (max-width: 1100px) {
+  .toolbar-dock {
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+  }
+  .toolbar-control input[type="range"] {
+    width: 50px;
+    min-width: 40px;
+  }
+  .toolbar-control-label {
+    display: none;
+  }
+  .toolbar-divider {
+    margin: 0 2px;
+  }
 }
 
 /* Canvas */
@@ -842,8 +886,13 @@ input:checked + .slider-switch:before {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes toolbarFadeSlideIn {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
 .app-load .sidebar { animation: fadeSlideIn var(--dur-slow) var(--ease-out-quint) both; }
-.app-load .toolbar-dock { animation: fadeSlideIn var(--dur-slow) var(--ease-out-quint) 0.05s both; }
+.app-load .toolbar-dock { animation: toolbarFadeSlideIn var(--dur-slow) var(--ease-out-quint) 0.05s both; }
 .app-load .workspace-footer { animation: fadeSlideIn var(--dur-slow) var(--ease-out-quint) 0.1s both; }
 
 .app-load .inspector-section:nth-child(1) { animation: fadeSlideIn var(--dur-slow) var(--ease-out-quint) 0.05s both; }

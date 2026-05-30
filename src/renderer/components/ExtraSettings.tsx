@@ -36,8 +36,9 @@ export default function ExtraSettings() {
                 border: 'none', 
                 borderRadius: '0', 
                 backgroundColor: chromeTheme === 'dark' ? 'var(--accent)' : 'var(--surface-2)',
-                color: chromeTheme === 'dark' ? 'white' : 'var(--text-secondary)',
-                padding: '0.3rem',
+                color: chromeTheme === 'dark' ? 'var(--on-accent)' : 'var(--text-secondary)',
+                height: '28px',
+                padding: 0,
                 fontSize: '0.8rem'
               }}
               onClick={() => {
@@ -54,8 +55,9 @@ export default function ExtraSettings() {
                 border: 'none', 
                 borderRadius: '0', 
                 backgroundColor: chromeTheme === 'light' ? 'var(--accent)' : 'var(--surface-2)',
-                color: chromeTheme === 'light' ? 'white' : 'var(--text-secondary)',
-                padding: '0.3rem',
+                color: chromeTheme === 'light' ? 'var(--on-accent)' : 'var(--text-secondary)',
+                height: '28px',
+                padding: 0,
                 fontSize: '0.8rem'
               }}
               onClick={() => {
@@ -84,7 +86,8 @@ export default function ExtraSettings() {
             type="text" 
             value={annotationColor} 
             onChange={(e) => setAnnotationColor(e.target.value)} 
-            style={{ flex: 1, padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+            className="input-sm"
+            style={{ flex: 1 }}
           />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>

@@ -4,6 +4,7 @@ import WorkspaceToolbar from './components/WorkspaceToolbar';
 import CanvasPreview from './components/CanvasPreview';
 import WorkspaceFooter from './components/WorkspaceFooter';
 import PromptModal from './components/PromptModal';
+import SettingsModal from './components/SettingsModal';
 
 function AppContent() {
   const { handleDragOver, handleDragLeave, handleDrop } = useAppContext();
@@ -16,6 +17,7 @@ function AppContent() {
         <WorkspaceFooter />
       </div>
       <PromptModal />
+      <SettingsModal />
     </div>
   );
 }

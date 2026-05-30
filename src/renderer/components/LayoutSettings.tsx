@@ -73,9 +73,9 @@ export default function LayoutSettings() {
       <div className="control-group">
         <div className="control-label-container">
           <span className="control-label">Inset Border</span>
-          <span className="control-link" onClick={() => setShowAdvancedInset(!showAdvancedInset)}>
+          <button type="button" className="control-link" onClick={() => setShowAdvancedInset(!showAdvancedInset)}>
             {showAdvancedInset ? 'Hide' : 'Advanced'}
-          </span>
+          </button>
         </div>
         <input 
           type="range" 
@@ -104,7 +104,8 @@ export default function LayoutSettings() {
                 setInsetColor(e.target.value);
                 pushHistory({ ...getCurrentConfig(), insetColor: e.target.value });
               }} 
-              style={{ flex: 1, padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+              className="input-sm"
+              style={{ flex: 1 }}
             />
           </div>
         )}
@@ -114,9 +115,9 @@ export default function LayoutSettings() {
       <div className="control-group">
         <div className="control-label-container">
           <span className="control-label">Shadow</span>
-          <span className="control-link" onClick={() => setShowAdvancedShadow(!showAdvancedShadow)}>
+          <button type="button" className="control-link" onClick={() => setShowAdvancedShadow(!showAdvancedShadow)}>
             {showAdvancedShadow ? 'Hide' : 'Advanced'}
-          </span>
+          </button>
         </div>
         <div className="switch-container" style={{ marginBottom: '0.25rem' }}>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Shadow Enabled</span>
@@ -141,12 +142,13 @@ export default function LayoutSettings() {
           onChange={(e) => setShadow(parseInt(e.target.value, 10))}
           onMouseUp={handleSliderRelease}
         />
-        {showAdvancedShadow && shadowEnabled && (
-          <div className="color-picker-row" style={{ marginTop: '0.25rem' }}>
+        {showAdvancedShadow && (
+          <div className="color-picker-row" style={{ marginTop: '0.25rem', opacity: shadowEnabled ? 1 : 0.5 }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Color:</span>
             <input 
               type="color" 
               value={shadowColor.startsWith('rgba') ? '#000000' : shadowColor} 
+              disabled={!shadowEnabled}
               onChange={(e) => {
                 setShadowColor(e.target.value);
                 pushHistory({ ...getCurrentConfig(), shadowColor: e.target.value });
@@ -156,11 +158,13 @@ export default function LayoutSettings() {
             <input 
               type="text" 
               value={shadowColor} 
+              disabled={!shadowEnabled}
               onChange={(e) => {
                 setShadowColor(e.target.value);
                 pushHistory({ ...getCurrentConfig(), shadowColor: e.target.value });
               }} 
-              style={{ flex: 1, padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+              className="input-sm"
+              style={{ flex: 1 }}
             />
           </div>
         )}
@@ -186,9 +190,9 @@ export default function LayoutSettings() {
       <div className="control-group">
         <div className="control-label-container">
           <span className="control-label">Outer Border</span>
-          <span className="control-link" onClick={() => setShowAdvancedBorder(!showAdvancedBorder)}>
+          <button type="button" className="control-link" onClick={() => setShowAdvancedBorder(!showAdvancedBorder)}>
             {showAdvancedBorder ? 'Hide' : 'Advanced'}
-          </span>
+          </button>
         </div>
         <input 
           type="range" 
@@ -217,7 +221,8 @@ export default function LayoutSettings() {
                 setBorderColor(e.target.value);
                 pushHistory({ ...getCurrentConfig(), borderColor: e.target.value });
               }} 
-              style={{ flex: 1, padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+              className="input-sm"
+              style={{ flex: 1 }}
             />
           </div>
         )}

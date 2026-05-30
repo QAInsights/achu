@@ -1,4 +1,4 @@
-import { Plus, Trash2, RotateCcw, Sparkles } from 'lucide-react';
+import { Plus, Trash2, RotateCcw, Sparkles, Clipboard } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import LayoutSettings from './LayoutSettings';
 import BackgroundSettings from './BackgroundSettings';
@@ -24,7 +24,7 @@ export default function Sidebar() {
       <div className="sidebar-header">
         <div className="sidebar-title">
           <Sparkles className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-          <span>SnapFrame</span>
+          <span>Achu</span>
         </div>
         <button className="preset-delete-btn" onClick={() => {
           setImageSrc(null);
@@ -42,7 +42,7 @@ export default function Sidebar() {
             <Plus className="w-4 h-4" /> New snap
           </button>
           <button className="btn btn-secondary" style={{ flex: 1 }} onClick={pasteFromClipboard}>
-            <RotateCcw className="w-4 h-4" /> Paste
+            <Clipboard className="w-4 h-4" /> Paste
           </button>
         </div>
 
@@ -60,7 +60,7 @@ export default function Sidebar() {
               onChange={(e) => setNewPresetName(e.target.value)}
               style={{ flex: 1 }}
             />
-            <button className="btn btn-secondary" onClick={saveCustomPreset} title="Save current background">
+            <button className="btn btn-secondary" onClick={saveCustomPreset} title="Save current background" style={{ width: '36px', padding: 0, flexShrink: 0 }}>
               <Plus className="w-4 h-4" />
             </button>
           </div>

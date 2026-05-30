@@ -1,0 +1,470 @@
+import { useState, useEffect, useRef, RefObject } from 'react';
+import { Annotation } from '../canvasRenderer';
+
+interface UseAnnotationEventsProps {
+  annotations: Annotation[];
+  setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
+  activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji';
+  color: string;
+  strokeWidth: number;
+  arrowStyle?: 'classic' | 'dashed' | 'tapered' | 'curved';
+  onSaveHistory: () => void;
+  customPrompt: (message: string, defaultValue?: string) => Promise<string | null>;
+  containerRef: RefObject<HTMLDivElement | null>;
+}
+
+function rotatePoint(x: number, y: number, cx: number, cy: number, angleDeg: number) {
+  const rad = (-angleDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const dx = x - cx;
+  const dy = y - cy;
+  return {
+    x: cx + dx * cos - dy * sin,
+    y: cy + dx * sin + dy * cos,
+  };
+}
+
+export function useAnnotationEvents({
+  annotations,
+  setAnnotations,
+  activeTool,
+  color,
+  strokeWidth,
+  arrowStyle,
+  onSaveHistory,
+  customPrompt,
+  containerRef,
+}: UseAnnotationEventsProps) {
+  const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
+  const [drawingAnnotation, setDrawingAnnotation] = useState<Annotation | null>(null);
+  const [penPoints, setPenPoints] = useState<Array<{ x: number; y: number }>>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [editingTextValue, setEditingTextValue] = useState<string>('');
+  const lastClickTimeRef = useRef<number>(0);
+  
+  const [dragStart, setDragStart] = useState<{
+    mouseX: number;
+    mouseY: number;
+    annX: number;
+    annY: number;
+    startX: number;
+    startY: number;
+    hasDragged: boolean;
+  } | null>(null);
+  const [resizeHandle, setResizeHandle] = useState<string | null>(null);
+  const [resizeStart, setResizeStart] = useState<{
+    mouseX: number;
+    mouseY: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    rotation: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      if (entries.length > 0) {
+        const { width, height } = entries[0].contentRect;
+        setDimensions({ width: width || 1, height: height || 1 });
+      }
+    });
+    observer.observe(containerRef.current);
+    const rect = containerRef.current.getBoundingClientRect();
+    setDimensions({ width: rect.width || 1, height: rect.height || 1 });
+    return () => observer.disconnect();
+  }, [containerRef]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      if (selectedId && (e.key === 'Delete' || e.key === 'Backspace')) {
+        setAnnotations(prev => prev.filter(ann => ann.id !== selectedId));
+        setSelectedId(null);
+        onSaveHistory();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId, setAnnotations, onSaveHistory]);
+
+  useEffect(() => {
+    if (selectedId && arrowStyle) {
+      setAnnotations(prev =>
+        prev.map(ann => {
+          if (ann.id === selectedId && ann.type === 'arrow' && ann.arrowStyle !== arrowStyle) {
+            return { ...ann, arrowStyle };
+          }
+          return ann;
+        })
+      );
+    }
+  }, [arrowStyle, selectedId, setAnnotations]);
+
+  const handleFreehandDraw = (mouseX: number, mouseY: number, startX: number, startY: number) => {
+    const newPoints = [...penPoints, { x: mouseX, y: mouseY }];
+    setPenPoints(newPoints);
+    setDrawingAnnotation(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        points: newPoints.map(p => ({ x: p.x - startX, y: p.y - startY })),
+      };
+    });
+  };
+
+  const handleShapeDraw = (mouseX: number, mouseY: number) => {
+    setDrawingAnnotation(prev => {
+      if (!prev) return null;
+      return { ...prev, w: mouseX - prev.x, h: mouseY - prev.y };
+    });
+  };
+
+  const handleDragMove = (mouseX: number, mouseY: number) => {
+    if (!dragStart || !selectedId) return;
+    const deltaX = mouseX - dragStart.mouseX;
+    const deltaY = mouseY - dragStart.mouseY;
+    setAnnotations(prev =>
+      prev.map(ann => {
+        if (ann.id === selectedId) {
+          return {
+            ...ann,
+            x: dragStart.annX + deltaX,
+            y: dragStart.annY + deltaY,
+          };
+        }
+        return ann;
+      })
+    );
+  };
+
+  const handleRotateMove = (mouseY: number, mouseX: number, cx: number, cy: number) => {
+    const rad = Math.atan2(mouseY - cy, mouseX - cx);
+    let deg = rad * (180 / Math.PI) + 90;
+    if (deg < 0) deg += 360;
+    setAnnotations(prev =>
+      prev.map(a => (a.id === selectedId ? { ...a, rotation: Math.round(deg) } : a))
+    );
+  };
+
+  const handleResizeMove = (mouseX: number, mouseY: number, cx: number, cy: number) => {
+    if (!resizeStart || !selectedId || !resizeHandle) return;
+    const unrotated = rotatePoint(mouseX, mouseY, cx, cy, resizeStart.rotation);
+    setAnnotations(prev =>
+      prev.map(a => {
+        if (a.id !== selectedId) return a;
+        let { x, y, w, h } = resizeStart;
+        if (resizeHandle.includes('r')) w = unrotated.x - x;
+        if (resizeHandle.includes('l')) {
+          const right = x + w;
+          x = unrotated.x;
+          w = right - x;
+        }
+        if (resizeHandle.includes('b')) h = unrotated.y - y;
+        if (resizeHandle.includes('t')) {
+          const bottom = y + h;
+          y = unrotated.y;
+          h = bottom - y;
+        }
+        return { ...a, x, y, w, h };
+      })
+    );
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!containerRef.current || editingTextId) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left) / dimensions.width;
+    const mouseY = (e.clientY - rect.top) / dimensions.height;
+    if (activeTool === 'pointer') {
+      if (e.target === e.currentTarget) setSelectedId(null);
+      return;
+    }
+    const newAnn: Annotation = {
+      id: `ann-${Date.now()}`,
+      type: activeTool,
+      x: mouseX,
+      y: mouseY,
+      w: 0,
+      h: 0,
+      color,
+      strokeWidth,
+      rotation: 0,
+      points: activeTool === 'pen' ? [{ x: 0, y: 0 }] : undefined,
+      arrowStyle: activeTool === 'arrow' ? arrowStyle : undefined,
+    };
+    if (activeTool === 'pen') setPenPoints([{ x: mouseX, y: mouseY }]);
+    setDrawingAnnotation(newAnn);
+    try { containerRef.current.setPointerCapture(e.pointerId); } catch (err) {}
+  };
+
+  const processDragMove = (e: React.PointerEvent, mouseX: number, mouseY: number) => {
+    if (!dragStart || !selectedId) return;
+    const dist = Math.hypot(e.clientX - dragStart.startX, e.clientY - dragStart.startY);
+    if (!dragStart.hasDragged && dist < 5) return;
+    if (!dragStart.hasDragged) {
+      try { containerRef.current?.setPointerCapture(e.pointerId); } catch (err) {}
+      setDragStart(prev => prev ? { ...prev, hasDragged: true } : null);
+    }
+    handleDragMove(mouseX, mouseY);
+  };
+
+  const processResizeMove = (e: React.PointerEvent, mouseX: number, mouseY: number) => {
+    if (!resizeStart || !selectedId || !resizeHandle) return;
+    try { containerRef.current?.setPointerCapture(e.pointerId); } catch (err) {}
+    const cx = resizeStart.x + resizeStart.w / 2;
+    const cy = resizeStart.y + resizeStart.h / 2;
+    if (resizeHandle === 'rot') {
+      handleRotateMove(mouseY, mouseX, cx, cy);
+    } else {
+      handleResizeMove(mouseX, mouseY, cx, cy);
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left) / dimensions.width;
+    const mouseY = (e.clientY - rect.top) / dimensions.height;
+    if (drawingAnnotation) {
+      if (activeTool === 'pen') {
+        handleFreehandDraw(mouseX, mouseY, drawingAnnotation.x, drawingAnnotation.y);
+      } else {
+        handleShapeDraw(mouseX, mouseY);
+      }
+      return;
+    }
+    if (dragStart && selectedId && !resizeHandle) {
+      processDragMove(e, mouseX, mouseY);
+      return;
+    }
+    if (resizeStart && selectedId && resizeHandle) {
+      processResizeMove(e, mouseX, mouseY);
+    }
+  };
+
+  const savePenDrawing = (drawingAnn: Annotation) => {
+    if (penPoints.length <= 1) return;
+    const xs = penPoints.map(p => p.x);
+    const ys = penPoints.map(p => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const w = Math.max(0.001, maxX - minX);
+    const h = Math.max(0.001, maxY - minY);
+    const finalPoints = penPoints.map(p => ({
+      x: (p.x - minX) / w,
+      y: (p.y - minY) / h,
+    }));
+    setAnnotations(prev => [...prev, {
+      ...drawingAnn,
+      x: minX,
+      y: minY,
+      w,
+      h,
+      points: finalPoints,
+    }]);
+    onSaveHistory();
+  };
+
+  const saveTextDrawing = (drawingAnn: Annotation) => {
+    let w = Math.abs(drawingAnn.w);
+    let h = Math.abs(drawingAnn.h);
+    if (w < 0.02) w = 0.16;
+    if (h < 0.02) h = 0.04;
+    const finalAnn: Annotation = {
+      ...drawingAnn,
+      text: '',
+      x: drawingAnn.w >= 0 ? drawingAnn.x : drawingAnn.x - w,
+      y: drawingAnn.h >= 0 ? drawingAnn.y : drawingAnn.y - h,
+      w,
+      h,
+    };
+    setAnnotations(prev => [...prev, finalAnn]);
+    setEditingTextId(finalAnn.id);
+    setEditingTextValue('');
+  };
+
+  const saveEmojiDrawing = async (drawingAnn: Annotation) => {
+    const emojiVal = await customPrompt('Enter an emoji (e.g. 😊, 👍, 🔥, ❌):', '😊');
+    if (emojiVal && emojiVal.trim()) {
+      const w = 0.06;
+      const h = 0.06;
+      setAnnotations(prev => [...prev, {
+        ...drawingAnn,
+        text: emojiVal.trim(),
+        x: drawingAnn.x - w / 2,
+        y: drawingAnn.y - h / 2,
+        w,
+        h,
+      }]);
+      onSaveHistory();
+    }
+  };
+
+  const saveShapeDrawing = (drawingAnn: Annotation) => {
+    const width = Math.abs(drawingAnn.w);
+    const height = Math.abs(drawingAnn.h);
+    if (width > 0.005 || height > 0.005) {
+      let finalAnn = { ...drawingAnn };
+      if (!activeTool.includes('line') && !activeTool.includes('arrow')) {
+        finalAnn = {
+          ...drawingAnn,
+          x: drawingAnn.w < 0 ? drawingAnn.x + drawingAnn.w : drawingAnn.x,
+          y: drawingAnn.h < 0 ? drawingAnn.y + drawingAnn.h : drawingAnn.y,
+          w: Math.abs(drawingAnn.w),
+          h: Math.abs(drawingAnn.h),
+        };
+      }
+      setAnnotations(prev => [...prev, finalAnn]);
+      onSaveHistory();
+    }
+  };
+
+  const handlePointerUp = async (e: React.PointerEvent<HTMLDivElement>) => {
+    if (drawingAnnotation) {
+      try { containerRef.current?.releasePointerCapture(e.pointerId); } catch (err) {}
+      if (activeTool === 'pen') {
+        savePenDrawing(drawingAnnotation);
+      } else if (activeTool === 'text') {
+        saveTextDrawing(drawingAnnotation);
+      } else if (activeTool === 'emoji') {
+        await saveEmojiDrawing(drawingAnnotation);
+      } else {
+        saveShapeDrawing(drawingAnnotation);
+      }
+      setDrawingAnnotation(null);
+      setPenPoints([]);
+    }
+    if (dragStart) {
+      try { containerRef.current?.releasePointerCapture(e.pointerId); } catch (err) {}
+      setDragStart(null);
+      onSaveHistory();
+    }
+    if (resizeStart) {
+      try { containerRef.current?.releasePointerCapture(e.pointerId); } catch (err) {}
+      setResizeStart(null);
+      setResizeHandle(null);
+      onSaveHistory();
+    }
+  };
+
+  const handleDoubleOrTripleClick = (e: React.PointerEvent, ann: Annotation) => {
+    if (ann.type === 'text') {
+      try { containerRef.current?.releasePointerCapture(e.pointerId); } catch (err) {}
+      setEditingTextId(ann.id);
+      setEditingTextValue(ann.text || '');
+      setDragStart(null);
+      lastClickTimeRef.current = 0;
+    } else if (ann.type === 'emoji') {
+      try { containerRef.current?.releasePointerCapture(e.pointerId); } catch (err) {}
+      setDragStart(null);
+      lastClickTimeRef.current = 0;
+      (async () => {
+        const val = await customPrompt('Edit emoji:', ann.text);
+        if (val !== null) {
+          setAnnotations(prev =>
+            prev.map(a => (a.id === ann.id ? { ...a, text: val.trim() } : a))
+          );
+          onSaveHistory();
+        }
+      })();
+    }
+  };
+
+  const startDrag = (e: React.PointerEvent, ann: Annotation) => {
+    if (activeTool !== 'pointer') return;
+    e.stopPropagation();
+    setSelectedId(ann.id);
+    if (!containerRef.current) return;
+    const now = Date.now();
+    if (e.detail === 2 || (lastClickTimeRef.current > 0 && now - lastClickTimeRef.current < 300)) {
+      handleDoubleOrTripleClick(e, ann);
+      return;
+    }
+    lastClickTimeRef.current = now;
+    const rect = containerRef.current.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left) / dimensions.width;
+    const mouseY = (e.clientY - rect.top) / dimensions.height;
+    setDragStart({
+      mouseX,
+      mouseY,
+      annX: ann.x,
+      annY: ann.y,
+      startX: e.clientX,
+      startY: e.clientY,
+      hasDragged: false,
+    });
+  };
+
+  const startResize = (e: React.PointerEvent, ann: Annotation, handle: string) => {
+    e.stopPropagation();
+    setSelectedId(ann.id);
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left) / dimensions.width;
+    const mouseY = (e.clientY - rect.top) / dimensions.height;
+    setResizeHandle(handle);
+    setResizeStart({
+      mouseX,
+      mouseY,
+      x: ann.x,
+      y: ann.y,
+      w: ann.w,
+      h: ann.h,
+      rotation: ann.rotation || 0,
+    });
+    try { containerRef.current.setPointerCapture(e.pointerId); } catch (err) {}
+  };
+
+  const handleDoubleClick = async (e: React.MouseEvent, ann: Annotation) => {
+    if (activeTool !== 'pointer') return;
+    e.stopPropagation();
+    if (ann.type === 'text') {
+      setEditingTextId(ann.id);
+      setEditingTextValue(ann.text || '');
+    } else if (ann.type === 'emoji') {
+      const val = await customPrompt('Edit emoji:', ann.text);
+      if (val !== null) {
+        setAnnotations(prev =>
+          prev.map(a => (a.id === ann.id ? { ...a, text: val.trim() } : a))
+        );
+        onSaveHistory();
+      }
+    }
+  };
+
+  const deleteAnnotation = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setAnnotations(prev => prev.filter(ann => ann.id !== id));
+    if (selectedId === id) setSelectedId(null);
+    onSaveHistory();
+  };
+
+  return {
+    dimensions,
+    setDimensions,
+    drawingAnnotation,
+    penPoints,
+    selectedId,
+    setSelectedId,
+    editingTextId,
+    setEditingTextId,
+    editingTextValue,
+    setEditingTextValue,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    startDrag,
+    startResize,
+    handleDoubleClick,
+    deleteAnnotation,
+  };
+}

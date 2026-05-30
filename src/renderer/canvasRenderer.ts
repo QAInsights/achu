@@ -10,7 +10,10 @@ export interface Annotation {
   strokeWidth: number; // relative to 1000px viewBox
   points?: Array<{ x: number; y: number }>;
   rotation?: number;
+  arrowStyle?: 'classic' | 'dashed' | 'tapered' | 'curved';
 }
+
+import { drawArrowOnCanvas } from './arrowUtils';
 
 
 export interface RenderConfig {
@@ -657,50 +660,28 @@ export function renderCanvas(
         ctx.lineTo(halfW, halfH);
         ctx.stroke();
       } else if (ann.type === 'arrow') {
-        const angle = Math.atan2(halfH * 2, halfW * 2);
-        const headLen = Math.max(12, strokeW * 3);
-
-        // Draw line stopping halfway along the arrowhead
-        ctx.beginPath();
-        ctx.moveTo(-halfW, -halfH);
-        ctx.lineTo(
-          halfW - (headLen * 0.5) * Math.cos(angle),
-          halfH - (headLen * 0.5) * Math.sin(angle)
-        );
-        ctx.stroke();
-
-        // Draw arrowhead at end point
-        ctx.beginPath();
-        ctx.moveTo(halfW, halfH);
-        ctx.lineTo(
-          halfW - headLen * Math.cos(angle - Math.PI / 6),
-          halfH - headLen * Math.sin(angle - Math.PI / 6)
-        );
-        ctx.lineTo(
-          halfW - headLen * Math.cos(angle + Math.PI / 6),
-          halfH - headLen * Math.sin(angle + Math.PI / 6)
-        );
-        ctx.closePath();
-        ctx.fill();
+        drawArrowOnCanvas(ctx, ann, halfW, halfH, strokeW);
       } else if (ann.type === 'text' && ann.text) {
-        const fontSize = (24 / 1000) * contentW;
-        ctx.font = `bold ${Math.max(12, fontSize)}px sans-serif`;
+        const fontSize = Math.max(12, Math.abs(canvasH) * 0.7);
+        ctx.font = `bold ${fontSize}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Semi-transparent background
+        // Render background box matching the annotation bounds
         ctx.save();
-        const textWidth = ctx.measureText(ann.text).width;
-        const paddingX = fontSize * 0.4;
-        const paddingY = fontSize * 0.2;
         ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
         ctx.beginPath();
-        const rx = -textWidth / 2 - paddingX;
-        const ry = -fontSize / 2 - paddingY;
-        const rw = textWidth + paddingX * 2;
-        const rh = fontSize + paddingY * 2;
-        ctx.roundRect ? ctx.roundRect(rx, ry, rw, rh, fontSize * 0.2) : ctx.rect(rx, ry, rw, rh);
+        const r = Math.abs(canvasH) * 0.15;
+        ctx.roundRect ? ctx.roundRect(-halfW, -halfH, canvasW, canvasH, r) : ctx.rect(-halfW, -halfH, canvasW, canvasH);
         ctx.fill();
+        ctx.restore();
+
+        // Draw outline stroke
+        ctx.save();
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = Math.max(2, fontSize * 0.15);
+        ctx.lineJoin = 'round';
+        ctx.strokeText(ann.text, 0, 0);
         ctx.restore();
 
         ctx.fillText(ann.text, 0, 0);

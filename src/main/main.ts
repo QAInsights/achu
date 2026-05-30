@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, clipboard, globalShortcut } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, clipboard, globalShortcut, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -69,7 +69,7 @@ const defaultSettings: AppSettings = {
     paddingMode: 'fit',
     chromeStyle: 'mac',
     watermarkEnabled: false,
-    watermarkText: 'SnapFrame.app',
+    watermarkText: 'Achu',
     position: 'Middle center',
   },
   presets: [],
@@ -115,6 +115,12 @@ function createWindow(settings: AppSettings) {
       nodeIntegration: false,
     },
     titleBarStyle: 'default',
+  });
+
+  // Open external links in user's default browser
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
   });
 
   // Hide default menu bar by default, toggleable via Alt key
@@ -199,6 +205,10 @@ ipcMain.handle('settings:set', (_event, newSettings) => {
   return true;
 });
 
+ipcMain.on('url:open', (_event, url) => {
+  shell.openExternal(url);
+});
+
 ipcMain.handle('file:open-dialog', async () => {
   if (!mainWindow) return null;
   const result = await dialog.showOpenDialog(mainWindow, {
@@ -228,7 +238,7 @@ ipcMain.handle('file:save-dialog', async (_event, { base64Data, type }) => {
   const ext = type === 'jpeg' ? 'jpg' : 'png';
   const result = await dialog.showSaveDialog(mainWindow, {
     title: 'Export Beautified Screenshot',
-    defaultPath: `snapframe-export.${ext}`,
+    defaultPath: `achu-export.${ext}`,
     filters: [
       { name: type === 'jpeg' ? 'JPEG Image' : 'PNG Image', extensions: [ext] }
     ]

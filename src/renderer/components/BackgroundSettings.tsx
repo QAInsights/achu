@@ -95,7 +95,8 @@ export default function BackgroundSettings() {
                   setBackgroundValue(e.target.value);
                   pushHistory({ ...getCurrentConfig(), backgroundValue: e.target.value });
                 }} 
-                style={{ flex: 1, padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+                className="input-sm"
+                style={{ flex: 1 }}
               />
             </div>
           )}
@@ -167,7 +168,7 @@ export default function BackgroundSettings() {
               }}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              {showHollywoodPalettes ? 'Hide Movie Palettes' : 'Load Hollywood & Disney Palettes'}
+              {showHollywoodPalettes ? 'Hide Movie Palettes' : 'Load Hollywood Palettes'}
             </button>
           )}
         </div>
@@ -218,16 +219,16 @@ export default function BackgroundSettings() {
                 <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Color Spots</span>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
                   <button
-                    className="btn btn-secondary"
-                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ flexShrink: 0 }}
                     onClick={generateRandomPalette}
                     title="Randomize points position and colors"
                   >
                     <Sparkles className="w-3.5 h-3.5" style={{ marginRight: '0.2rem' }} /> Randomize
                   </button>
                   <button
-                    className="btn btn-secondary"
-                    style={{ padding: '0.25rem 0.4rem' }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ width: '28px', padding: 0, flexShrink: 0 }}
                     onClick={() => {
                       if (meshPoints.length >= 10) return;
                       const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
@@ -250,8 +251,8 @@ export default function BackgroundSettings() {
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    className="btn btn-secondary"
-                    style={{ padding: '0.25rem 0.4rem' }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ width: '28px', padding: 0, flexShrink: 0 }}
                     onClick={() => {
                       if (meshPoints.length <= 2) return;
                       const filtered = meshPoints.filter((_, idx) => idx !== activePointIdx);
@@ -310,7 +311,8 @@ export default function BackgroundSettings() {
                         setMeshPoints(updated);
                       }}
                       onBlur={() => pushHistory(getCurrentConfig())}
-                      style={{ flex: 1, padding: '0.2rem 0.4rem', fontSize: '0.8rem' }}
+                      className="input-sm"
+                      style={{ flex: 1 }}
                     />
                   </div>
 
@@ -486,7 +488,7 @@ export default function BackgroundSettings() {
                 setCanvasWidth(parseInt(e.target.value, 10) || 800);
                 pushHistory({ ...getCurrentConfig(), canvasWidth: parseInt(e.target.value, 10) || 800 });
               }} 
-              style={{ padding: '0.4rem', textAlign: 'center' }} 
+              style={{ textAlign: 'center' }} 
             />
             <span style={{ color: 'var(--text-secondary)' }}>×</span>
             <input 
@@ -497,7 +499,7 @@ export default function BackgroundSettings() {
                 setCanvasHeight(parseInt(e.target.value, 10) || 600);
                 pushHistory({ ...getCurrentConfig(), canvasHeight: parseInt(e.target.value, 10) || 600 });
               }} 
-              style={{ padding: '0.4rem', textAlign: 'center' }} 
+              style={{ textAlign: 'center' }} 
             />
           </div>
         )}
@@ -510,7 +512,8 @@ export default function BackgroundSettings() {
                 setPaddingMode(e.target.value as 'fit' | 'fill');
                 pushHistory({ ...getCurrentConfig(), paddingMode: e.target.value as 'fit' | 'fill' });
               }}
-              style={{ width: '100px', padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+              className="input-sm"
+              style={{ width: '100px' }}
             >
               <option value="fit">Fit</option>
               <option value="fill">Fill</option>

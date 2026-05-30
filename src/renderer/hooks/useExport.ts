@@ -6,8 +6,26 @@ export function useExport(
   noImageMode: boolean,
   getCurrentConfig: () => RenderConfig
 ) {
-  const [exportFormat, setExportFormat] = useState<'png' | 'jpeg'>('png');
-  const [jpegQuality, setJpegQuality] = useState<number>(90);
+  const [exportFormat, setExportFormat] = useState<'png' | 'jpeg'>(() => {
+    try {
+      const saved = localStorage.getItem('snapframe-user-defaults');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.exportFormat) return parsed.exportFormat;
+      }
+    } catch (e) {}
+    return 'png';
+  });
+  const [jpegQuality, setJpegQuality] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('snapframe-user-defaults');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.jpegQuality !== undefined) return parsed.jpegQuality;
+      }
+    } catch (e) {}
+    return 90;
+  });
 
   const copyBeautifiedImage = async () => {
     if (!noImageMode && !imageSrc) return;

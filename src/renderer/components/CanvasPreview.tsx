@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Image as ImageIcon, Sparkles, Minus, Plus } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import AnnotationsLayer from '../AnnotationsLayer';
 
@@ -50,6 +50,34 @@ export default function CanvasPreview() {
     handlePointerUp
   } = useAppContext();
 
+  const handleZoomIn = () => {
+    if (zoomLevel === 'Zoom to fit') {
+      setZoomLevel('110%');
+      return;
+    }
+    const currentVal = parseInt(zoomLevel, 10);
+    if (isNaN(currentVal)) {
+      setZoomLevel('100%');
+      return;
+    }
+    const nextVal = Math.min(500, Math.floor(currentVal / 10) * 10 + 10);
+    setZoomLevel(`${nextVal}%`);
+  };
+
+  const handleZoomOut = () => {
+    if (zoomLevel === 'Zoom to fit') {
+      setZoomLevel('90%');
+      return;
+    }
+    const currentVal = parseInt(zoomLevel, 10);
+    if (isNaN(currentVal)) {
+      setZoomLevel('100%');
+      return;
+    }
+    const nextVal = Math.max(10, Math.ceil(currentVal / 10) * 10 - 10);
+    setZoomLevel(`${nextVal}%`);
+  };
+
   return (
     <div className="workspace-canvas-container">
       {(imageSrc || noImageMode) ? (
@@ -60,15 +88,20 @@ export default function CanvasPreview() {
             className="preview-background-card"
             style={{
               padding: `${padding}px`,
-              background: backgroundType === 'gradient' ? backgroundValue : undefined,
               backgroundColor: backgroundType === 'color' ? backgroundValue : undefined,
-              backgroundImage: backgroundType === 'blur' && imageSrc ? `url(${imageSrc})` : backgroundType === 'mesh' ? `url(${meshDataUrl})` : undefined,
+              backgroundImage: backgroundType === 'gradient' 
+                ? backgroundValue 
+                : backgroundType === 'blur' && imageSrc 
+                  ? `url(${imageSrc})` 
+                  : backgroundType === 'mesh' 
+                    ? `url(${meshDataUrl})` 
+                    : undefined,
               alignItems: (position || 'Middle center').includes('Top') ? 'flex-start' : (position || 'Middle center').includes('Bottom') ? 'flex-end' : 'center',
               justifyContent: (position || 'Middle center').includes('left') ? 'flex-start' : (position || 'Middle center').includes('right') ? 'flex-end' : 'center',
               borderRadius: '12px',
               // Fixed sizes mapping
-              width: aspectRatio === '1:1' ? '600px' : aspectRatio === '16:9' ? '800px' : aspectRatio === '4:3' ? '700px' : aspectRatio === '3:2' ? '750px' : aspectRatio === 'Custom' ? `${canvasWidth}px` : 'auto',
-              height: aspectRatio === '1:1' ? '600px' : aspectRatio === '16:9' ? '450px' : aspectRatio === '4:3' ? '525px' : aspectRatio === '3:2' ? '500px' : aspectRatio === 'Custom' ? `${canvasHeight}px` : 'auto',
+              width: aspectRatio === '1:1' ? '600px' : aspectRatio === '16:9' ? '800px' : aspectRatio === '4:3' ? '700px' : aspectRatio === '3:2' ? '750px' : aspectRatio === 'Custom' ? `${canvasWidth}px` : (noImageMode ? '800px' : 'auto'),
+              height: aspectRatio === '1:1' ? '600px' : aspectRatio === '16:9' ? '450px' : aspectRatio === '4:3' ? '525px' : aspectRatio === '3:2' ? '500px' : aspectRatio === 'Custom' ? `${canvasHeight}px` : (noImageMode ? '450px' : 'auto'),
             }}
           >
             
@@ -226,12 +259,12 @@ export default function CanvasPreview() {
               onClick={(e) => {
                 e.stopPropagation();
                 setNoImageMode(true);
-                setBackgroundType('mesh');
-                setImageSrc(null);
+                setBackgroundType('gradient');
+                setImageSrc(null);              
                 pushHistory({
                   ...getCurrentConfig(),
                   noImage: true,
-                  backgroundType: 'mesh',
+                  backgroundType: 'gradient',
                 });
               }}
             >
@@ -247,16 +280,31 @@ export default function CanvasPreview() {
 
       {/* Zoom Cluster */}
       {(imageSrc || noImageMode) && (
-        <div className="zoom-cluster">
-          {['Zoom to fit', '50%', '100%', '200%'].map((z) => (
-            <button
-              key={z}
-              className={`zoom-btn ${zoomLevel === z ? 'active' : ''}`}
-              onClick={() => setZoomLevel(z)}
-            >
-              {z === 'Zoom to fit' ? 'Fit' : z}
-            </button>
-          ))}
+        <div className="zoom-cluster" style={{ gap: '4px' }}>
+          <button
+            className="zoom-btn"
+            onClick={handleZoomOut}
+            disabled={zoomLevel !== 'Zoom to fit' && parseInt(zoomLevel, 10) <= 10}
+            title="Zoom out (10%)"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+          <button
+            className={`zoom-btn ${zoomLevel === 'Zoom to fit' ? 'active' : ''}`}
+            style={{ minWidth: '48px', fontWeight: 'bold' }}
+            onClick={() => setZoomLevel('Zoom to fit')}
+            title="Reset to Zoom to fit"
+          >
+            {zoomLevel === 'Zoom to fit' ? 'Fit' : zoomLevel}
+          </button>
+          <button
+            className="zoom-btn"
+            onClick={handleZoomIn}
+            disabled={zoomLevel !== 'Zoom to fit' && parseInt(zoomLevel, 10) >= 500}
+            title="Zoom in (10%)"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
     </div>

@@ -11,6 +11,17 @@ declare global {
   }
 }
 
+function getUserDefault<T>(key: string, fallback: T): T {
+  try {
+    const saved = localStorage.getItem('snapframe-user-defaults');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed[key] !== undefined) return parsed[key];
+    }
+  } catch (e) {}
+  return fallback;
+}
+
 interface AppContextType {
   // Config state
   padding: number; setPadding: React.Dispatch<React.SetStateAction<number>>;
@@ -44,11 +55,13 @@ interface AppContextType {
   watermarkText: string; setWatermarkText: React.Dispatch<React.SetStateAction<string>>;
   position: string; setPosition: React.Dispatch<React.SetStateAction<string>>;
   activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'; setActiveTool: React.Dispatch<React.SetStateAction<'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'>>;
+  arrowStyle: 'classic' | 'dashed' | 'tapered' | 'curved'; setArrowStyle: React.Dispatch<React.SetStateAction<'classic' | 'dashed' | 'tapered' | 'curved'>>;
   annotations: Annotation[]; setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
   annotationColor: string; setAnnotationColor: React.Dispatch<React.SetStateAction<string>>;
   annotationStrokeWidth: number; setAnnotationStrokeWidth: React.Dispatch<React.SetStateAction<number>>;
   promptConfig: { message: string; defaultValue: string; resolve: (val: string | null) => void } | null; setPromptConfig: React.Dispatch<React.SetStateAction<{ message: string; defaultValue: string; resolve: (val: string | null) => void } | null>>;
   sidebarVisible: boolean; setSidebarVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  settingsVisible: boolean; setSettingsVisible: React.Dispatch<React.SetStateAction<boolean>>;
   imageSrc: string | null; setImageSrc: React.Dispatch<React.SetStateAction<string | null>>;
   isDragging: boolean; setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
   customPresets: any[]; setCustomPresets: React.Dispatch<React.SetStateAction<any[]>>;
@@ -102,9 +115,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Config state
-  const [padding, setPadding] = useState<number>(38);
-  const [rounded, setRounded] = useState<number>(20);
-  const [shadow, setShadow] = useState<number>(30);
+  const [padding, setPadding] = useState<number>(() => getUserDefault('padding', 38));
+  const [rounded, setRounded] = useState<number>(() => getUserDefault('rounded', 20));
+  const [shadow, setShadow] = useState<number>(() => getUserDefault('shadow', 30));
   const [shadowColor, setShadowColor] = useState<string>('rgba(0, 0, 0, 0.45)');
   const [shadowEnabled, setShadowEnabled] = useState<boolean>(true);
   const [inset, setInset] = useState<number>(0);
@@ -137,10 +150,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [meshDataUrl, setMeshDataUrl] = useState<string>('');
   const [activePointIdx, setActivePointIdx] = useState<number>(0);
 
-  const [watermarkEnabled, setWatermarkEnabled] = useState<boolean>(false);
-  const [watermarkText, setWatermarkText] = useState<string>('SnapFrame.app');
+  const [watermarkEnabled, setWatermarkEnabled] = useState<boolean>(() => getUserDefault('watermarkEnabled', false));
+  const [watermarkText, setWatermarkText] = useState<string>(() => getUserDefault('watermarkText', 'Achu'));
   const [position, setPosition] = useState<string>('Middle center');
   const [activeTool, setActiveTool] = useState<'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'>('pointer');
+  const [arrowStyle, setArrowStyle] = useState<'classic' | 'dashed' | 'tapered' | 'curved'>('classic');
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [annotationColor, setAnnotationColor] = useState<string>('#f43f5e');
   const [annotationStrokeWidth, setAnnotationStrokeWidth] = useState<number>(4);
@@ -148,6 +162,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [promptConfig, setPromptConfig] = useState<{ message: string; defaultValue: string; resolve: (val: string | null) => void } | null>(null);
 
   const [sidebarVisible, setSidebarVisible] = useState<boolean>(true);
+  const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [showAdvancedInset, setShowAdvancedInset] = useState<boolean>(false);
@@ -198,7 +213,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setChromeTheme(config.chromeTheme ?? 'dark');
     setBlurDensity(config.blurDensity ?? 40);
     setWatermarkEnabled(config.watermarkEnabled ?? false);
-    setWatermarkText(config.watermarkText ?? 'SnapFrame.app');
+    setWatermarkText(config.watermarkText ?? 'Achu');
     setPosition(config.position ?? 'Middle center');
     setAnnotations(config.annotations ?? []);
     setMeshPoints(config.meshPoints ?? [
@@ -244,11 +259,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleSliderRelease = () => { pushHistory(getCurrentConfig()); };
 
   const getZoomStyle = (): React.CSSProperties => {
-    if (zoomLevel === '50%') return { transform: 'scale(0.5)' };
-    if (zoomLevel === '100%') return { transform: 'scale(1)' };
-    if (zoomLevel === '200%') return { transform: 'scale(2)' };
-    return {};
+    if (zoomLevel === 'Zoom to fit') return {};
+    const percent = parseInt(zoomLevel, 10);
+    return isNaN(percent) ? {} : { transform: `scale(${percent / 100})` };
   };
+
 
   const applyMeshPalette = (colors: string[]) => {
     setMeshPoints((prev) => prev.map((pt, idx) => ({ ...pt, color: colors[idx % colors.length] })));
@@ -370,6 +385,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); handleUndo(); }
       if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); handleRedo(); }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') {
@@ -441,8 +460,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       meshPoints, setMeshPoints, meshBlur, setMeshBlur, meshGrain, setMeshGrain, meshOpacity, setMeshOpacity,
       meshSpread, setMeshSpread, meshDataUrl, setMeshDataUrl, activePointIdx, setActivePointIdx,
       watermarkEnabled, setWatermarkEnabled, watermarkText, setWatermarkText, position, setPosition,
-      activeTool, setActiveTool, annotations, setAnnotations, annotationColor, setAnnotationColor,
+      activeTool, setActiveTool, arrowStyle, setArrowStyle, annotations, setAnnotations, annotationColor, setAnnotationColor,
       annotationStrokeWidth, setAnnotationStrokeWidth, promptConfig, setPromptConfig, sidebarVisible, setSidebarVisible,
+      settingsVisible, setSettingsVisible,
       imageSrc, setImageSrc, isDragging, setIsDragging, customPresets, setCustomPresets, newPresetName, setNewPresetName,
       showAdvancedInset, setShowAdvancedInset, showAdvancedShadow, setShowAdvancedShadow, showAdvancedBorder, setShowAdvancedBorder,
       exportFormat, setExportFormat, jpegQuality, setJpegQuality, zoomLevel, setZoomLevel, history, setHistory,

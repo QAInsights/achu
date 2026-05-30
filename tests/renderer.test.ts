@@ -1,7 +1,7 @@
 import { getCanvasDimensions, RenderConfig } from '../src/renderer/canvasRenderer';
 import * as assert from 'assert';
 
-console.log('--- Running SnapFrame Unit Tests ---');
+console.log('--- Running Achu Unit Tests ---');
 
 // Mock RenderConfig
 const baseConfig: RenderConfig = {
@@ -23,7 +23,7 @@ const baseConfig: RenderConfig = {
   paddingMode: 'fit',
   chromeStyle: 'mac',
   watermarkEnabled: false,
-  watermarkText: 'SnapFrame.app',
+  watermarkText: 'Achu',
   position: 'Middle center',
 };
 
