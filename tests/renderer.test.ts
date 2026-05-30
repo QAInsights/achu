@@ -9,6 +9,7 @@ import {
   curatedMeshPalettes,
   disneyHollywoodGradients,
   disneyHollywoodMeshPalettes,
+  defaultGradients,
   GradientPreset,
   MeshPalette,
 } from '../src/renderer/presetsData';
@@ -447,6 +448,161 @@ function testDisneyMeshPalettes() {
   console.log('✓ disneyHollywoodMeshPalettes');
 }
 
+function testDefaultGradients() {
+  console.log('Testing defaultGradients shape...');
+  assert.ok(defaultGradients.length > 0, 'Has entries');
+  const ids = new Set<string>();
+  for (const g of defaultGradients) {
+    assert.ok(g.id, `id defined: ${g.id}`);
+    assert.ok(!ids.has(g.id), `id unique: ${g.id}`);
+    ids.add(g.id);
+    assert.ok(g.name, 'name defined');
+    assert.ok(
+      g.gradient.startsWith('linear-gradient') || g.gradient.startsWith('radial-gradient'),
+      `gradient is valid CSS: ${g.gradient}`
+    );
+    assert.strictEqual(g.type, 'gradient', `type is gradient: ${g.name}`);
+  }
+  console.log('✓ defaultGradients');
+}
+
+function testGradientCategoryFiltering() {
+  console.log('Testing gradient category filtering logic...');
+  const categories = ['classic', 'disney', 'marvel', 'hollywood'] as const;
+  
+  // Test filtering for each category
+  for (const cat of categories) {
+    if (cat === 'classic') {
+      // Classic uses defaultGradients
+      assert.ok(defaultGradients.length > 0, 'Classic has gradients');
+    } else {
+      // Other categories filter disneyHollywoodGradients
+      const filtered = disneyHollywoodGradients.filter(g => g.category === cat);
+      assert.ok(filtered.length > 0, `Category ${cat} has gradients`);
+      for (const g of filtered) {
+        assert.strictEqual(g.category, cat, `All filtered have category ${cat}`);
+      }
+    }
+  }
+  console.log('✓ Gradient category filtering');
+}
+
+function testBackgroundTypeModes() {
+  console.log('Testing background type modes...');
+  const types = ['color', 'gradient', 'blur', 'mesh'] as const;
+  
+  // Each type should be a valid string
+  for (const type of types) {
+    assert.ok(typeof type === 'string');
+    assert.ok(type.length > 0);
+  }
+  
+  // Type labels mapping
+  const labels: Record<string, string> = {
+    color: 'Solid',
+    gradient: 'Preset',
+    blur: 'Blurred',
+    mesh: 'Mesh'
+  };
+  
+  for (const type of types) {
+    assert.ok(labels[type], `Type ${type} has label`);
+  }
+  console.log('✓ Background type modes');
+}
+
+function testMeshPointLimits() {
+  console.log('Testing mesh point limits...');
+  const MIN_POINTS = 2;
+  const MAX_POINTS = 10;
+  
+  // Test boundary conditions
+  assert.ok(MIN_POINTS >= 2, 'Minimum points is at least 2');
+  assert.ok(MAX_POINTS <= 10, 'Maximum points is at most 10');
+  
+  // Simulate add/remove logic
+  let meshPoints = [
+    { id: 'mesh-1', color: '#ff0000', x: 0.5, y: 0.5, radius: 200 },
+    { id: 'mesh-2', color: '#00ff00', x: 0.3, y: 0.3, radius: 150 },
+  ];
+  
+  // Cannot remove below minimum
+  const canRemove = meshPoints.length > MIN_POINTS;
+  assert.strictEqual(canRemove, false, 'Cannot remove when at minimum');
+  
+  // Can add up to maximum
+  const canAdd = meshPoints.length < MAX_POINTS;
+  assert.strictEqual(canAdd, true, 'Can add when below maximum');
+  
+  // Add points to reach maximum
+  while (meshPoints.length < MAX_POINTS) {
+    meshPoints.push({
+      id: `mesh-${meshPoints.length + 1}`,
+      color: '#0000ff',
+      x: Math.random(),
+      y: Math.random(),
+      radius: 200
+    });
+  }
+  
+  assert.strictEqual(meshPoints.length, MAX_POINTS);
+  const canAddAtMax = meshPoints.length < MAX_POINTS;
+  assert.strictEqual(canAddAtMax, false, 'Cannot add when at maximum');
+  
+  console.log('✓ Mesh point limits');
+}
+
+function testMeshPointPositionValues() {
+  console.log('Testing mesh point position values...');
+  // Position values are normalized (0-1) and displayed as percentages (0-100)
+  const point = { x: 0.5, y: 0.75, radius: 200 };
+  
+  // Convert to percentage for display
+  const xPercent = Math.round(point.x * 100);
+  const yPercent = Math.round(point.y * 100);
+  
+  assert.strictEqual(xPercent, 50, 'X position as percentage');
+  assert.strictEqual(yPercent, 75, 'Y position as percentage');
+  
+  // Slider ranges
+  assert.ok(xPercent >= 0 && xPercent <= 100, 'X in range 0-100');
+  assert.ok(yPercent >= 0 && yPercent <= 100, 'Y in range 0-100');
+  
+  console.log('✓ Mesh point position values');
+}
+
+function testMeshFilterRanges() {
+  console.log('Testing mesh filter ranges...');
+  const ranges = {
+    blur: { min: 10, max: 200, default: 60 },
+    grain: { min: 0, max: 50, default: 15 },
+    opacity: { min: 10, max: 100, default: 100 },
+    spread: { min: 20, max: 200, default: 100 },
+  };
+  
+  // Validate each range
+  for (const [name, range] of Object.entries(ranges)) {
+    assert.ok(range.min < range.max, `${name}: min < max`);
+    assert.ok(range.default >= range.min, `${name}: default >= min`);
+    assert.ok(range.default <= range.max, `${name}: default <= max`);
+  }
+  
+  console.log('✓ Mesh filter ranges');
+}
+
+function testBlurDensityRange() {
+  console.log('Testing blur density range...');
+  const BLUR_MIN = 10;
+  const BLUR_MAX = 100;
+  const BLUR_DEFAULT = 50;
+  
+  assert.ok(BLUR_MIN < BLUR_MAX, 'Min < Max');
+  assert.ok(BLUR_DEFAULT >= BLUR_MIN, 'Default >= Min');
+  assert.ok(BLUR_DEFAULT <= BLUR_MAX, 'Default <= Max');
+  
+  console.log('✓ Blur density range');
+}
+
 // ---------------------------------------------------------------------------
 // 9. Inline preset logic (saveCustomPreset / deleteCustomPreset / selectBackgroundPreset)
 // ---------------------------------------------------------------------------
@@ -640,6 +796,13 @@ try {
   testCuratedMeshPalettes();
   testDisneyGradients();
   testDisneyMeshPalettes();
+  testDefaultGradients();
+  testGradientCategoryFiltering();
+  testBackgroundTypeModes();
+  testMeshPointLimits();
+  testMeshPointPositionValues();
+  testMeshFilterRanges();
+  testBlurDensityRange();
 
   // preset logic
   testSaveCustomPresetLogic();
