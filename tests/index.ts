@@ -8,6 +8,7 @@ import { runHistoryTests } from './history.test';
 import { runAppContextTests } from './appContext.test';
 import { runBackgroundSettingsTests } from './backgroundSettings.test';
 import { runAnnotationEventsTests } from './annotationEvents.test';
+import { runComponentsTests } from './components.test';
 
 console.log('--- Running Achu Unit Tests ---\n');
 
@@ -50,6 +51,10 @@ try {
 
   console.log('=== Annotation Events ===');
   runAnnotationEventsTests();
+  console.log('');
+
+  console.log('=== Components ===');
+  runComponentsTests();
   console.log('');
 
   console.log('--- All Tests Passed Successfully! ---');
