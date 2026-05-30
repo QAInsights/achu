@@ -17,7 +17,9 @@ export default function InspectorSection({ title, children, defaultOpen = true }
       </div>
       <div className="inspector-section-content">
         <div className="inspector-section-inner">
-          {children}
+          <div className="inspector-section-body">
+            {children}
+          </div>
         </div>
       </div>
     </div>
