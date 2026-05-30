@@ -79,5 +79,10 @@ describe('Arrow Utils', () => {
     it('handles curved short distance early return', () => {
       expect(() => drawArrowOnCanvas(makeMockCtx(), makeArrowAnnotation('curved'), 0.3, 0.2, 4)).not.toThrow();
     });
+
+    it('defaults to classic style when arrowStyle is missing', () => {
+      const ann = { ...makeArrowAnnotation('classic'), arrowStyle: undefined as any };
+      expect(() => drawArrowOnCanvas(makeMockCtx(), ann as any, 50, 30, 4)).not.toThrow();
+    });
   });
 });

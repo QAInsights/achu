@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import React from 'react';
 import AnnotationShape from '../src/renderer/components/annotations/AnnotationShape';
 import SelectionBox from '../src/renderer/components/annotations/SelectionBox';
@@ -450,6 +450,60 @@ describe('SelectionBox', () => {
     );
   });
 
+  it('calls startResize on handle pointer down - top-center', () => {
+    const { container } = render(
+      <SelectionBox ann={ann} {...defaultProps} />
+    );
+    const rects = container.querySelectorAll('rect');
+    fireEvent.pointerDown(rects[2]); // tc
+    expect(defaultProps.startResize).toHaveBeenCalledWith(expect.any(Object), ann, 'tc');
+  });
+
+  it('calls startResize on handle pointer down - top-right', () => {
+    const { container } = render(
+      <SelectionBox ann={ann} {...defaultProps} />
+    );
+    const rects = container.querySelectorAll('rect');
+    fireEvent.pointerDown(rects[3]); // tr
+    expect(defaultProps.startResize).toHaveBeenCalledWith(expect.any(Object), ann, 'tr');
+  });
+
+  it('calls startResize on handle pointer down - middle-left', () => {
+    const { container } = render(
+      <SelectionBox ann={ann} {...defaultProps} />
+    );
+    const rects = container.querySelectorAll('rect');
+    fireEvent.pointerDown(rects[4]); // ml
+    expect(defaultProps.startResize).toHaveBeenCalledWith(expect.any(Object), ann, 'ml');
+  });
+
+  it('calls startResize on handle pointer down - middle-right', () => {
+    const { container } = render(
+      <SelectionBox ann={ann} {...defaultProps} />
+    );
+    const rects = container.querySelectorAll('rect');
+    fireEvent.pointerDown(rects[5]); // mr
+    expect(defaultProps.startResize).toHaveBeenCalledWith(expect.any(Object), ann, 'mr');
+  });
+
+  it('calls startResize on handle pointer down - bottom-left', () => {
+    const { container } = render(
+      <SelectionBox ann={ann} {...defaultProps} />
+    );
+    const rects = container.querySelectorAll('rect');
+    fireEvent.pointerDown(rects[6]); // bl
+    expect(defaultProps.startResize).toHaveBeenCalledWith(expect.any(Object), ann, 'bl');
+  });
+
+  it('calls startResize on handle pointer down - bottom-center', () => {
+    const { container } = render(
+      <SelectionBox ann={ann} {...defaultProps} />
+    );
+    const rects = container.querySelectorAll('rect');
+    fireEvent.pointerDown(rects[7]); // bc
+    expect(defaultProps.startResize).toHaveBeenCalledWith(expect.any(Object), ann, 'bc');
+  });
+
   it('applies correct cursor styles to resize handles', () => {
     const { container } = render(
       <SelectionBox ann={ann} {...defaultProps} />
@@ -590,14 +644,19 @@ describe('TextEditor', () => {
     });
   });
 
-  it('auto-focuses textarea', () => {
+  it('auto-focuses textarea after timeout', () => {
+    vi.useFakeTimers();
     render(<TextEditor ann={ann} {...defaultProps} />);
-    
-    const textarea = screen.getByRole('textbox');
-    
-    // Note: In JSDOM, autoFocus might not work exactly like in browser
-    // but we can check that the ref is set up correctly
-    expect(textarea).toBeInTheDocument();
+
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+    const focusSpy = vi.spyOn(textarea, 'focus');
+
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+
+    expect(focusSpy).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('calculates font size based on stroke width', () => {

@@ -432,6 +432,27 @@ describe('SettingsModal', () => {
     expect(screen.getByText('Copy beautified snap')).toBeInTheDocument();
     expect(screen.getByText('Delete Annotation')).toBeInTheDocument();
   });
+
+  it('renders Donate button', () => {
+    mockContext.settingsVisible = true;
+    render(<SettingsModal />);
+    expect(screen.getByText('Donate')).toBeInTheDocument();
+  });
+
+  it('renders GitHub Repo button', () => {
+    mockContext.settingsVisible = true;
+    render(<SettingsModal />);
+    expect(screen.getByText('GitHub Repo')).toBeInTheDocument();
+  });
+
+  it('updates JPEG quality slider', () => {
+    mockContext.settingsVisible = true;
+    mockContext.exportFormat = 'jpeg';
+    render(<SettingsModal />);
+    const qualitySlider = screen.getByDisplayValue('90');
+    fireEvent.change(qualitySlider, { target: { value: '75' } });
+    expect(mockContext.setJpegQuality).toHaveBeenCalledWith(75);
+  });
 });
 
 describe('WorkspaceToolbar', () => {
@@ -838,10 +859,33 @@ describe('CanvasPreview', () => {
     mockContext.imageSrc = 'data:image/png;base64,test';
     mockContext.watermarkEnabled = false;
     mockContext.watermarkText = 'My Watermark';
-    
+
     render(<CanvasPreview />);
-    
+
     expect(screen.queryByText('My Watermark')).not.toBeInTheDocument();
+  });
+
+  it('renders macOS chrome dots when chromeStyle is mac', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.chromeStyle = 'mac';
+    const { container } = render(<CanvasPreview />);
+    const chromeDots = container.querySelectorAll('.dot');
+    expect(chromeDots.length).toBe(3);
+  });
+
+  it('renders Windows chrome buttons when chromeStyle is windows', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.chromeStyle = 'windows';
+    const { container } = render(<CanvasPreview />);
+    const winButtons = container.querySelectorAll('.win-min, .win-icon, .win-close');
+    expect(winButtons.length).toBe(3);
+  });
+
+  it('renders AnnotationsLayer when image is loaded', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    const { container } = render(<CanvasPreview />);
+    const annotationsLayer = container.querySelector('.annotations-layer');
+    expect(annotationsLayer).toBeInTheDocument();
   });
 });
 

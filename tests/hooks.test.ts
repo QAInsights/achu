@@ -419,7 +419,7 @@ describe('usePresets', () => {
     vi.stubGlobal('snapFrameAPI', {
       readImageFromClipboard: vi.fn().mockResolvedValue(null),
     });
-    
+
     const { result } = renderHook(() =>
       usePresets(
         mockSetImageSrc,
@@ -433,12 +433,40 @@ describe('usePresets', () => {
         mockPushHistory
       )
     );
-    
+
     await act(async () => {
       await result.current.pasteFromClipboard();
     });
-    
+
     expect(mockAlert).toHaveBeenCalledWith('No image found in clipboard.');
+  });
+
+  it('falls back to file input click when snapFrameAPI is unavailable', () => {
+    vi.stubGlobal('snapFrameAPI', undefined);
+
+    const { result } = renderHook(() =>
+      usePresets(
+        mockSetImageSrc,
+        mockSetNoImageMode,
+        mockSetAnnotations,
+        'gradient',
+        mockSetBackgroundType,
+        'linear-gradient(...)',
+        mockSetBackgroundValue,
+        mockGetCurrentConfig,
+        mockPushHistory
+      )
+    );
+
+    // fileInputRef should be created
+    expect(result.current.fileInputRef).toBeDefined();
+
+    act(() => {
+      result.current.selectFile();
+    });
+
+    // Should not throw when called without snapFrameAPI
+    expect(result.current.fileInputRef.current).toBeNull();
   });
 });
 
@@ -511,34 +539,34 @@ describe('useExport', () => {
   });
 
   it('exports with snapFrameAPI when available', () => {
-    const mockExportImage = vi.fn().mockResolvedValue(undefined);
+    const mockSaveFile = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('snapFrameAPI', {
-      exportImage: mockExportImage,
+      saveFile: mockSaveFile,
     });
-    
+
     const { result } = renderHook(() =>
-      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig)
+      useExport(null, true, mockGetCurrentConfig)
     );
-    
+
     act(() => {
       result.current.triggerExport();
     });
-    
-    expect(mockExportImage).toHaveBeenCalled();
-    expect(mockExportImage.mock.calls[0][0]).toBe('png');
-    expect(mockExportImage.mock.calls[0][1]).toBe(90);
+
+    expect(mockSaveFile).toHaveBeenCalled();
+    expect(mockSaveFile.mock.calls[0][1]).toBe('png');
+    expect(mockSaveFile.mock.calls[0][2]).toBe(90);
   });
 
   it('exports JPEG with correct quality', () => {
-    const mockExportImage = vi.fn().mockResolvedValue(undefined);
+    const mockSaveFile = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('snapFrameAPI', {
-      exportImage: mockExportImage,
+      saveFile: mockSaveFile,
     });
-    
+
     const { result } = renderHook(() =>
-      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig)
+      useExport(null, true, mockGetCurrentConfig)
     );
-    
+
     act(() => {
       result.current.setExportFormat('jpeg');
     });
@@ -548,8 +576,8 @@ describe('useExport', () => {
     act(() => {
       result.current.triggerExport();
     });
-    
-    expect(mockExportImage).toHaveBeenCalledWith('jpeg', 75);
+
+    expect(mockSaveFile).toHaveBeenCalledWith(null, 'jpeg', 75);
   });
 
   it('copies to clipboard with snapFrameAPI', async () => {
@@ -557,15 +585,15 @@ describe('useExport', () => {
     vi.stubGlobal('snapFrameAPI', {
       copyImageToClipboard: mockCopyImageToClipboard,
     });
-    
+
     const { result } = renderHook(() =>
-      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig)
+      useExport(null, true, mockGetCurrentConfig)
     );
-    
+
     await act(async () => {
       await result.current.copyBeautifiedImage();
     });
-    
+
     expect(mockCopyImageToClipboard).toHaveBeenCalled();
   });
 
@@ -599,19 +627,48 @@ describe('useExport', () => {
   });
 
   it('exports in no-image mode without image', () => {
-    const mockExportImage = vi.fn().mockResolvedValue(undefined);
+    const mockSaveFile = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('snapFrameAPI', {
-      exportImage: mockExportImage,
+      saveFile: mockSaveFile,
     });
-    
+
     const { result } = renderHook(() =>
       useExport(null, true, mockGetCurrentConfig)
     );
-    
+
     act(() => {
       result.current.triggerExport();
     });
-    
-    expect(mockExportImage).toHaveBeenCalled();
+
+    expect(mockSaveFile).toHaveBeenCalled();
+  });
+
+  it('triggers export via browser download when snapFrameAPI is unavailable', () => {
+    const mockClick = vi.fn();
+    const mockAnchor = { download: '', href: '', click: mockClick } as any;
+    const origCE = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'a') return mockAnchor;
+      if (tag === 'canvas') {
+        const c = origCE('canvas');
+        c.toDataURL = () => 'data:image/png;base64,fake';
+        return c;
+      }
+      return origCE(tag);
+    });
+
+    const { result } = renderHook(() =>
+      useExport(null, true, mockGetCurrentConfig)
+    );
+
+    act(() => {
+      result.current.triggerExport();
+    });
+
+    expect(mockAnchor.download).toBe('snapframe-export.png');
+    expect(mockAnchor.href).toBe('data:image/png;base64,fake');
+    expect(mockClick).toHaveBeenCalled();
+
+    (document.createElement as any).mockRestore();
   });
 });
