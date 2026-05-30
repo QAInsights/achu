@@ -12,6 +12,11 @@ async function compileAll() {
   }
   fs.mkdirSync(distPath);
 
+  // Copy assets folder
+  const assetsSrc = path.join(__dirname, '../assets');
+  const assetsDest = path.join(distPath, 'assets');
+  fs.cpSync(assetsSrc, assetsDest, { recursive: true });
+
   console.log('Building renderer process (React)...');
   await build({
     configFile: path.join(__dirname, '../vite.config.ts'),

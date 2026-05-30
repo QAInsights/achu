@@ -50,6 +50,7 @@
       "package.json"
     ],
     "win": {
+      "icon": "assets/icon.ico",
       "target": [
         { "target": "portable", "arch": ["x64", "arm64"] }
       ]
@@ -62,6 +63,7 @@
       "category": "public.app-category.graphics-design"
     },
     "linux": {
+      "icon": "assets/icon-256.png",
       "target": [
         { "target": "AppImage", "arch": ["x64", "arm64"] },
         { "target": "deb", "arch": ["x64", "arm64"] }

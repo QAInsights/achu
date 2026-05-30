@@ -12,6 +12,11 @@ async function dev() {
     fs.mkdirSync(distPath);
   }
 
+  // Copy assets folder
+  const assetsSrc = path.join(__dirname, '../assets');
+  const assetsDest = path.join(distPath, 'assets');
+  fs.cpSync(assetsSrc, assetsDest, { recursive: true });
+
   // 1. Start Vite Dev Server
   const server = await createServer({
     configFile: path.join(__dirname, '../vite.config.ts'),
