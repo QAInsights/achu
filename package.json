@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev.js",
     "build": "node scripts/build.js",
-    "test": "esbuild tests/renderer.test.ts --bundle --platform=node --outfile=app-bundle/test.js && node app-bundle/test.js",
+    "test": "esbuild tests/index.ts --bundle --platform=node --outfile=app-bundle/test.js && node app-bundle/test.js",
     "package": "npm run build && electron-builder --win portable"
   },
   "keywords": [],
