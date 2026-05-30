@@ -192,15 +192,15 @@ export default function CanvasPreview() {
 
             {/* Draggable Point Handles for Mesh Gradient */}
             {backgroundType === 'mesh' && (
-              <div 
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'auto', zIndex: 10 }}
+              <div
+                onPointerMove={activeTool === 'pointer' ? handlePointerMove : undefined}
+                onPointerUp={activeTool === 'pointer' ? handlePointerUp : undefined}
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 10 }}
               >
                 {meshPoints.map((pt, idx) => (
                   <Tooltip key={pt.id} position="top">
                     <div
-                      onPointerDown={(e) => handlePointerDown(e, idx)}
+                      onPointerDown={activeTool === 'pointer' ? (e) => handlePointerDown(e, idx) : undefined}
                       style={{
                         position: 'absolute',
                         left: `${pt.x * 100}%`,
@@ -212,7 +212,8 @@ export default function CanvasPreview() {
                         border: idx === activePointIdx ? '3px solid #ffffff' : '2px solid rgba(255,255,255,0.8)',
                         boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                         transform: 'translate(-50%, -50%)',
-                        cursor: 'move',
+                        cursor: activeTool === 'pointer' ? 'move' : 'default',
+                        pointerEvents: activeTool === 'pointer' ? 'auto' : 'none',
                         zIndex: idx === activePointIdx ? 12 : 11,
                       }}
                       title={`Point ${idx + 1}`}
@@ -231,8 +232,8 @@ export default function CanvasPreview() {
             )}
 
             {/* Main Screenshot card box */}
-            {!noImageMode && imageSrc && (
-              <div 
+            {!noImageMode && imageSrc ? (
+              <div
                 className="preview-container-box"
                 style={{
                   borderRadius: `${rounded}px`,
@@ -247,10 +248,10 @@ export default function CanvasPreview() {
                   ...getPreviewPositionStyle(position || 'Middle center', padding, aspectRatio),
                 }}
               >
-                
+
                 {/* macOS Title Bar Mockup */}
                 {chromeStyle === 'mac' && (
-                  <div 
+                  <div
                     className="preview-chrome-mac"
                     style={{
                       backgroundColor: chromeTheme === 'light' ? '#f3f3f3' : '#21252b',
@@ -265,7 +266,7 @@ export default function CanvasPreview() {
 
                 {/* Windows Title Bar Mockup */}
                 {chromeStyle === 'windows' && (
-                  <div 
+                  <div
                     className="preview-chrome-win"
                     style={{
                       backgroundColor: chromeTheme === 'light' ? '#ffffff' : '#1e1e1e',
@@ -281,10 +282,10 @@ export default function CanvasPreview() {
 
                 {/* Image render element with Annotations layer */}
                 <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>
-                  <img 
-                    src={imageSrc} 
-                    alt="Screenshot" 
-                    className="preview-screenshot-img" 
+                  <img
+                    src={imageSrc}
+                    alt="Screenshot"
+                    className="preview-screenshot-img"
                     onLoad={(e) => {
                       setImgDims({
                         width: e.currentTarget.naturalWidth,
@@ -310,6 +311,20 @@ export default function CanvasPreview() {
                     customPrompt={customPrompt}
                   />
                 </div>
+              </div>
+            ) : (
+              /* No-image mode: render annotations layer directly on the background */
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
+                <AnnotationsLayer
+                  annotations={annotations}
+                  setAnnotations={setAnnotations}
+                  activeTool={activeTool}
+                  setActiveTool={setActiveTool}
+                  color={annotationColor}
+                  strokeWidth={annotationStrokeWidth}
+                  onSaveHistory={() => pushHistory(getCurrentConfig())}
+                  customPrompt={customPrompt}
+                />
               </div>
             )}
 

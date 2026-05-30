@@ -567,8 +567,11 @@ export function renderCanvas(
   // 3. Draw Background
   drawBackground(ctx, dims.width, dims.height, config, imageEl);
 
-  // If noImage is true, skip drawing screenshot container/decorations
+  // If noImage is true, draw annotations directly on the background
   if (config.noImage) {
+    if (config.annotations && config.annotations.length > 0) {
+      drawAnnotationsOnCanvas(ctx, dims.width, dims.height, config.annotations);
+    }
     drawWatermark(ctx, dims.width, dims.height, config);
     return;
   }
@@ -644,104 +647,113 @@ export function renderCanvas(
     );
   }
 
-  // Draw Annotations
+function drawAnnotationsOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  canvasW: number,
+  canvasH: number,
+  annotations: Annotation[],
+  originX?: number,
+  originY?: number,
+  scaleFactor?: number
+) {
+  const ox = originX ?? 0;
+  const oy = originY ?? 0;
+  const sf = scaleFactor ?? 1;
+
+  annotations.forEach((ann) => {
+    ctx.save();
+    ctx.strokeStyle = ann.color;
+    ctx.fillStyle = ann.color;
+
+    const strokeW = (ann.strokeWidth / 1000) * canvasW;
+    ctx.lineWidth = Math.max(1, strokeW);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const cx = ox + (ann.x + ann.w / 2) * canvasW;
+    const cy = oy + (ann.y + ann.h / 2) * canvasH;
+    const w = ann.w * canvasW;
+    const h = ann.h * canvasH;
+
+    ctx.translate(cx, cy);
+    if (ann.rotation) {
+      ctx.rotate((ann.rotation * Math.PI) / 180);
+    }
+
+    const halfW = w / 2;
+    const halfH = h / 2;
+
+    if (ann.type === 'rect') {
+      ctx.strokeRect(-halfW, -halfH, w, h);
+    } else if (ann.type === 'filled-rect') {
+      ctx.beginPath();
+      const r = Math.min(8 * sf, Math.abs(w) * 0.1, Math.abs(h) * 0.1);
+      ctx.roundRect ? ctx.roundRect(-halfW, -halfH, w, h, r) : ctx.rect(-halfW, -halfH, w, h);
+      ctx.fill();
+    } else if (ann.type === 'circle') {
+      ctx.beginPath();
+      ctx.ellipse(0, 0, Math.abs(halfW), Math.abs(halfH), 0, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (ann.type === 'filled-circle') {
+      ctx.beginPath();
+      ctx.ellipse(0, 0, Math.abs(halfW), Math.abs(halfH), 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (ann.type === 'line') {
+      ctx.beginPath();
+      ctx.moveTo(-halfW, -halfH);
+      ctx.lineTo(halfW, halfH);
+      ctx.stroke();
+    } else if (ann.type === 'arrow') {
+      drawArrowOnCanvas(ctx, ann, halfW, halfH, strokeW);
+    } else if (ann.type === 'text' && ann.text) {
+      const fontSize = Math.max(12, Math.abs(h) * 0.7);
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+      ctx.beginPath();
+      const r = Math.abs(h) * 0.15;
+      ctx.roundRect ? ctx.roundRect(-halfW, -halfH, w, h, r) : ctx.rect(-halfW, -halfH, w, h);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = Math.max(2, fontSize * 0.15);
+      ctx.lineJoin = 'round';
+      ctx.strokeText(ann.text, 0, 0);
+      ctx.restore();
+
+      ctx.fillText(ann.text, 0, 0);
+    } else if (ann.type === 'emoji' && ann.text) {
+      const fontSize = Math.min(Math.abs(w), Math.abs(h));
+      ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ann.text, 0, 0);
+    } else if (ann.type === 'pen' && ann.points) {
+      ctx.beginPath();
+      ann.points.forEach((p, idx) => {
+        const ptX = -halfW + p.x * w;
+        const ptY = -halfH + p.y * h;
+        if (idx === 0) ctx.moveTo(ptX, ptY);
+        else ctx.lineTo(ptX, ptY);
+      });
+      ctx.stroke();
+    }
+    ctx.restore();
+  });
+}
+
+  // Draw Annotations on the screenshot image area
   if (config.annotations && config.annotations.length > 0) {
     ctx.save();
-    // Clip to image area so annotations don't bleed outside the screenshot
     ctx.beginPath();
     ctx.rect(contentX, contentY + scaledChromeHeight, contentW, imgH * scale);
     ctx.clip();
-
-    config.annotations.forEach((ann) => {
-      ctx.save();
-      ctx.strokeStyle = ann.color;
-      ctx.fillStyle = ann.color;
-      
-      const strokeW = (ann.strokeWidth / 1000) * contentW;
-      ctx.lineWidth = Math.max(1, strokeW);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      // Calculate absolute center and dimensions on canvas
-      const cx = contentX + (ann.x + ann.w / 2) * contentW;
-      const cy = contentY + scaledChromeHeight + (ann.y + ann.h / 2) * (imgH * scale);
-      const canvasW = ann.w * contentW;
-      const canvasH = ann.h * (imgH * scale);
-
-      // Translate and rotate
-      ctx.translate(cx, cy);
-      if (ann.rotation) {
-        ctx.rotate((ann.rotation * Math.PI) / 180);
-      }
-
-      // Draw centered at (0, 0)
-      const halfW = canvasW / 2;
-      const halfH = canvasH / 2;
-
-      if (ann.type === 'rect') {
-        ctx.strokeRect(-halfW, -halfH, canvasW, canvasH);
-      } else if (ann.type === 'filled-rect') {
-        ctx.beginPath();
-        const r = Math.min(8 * scale, Math.abs(canvasW) * 0.1, Math.abs(canvasH) * 0.1);
-        ctx.roundRect ? ctx.roundRect(-halfW, -halfH, canvasW, canvasH, r) : ctx.rect(-halfW, -halfH, canvasW, canvasH);
-        ctx.fill();
-      } else if (ann.type === 'circle') {
-        ctx.beginPath();
-        ctx.ellipse(0, 0, Math.abs(halfW), Math.abs(halfH), 0, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (ann.type === 'filled-circle') {
-        ctx.beginPath();
-        ctx.ellipse(0, 0, Math.abs(halfW), Math.abs(halfH), 0, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (ann.type === 'line') {
-        ctx.beginPath();
-        ctx.moveTo(-halfW, -halfH);
-        ctx.lineTo(halfW, halfH);
-        ctx.stroke();
-      } else if (ann.type === 'arrow') {
-        drawArrowOnCanvas(ctx, ann, halfW, halfH, strokeW);
-      } else if (ann.type === 'text' && ann.text) {
-        const fontSize = Math.max(12, Math.abs(canvasH) * 0.7);
-        ctx.font = `bold ${fontSize}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        // Render background box matching the annotation bounds
-        ctx.save();
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-        ctx.beginPath();
-        const r = Math.abs(canvasH) * 0.15;
-        ctx.roundRect ? ctx.roundRect(-halfW, -halfH, canvasW, canvasH, r) : ctx.rect(-halfW, -halfH, canvasW, canvasH);
-        ctx.fill();
-        ctx.restore();
-
-        // Draw outline stroke
-        ctx.save();
-        ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = Math.max(2, fontSize * 0.15);
-        ctx.lineJoin = 'round';
-        ctx.strokeText(ann.text, 0, 0);
-        ctx.restore();
-
-        ctx.fillText(ann.text, 0, 0);
-      } else if (ann.type === 'emoji' && ann.text) {
-        const fontSize = Math.min(Math.abs(canvasW), Math.abs(canvasH));
-        ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(ann.text, 0, 0);
-      } else if (ann.type === 'pen' && ann.points) {
-        ctx.beginPath();
-        ann.points.forEach((p, idx) => {
-          const ptX = -halfW + p.x * contentW;
-          const ptY = -halfH + p.y * (imgH * scale);
-          if (idx === 0) ctx.moveTo(ptX, ptY);
-          else ctx.lineTo(ptX, ptY);
-        });
-        ctx.stroke();
-      }
-      ctx.restore();
-    });
+    drawAnnotationsOnCanvas(ctx, contentW, imgH * scale, config.annotations, contentX, contentY + scaledChromeHeight, scale);
     ctx.restore();
   }
 
