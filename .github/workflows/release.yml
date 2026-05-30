@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'CalVer version override (YY.MM.MICRO). Leave empty for auto-generation.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    name: Generate CalVer
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.calver.outputs.version }}
+    steps:
+      - name: Generate version
+        id: calver
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            YEAR_MONTH=$(date +%y.%m)
+            RELEASE_COUNT=$(curl -s \
+              "https://api.github.com/repos/${{ github.repository }}/releases?per_page=100" | \
+              jq --arg prefix "v$YEAR_MONTH" '[.[] | select(.tag_name | startswith($prefix))] | length')
+            VERSION="${YEAR_MONTH}.${RELEASE_COUNT}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Release version: v$VERSION"
+
+  build:
+    name: Build (${{ matrix.os }})
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: win
+          - os: macos-latest
+            platform: mac
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build renderer + main + preload
+        run: npm run build
+
+      - name: Package Electron app (${{ matrix.platform }})
+        run: npx electron-builder --${{ matrix.platform }} --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}
+          path: release/*
+
+  release:
+    name: Create GitHub Release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: v${{ needs.version.outputs.version }}
+          files: artifacts/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true
