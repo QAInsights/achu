@@ -3,23 +3,14 @@ import { RenderConfig, Annotation, drawMeshGradient } from './canvasRenderer';
 import { useHistory } from './hooks/useHistory';
 import { useExport } from './hooks/useExport';
 import { usePresets } from './hooks/usePresets';
+import { getZoomStyle as getZoomStyleUtil } from './utils/layoutUtils';
+import { getUserDefault } from './utils/storageUtils';
 
 // TypeScript declarations for secure Electron IPC bridge
 declare global {
   interface Window {
     snapFrameAPI: any;
   }
-}
-
-function getUserDefault<T>(key: string, fallback: T): T {
-  try {
-    const saved = localStorage.getItem('snapframe-user-defaults');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed[key] !== undefined) return parsed[key];
-    }
-  } catch (e) {}
-  return fallback;
 }
 
 interface AppContextType {
@@ -258,11 +249,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleSliderRelease = () => { pushHistory(getCurrentConfig()); };
 
-  const getZoomStyle = (): React.CSSProperties => {
-    if (zoomLevel === 'Zoom to fit') return {};
-    const percent = parseInt(zoomLevel, 10);
-    return isNaN(percent) ? {} : { transform: `scale(${percent / 100})` };
-  };
+  const getZoomStyle = (): React.CSSProperties => getZoomStyleUtil(zoomLevel);
 
 
   const applyMeshPalette = (colors: string[]) => {

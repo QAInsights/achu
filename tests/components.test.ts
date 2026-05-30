@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   getArrowAngle,
   getArrowheadLength,
@@ -223,7 +223,7 @@ describe('Components', () => {
       };
 
       // Mock localStorage
-      (global as any).localStorage = mockLocalStorage;
+      vi.stubGlobal('localStorage', mockLocalStorage);
 
       updateUserDefault('padding', 50);
       const saved1 = JSON.parse(storage['snapframe-user-defaults']);
@@ -283,6 +283,10 @@ describe('Components', () => {
       expect(shouldResolveOnKey('Escape', 'escape')).toBe(true);
       expect(shouldResolveOnKey('Enter', 'escape')).toBe(false);
       expect(shouldResolveOnKey('a', 'enter')).toBe(false);
+    });
+
+    it('returns false for invalid action', () => {
+      expect(shouldResolveOnKey('Enter', 'invalid' as any)).toBe(false);
     });
   });
 

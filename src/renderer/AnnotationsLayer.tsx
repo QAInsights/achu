@@ -5,6 +5,7 @@ import { useAnnotationEvents } from './hooks/useAnnotationEvents';
 import AnnotationShape from './components/annotations/AnnotationShape';
 import SelectionBox from './components/annotations/SelectionBox';
 import TextEditor from './components/annotations/TextEditor';
+import { transformCoordinates, getDeleteButtonPosition } from './utils/layoutUtils';
 
 interface AnnotationsLayerProps {
   annotations: Annotation[];
@@ -91,13 +92,7 @@ export default function AnnotationsLayer({
           const isSelected = ann.id === selectedId && activeTool === 'pointer';
           const strokeW = ann.strokeWidth;
           
-          const x1 = ann.x * dimensions.width;
-          const y1 = ann.y * dimensions.height;
-          const w = ann.w * dimensions.width;
-          const h = ann.h * dimensions.height;
-
-          const rectW = Math.abs(w);
-          const rectH = Math.abs(h);
+          const { x1, y1, w, h, rectW, rectH } = transformCoordinates(ann, dimensions);
 
           const cx = x1 + w / 2;
           const cy = y1 + h / 2;
@@ -177,8 +172,7 @@ export default function AnnotationsLayer({
         const ann = annotations.find(a => a.id === selectedId);
         if (!ann) return null;
         
-        const percentX = (ann.x + ann.w / 2) * 100;
-        const percentY = (ann.y + ann.h) * 100;
+        const { percentX, percentY } = getDeleteButtonPosition(ann);
 
         return (
           <div

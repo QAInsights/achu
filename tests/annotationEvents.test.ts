@@ -134,5 +134,10 @@ describe('Annotation Events', () => {
       const deg4 = calculateRotationAngle(0, 50, 50, 50);
       expect(Math.abs(deg4 - 270)).toBeLessThan(1);
     });
+
+    it('normalizes negative angles', () => {
+      const deg = calculateRotationAngle(25, 25, 50, 50);
+      expect(Math.abs(deg - 315)).toBeLessThan(1);
+    });
   });
 });

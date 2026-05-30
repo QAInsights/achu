@@ -20,6 +20,7 @@ import {
   Settings
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
+import { toggleTheme } from '../utils/uiUtils';
 
 export default function WorkspaceToolbar() {
   const {
@@ -218,7 +219,7 @@ export default function WorkspaceToolbar() {
       <div className="toolbar-group">
         <button
           className="tool-btn"
-          onClick={() => setAppTheme(appTheme === 'dark' ? 'light' : 'dark')}
+          onClick={() => setAppTheme(toggleTheme(appTheme))}
           title={appTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           {appTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}

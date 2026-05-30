@@ -1,6 +1,7 @@
 import { Image as ImageIcon, Sparkles, Minus, Plus } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import AnnotationsLayer from '../AnnotationsLayer';
+import { zoomIn, zoomOut, getFixedSizeFromAspectRatio, getPositionAlignment } from '../utils/layoutUtils';
 
 export default function CanvasPreview() {
   const {
@@ -50,33 +51,8 @@ export default function CanvasPreview() {
     handlePointerUp
   } = useAppContext();
 
-  const handleZoomIn = () => {
-    if (zoomLevel === 'Zoom to fit') {
-      setZoomLevel('110%');
-      return;
-    }
-    const currentVal = parseInt(zoomLevel, 10);
-    if (isNaN(currentVal)) {
-      setZoomLevel('100%');
-      return;
-    }
-    const nextVal = Math.min(500, Math.floor(currentVal / 10) * 10 + 10);
-    setZoomLevel(`${nextVal}%`);
-  };
-
-  const handleZoomOut = () => {
-    if (zoomLevel === 'Zoom to fit') {
-      setZoomLevel('90%');
-      return;
-    }
-    const currentVal = parseInt(zoomLevel, 10);
-    if (isNaN(currentVal)) {
-      setZoomLevel('100%');
-      return;
-    }
-    const nextVal = Math.max(10, Math.ceil(currentVal / 10) * 10 - 10);
-    setZoomLevel(`${nextVal}%`);
-  };
+  const handleZoomIn = () => setZoomLevel(zoomIn(zoomLevel));
+  const handleZoomOut = () => setZoomLevel(zoomOut(zoomLevel));
 
   return (
     <div className="workspace-canvas-container">
@@ -96,12 +72,16 @@ export default function CanvasPreview() {
                   : backgroundType === 'mesh' 
                     ? `url(${meshDataUrl})` 
                     : undefined,
-              alignItems: (position || 'Middle center').includes('Top') ? 'flex-start' : (position || 'Middle center').includes('Bottom') ? 'flex-end' : 'center',
-              justifyContent: (position || 'Middle center').includes('left') ? 'flex-start' : (position || 'Middle center').includes('right') ? 'flex-end' : 'center',
+              ...getPositionAlignment(position || 'Middle center'),
               borderRadius: '12px',
               // Fixed sizes mapping
-              width: aspectRatio === '1:1' ? '600px' : aspectRatio === '16:9' ? '800px' : aspectRatio === '4:3' ? '700px' : aspectRatio === '3:2' ? '750px' : aspectRatio === 'Custom' ? `${canvasWidth}px` : (noImageMode ? '800px' : 'auto'),
-              height: aspectRatio === '1:1' ? '600px' : aspectRatio === '16:9' ? '450px' : aspectRatio === '4:3' ? '525px' : aspectRatio === '3:2' ? '500px' : aspectRatio === 'Custom' ? `${canvasHeight}px` : (noImageMode ? '450px' : 'auto'),
+              ...(() => {
+                const { width, height } = getFixedSizeFromAspectRatio(aspectRatio, canvasWidth, canvasHeight, noImageMode);
+                return {
+                  width: typeof width === 'number' ? `${width}px` : width,
+                  height: typeof height === 'number' ? `${height}px` : height,
+                };
+              })(),
             }}
           >
             

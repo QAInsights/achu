@@ -18,6 +18,12 @@ export function updateUserDefault(key: string, value: any) {
   } catch (e) {}
 }
 
+export function clearUserDefaults() {
+  try {
+    localStorage.removeItem('snapframe-user-defaults');
+  } catch (e) {}
+}
+
 export const DEFAULT_SETTINGS = {
   padding: 38,
   rounded: 20,

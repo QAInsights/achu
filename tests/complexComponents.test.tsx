@@ -948,9 +948,16 @@ describe('App', () => {
     const { container } = render(<App />);
     
     const appContainer = container.querySelector('.app-container');
-    expect(appContainer).toHaveAttribute('ondragover');
-    expect(appContainer).toHaveAttribute('ondragleave');
-    expect(appContainer).toHaveAttribute('ondrop');
+    expect(appContainer).toBeInTheDocument();
+    
+    fireEvent.dragOver(appContainer!);
+    expect(mockContext.handleDragOver).toHaveBeenCalled();
+    
+    fireEvent.dragLeave(appContainer!);
+    expect(mockContext.handleDragLeave).toHaveBeenCalled();
+    
+    fireEvent.drop(appContainer!);
+    expect(mockContext.handleDrop).toHaveBeenCalled();
   });
 
   it('calls handleDragOver on drag over', () => {

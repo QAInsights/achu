@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   DEFAULT_MESH_POINTS,
   applyMeshPalette,
@@ -36,7 +36,7 @@ describe('AppContext', () => {
         setItem: (key: string, value: string) => { storage[key] = value; },
       };
 
-      (global as any).localStorage = mockLocalStorage;
+      vi.stubGlobal('localStorage', mockLocalStorage);
 
       expect(getUserDefault('padding', 38)).toBe(50);
       expect(getUserDefault('rounded', 20)).toBe(30);
@@ -56,9 +56,20 @@ describe('AppContext', () => {
         getItem: (key: string) => storage[key] || null,
       };
 
-      (global as any).localStorage = mockLocalStorage;
+      vi.stubGlobal('localStorage', mockLocalStorage);
 
       expect(getUserDefault('padding', 38)).toBe(38);
+    });
+
+    it('returns fallback when no saved settings exist', () => {
+      const mockLocalStorage = {
+        getItem: () => null,
+      };
+
+      vi.stubGlobal('localStorage', mockLocalStorage);
+
+      expect(getUserDefault('padding', 38)).toBe(38);
+      expect(getUserDefault('rounded', 20)).toBe(20);
     });
   });
 

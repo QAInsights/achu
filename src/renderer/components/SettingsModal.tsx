@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAppContext } from '../AppContext';
 import { X, Keyboard, Heart, Github } from 'lucide-react';
+import { updateUserDefault, clearUserDefaults, DEFAULT_SETTINGS } from '../utils/storageUtils';
 
 export default function SettingsModal() {
   const {
@@ -28,31 +29,26 @@ export default function SettingsModal() {
 
   const updateSetting = (key: string, val: any, setter: (v: any) => void) => {
     setter(val);
-    try {
-      const saved = localStorage.getItem('snapframe-user-defaults');
-      const parsed = saved ? JSON.parse(saved) : {};
-      parsed[key] = val;
-      localStorage.setItem('snapframe-user-defaults', JSON.stringify(parsed));
-    } catch (e) {}
+    updateUserDefault(key, val);
     pushHistory(getCurrentConfig());
   };
 
   const handleReset = () => {
-    localStorage.removeItem('snapframe-user-defaults');
-    setPadding(38);
-    setRounded(20);
-    setShadow(30);
-    setWatermarkEnabled(false);
-    setWatermarkText('Achu');
-    setExportFormat('png');
-    setJpegQuality(90);
+    clearUserDefaults();
+    setPadding(DEFAULT_SETTINGS.padding);
+    setRounded(DEFAULT_SETTINGS.rounded);
+    setShadow(DEFAULT_SETTINGS.shadow);
+    setWatermarkEnabled(DEFAULT_SETTINGS.watermarkEnabled);
+    setWatermarkText(DEFAULT_SETTINGS.watermarkText);
+    setExportFormat(DEFAULT_SETTINGS.exportFormat);
+    setJpegQuality(DEFAULT_SETTINGS.jpegQuality);
     pushHistory({
       ...getCurrentConfig(),
-      padding: 38,
-      rounded: 20,
-      shadow: 30,
-      watermarkEnabled: false,
-      watermarkText: 'Achu',
+      padding: DEFAULT_SETTINGS.padding,
+      rounded: DEFAULT_SETTINGS.rounded,
+      shadow: DEFAULT_SETTINGS.shadow,
+      watermarkEnabled: DEFAULT_SETTINGS.watermarkEnabled,
+      watermarkText: DEFAULT_SETTINGS.watermarkText,
     });
   };
 
