@@ -2,6 +2,7 @@ import React from 'react';
 import { useAppContext } from '../AppContext';
 import { X, Keyboard, Heart, Github } from 'lucide-react';
 import { updateUserDefault, clearUserDefaults, DEFAULT_SETTINGS } from '../utils/storageUtils';
+import Tooltip from './Tooltip';
 
 export default function SettingsModal() {
   const {
@@ -17,6 +18,10 @@ export default function SettingsModal() {
     setWatermarkEnabled,
     watermarkText,
     setWatermarkText,
+    watermarkPosition,
+    setWatermarkPosition,
+    watermarkOpacity,
+    setWatermarkOpacity,
     exportFormat,
     setExportFormat,
     jpegQuality,
@@ -40,6 +45,8 @@ export default function SettingsModal() {
     setShadow(DEFAULT_SETTINGS.shadow);
     setWatermarkEnabled(DEFAULT_SETTINGS.watermarkEnabled);
     setWatermarkText(DEFAULT_SETTINGS.watermarkText);
+    setWatermarkPosition(DEFAULT_SETTINGS.watermarkPosition);
+    setWatermarkOpacity(DEFAULT_SETTINGS.watermarkOpacity);
     setExportFormat(DEFAULT_SETTINGS.exportFormat);
     setJpegQuality(DEFAULT_SETTINGS.jpegQuality);
     pushHistory({
@@ -49,6 +56,8 @@ export default function SettingsModal() {
       shadow: DEFAULT_SETTINGS.shadow,
       watermarkEnabled: DEFAULT_SETTINGS.watermarkEnabled,
       watermarkText: DEFAULT_SETTINGS.watermarkText,
+      watermarkPosition: DEFAULT_SETTINGS.watermarkPosition,
+      watermarkOpacity: DEFAULT_SETTINGS.watermarkOpacity,
     });
   };
 
@@ -194,6 +203,37 @@ export default function SettingsModal() {
                 style={{ marginTop: '4px' }}
               />
             </div>
+
+            <div className="control-group">
+              <span className="control-label">Default Position</span>
+              <select
+                value={watermarkPosition}
+                onChange={(e) => updateSetting('watermarkPosition', e.target.value, setWatermarkPosition)}
+                style={{ marginTop: '4px' }}
+              >
+                <option value="left">Bottom Left</option>
+                <option value="middle">Bottom Center</option>
+                <option value="right">Bottom Right</option>
+                <option value="top left">Top Left</option>
+                <option value="top middle">Top Center</option>
+                <option value="top right">Top Right</option>
+              </select>
+            </div>
+
+            <div className="control-group">
+              <div className="control-label-container">
+                <span className="control-label">Default Opacity</span>
+                <span className="control-value">{Math.round(watermarkOpacity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={Math.round(watermarkOpacity * 100)}
+                onChange={(e) => updateSetting('watermarkOpacity', parseFloat(e.target.value) / 100, setWatermarkOpacity)}
+                style={{ marginTop: '4px' }}
+              />
+            </div>
           </div>
 
           {/* Keyboard Shortcuts Section */}
@@ -225,22 +265,26 @@ export default function SettingsModal() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0' }}>Support & Project</h3>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                className="btn btn-secondary"
-                style={{ flex: 1, gap: '8px', fontSize: '0.8rem', height: '32px' }}
-                onClick={() => window.snapFrameAPI ? window.snapFrameAPI.openURL('https://buymeacoffee.com/qainsights') : window.open('https://buymeacoffee.com/qainsights', '_blank')}
-                title="Donate to QAInsights"
-              >
-                <Heart className="w-3.5 h-3.5" style={{ color: '#ec4899' }} /> Donate
-              </button>
-              <button
-                className="btn btn-secondary"
-                style={{ flex: 1, gap: '8px', fontSize: '0.8rem', height: '32px' }}
-                onClick={() => window.snapFrameAPI ? window.snapFrameAPI.openURL('https://github.com/QAInsights/achu') : window.open('https://github.com/QAInsights/achu', '_blank')}
-                title="GitHub Repository"
-              >
-                <Github className="w-3.5 h-3.5" /> GitHub Repo
-              </button>
+              <Tooltip position="top">
+                <button
+                  className="btn btn-secondary"
+                  style={{ flex: 1, gap: '8px', fontSize: '0.8rem', height: '32px' }}
+                  onClick={() => window.snapFrameAPI ? window.snapFrameAPI.openURL('https://buymeacoffee.com/qainsights') : window.open('https://buymeacoffee.com/qainsights', '_blank')}
+                  title="Donate to QAInsights"
+                >
+                  <Heart className="w-3.5 h-3.5" style={{ color: '#ec4899' }} /> Donate
+                </button>
+              </Tooltip>
+              <Tooltip position="top">
+                <button
+                  className="btn btn-secondary"
+                  style={{ flex: 1, gap: '8px', fontSize: '0.8rem', height: '32px' }}
+                  onClick={() => window.snapFrameAPI ? window.snapFrameAPI.openURL('https://github.com/QAInsights/achu') : window.open('https://github.com/QAInsights/achu', '_blank')}
+                  title="GitHub Repository"
+                >
+                  <Github className="w-3.5 h-3.5" /> GitHub Repo
+                </button>
+              </Tooltip>
             </div>
           </div>
         </div>

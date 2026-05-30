@@ -31,6 +31,8 @@ export const DEFAULT_SETTINGS = {
   watermarkEnabled: false,
   watermarkText: 'Achu',
   watermarkSize: 20,
+  watermarkPosition: 'middle',
+  watermarkOpacity: 0.45,
   exportFormat: 'png' as const,
   jpegQuality: 90,
 };

@@ -11,6 +11,8 @@ export default function ExtraSettings() {
     watermarkEnabled, setWatermarkEnabled,
     watermarkText, setWatermarkText,
     watermarkSize, setWatermarkSize,
+    watermarkPosition, setWatermarkPosition,
+    watermarkOpacity, setWatermarkOpacity,
     getCurrentConfig, pushHistory, handleSliderRelease
   } = useAppContext();
 
@@ -147,6 +149,23 @@ export default function ExtraSettings() {
               style={{ marginTop: '0.5rem' }}
             />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
+              <span className="control-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Position</span>
+              <select 
+                value={watermarkPosition} 
+                onChange={(e) => {
+                  setWatermarkPosition(e.target.value);
+                  pushHistory({ ...getCurrentConfig(), watermarkPosition: e.target.value });
+                }}
+              >
+                <option value="left">Bottom Left</option>
+                <option value="middle">Bottom Center</option>
+                <option value="right">Bottom Right</option>
+                <option value="top left">Top Left</option>
+                <option value="top middle">Top Center</option>
+                <option value="top right">Top Right</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
               <div className="control-label-container">
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Font Size</span>
                 <span className="control-value">{watermarkSize}px</span>
@@ -157,6 +176,20 @@ export default function ExtraSettings() {
                 max="40" 
                 value={watermarkSize} 
                 onChange={(e) => setWatermarkSize(parseInt(e.target.value, 10))}
+                onMouseUp={handleSliderRelease}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
+              <div className="control-label-container">
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Opacity</span>
+                <span className="control-value">{Math.round(watermarkOpacity * 100)}%</span>
+              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                value={Math.round(watermarkOpacity * 100)} 
+                onChange={(e) => setWatermarkOpacity(parseFloat(e.target.value) / 100)}
                 onMouseUp={handleSliderRelease}
               />
             </div>

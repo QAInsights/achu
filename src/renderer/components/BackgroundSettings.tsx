@@ -1,6 +1,7 @@
 import { useAppContext } from '../AppContext';
 import { Sparkles, Plus, Trash2 } from 'lucide-react';
 import InspectorSection from './InspectorSection';
+import Tooltip from './Tooltip';
 import { 
   disneyHollywoodGradients, 
   disneyHollywoodMeshPalettes, 
@@ -120,36 +121,39 @@ export default function BackgroundSettings() {
             {backgroundType === 'gradient' && (
               !showHollywoodPalettes || selectedGradientCategory === 'classic' ? (
                 defaultGradients.map((g: any) => (
-                  <div 
-                    key={g.id} 
-                    className={`preset-swatch ${backgroundType === 'gradient' && backgroundValue === g.gradient ? 'active' : ''}`}
-                    style={{ background: g.gradient }}
-                    onClick={() => selectBackgroundPreset(g)}
-                    title={g.name}
-                  />
-                ))
-              ) : (
-                disneyHollywoodGradients
-                  .filter((g) => g.category === selectedGradientCategory)
-                  .map((g) => (
+                  <Tooltip key={g.id} position="top">
                     <div 
-                      key={g.id} 
                       className={`preset-swatch ${backgroundType === 'gradient' && backgroundValue === g.gradient ? 'active' : ''}`}
                       style={{ background: g.gradient }}
                       onClick={() => selectBackgroundPreset(g)}
                       title={g.name}
                     />
+                  </Tooltip>
+                ))
+              ) : (
+                disneyHollywoodGradients
+                  .filter((g) => g.category === selectedGradientCategory)
+                  .map((g) => (
+                    <Tooltip key={g.id} position="top">
+                      <div 
+                        className={`preset-swatch ${backgroundType === 'gradient' && backgroundValue === g.gradient ? 'active' : ''}`}
+                        style={{ background: g.gradient }}
+                        onClick={() => selectBackgroundPreset(g)}
+                        title={g.name}
+                      />
+                    </Tooltip>
                   ))
               )
             )}
             {(!showHollywoodPalettes || selectedGradientCategory === 'classic') && solidPresets.map((s: any) => (
-              <div 
-                key={s.id} 
-                className={`preset-swatch ${backgroundType === 'color' && backgroundValue === s.color ? 'active' : ''}`}
-                style={{ backgroundColor: s.color }}
-                onClick={() => selectBackgroundPreset(s)}
-                title={s.name}
-              />
+              <Tooltip key={s.id} position="top">
+                <div 
+                  className={`preset-swatch ${backgroundType === 'color' && backgroundValue === s.color ? 'active' : ''}`}
+                  style={{ backgroundColor: s.color }}
+                  onClick={() => selectBackgroundPreset(s)}
+                  title={s.name}
+                />
+              </Tooltip>
             ))}
           </div>
 
@@ -201,15 +205,16 @@ export default function BackgroundSettings() {
                   {showHollywoodMeshPalettes ? 'Hide Movie' : '+ Movie Palettes'}
                 </button>
                 {showHollywoodMeshPalettes && disneyHollywoodMeshPalettes.map((pal: any) => (
-                  <button
-                    key={pal.name}
-                    className="btn btn-secondary"
-                    style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
-                    onClick={() => applyMeshPalette(pal.colors)}
-                    title={`${pal.category.toUpperCase()}: ${pal.colors.join(', ')}`}
-                  >
-                    {pal.name}
-                  </button>
+                  <Tooltip key={pal.name} position="top">
+                    <button
+                      className="btn btn-secondary"
+                      style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
+                      onClick={() => applyMeshPalette(pal.colors)}
+                      title={`${pal.category.toUpperCase()}: ${pal.colors.join(', ')}`}
+                    >
+                      {pal.name}
+                    </button>
+                  </Tooltip>
                 ))}
               </div>
             </div>
@@ -218,72 +223,79 @@ export default function BackgroundSettings() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Color Spots</span>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    style={{ flexShrink: 0 }}
-                    onClick={generateRandomPalette}
-                    title="Randomize points position and colors"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" style={{ marginRight: '0.2rem' }} /> Randomize
-                  </button>
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    style={{ width: '28px', padding: 0, flexShrink: 0 }}
-                    onClick={() => {
-                      if (meshPoints.length >= 10) return;
-                      const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
-                      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-                      const newPt = {
-                        id: `mesh-${Date.now()}`,
-                        color: randomColor,
-                        x: 0.2 + Math.random() * 0.6,
-                        y: 0.2 + Math.random() * 0.6,
-                        radius: 200
-                      };
-                      const updated = [...meshPoints, newPt];
-                      setMeshPoints(updated);
-                      setActivePointIdx(meshPoints.length);
-                      pushHistory({ ...getCurrentConfig(), meshPoints: updated });
-                    }}
-                    disabled={meshPoints.length >= 10}
-                    title="Add spot"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    style={{ width: '28px', padding: 0, flexShrink: 0 }}
-                    onClick={() => {
-                      if (meshPoints.length <= 2) return;
-                      const filtered = meshPoints.filter((_, idx) => idx !== activePointIdx);
-                      setMeshPoints(filtered);
-                      setActivePointIdx(Math.max(0, activePointIdx - 1));
-                      pushHistory({ ...getCurrentConfig(), meshPoints: filtered });
-                    }}
-                    disabled={meshPoints.length <= 2}
-                    title="Remove active spot"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                   <Tooltip position="top">
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      style={{ flexShrink: 0 }}
+                      onClick={generateRandomPalette}
+                      title="Randomize points position and colors"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" style={{ marginRight: '0.2rem' }} /> Randomize
+                    </button>
+                  </Tooltip>
+                  <Tooltip position="top">
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      style={{ width: '28px', padding: 0, flexShrink: 0 }}
+                      onClick={() => {
+                        if (meshPoints.length >= 10) return;
+                        const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+                        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                        const newPt = {
+                          id: `mesh-${Date.now()}`,
+                          color: randomColor,
+                          x: 0.2 + Math.random() * 0.6,
+                          y: 0.2 + Math.random() * 0.6,
+                          radius: 200
+                        };
+                        const updated = [...meshPoints, newPt];
+                        setMeshPoints(updated);
+                        setActivePointIdx(meshPoints.length);
+                        pushHistory({ ...getCurrentConfig(), meshPoints: updated });
+                      }}
+                      disabled={meshPoints.length >= 10}
+                      title="Add spot"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip position="top">
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      style={{ width: '28px', padding: 0, flexShrink: 0 }}
+                      onClick={() => {
+                        if (meshPoints.length <= 2) return;
+                        const filtered = meshPoints.filter((_, idx) => idx !== activePointIdx);
+                        setMeshPoints(filtered);
+                        setActivePointIdx(Math.max(0, activePointIdx - 1));
+                        pushHistory({ ...getCurrentConfig(), meshPoints: filtered });
+                      }}
+                      disabled={meshPoints.length <= 2}
+                      title="Remove active spot"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                 {meshPoints.map((pt, idx) => (
-                  <button
-                    key={pt.id}
-                    onClick={() => setActivePointIdx(idx)}
-                    style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      backgroundColor: pt.color,
-                      border: idx === activePointIdx ? '2.5px solid #ffffff' : '1px solid var(--border)',
-                      boxShadow: idx === activePointIdx ? '0 0 0 2px var(--accent)' : 'none',
-                      cursor: 'pointer',
-                    }}
-                    title={`Point ${idx + 1}`}
-                  />
+                  <Tooltip key={pt.id} position="top">
+                    <button
+                      onClick={() => setActivePointIdx(idx)}
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        backgroundColor: pt.color,
+                        border: idx === activePointIdx ? '2.5px solid #ffffff' : '1px solid var(--border)',
+                        boxShadow: idx === activePointIdx ? '0 0 0 2px var(--accent)' : 'none',
+                        cursor: 'pointer',
+                      }}
+                      title={`Point ${idx + 1}`}
+                    />
+                  </Tooltip>
                 ))}
               </div>
 

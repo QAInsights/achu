@@ -497,6 +497,53 @@ export function getCanvasDimensions(
   }
 }
 
+function drawWatermark(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  config: RenderConfig
+) {
+  if (!config.watermarkEnabled || !config.watermarkText) return;
+  ctx.save();
+  const fontSize = config.watermarkSize || 20;
+  ctx.font = `600 ${fontSize}px sans-serif`;
+  
+  const opacity = config.watermarkOpacity !== undefined ? config.watermarkOpacity : 0.45;
+  ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+  
+  const position = config.watermarkPosition || 'middle';
+  let x = width / 2;
+  let y = height - (config.padding / 2) + (fontSize / 3);
+  let align: CanvasTextAlign = 'center';
+
+  if (position === 'left') {
+    x = config.padding / 2;
+    align = 'left';
+  } else if (position === 'middle') {
+    x = width / 2;
+    align = 'center';
+  } else if (position === 'right') {
+    x = width - (config.padding / 2);
+    align = 'right';
+  } else if (position === 'top left') {
+    x = config.padding / 2;
+    y = (config.padding / 2) + (fontSize / 3);
+    align = 'left';
+  } else if (position === 'top middle') {
+    x = width / 2;
+    y = (config.padding / 2) + (fontSize / 3);
+    align = 'center';
+  } else if (position === 'top right') {
+    x = width - (config.padding / 2);
+    y = (config.padding / 2) + (fontSize / 3);
+    align = 'right';
+  }
+
+  ctx.textAlign = align;
+  ctx.fillText(config.watermarkText, x, y);
+  ctx.restore();
+}
+
 // Primary Render function
 export function renderCanvas(
   canvas: HTMLCanvasElement,
@@ -522,16 +569,7 @@ export function renderCanvas(
 
   // If noImage is true, skip drawing screenshot container/decorations
   if (config.noImage) {
-    if (config.watermarkEnabled && config.watermarkText) {
-      ctx.save();
-      const fontSize = config.watermarkSize || 20;
-      ctx.font = `600 ${fontSize}px sans-serif`;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      ctx.textAlign = 'center';
-      const textY = dims.height - (config.padding / 2) + (fontSize / 3);
-      ctx.fillText(config.watermarkText, dims.width / 2, textY);
-      ctx.restore();
-    }
+    drawWatermark(ctx, dims.width, dims.height, config);
     return;
   }
 
@@ -730,16 +768,5 @@ export function renderCanvas(
   }
 
   // 8. Draw Watermark
-  if (config.watermarkEnabled && config.watermarkText) {
-    ctx.save();
-    const fontSize = config.watermarkSize || 20;
-    ctx.font = `600 ${fontSize}px sans-serif`;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.textAlign = 'center';
-    
-    // Draw watermark text at the bottom center
-    const textY = dims.height - (config.padding / 2) + (fontSize / 3);
-    ctx.fillText(config.watermarkText, dims.width / 2, textY);
-    ctx.restore();
-  }
+  drawWatermark(ctx, dims.width, dims.height, config);
 }

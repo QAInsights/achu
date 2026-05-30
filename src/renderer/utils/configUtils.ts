@@ -52,6 +52,8 @@ export function getCurrentConfig(state: {
   watermarkEnabled: boolean;
   watermarkText: string;
   watermarkSize: number;
+  watermarkPosition: string;
+  watermarkOpacity: number;
   position: string;
   annotations: Annotation[];
   meshPoints: Array<{ id: string; color: string; x: number; y: number; radius: number }>;
@@ -84,6 +86,8 @@ export function getCurrentConfig(state: {
     watermarkEnabled: state.watermarkEnabled,
     watermarkText: state.watermarkText,
     watermarkSize: state.watermarkSize,
+    watermarkPosition: state.watermarkPosition,
+    watermarkOpacity: state.watermarkOpacity,
     position: state.position,
     annotations: state.annotations,
     meshPoints: state.meshPoints,
@@ -120,6 +124,8 @@ export function applyConfig(
     setWatermarkEnabled: (v: boolean) => void;
     setWatermarkText: (v: string) => void;
     setWatermarkSize: (v: number) => void;
+    setWatermarkPosition: (v: string) => void;
+    setWatermarkOpacity: (v: number) => void;
     setPosition: (v: string) => void;
     setAnnotations: (v: Annotation[]) => void;
     setMeshPoints: (v: Array<{ id: string; color: string; x: number; y: number; radius: number }>) => void;
@@ -153,6 +159,8 @@ export function applyConfig(
   setters.setWatermarkEnabled(config.watermarkEnabled ?? false);
   setters.setWatermarkText(config.watermarkText ?? 'Achu');
   setters.setWatermarkSize(config.watermarkSize ?? 20);
+  setters.setWatermarkPosition(config.watermarkPosition ?? 'middle');
+  setters.setWatermarkOpacity(config.watermarkOpacity ?? 0.45);
   setters.setPosition(config.position ?? 'Middle center');
   setters.setAnnotations(config.annotations ?? []);
   setters.setMeshPoints(config.meshPoints ?? DEFAULT_MESH_POINTS);

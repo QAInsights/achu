@@ -20,6 +20,9 @@ export const baseConfig: RenderConfig = {
   chromeStyle: 'mac',
   watermarkEnabled: false,
   watermarkText: 'Achu',
+  watermarkSize: 20,
+  watermarkPosition: 'middle',
+  watermarkOpacity: 0.45,
   position: 'Middle center',
 };
 
@@ -253,6 +256,12 @@ export function makeFullMockContext(overrides: Record<string, any> = {}) {
     setWatermarkEnabled: noop,
     watermarkText: 'Achu',
     setWatermarkText: noop,
+    watermarkSize: 20,
+    setWatermarkSize: noop,
+    watermarkPosition: 'middle',
+    setWatermarkPosition: noop,
+    watermarkOpacity: 0.45,
+    setWatermarkOpacity: noop,
     exportFormat: 'png',
     setExportFormat: noop,
     jpegQuality: 90,

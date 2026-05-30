@@ -4,6 +4,7 @@ import logoUrl from '../../../assets/logo.svg';
 import LayoutSettings from './LayoutSettings';
 import BackgroundSettings from './BackgroundSettings';
 import ExtraSettings from './ExtraSettings';
+import Tooltip from './Tooltip';
 
 export default function Sidebar() {
   const {
@@ -51,9 +52,11 @@ export default function Sidebar() {
               onChange={(e) => setNewPresetName(e.target.value)}
               style={{ flex: 1 }}
             />
-            <button className="btn btn-secondary" onClick={saveCustomPreset} title="Save current background" style={{ width: '36px', padding: 0, flexShrink: 0 }}>
-              <Plus className="w-4 h-4" />
-            </button>
+            <Tooltip position="top">
+              <button className="btn btn-secondary" onClick={saveCustomPreset} title="Save current background" style={{ width: '36px', padding: 0, flexShrink: 0 }}>
+                <Plus className="w-4 h-4" />
+              </button>
+            </Tooltip>
           </div>
 
           {customPresets.length > 0 && (
@@ -61,9 +64,11 @@ export default function Sidebar() {
               {customPresets.map((p) => (
                 <div key={p.id} className="preset-item" onClick={() => selectBackgroundPreset(p)}>
                   <span>{p.name}</span>
-                  <button className="preset-delete-btn" onClick={(e) => deleteCustomPreset(p.id, e)}>
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <Tooltip content="Delete preset" position="left">
+                    <button className="preset-delete-btn" onClick={(e) => deleteCustomPreset(p.id, e)}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
                 </div>
               ))}
             </div>

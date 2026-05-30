@@ -39,6 +39,13 @@ beforeEach(() => {
     setWatermarkEnabled: vi.fn(),
     watermarkText: '',
     setWatermarkText: vi.fn(),
+    watermarkSize: 20,
+    setWatermarkSize: vi.fn(),
+    watermarkPosition: 'middle',
+    setWatermarkPosition: vi.fn(),
+    watermarkOpacity: 0.45,
+    setWatermarkOpacity: vi.fn(),
+    handleSliderRelease: vi.fn(),
     getCurrentConfig: vi.fn(() => ({})),
     pushHistory: vi.fn(),
   };

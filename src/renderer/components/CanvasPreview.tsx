@@ -4,6 +4,7 @@ import { useAppContext } from '../AppContext';
 import AnnotationsLayer from '../AnnotationsLayer';
 import { zoomIn, zoomOut, getFixedSizeFromAspectRatio } from '../utils/layoutUtils';
 import { getCanvasDimensions } from '../canvasRenderer';
+import Tooltip from './Tooltip';
 
 export default function CanvasPreview() {
   const [imgDims, setImgDims] = useState<{ width: number; height: number } | null>(null);
@@ -35,6 +36,8 @@ export default function CanvasPreview() {
     watermarkEnabled,
     watermarkText,
     watermarkSize,
+    watermarkPosition,
+    watermarkOpacity,
     position,
     activeTool,
     setActiveTool,
@@ -195,33 +198,34 @@ export default function CanvasPreview() {
                 style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'auto', zIndex: 10 }}
               >
                 {meshPoints.map((pt, idx) => (
-                  <div
-                    key={pt.id}
-                    onPointerDown={(e) => handlePointerDown(e, idx)}
-                    style={{
-                      position: 'absolute',
-                      left: `${pt.x * 100}%`,
-                      top: `${pt.y * 100}%`,
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      backgroundColor: pt.color,
-                      border: idx === activePointIdx ? '3px solid #ffffff' : '2px solid rgba(255,255,255,0.8)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                      transform: 'translate(-50%, -50%)',
-                      cursor: 'move',
-                      zIndex: idx === activePointIdx ? 12 : 11,
-                    }}
-                    title={`Point ${idx + 1}`}
-                  >
-                    <div style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      backgroundColor: '#ffffff',
-                      margin: '6px auto 0 auto',
-                    }} />
-                  </div>
+                  <Tooltip key={pt.id} position="top">
+                    <div
+                      onPointerDown={(e) => handlePointerDown(e, idx)}
+                      style={{
+                        position: 'absolute',
+                        left: `${pt.x * 100}%`,
+                        top: `${pt.y * 100}%`,
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        backgroundColor: pt.color,
+                        border: idx === activePointIdx ? '3px solid #ffffff' : '2px solid rgba(255,255,255,0.8)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                        transform: 'translate(-50%, -50%)',
+                        cursor: 'move',
+                        zIndex: idx === activePointIdx ? 12 : 11,
+                      }}
+                      title={`Point ${idx + 1}`}
+                    >
+                      <div style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        backgroundColor: '#ffffff',
+                        margin: '6px auto 0 auto',
+                      }} />
+                    </div>
+                  </Tooltip>
                 ))}
               </div>
             )}
@@ -315,6 +319,7 @@ export default function CanvasPreview() {
                 className="preview-watermark" 
                 style={{ 
                   zIndex: 2,
+                  opacity: watermarkOpacity,
                   fontSize: (() => {
                     if (noImageMode || !imgDims) {
                       return `${watermarkSize}px`;
@@ -329,7 +334,55 @@ export default function CanvasPreview() {
                     }
                     const ratio = previewCardWidth / (dims.width - padding * 2);
                     return `${Math.max(8, Math.round(watermarkSize * ratio))}px`;
-                  })()
+                  })(),
+                  ...(() => {
+                    const pos = watermarkPosition || 'middle';
+                    const halfPadding = padding / 2;
+                    const style: React.CSSProperties = {
+                      position: 'absolute',
+                      display: 'flex',
+                      alignItems: 'center',
+                      pointerEvents: 'none',
+                      color: '#ffffff',
+                      fontWeight: 600,
+                      transform: 'none',
+                      left: 'auto',
+                      right: 'auto',
+                      top: 'auto',
+                      bottom: 'auto',
+                      height: `${padding}px`,
+                      width: 'auto',
+                    };
+                    
+                    if (pos === 'left') {
+                      style.bottom = 0;
+                      style.left = `${halfPadding}px`;
+                      style.justifyContent = 'flex-start';
+                    } else if (pos === 'middle') {
+                      style.bottom = 0;
+                      style.left = 0;
+                      style.right = 0;
+                      style.justifyContent = 'center';
+                    } else if (pos === 'right') {
+                      style.bottom = 0;
+                      style.right = `${halfPadding}px`;
+                      style.justifyContent = 'flex-end';
+                    } else if (pos === 'top left') {
+                      style.top = 0;
+                      style.left = `${halfPadding}px`;
+                      style.justifyContent = 'flex-start';
+                    } else if (pos === 'top middle') {
+                      style.top = 0;
+                      style.left = 0;
+                      style.right = 0;
+                      style.justifyContent = 'center';
+                    } else if (pos === 'top right') {
+                      style.top = 0;
+                      style.right = `${halfPadding}px`;
+                      style.justifyContent = 'flex-end';
+                    }
+                    return style;
+                  })(),
                 }}
               >
                 {watermarkText}
@@ -377,30 +430,36 @@ export default function CanvasPreview() {
       {/* Zoom Cluster */}
       {(imageSrc || noImageMode) && (
         <div className="zoom-cluster" style={{ gap: '4px' }}>
-          <button
-            className="zoom-btn"
-            onClick={handleZoomOut}
-            disabled={zoomLevel !== 'Zoom to fit' && parseInt(zoomLevel, 10) <= 10}
-            title="Zoom out (10%)"
-          >
-            <Minus className="w-3.5 h-3.5" />
-          </button>
-          <button
-            className={`zoom-btn ${zoomLevel === 'Zoom to fit' ? 'active' : ''}`}
-            style={{ minWidth: '48px', fontWeight: 'bold' }}
-            onClick={() => setZoomLevel('Zoom to fit')}
-            title="Reset to Zoom to fit"
-          >
-            {zoomLevel === 'Zoom to fit' ? 'Fit' : zoomLevel}
-          </button>
-          <button
-            className="zoom-btn"
-            onClick={handleZoomIn}
-            disabled={zoomLevel !== 'Zoom to fit' && parseInt(zoomLevel, 10) >= 500}
-            title="Zoom in (10%)"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+          <Tooltip position="top">
+            <button
+              className="zoom-btn"
+              onClick={handleZoomOut}
+              disabled={zoomLevel !== 'Zoom to fit' && parseInt(zoomLevel, 10) <= 10}
+              title="Zoom out (10%)"
+            >
+              <Minus className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip position="top">
+            <button
+              className={`zoom-btn ${zoomLevel === 'Zoom to fit' ? 'active' : ''}`}
+              style={{ minWidth: '48px', fontWeight: 'bold' }}
+              onClick={() => setZoomLevel('Zoom to fit')}
+              title="Reset to Zoom to fit"
+            >
+              {zoomLevel === 'Zoom to fit' ? 'Fit' : zoomLevel}
+            </button>
+          </Tooltip>
+          <Tooltip position="top">
+            <button
+              className="zoom-btn"
+              onClick={handleZoomIn}
+              disabled={zoomLevel !== 'Zoom to fit' && parseInt(zoomLevel, 10) >= 500}
+              title="Zoom in (10%)"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
         </div>
       )}
     </div>

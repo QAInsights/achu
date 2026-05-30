@@ -232,6 +232,8 @@ describe('AppContext', () => {
         setWatermarkEnabled: (v: boolean) => { state.watermarkEnabled = v; },
         setWatermarkText: (v: string) => { state.watermarkText = v; },
         setWatermarkSize: (v: number) => { state.watermarkSize = v; },
+        setWatermarkPosition: (v: string) => { state.watermarkPosition = v; },
+        setWatermarkOpacity: (v: number) => { state.watermarkOpacity = v; },
         setPosition: (v: string) => { state.position = v; },
         setAnnotations: (v: any[]) => { state.annotations = v; },
         setMeshPoints: (v: any[]) => { state.meshPoints = v; },
@@ -265,6 +267,8 @@ describe('AppContext', () => {
         watermarkEnabled: true,
         watermarkText: 'Test',
         watermarkSize: 35,
+        watermarkPosition: 'right',
+        watermarkOpacity: 0.8,
         position: 'Top left',
         annotations: [{ id: '1', type: 'rect' }],
         meshPoints: [{ id: '1', color: '#000000', x: 0.5, y: 0.5, radius: 100 }],
@@ -287,6 +291,8 @@ describe('AppContext', () => {
       expect(state.watermarkEnabled).toBe(true);
       expect(state.watermarkText).toBe('Test');
       expect(state.watermarkSize).toBe(35);
+      expect(state.watermarkPosition).toBe('right');
+      expect(state.watermarkOpacity).toBe(0.8);
       expect(state.chromeStyle).toBe('windows');
       expect(state.meshBlur).toBe(80);
       expect(state.noImageMode).toBe(true);
