@@ -26,18 +26,18 @@ export function getFixedSizeFromAspectRatio(
   canvasHeight: number,
   noImageMode: boolean
 ) {
-  const width = aspectRatio === '1:1' ? 600 : 
-                aspectRatio === '16:9' ? 800 : 
-                aspectRatio === '4:3' ? 700 : 
-                aspectRatio === '3:2' ? 750 : 
-                aspectRatio === 'Custom' ? canvasWidth : 
+  const width = aspectRatio === '1:1' ? 600 :
+                aspectRatio === '16:9' ? 800 :
+                aspectRatio === '4:3' ? 700 :
+                aspectRatio === '3:2' ? 750 :
+                aspectRatio === 'Custom' ? canvasWidth :
                 (noImageMode ? 800 : 'auto');
-  
-  const height = aspectRatio === '1:1' ? 600 : 
-                 aspectRatio === '16:9' ? 450 : 
-                 aspectRatio === '4:3' ? 525 : 
-                 aspectRatio === '3:2' ? 500 : 
-                 aspectRatio === 'Custom' ? canvasHeight : 
+
+  const height = aspectRatio === '1:1' ? 600 :
+                 aspectRatio === '16:9' ? 450 :
+                 aspectRatio === '4:3' ? 525 :
+                 aspectRatio === '3:2' ? 500 :
+                 aspectRatio === 'Custom' ? canvasHeight :
                  (noImageMode ? 450 : 'auto');
   
   return { width, height };

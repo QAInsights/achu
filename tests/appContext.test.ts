@@ -176,6 +176,7 @@ describe('AppContext', () => {
         blurDensity: 40,
         watermarkEnabled: false,
         watermarkText: 'Achu',
+        watermarkSize: 20,
         position: 'Middle center',
         annotations: [],
         meshPoints: [
@@ -195,7 +196,7 @@ describe('AppContext', () => {
         'inset', 'insetColor', 'border', 'borderColor', 'scale',
         'backgroundType', 'backgroundValue', 'aspectRatio', 'canvasWidth', 'canvasHeight',
         'paddingMode', 'chromeStyle', 'chromeTheme', 'blurDensity',
-        'watermarkEnabled', 'watermarkText', 'position', 'annotations',
+        'watermarkEnabled', 'watermarkText', 'watermarkSize', 'position', 'annotations',
         'meshPoints', 'meshBlur', 'meshGrain', 'meshOpacity', 'meshSpread', 'noImage'
       ];
 
@@ -230,6 +231,7 @@ describe('AppContext', () => {
         setBlurDensity: (v: number) => { state.blurDensity = v; },
         setWatermarkEnabled: (v: boolean) => { state.watermarkEnabled = v; },
         setWatermarkText: (v: string) => { state.watermarkText = v; },
+        setWatermarkSize: (v: number) => { state.watermarkSize = v; },
         setPosition: (v: string) => { state.position = v; },
         setAnnotations: (v: any[]) => { state.annotations = v; },
         setMeshPoints: (v: any[]) => { state.meshPoints = v; },
@@ -262,6 +264,7 @@ describe('AppContext', () => {
         blurDensity: 60,
         watermarkEnabled: true,
         watermarkText: 'Test',
+        watermarkSize: 35,
         position: 'Top left',
         annotations: [{ id: '1', type: 'rect' }],
         meshPoints: [{ id: '1', color: '#000000', x: 0.5, y: 0.5, radius: 100 }],
@@ -283,6 +286,7 @@ describe('AppContext', () => {
       expect(state.aspectRatio).toBe('16:9');
       expect(state.watermarkEnabled).toBe(true);
       expect(state.watermarkText).toBe('Test');
+      expect(state.watermarkSize).toBe(35);
       expect(state.chromeStyle).toBe('windows');
       expect(state.meshBlur).toBe(80);
       expect(state.noImageMode).toBe(true);

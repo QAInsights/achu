@@ -51,6 +51,7 @@ export function getCurrentConfig(state: {
   blurDensity: number;
   watermarkEnabled: boolean;
   watermarkText: string;
+  watermarkSize: number;
   position: string;
   annotations: Annotation[];
   meshPoints: Array<{ id: string; color: string; x: number; y: number; radius: number }>;
@@ -82,6 +83,7 @@ export function getCurrentConfig(state: {
     blurDensity: state.blurDensity,
     watermarkEnabled: state.watermarkEnabled,
     watermarkText: state.watermarkText,
+    watermarkSize: state.watermarkSize,
     position: state.position,
     annotations: state.annotations,
     meshPoints: state.meshPoints,
@@ -117,6 +119,7 @@ export function applyConfig(
     setBlurDensity: (v: number) => void;
     setWatermarkEnabled: (v: boolean) => void;
     setWatermarkText: (v: string) => void;
+    setWatermarkSize: (v: number) => void;
     setPosition: (v: string) => void;
     setAnnotations: (v: Annotation[]) => void;
     setMeshPoints: (v: Array<{ id: string; color: string; x: number; y: number; radius: number }>) => void;
@@ -149,6 +152,7 @@ export function applyConfig(
   setters.setBlurDensity(config.blurDensity ?? 40);
   setters.setWatermarkEnabled(config.watermarkEnabled ?? false);
   setters.setWatermarkText(config.watermarkText ?? 'Achu');
+  setters.setWatermarkSize(config.watermarkSize ?? 20);
   setters.setPosition(config.position ?? 'Middle center');
   setters.setAnnotations(config.annotations ?? []);
   setters.setMeshPoints(config.meshPoints ?? DEFAULT_MESH_POINTS);

@@ -1,9 +1,12 @@
+import { useState, useEffect } from 'react';
 import { Image as ImageIcon, Sparkles, Minus, Plus } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import AnnotationsLayer from '../AnnotationsLayer';
-import { zoomIn, zoomOut, getFixedSizeFromAspectRatio, getPositionAlignment } from '../utils/layoutUtils';
+import { zoomIn, zoomOut, getFixedSizeFromAspectRatio } from '../utils/layoutUtils';
+import { getCanvasDimensions } from '../canvasRenderer';
 
 export default function CanvasPreview() {
+  const [imgDims, setImgDims] = useState<{ width: number; height: number } | null>(null);
   const {
     padding,
     rounded,
@@ -31,6 +34,7 @@ export default function CanvasPreview() {
     activePointIdx,
     watermarkEnabled,
     watermarkText,
+    watermarkSize,
     position,
     activeTool,
     setActiveTool,
@@ -54,6 +58,74 @@ export default function CanvasPreview() {
   const handleZoomIn = () => setZoomLevel(zoomIn(zoomLevel));
   const handleZoomOut = () => setZoomLevel(zoomOut(zoomLevel));
 
+  useEffect(() => {
+    if (!imageSrc) {
+      setImgDims(null);
+    }
+  }, [imageSrc]);
+
+  const getPreviewPositionStyle = (pos: string, paddingVal: number, aspect: string) => {
+    if (aspect === 'Auto') {
+      return {
+        position: 'relative' as const,
+        top: undefined,
+        bottom: undefined,
+        left: undefined,
+        right: undefined,
+        transform: undefined,
+      };
+    }
+    const pad = `${paddingVal}px`;
+    switch (pos || 'Middle center') {
+      case 'Top center':
+        return {
+          position: 'absolute' as const,
+          top: pad,
+          bottom: undefined,
+          left: '50%',
+          right: undefined,
+          transform: 'translateX(-50%)',
+        };
+      case 'Bottom center':
+        return {
+          position: 'absolute' as const,
+          top: undefined,
+          bottom: pad,
+          left: '50%',
+          right: undefined,
+          transform: 'translateX(-50%)',
+        };
+      case 'Middle left':
+        return {
+          position: 'absolute' as const,
+          top: '50%',
+          bottom: undefined,
+          left: pad,
+          right: undefined,
+          transform: 'translateY(-50%)',
+        };
+      case 'Middle right':
+        return {
+          position: 'absolute' as const,
+          top: '50%',
+          bottom: undefined,
+          left: undefined,
+          right: pad,
+          transform: 'translateY(-50%)',
+        };
+      case 'Middle center':
+      default:
+        return {
+          position: 'absolute' as const,
+          top: '50%',
+          bottom: undefined,
+          left: '50%',
+          right: undefined,
+          transform: 'translate(-50%, -50%)',
+        };
+    }
+  };
+
   return (
     <div className="workspace-canvas-container">
       {(imageSrc || noImageMode) ? (
@@ -64,6 +136,7 @@ export default function CanvasPreview() {
             className="preview-background-card"
             style={{
               padding: `${padding}px`,
+              boxSizing: 'content-box',
               backgroundColor: backgroundType === 'color' ? backgroundValue : undefined,
               backgroundImage: backgroundType === 'gradient' 
                 ? backgroundValue 
@@ -72,14 +145,29 @@ export default function CanvasPreview() {
                   : backgroundType === 'mesh' 
                     ? `url(${meshDataUrl})` 
                     : undefined,
-              ...getPositionAlignment(position || 'Middle center'),
               borderRadius: '12px',
+              maxWidth: '100%',
+              maxHeight: '70vh',
               // Fixed sizes mapping
               ...(() => {
+                if (aspectRatio === 'Auto' && !noImageMode && imgDims) {
+                  const s = scale / 100;
+                  const chromeHeight = chromeStyle !== 'none' ? 32 : 0;
+                  const w = Math.round(imgDims.width * s);
+                  const h = Math.round((imgDims.height + chromeHeight) * s);
+                  return {
+                    width: `${w}px`,
+                    height: `${h}px`,
+                    aspectRatio: `${w} / ${h}`,
+                  };
+                }
                 const { width, height } = getFixedSizeFromAspectRatio(aspectRatio, canvasWidth, canvasHeight, noImageMode);
+                const w = typeof width === 'number' ? width : 800;
+                const h = typeof height === 'number' ? height : 450;
                 return {
                   width: typeof width === 'number' ? `${width}px` : width,
                   height: typeof height === 'number' ? `${height}px` : height,
+                  aspectRatio: `${w} / ${h}`,
                 };
               })(),
             }}
@@ -148,9 +236,11 @@ export default function CanvasPreview() {
                   border: border > 0 ? `${border}px solid ${borderColor}` : 'none',
                   outline: inset > 0 ? `${inset}px solid ${insetColor}` : 'none',
                   outlineOffset: `-${inset}px`,
-                  width: scale === 100 ? '100%' : `${scale}%`,
-                  maxWidth: '100%',
+                  width: aspectRatio === 'Auto' ? '100%' : `calc((100% - ${padding * 2}px) * ${scale / 100})`,
+                  maxWidth: aspectRatio === 'Auto' ? '100%' : `calc(100% - ${padding * 2}px)`,
+                  maxHeight: aspectRatio === 'Auto' ? '100%' : `calc(100% - ${padding * 2}px)`,
                   zIndex: 1,
+                  ...getPreviewPositionStyle(position || 'Middle center', padding, aspectRatio),
                 }}
               >
                 
@@ -186,11 +276,17 @@ export default function CanvasPreview() {
                 )}
 
                 {/* Image render element with Annotations layer */}
-                <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: aspectRatio === 'Auto' ? '65vh' : '100%' }}>
+                <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>
                   <img 
                     src={imageSrc} 
                     alt="Screenshot" 
                     className="preview-screenshot-img" 
+                    onLoad={(e) => {
+                      setImgDims({
+                        width: e.currentTarget.naturalWidth,
+                        height: e.currentTarget.naturalHeight
+                      });
+                    }}
                     style={{
                       maxHeight: '100%',
                       maxWidth: '100%',
@@ -215,7 +311,27 @@ export default function CanvasPreview() {
 
             {/* Floating Watermark text */}
             {watermarkEnabled && watermarkText && (
-              <div className="preview-watermark" style={{ zIndex: 2 }}>
+              <div 
+                className="preview-watermark" 
+                style={{ 
+                  zIndex: 2,
+                  fontSize: (() => {
+                    if (noImageMode || !imgDims) {
+                      return `${watermarkSize}px`;
+                    }
+                    const dims = getCanvasDimensions(imgDims.width, imgDims.height, getCurrentConfig());
+                    let previewCardWidth = 800;
+                    if (aspectRatio === 'Auto') {
+                      previewCardWidth = Math.round(imgDims.width * (scale / 100));
+                    } else {
+                      const size = getFixedSizeFromAspectRatio(aspectRatio, canvasWidth, canvasHeight, noImageMode);
+                      previewCardWidth = typeof size.width === 'number' ? size.width : 800;
+                    }
+                    const ratio = previewCardWidth / (dims.width - padding * 2);
+                    return `${Math.max(8, Math.round(watermarkSize * ratio))}px`;
+                  })()
+                }}
+              >
                 {watermarkText}
               </div>
             )}

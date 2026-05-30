@@ -30,6 +30,7 @@ export const DEFAULT_SETTINGS = {
   shadow: 30,
   watermarkEnabled: false,
   watermarkText: 'Achu',
+  watermarkSize: 20,
   exportFormat: 'png' as const,
   jpegQuality: 90,
 };

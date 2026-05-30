@@ -38,6 +38,7 @@ export interface RenderConfig {
   blurDensity?: number;
   watermarkEnabled: boolean;
   watermarkText: string;
+  watermarkSize?: number;
   position: string; // "Middle center", "Top center", "Bottom center", "Middle left", "Middle right"
   annotations?: Annotation[];
   meshPoints?: Array<{ id: string; color: string; x: number; y: number; radius: number }>;
@@ -523,7 +524,7 @@ export function renderCanvas(
   if (config.noImage) {
     if (config.watermarkEnabled && config.watermarkText) {
       ctx.save();
-      const fontSize = Math.max(14, Math.round(dims.width * 0.018));
+      const fontSize = config.watermarkSize || 20;
       ctx.font = `600 ${fontSize}px sans-serif`;
       ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
       ctx.textAlign = 'center';
@@ -731,8 +732,7 @@ export function renderCanvas(
   // 8. Draw Watermark
   if (config.watermarkEnabled && config.watermarkText) {
     ctx.save();
-    // Font size relative to canvas width
-    const fontSize = Math.max(14, Math.round(dims.width * 0.018));
+    const fontSize = config.watermarkSize || 20;
     ctx.font = `600 ${fontSize}px sans-serif`;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
     ctx.textAlign = 'center';

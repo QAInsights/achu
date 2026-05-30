@@ -887,6 +887,88 @@ describe('CanvasPreview', () => {
     const annotationsLayer = container.querySelector('.annotations-layer');
     expect(annotationsLayer).toBeInTheDocument();
   });
+
+  it('applies absolute position styles to container box for Middle right', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.aspectRatio = '1:1';
+    mockContext.position = 'Middle right';
+
+    const { container } = render(<CanvasPreview />);
+    const box = container.querySelector('.preview-container-box');
+    expect(box).toHaveStyle({ position: 'absolute' });
+    expect(box).toHaveStyle({ top: '50%' });
+    expect(box).toHaveStyle({ right: '38px' });
+    expect(box).toHaveStyle({ transform: 'translateY(-50%)' });
+  });
+
+  it('applies absolute position styles to container box for Top center', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.aspectRatio = '1:1';
+    mockContext.position = 'Top center';
+
+    const { container } = render(<CanvasPreview />);
+    const box = container.querySelector('.preview-container-box');
+    expect(box).toHaveStyle({ position: 'absolute' });
+    expect(box).toHaveStyle({ top: '38px' });
+    expect(box).toHaveStyle({ left: '50%' });
+    expect(box).toHaveStyle({ transform: 'translateX(-50%)' });
+  });
+
+  it('applies absolute position styles to container box for Bottom center', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.aspectRatio = '1:1';
+    mockContext.position = 'Bottom center';
+
+    const { container } = render(<CanvasPreview />);
+    const box = container.querySelector('.preview-container-box');
+    expect(box).toHaveStyle({ position: 'absolute' });
+    expect(box).toHaveStyle({ bottom: '38px' });
+    expect(box).toHaveStyle({ left: '50%' });
+    expect(box).toHaveStyle({ transform: 'translateX(-50%)' });
+  });
+
+  it('applies absolute position styles to container box for Middle left', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.aspectRatio = '1:1';
+    mockContext.position = 'Middle left';
+
+    const { container } = render(<CanvasPreview />);
+    const box = container.querySelector('.preview-container-box');
+    expect(box).toHaveStyle({ position: 'absolute' });
+    expect(box).toHaveStyle({ top: '50%' });
+    expect(box).toHaveStyle({ left: '38px' });
+    expect(box).toHaveStyle({ transform: 'translateY(-50%)' });
+  });
+
+  it('applies relative position styles in Auto mode', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.aspectRatio = 'Auto';
+    mockContext.position = 'Bottom center';
+
+    const { container } = render(<CanvasPreview />);
+    const box = container.querySelector('.preview-container-box');
+    expect(box).toHaveStyle({ position: 'relative' });
+  });
+
+  it('uses auto width for container box at scale 100', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.aspectRatio = '1:1';
+    mockContext.scale = 100;
+
+    const { container } = render(<CanvasPreview />);
+    const box = container.querySelector('.preview-container-box');
+    expect(box).toHaveStyle({ width: 'calc(1 * (100% - 76px))' });
+  });
+
+  it('uses percentage width for container box when scale is below 100', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.aspectRatio = '1:1';
+    mockContext.scale = 80;
+
+    const { container } = render(<CanvasPreview />);
+    const box = container.querySelector('.preview-container-box');
+    expect(box).toHaveStyle({ width: 'calc(0.8 * (100% - 76px))' });
+  });
 });
 
 describe('AnnotationsLayer', () => {

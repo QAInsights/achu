@@ -10,7 +10,8 @@ export default function ExtraSettings() {
     annotations, setAnnotations,
     watermarkEnabled, setWatermarkEnabled,
     watermarkText, setWatermarkText,
-    getCurrentConfig, pushHistory
+    watermarkSize, setWatermarkSize,
+    getCurrentConfig, pushHistory, handleSliderRelease
   } = useAppContext();
 
   return (
@@ -134,16 +135,32 @@ export default function ExtraSettings() {
           </label>
         </div>
         {watermarkEnabled && (
-          <input 
-            type="text" 
-            placeholder="Watermark text..." 
-            value={watermarkText} 
-            onChange={(e) => {
-              setWatermarkText(e.target.value);
-            }}
-            onBlur={() => pushHistory(getCurrentConfig())}
-            style={{ marginTop: '0.5rem' }}
-          />
+          <>
+            <input 
+              type="text" 
+              placeholder="Watermark text..." 
+              value={watermarkText} 
+              onChange={(e) => {
+                setWatermarkText(e.target.value);
+              }}
+              onBlur={() => pushHistory(getCurrentConfig())}
+              style={{ marginTop: '0.5rem' }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
+              <div className="control-label-container">
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Font Size</span>
+                <span className="control-value">{watermarkSize}px</span>
+              </div>
+              <input 
+                type="range" 
+                min="10" 
+                max="40" 
+                value={watermarkSize} 
+                onChange={(e) => setWatermarkSize(parseInt(e.target.value, 10))}
+                onMouseUp={handleSliderRelease}
+              />
+            </div>
+          </>
         )}
       </div>
     </InspectorSection>

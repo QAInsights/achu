@@ -44,6 +44,7 @@ interface AppContextType {
   activePointIdx: number; setActivePointIdx: React.Dispatch<React.SetStateAction<number>>;
   watermarkEnabled: boolean; setWatermarkEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   watermarkText: string; setWatermarkText: React.Dispatch<React.SetStateAction<string>>;
+  watermarkSize: number; setWatermarkSize: React.Dispatch<React.SetStateAction<number>>;
   position: string; setPosition: React.Dispatch<React.SetStateAction<string>>;
   activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'; setActiveTool: React.Dispatch<React.SetStateAction<'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'>>;
   arrowStyle: 'classic' | 'dashed' | 'tapered' | 'curved'; setArrowStyle: React.Dispatch<React.SetStateAction<'classic' | 'dashed' | 'tapered' | 'curved'>>;
@@ -143,6 +144,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [watermarkEnabled, setWatermarkEnabled] = useState<boolean>(() => getUserDefault('watermarkEnabled', false));
   const [watermarkText, setWatermarkText] = useState<string>(() => getUserDefault('watermarkText', 'Achu'));
+  const [watermarkSize, setWatermarkSize] = useState<number>(() => getUserDefault('watermarkSize', 20));
   const [position, setPosition] = useState<string>('Middle center');
   const [activeTool, setActiveTool] = useState<'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'>('pointer');
   const [arrowStyle, setArrowStyle] = useState<'classic' | 'dashed' | 'tapered' | 'curved'>('classic');
@@ -177,7 +179,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     padding, rounded, shadow, shadowColor, shadowEnabled,
     inset, insetColor, border, borderColor, scale,
     backgroundType, backgroundValue, aspectRatio, canvasWidth, canvasHeight,
-    paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled, watermarkText,
+    paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled, watermarkText, watermarkSize,
     position, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread,
     noImage: noImageMode,
   });
@@ -205,6 +207,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBlurDensity(config.blurDensity ?? 40);
     setWatermarkEnabled(config.watermarkEnabled ?? false);
     setWatermarkText(config.watermarkText ?? 'Achu');
+    setWatermarkSize(config.watermarkSize ?? 20);
     setPosition(config.position ?? 'Middle center');
     setAnnotations(config.annotations ?? []);
     setMeshPoints(config.meshPoints ?? [
@@ -329,7 +332,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     padding, rounded, shadow, shadowColor, shadowEnabled, inset, insetColor, border,
     borderColor, scale, backgroundType, backgroundValue, aspectRatio, canvasWidth,
     canvasHeight, paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled,
-    watermarkText, position, customPresets, meshPoints, meshBlur, meshGrain, meshOpacity,
+    watermarkText, watermarkSize, position, customPresets, meshPoints, meshBlur, meshGrain, meshOpacity,
     meshSpread, noImageMode
   ]);
 
@@ -384,7 +387,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [historyIndex, history, imageSrc, padding, rounded, shadow, shadowColor, shadowEnabled, inset, insetColor, border, borderColor, scale, backgroundType, backgroundValue, aspectRatio, canvasWidth, canvasHeight, paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled, watermarkText, position, exportFormat, jpegQuality, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread, noImageMode]);
+  }, [historyIndex, history, imageSrc, padding, rounded, shadow, shadowColor, shadowEnabled, inset, insetColor, border, borderColor, scale, backgroundType, backgroundValue, aspectRatio, canvasWidth, canvasHeight, paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled, watermarkText, watermarkSize, position, exportFormat, jpegQuality, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread, noImageMode]);
 
   // Mesh gradient background rendering
   useEffect(() => {
@@ -446,7 +449,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       chromeTheme, setChromeTheme, blurDensity, setBlurDensity, noImageMode, setNoImageMode,
       meshPoints, setMeshPoints, meshBlur, setMeshBlur, meshGrain, setMeshGrain, meshOpacity, setMeshOpacity,
       meshSpread, setMeshSpread, meshDataUrl, setMeshDataUrl, activePointIdx, setActivePointIdx,
-      watermarkEnabled, setWatermarkEnabled, watermarkText, setWatermarkText, position, setPosition,
+      watermarkEnabled, setWatermarkEnabled, watermarkText, setWatermarkText, watermarkSize, setWatermarkSize, position, setPosition,
       activeTool, setActiveTool, arrowStyle, setArrowStyle, annotations, setAnnotations, annotationColor, setAnnotationColor,
       annotationStrokeWidth, setAnnotationStrokeWidth, promptConfig, setPromptConfig, sidebarVisible, setSidebarVisible,
       settingsVisible, setSettingsVisible,
