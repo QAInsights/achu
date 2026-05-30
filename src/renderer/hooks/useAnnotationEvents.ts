@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, RefObject } from 'react';
 import { Annotation } from '../canvasRenderer';
+import { SnapGuide, snapDragPosition, snapResizeDimensions, snapDrawingDimensions } from '../utils/snapUtils';
 
 interface UseAnnotationEventsProps {
   annotations: Annotation[];
@@ -53,6 +54,7 @@ export function useAnnotationEvents({
     startY: number;
     hasDragged: boolean;
   } | null>(null);
+  const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
   const [resizeHandle, setResizeHandle] = useState<string | null>(null);
   const [resizeStart, setResizeStart] = useState<{
     mouseX: number;
@@ -120,27 +122,42 @@ export function useAnnotationEvents({
   };
 
   const handleShapeDraw = (mouseX: number, mouseY: number) => {
-    setDrawingAnnotation(prev => {
-      if (!prev) return null;
-      return { ...prev, w: mouseX - prev.x, h: mouseY - prev.y };
-    });
+    if (!drawingAnnotation) return;
+    const rawW = mouseX - drawingAnnotation.x;
+    const rawH = mouseY - drawingAnnotation.y;
+
+    const { w: snappedW, h: snappedH, guides } = snapDrawingDimensions(
+      drawingAnnotation.x, drawingAnnotation.y,
+      rawW, rawH,
+      annotations,
+      dimensions,
+    );
+
+    setActiveGuides(guides);
+    setDrawingAnnotation({ ...drawingAnnotation, w: snappedW, h: snappedH });
   };
 
   const handleDragMove = (mouseX: number, mouseY: number) => {
     if (!dragStart || !selectedId) return;
     const deltaX = mouseX - dragStart.mouseX;
     const deltaY = mouseY - dragStart.mouseY;
+    const rawX = dragStart.annX + deltaX;
+    const rawY = dragStart.annY + deltaY;
+
+    const targetAnn = annotations.find(a => a.id === selectedId);
+    if (!targetAnn) return;
+
+    const { x: snappedX, y: snappedY, guides } = snapDragPosition(
+      rawX, rawY, targetAnn.w, targetAnn.h,
+      annotations.filter(a => a.id !== selectedId),
+      dimensions,
+    );
+
+    setActiveGuides(guides);
     setAnnotations(prev =>
-      prev.map(ann => {
-        if (ann.id === selectedId) {
-          return {
-            ...ann,
-            x: dragStart.annX + deltaX,
-            y: dragStart.annY + deltaY,
-          };
-        }
-        return ann;
-      })
+      prev.map(ann =>
+        ann.id === selectedId ? { ...ann, x: snappedX, y: snappedY } : ann,
+      ),
     );
   };
 
@@ -155,25 +172,50 @@ export function useAnnotationEvents({
 
   const handleResizeMove = (mouseX: number, mouseY: number, cx: number, cy: number) => {
     if (!resizeStart || !selectedId || !resizeHandle) return;
+    if (resizeHandle === 'rot') {
+      handleRotateMove(mouseY, mouseX, cx, cy);
+      return;
+    }
+
     const unrotated = rotatePoint(mouseX, mouseY, cx, cy, resizeStart.rotation);
+
+    let proposedX = resizeStart.x;
+    let proposedY = resizeStart.y;
+    let proposedW = resizeStart.w;
+    let proposedH = resizeStart.h;
+
+    if (resizeHandle.includes('r')) proposedW = unrotated.x - resizeStart.x;
+    if (resizeHandle.includes('l')) {
+      const right = resizeStart.x + resizeStart.w;
+      proposedX = unrotated.x;
+      proposedW = right - proposedX;
+    }
+    if (resizeHandle.includes('b')) proposedH = unrotated.y - resizeStart.y;
+    if (resizeHandle.includes('t')) {
+      const bottom = resizeStart.y + resizeStart.h;
+      proposedY = unrotated.y;
+      proposedH = bottom - proposedY;
+    }
+
+    const { x: snappedX, y: snappedY, w: snappedW, h: snappedH, guides } = snapResizeDimensions(
+      resizeStart.x, resizeStart.y, resizeStart.w, resizeStart.h,
+      proposedX, proposedY, proposedW, proposedH,
+      resizeHandle,
+      annotations.filter(a => a.id !== selectedId),
+      dimensions,
+    );
+
+    setActiveGuides(guides);
     setAnnotations(prev =>
-      prev.map(a => {
-        if (a.id !== selectedId) return a;
-        let { x, y, w, h } = resizeStart;
-        if (resizeHandle.includes('r')) w = unrotated.x - x;
-        if (resizeHandle.includes('l')) {
-          const right = x + w;
-          x = unrotated.x;
-          w = right - x;
-        }
-        if (resizeHandle.includes('b')) h = unrotated.y - y;
-        if (resizeHandle.includes('t')) {
-          const bottom = y + h;
-          y = unrotated.y;
-          h = bottom - y;
-        }
-        return { ...a, x, y, w, h };
-      })
+      prev.map(a =>
+        a.id === selectedId
+          ? { ...a, x: snappedX, y: snappedY, w: snappedW, h: snappedH }
+          : a,
+      ),
+    );
+
+    setResizeStart(prev =>
+      prev ? { ...prev, x: snappedX, y: snappedY, w: snappedW, h: snappedH } : prev,
     );
   };
 
@@ -220,11 +262,7 @@ export function useAnnotationEvents({
     try { containerRef.current?.setPointerCapture(e.pointerId); } catch (err) {}
     const cx = resizeStart.x + resizeStart.w / 2;
     const cy = resizeStart.y + resizeStart.h / 2;
-    if (resizeHandle === 'rot') {
-      handleRotateMove(mouseY, mouseX, cx, cy);
-    } else {
-      handleResizeMove(mouseX, mouseY, cx, cy);
-    }
+    handleResizeMove(mouseX, mouseY, cx, cy);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -329,6 +367,7 @@ export function useAnnotationEvents({
   };
 
   const handlePointerUp = async (e: React.PointerEvent<HTMLDivElement>) => {
+    setActiveGuides([]);
     if (drawingAnnotation) {
       try { containerRef.current?.releasePointerCapture(e.pointerId); } catch (err) {}
       if (activeTool === 'pen') {
@@ -459,6 +498,7 @@ export function useAnnotationEvents({
     setEditingTextId,
     editingTextValue,
     setEditingTextValue,
+    activeGuides,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,

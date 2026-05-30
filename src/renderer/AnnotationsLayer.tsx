@@ -5,6 +5,7 @@ import { useAnnotationEvents } from './hooks/useAnnotationEvents';
 import AnnotationShape from './components/annotations/AnnotationShape';
 import SelectionBox from './components/annotations/SelectionBox';
 import TextEditor from './components/annotations/TextEditor';
+import SnapGuides from './components/annotations/SnapGuides';
 import { transformCoordinates, getDeleteButtonPosition } from './utils/layoutUtils';
 
 interface AnnotationsLayerProps {
@@ -34,6 +35,7 @@ export default function AnnotationsLayer({
     dimensions,
     drawingAnnotation,
     selectedId,
+    activeGuides,
     editingTextId,
     setEditingTextId,
     editingTextValue,
@@ -166,6 +168,12 @@ export default function AnnotationsLayer({
             </g>
           );
         })}
+
+        <SnapGuides
+          guides={activeGuides}
+          containerWidth={dimensions.width}
+          containerHeight={dimensions.height}
+        />
       </svg>
 
       {selectedId && activeTool === 'pointer' && (() => {
