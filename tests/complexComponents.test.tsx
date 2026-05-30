@@ -377,6 +377,28 @@ describe('SettingsModal', () => {
     expect(mockContext.setWatermarkText).toHaveBeenCalledWith('New Watermark');
   });
 
+  it('updates default watermark position', () => {
+    mockContext.settingsVisible = true;
+    
+    render(<SettingsModal />);
+    
+    const select = screen.getByDisplayValue('Bottom Center');
+    fireEvent.change(select, { target: { value: 'left' } });
+    
+    expect(mockContext.setWatermarkPosition).toHaveBeenCalledWith('left');
+  });
+
+  it('updates default watermark opacity', () => {
+    mockContext.settingsVisible = true;
+    
+    render(<SettingsModal />);
+    
+    const slider = screen.getAllByRole('slider')[3];
+    fireEvent.change(slider, { target: { value: '75' } });
+    
+    expect(mockContext.setWatermarkOpacity).toHaveBeenCalledWith(0.75);
+  });
+
   it('calls setSettingsVisible(false) on close button click', () => {
     mockContext.settingsVisible = true;
     
@@ -425,6 +447,8 @@ describe('SettingsModal', () => {
     expect(mockContext.setShadow).toHaveBeenCalledWith(30);
     expect(mockContext.setWatermarkEnabled).toHaveBeenCalledWith(false);
     expect(mockContext.setWatermarkText).toHaveBeenCalledWith('Achu');
+    expect(mockContext.setWatermarkPosition).toHaveBeenCalledWith('middle');
+    expect(mockContext.setWatermarkOpacity).toHaveBeenCalledWith(0.45);
     expect(mockContext.setExportFormat).toHaveBeenCalledWith('png');
     expect(mockContext.setJpegQuality).toHaveBeenCalledWith(90);
   });

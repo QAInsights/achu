@@ -664,4 +664,39 @@ describe('renderCanvas', () => {
     renderCanvas(canvas, img, config);
     expect(ctx.calls).toContain('fill');
   });
+
+  describe('watermark custom position and opacity', () => {
+    const positions = ['left', 'middle', 'right', 'top left', 'top middle', 'top right'];
+
+    positions.forEach((pos) => {
+      it(`renders watermark at position: ${pos}`, () => {
+        const { canvas, ctx } = makeMockCanvas();
+        const img = makeMockImage();
+        const config = {
+          ...baseConfig,
+          watermarkEnabled: true,
+          watermarkText: 'Custom Watermark Position',
+          watermarkPosition: pos,
+          watermarkOpacity: 0.75,
+        };
+        renderCanvas(canvas, img, config);
+        
+        expect(ctx.calls.some(c => c.startsWith('fillText'))).toBe(true);
+        expect(ctx._state.fillStyle).toBe('rgba(255, 255, 255, 0.75)');
+      });
+    });
+
+    it('renders watermark with custom opacity', () => {
+      const { canvas, ctx } = makeMockCanvas();
+      const img = makeMockImage();
+      const config = {
+        ...baseConfig,
+        watermarkEnabled: true,
+        watermarkText: 'Opacity Test',
+        watermarkOpacity: 0.15,
+      };
+      renderCanvas(canvas, img, config);
+      expect(ctx._state.fillStyle).toBe('rgba(255, 255, 255, 0.15)');
+    });
+  });
 });

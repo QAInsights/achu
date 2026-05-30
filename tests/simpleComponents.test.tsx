@@ -416,4 +416,24 @@ describe('ExtraSettings', () => {
     
     expect(mockContext.setWatermarkText).toHaveBeenCalledWith('My Watermark');
   });
+
+  it('changes watermark position', () => {
+    mockContext.watermarkEnabled = true;
+    render(<ExtraSettings />);
+    
+    const select = screen.getByDisplayValue('Bottom Center');
+    fireEvent.change(select, { target: { value: 'top right' } });
+    
+    expect(mockContext.setWatermarkPosition).toHaveBeenCalledWith('top right');
+  });
+
+  it('changes watermark opacity', () => {
+    mockContext.watermarkEnabled = true;
+    render(<ExtraSettings />);
+    
+    const slider = screen.getAllByRole('slider')[2];
+    fireEvent.change(slider, { target: { value: '75' } });
+    
+    expect(mockContext.setWatermarkOpacity).toHaveBeenCalledWith(0.75);
+  });
 });
