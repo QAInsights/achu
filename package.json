@@ -11,7 +11,7 @@
     "package": "npm run build && electron-builder --win portable"
   },
   "keywords": [],
-  "author": "",
+  "author": "NaveenKumar Namachivayam <catch.nkn@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "geist": "1.7.1",
