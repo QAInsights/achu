@@ -68,7 +68,7 @@ export default function TextEditor({
         style={{
           width: '100%',
           height: '100%',
-          background: 'rgba(15, 23, 42, 0.85)',
+          background: 'transparent',
           border: `2px dashed ${ann.color}`,
           borderRadius: '4px',
           color: ann.color,

@@ -157,34 +157,23 @@ export default function AnnotationShape({
   if (ann.type === 'text' && ann.text && ann.id !== editingTextId) {
     const fSize = Math.max(12, rectH * 0.7);
     return (
-      <g>
-        <rect
-          x={-rectW / 2}
-          y={-rectH / 2}
-          width={rectW}
-          height={rectH}
-          rx={rectH * 0.15}
-          ry={rectH * 0.15}
-          fill="rgba(15, 23, 42, 0.75)"
-        />
-        <text
-          x={0}
-          y={0}
-          fill={ann.color}
-          fontSize={`${fSize}px`}
-          fontWeight="bold"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          style={{
-            paintOrder: 'stroke',
-            stroke: '#0f172a',
-            strokeWidth: `${Math.max(2, fSize * 0.15)}px`,
-            strokeLinejoin: 'round',
-          }}
-        >
-          {ann.text}
-        </text>
-      </g>
+      <text
+        x={0}
+        y={0}
+        fill={ann.color}
+        fontSize={`${fSize}px`}
+        fontWeight="bold"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        style={{
+          paintOrder: 'stroke',
+          stroke: '#0f172a',
+          strokeWidth: `${Math.max(2, fSize * 0.15)}px`,
+          strokeLinejoin: 'round',
+        }}
+      >
+        {ann.text}
+      </text>
     );
   }
 

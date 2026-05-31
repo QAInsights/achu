@@ -39,6 +39,8 @@ export interface RenderConfig {
   watermarkEnabled: boolean;
   watermarkText: string;
   watermarkSize?: number;
+  watermarkPosition?: 'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right';
+  watermarkOpacity?: number;
   position: string; // "Middle center", "Top center", "Bottom center", "Middle left", "Middle right"
   annotations?: Annotation[];
   meshPoints?: Array<{ id: string; color: string; x: number; y: number; radius: number }>;
@@ -712,14 +714,6 @@ function drawAnnotationsOnCanvas(
       ctx.font = `bold ${fontSize}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-
-      ctx.save();
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-      ctx.beginPath();
-      const r = Math.abs(h) * 0.15;
-      ctx.roundRect ? ctx.roundRect(-halfW, -halfH, w, h, r) : ctx.rect(-halfW, -halfH, w, h);
-      ctx.fill();
-      ctx.restore();
 
       ctx.save();
       ctx.strokeStyle = '#0f172a';

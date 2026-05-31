@@ -247,7 +247,7 @@ describe('AnnotationShape', () => {
     
     const rect = container.querySelector('rect');
     const text = container.querySelector('text');
-    expect(rect).toBeInTheDocument();
+    expect(rect).not.toBeInTheDocument();
     expect(text).toBeInTheDocument();
     expect(text).toHaveTextContent('Hello World');
     expect(text).toHaveAttribute('fill', '#ffffff');
@@ -635,7 +635,7 @@ describe('TextEditor', () => {
     
     const textarea = screen.getByRole('textbox');
     expect(textarea).toHaveStyle({
-      background: 'rgba(15, 23, 42, 0.85)',
+      background: 'transparent',
       border: '2px dashed #ffffff',
       color: '#ffffff',
       fontWeight: 'bold',
