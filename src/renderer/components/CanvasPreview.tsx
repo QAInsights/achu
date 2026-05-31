@@ -44,6 +44,7 @@ export default function CanvasPreview() {
     annotations,
     setAnnotations,
     annotationColor,
+    setAnnotationColor,
     annotationStrokeWidth,
     imageSrc,
     setImageSrc,
@@ -293,8 +294,13 @@ export default function CanvasPreview() {
                     activeTool={activeTool}
                     setActiveTool={setActiveTool}
                     color={annotationColor}
+                    setAnnotationColor={setAnnotationColor}
                     strokeWidth={annotationStrokeWidth}
-                    onSaveHistory={() => pushHistory(getCurrentConfig())}
+                    onSaveHistory={(newAnns) => {
+                      const cfg = getCurrentConfig();
+                      if (newAnns) cfg.annotations = newAnns;
+                      pushHistory(cfg);
+                    }}
                     customPrompt={customPrompt}
                   />
                 </div>
@@ -308,8 +314,13 @@ export default function CanvasPreview() {
                   activeTool={activeTool}
                   setActiveTool={setActiveTool}
                   color={annotationColor}
+                  setAnnotationColor={setAnnotationColor}
                   strokeWidth={annotationStrokeWidth}
-                  onSaveHistory={() => pushHistory(getCurrentConfig())}
+                  onSaveHistory={(newAnns) => {
+                    const cfg = getCurrentConfig();
+                    if (newAnns) cfg.annotations = newAnns;
+                    pushHistory(cfg);
+                  }}
                   customPrompt={customPrompt}
                 />
               </div>

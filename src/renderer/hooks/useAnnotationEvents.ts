@@ -7,11 +7,17 @@ interface UseAnnotationEventsProps {
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
   activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji';
   color: string;
+  setAnnotationColor?: (color: string) => void;
   strokeWidth: number;
   arrowStyle?: 'classic' | 'dashed' | 'tapered' | 'curved';
-  onSaveHistory: () => void;
+  onSaveHistory: (newAnns?: Annotation[]) => void;
   customPrompt: (message: string, defaultValue?: string) => Promise<string | null>;
   containerRef: RefObject<HTMLDivElement | null>;
+}
+
+interface Point {
+  x: number;
+  y: number;
 }
 
 function rotatePoint(x: number, y: number, cx: number, cy: number, angleDeg: number) {
@@ -31,6 +37,7 @@ export function useAnnotationEvents({
   setAnnotations,
   activeTool,
   color,
+  setAnnotationColor,
   strokeWidth,
   arrowStyle,
   onSaveHistory,
@@ -87,14 +94,15 @@ export function useAnnotationEvents({
         return;
       }
       if (selectedId && (e.key === 'Delete' || e.key === 'Backspace')) {
-        setAnnotations(prev => prev.filter(ann => ann.id !== selectedId));
+        const updated = annotations.filter(ann => ann.id !== selectedId);
+        setAnnotations(updated);
         setSelectedId(null);
-        onSaveHistory();
+        onSaveHistory(updated);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, setAnnotations, onSaveHistory]);
+  }, [selectedId, annotations, setAnnotations, onSaveHistory]);
 
   useEffect(() => {
     if (selectedId && arrowStyle) {
@@ -108,6 +116,30 @@ export function useAnnotationEvents({
       );
     }
   }, [arrowStyle, selectedId, setAnnotations]);
+
+  // Synchronize selected annotation's color with active color picker
+  useEffect(() => {
+    if (!selectedId) return;
+    const selectedAnn = annotations.find(a => a.id === selectedId);
+    if (!selectedAnn) return;
+
+    if (color && selectedAnn.color !== color) {
+      const updated = annotations.map(a =>
+        a.id === selectedId ? { ...a, color } : a
+      );
+      setAnnotations(updated);
+      onSaveHistory(updated);
+    }
+  }, [color, selectedId]);
+
+  // Update active color picker state to match selected annotation's color
+  useEffect(() => {
+    if (!selectedId || !setAnnotationColor) return;
+    const selectedAnn = annotations.find(a => a.id === selectedId);
+    if (selectedAnn && selectedAnn.color !== color) {
+      setAnnotationColor(selectedAnn.color);
+    }
+  }, [selectedId, setAnnotationColor]);
 
   const handleFreehandDraw = (mouseX: number, mouseY: number, startX: number, startY: number) => {
     const newPoints = [...penPoints, { x: mouseX, y: mouseY }];
@@ -301,15 +333,17 @@ export function useAnnotationEvents({
       x: (p.x - minX) / w,
       y: (p.y - minY) / h,
     }));
-    setAnnotations(prev => [...prev, {
+    const newAnn = {
       ...drawingAnn,
       x: minX,
       y: minY,
       w,
       h,
       points: finalPoints,
-    }]);
-    onSaveHistory();
+    };
+    const updated = [...annotations, newAnn];
+    setAnnotations(updated);
+    onSaveHistory(updated);
   };
 
   const saveTextDrawing = (drawingAnn: Annotation) => {
@@ -335,15 +369,17 @@ export function useAnnotationEvents({
     if (emojiVal && emojiVal.trim()) {
       const w = 0.06;
       const h = 0.06;
-      setAnnotations(prev => [...prev, {
+      const newAnn = {
         ...drawingAnn,
         text: emojiVal.trim(),
         x: drawingAnn.x - w / 2,
         y: drawingAnn.y - h / 2,
         w,
         h,
-      }]);
-      onSaveHistory();
+      };
+      const updated = [...annotations, newAnn];
+      setAnnotations(updated);
+      onSaveHistory(updated);
     }
   };
 
@@ -361,8 +397,9 @@ export function useAnnotationEvents({
           h: Math.abs(drawingAnn.h),
         };
       }
-      setAnnotations(prev => [...prev, finalAnn]);
-      onSaveHistory();
+      const updated = [...annotations, finalAnn];
+      setAnnotations(updated);
+      onSaveHistory(updated);
     }
   };
 
@@ -385,13 +422,13 @@ export function useAnnotationEvents({
     if (dragStart) {
       try { containerRef.current?.releasePointerCapture(e.pointerId); } catch (err) {}
       setDragStart(null);
-      onSaveHistory();
+      onSaveHistory(annotations);
     }
     if (resizeStart) {
       try { containerRef.current?.releasePointerCapture(e.pointerId); } catch (err) {}
       setResizeStart(null);
       setResizeHandle(null);
-      onSaveHistory();
+      onSaveHistory(annotations);
     }
   };
 
@@ -409,10 +446,9 @@ export function useAnnotationEvents({
       (async () => {
         const val = await customPrompt('Edit emoji:', ann.text);
         if (val !== null) {
-          setAnnotations(prev =>
-            prev.map(a => (a.id === ann.id ? { ...a, text: val.trim() } : a))
-          );
-          onSaveHistory();
+          const updated = annotations.map(a => (a.id === ann.id ? { ...a, text: val.trim() } : a));
+          setAnnotations(updated);
+          onSaveHistory(updated);
         }
       })();
     }
@@ -472,19 +508,19 @@ export function useAnnotationEvents({
     } else if (ann.type === 'emoji') {
       const val = await customPrompt('Edit emoji:', ann.text);
       if (val !== null) {
-        setAnnotations(prev =>
-          prev.map(a => (a.id === ann.id ? { ...a, text: val.trim() } : a))
-        );
-        onSaveHistory();
+        const updated = annotations.map(a => (a.id === ann.id ? { ...a, text: val.trim() } : a));
+        setAnnotations(updated);
+        onSaveHistory(updated);
       }
     }
   };
 
   const deleteAnnotation = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    setAnnotations(prev => prev.filter(ann => ann.id !== id));
+    const updated = annotations.filter(ann => ann.id !== id);
+    setAnnotations(updated);
     if (selectedId === id) setSelectedId(null);
-    onSaveHistory();
+    onSaveHistory(updated);
   };
 
   return {

@@ -404,4 +404,84 @@ describe('useAnnotationEvents', () => {
     expect(result.current.editingTextId).toBe('ann-1');
     expect(result.current.editingTextValue).toBe('Hello');
   });
+
+  it('synchronizes selected annotation color with active color picker', () => {
+    const annotations: Annotation[] = [{
+      id: 'ann-1', type: 'rect', x: 0.2, y: 0.2, w: 0.3, h: 0.2,
+      color: '#ff0000', strokeWidth: 4,
+    }];
+
+    let currentAnnotations = [...annotations];
+    const wrappedSetAnnotations = vi.fn((updater: any) => {
+      if (typeof updater === 'function') {
+        currentAnnotations = updater(currentAnnotations);
+        return currentAnnotations;
+      }
+      currentAnnotations = updater;
+      return updater;
+    });
+
+    const setAnnotationColor = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ color }) =>
+        useAnnotationEvents({
+          annotations: currentAnnotations,
+          setAnnotations: wrappedSetAnnotations,
+          activeTool: 'pointer',
+          color,
+          setAnnotationColor,
+          strokeWidth: 4,
+          arrowStyle: 'classic',
+          onSaveHistory,
+          customPrompt,
+          containerRef,
+        }),
+      {
+        initialProps: { color: '#ff0000' },
+      }
+    );
+
+    // Select the annotation
+    act(() => {
+      result.current.setSelectedId('ann-1');
+    });
+
+    // Change color to green
+    rerender({ color: '#00ff00' });
+
+    expect(wrappedSetAnnotations).toHaveBeenCalled();
+    expect(currentAnnotations[0].color).toBe('#00ff00');
+    expect(onSaveHistory).toHaveBeenCalled();
+  });
+
+  it('updates color picker to match selected annotation color', () => {
+    const annotations: Annotation[] = [{
+      id: 'ann-1', type: 'rect', x: 0.2, y: 0.2, w: 0.3, h: 0.2,
+      color: '#0000ff', strokeWidth: 4,
+    }];
+
+    const setAnnotationColor = vi.fn();
+
+    const { result } = renderHook(() =>
+      useAnnotationEvents({
+        annotations,
+        setAnnotations,
+        activeTool: 'pointer',
+        color: '#ffffff',
+        setAnnotationColor,
+        strokeWidth: 4,
+        arrowStyle: 'classic',
+        onSaveHistory,
+        customPrompt,
+        containerRef,
+      })
+    );
+
+    act(() => {
+      result.current.setSelectedId('ann-1');
+    });
+
+    expect(setAnnotationColor).toHaveBeenCalledWith('#0000ff');
+  });
 });

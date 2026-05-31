@@ -14,8 +14,9 @@ interface AnnotationsLayerProps {
   activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji';
   setActiveTool: (tool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji') => void;
   color: string;
+  setAnnotationColor: (color: string) => void;
   strokeWidth: number;
-  onSaveHistory: () => void;
+  onSaveHistory: (newAnns?: Annotation[]) => void;
   customPrompt: (message: string, defaultValue?: string) => Promise<string | null>;
 }
 
@@ -24,6 +25,7 @@ export default function AnnotationsLayer({
   setAnnotations,
   activeTool,
   color,
+  setAnnotationColor,
   strokeWidth,
   onSaveHistory,
   customPrompt,
@@ -52,6 +54,7 @@ export default function AnnotationsLayer({
     setAnnotations,
     activeTool,
     color,
+    setAnnotationColor,
     strokeWidth,
     arrowStyle,
     onSaveHistory,
@@ -220,35 +223,37 @@ export default function AnnotationsLayer({
 
         const handleBlur = () => {
           const trimmed = editingTextValue.trim();
+          let updated = annotations;
           if (!trimmed) {
-            setAnnotations(prev => prev.filter(a => a.id !== ann.id));
+            updated = annotations.filter(a => a.id !== ann.id);
           } else {
-            setAnnotations(prev =>
-              prev.map(a => (a.id === ann.id ? { ...a, text: trimmed } : a))
-            );
+            updated = annotations.map(a => (a.id === ann.id ? { ...a, text: trimmed } : a));
           }
+          setAnnotations(updated);
           setEditingTextId(null);
           setEditingTextValue('');
-          onSaveHistory();
+          onSaveHistory(updated);
         };
 
         const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             const trimmed = editingTextValue.trim();
+            let updated = annotations;
             if (!trimmed) {
-              setAnnotations(prev => prev.filter(a => a.id !== ann.id));
+              updated = annotations.filter(a => a.id !== ann.id);
             } else {
-              setAnnotations(prev =>
-                prev.map(a => (a.id === ann.id ? { ...a, text: trimmed } : a))
-              );
+              updated = annotations.map(a => (a.id === ann.id ? { ...a, text: trimmed } : a));
             }
+            setAnnotations(updated);
             setEditingTextId(null);
             setEditingTextValue('');
-            onSaveHistory();
+            onSaveHistory(updated);
           } else if (e.key === 'Escape') {
             if (!ann.text) {
-              setAnnotations(prev => prev.filter(a => a.id !== ann.id));
+              const updated = annotations.filter(a => a.id !== ann.id);
+              setAnnotations(updated);
+              onSaveHistory(updated);
             }
             setEditingTextId(null);
             setEditingTextValue('');
