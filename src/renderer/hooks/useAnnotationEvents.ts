@@ -254,8 +254,10 @@ export function useAnnotationEvents({
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!containerRef.current || editingTextId) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / dimensions.width;
-    const mouseY = (e.clientY - rect.top) / dimensions.height;
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const mouseX = (e.clientX - rect.left) / w;
+    const mouseY = (e.clientY - rect.top) / h;
     if (activeTool === 'pointer') {
       if (e.target === e.currentTarget) setSelectedId(null);
       return;
@@ -300,8 +302,10 @@ export function useAnnotationEvents({
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / dimensions.width;
-    const mouseY = (e.clientY - rect.top) / dimensions.height;
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const mouseX = (e.clientX - rect.left) / w;
+    const mouseY = (e.clientY - rect.top) / h;
     if (drawingAnnotation) {
       if (activeTool === 'pen') {
         handleFreehandDraw(mouseX, mouseY, drawingAnnotation.x, drawingAnnotation.y);
@@ -466,8 +470,10 @@ export function useAnnotationEvents({
     }
     lastClickTimeRef.current = now;
     const rect = containerRef.current.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / dimensions.width;
-    const mouseY = (e.clientY - rect.top) / dimensions.height;
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const mouseX = (e.clientX - rect.left) / w;
+    const mouseY = (e.clientY - rect.top) / h;
     setDragStart({
       mouseX,
       mouseY,
@@ -484,8 +490,10 @@ export function useAnnotationEvents({
     setSelectedId(ann.id);
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / dimensions.width;
-    const mouseY = (e.clientY - rect.top) / dimensions.height;
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const mouseX = (e.clientX - rect.left) / w;
+    const mouseY = (e.clientY - rect.top) / h;
     setResizeHandle(handle);
     setResizeStart({
       mouseX,

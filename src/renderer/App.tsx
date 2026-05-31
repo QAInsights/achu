@@ -9,7 +9,7 @@ import HelpModal from './components/HelpModal';
 import logoUrl from '../../assets/logo.svg';
 
 function AppContent() {
-  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible } = useAppContext();
+  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput } = useAppContext();
   const isFrameless = window.snapFrameAPI && (window.snapFrameAPI.platform === 'win32' || window.snapFrameAPI.platform === 'darwin');
   const platformClass = window.snapFrameAPI ? `platform-${window.snapFrameAPI.platform}` : '';
   const collapsedClass = !sidebarVisible ? 'sidebar-collapsed' : '';
@@ -33,6 +33,13 @@ function AppContent() {
       <PromptModal />
       <SettingsModal />
       <HelpModal />
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        accept="image/*"
+        onChange={handleHTMLFileInput}
+      />
     </div>
   );
 }
