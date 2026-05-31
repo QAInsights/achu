@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
-import { Plus, Trash2, Clipboard, Brush } from 'lucide-react';
+import { Plus, Trash2, Clipboard, Brush, Bookmark } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import logoUrl from '../../../assets/logo.svg';
 import LayoutSettings from './LayoutSettings';
 import BackgroundSettings from './BackgroundSettings';
 import ExtraSettings from './ExtraSettings';
+import PrivacyGuardSettings from './PrivacyGuardSettings';
 import Tooltip from './Tooltip';
 
 const MIN_WIDTH = 425;
@@ -110,7 +111,8 @@ export default function Sidebar() {
 
         {/* User Presets */}
         <div className="control-group">
-          <div className="presets-header">
+          <div className="presets-header" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '6px', marginBottom: 'var(--space-2)' }}>
+            <Bookmark className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
             <span className="control-label">User Presets</span>
           </div>
 
@@ -146,6 +148,7 @@ export default function Sidebar() {
         </div>
 
         {/* Modular Sidebar Control Groups */}
+        <PrivacyGuardSettings />
         <LayoutSettings />
         <BackgroundSettings />
         <ExtraSettings />

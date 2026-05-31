@@ -59,7 +59,12 @@ export default function CanvasPreview() {
     handlePointerMove,
     handlePointerUp,
     selectedPreset,
-    showSafeZone
+    showSafeZone,
+    redactions = [],
+    toggleRedaction = () => {},
+    hoveredRedactionId = null,
+    setHoveredRedactionId = () => {},
+    redactionStyle = 'solid'
   } = useAppContext();
 
   const handleZoomIn = () => setZoomLevel(zoomIn(zoomLevel));
@@ -309,6 +314,86 @@ export default function CanvasPreview() {
                       display: 'block',
                     }}
                   />
+                  {/* SVG Blur Overlay for Privacy Guard when style is blur */}
+                  {redactions && redactionStyle === 'blur' && redactions.some(r => r.status === 'redacted') && (
+                    <svg
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        width: '100%',
+                        height: '100%',
+                        pointerEvents: 'none',
+                        zIndex: 15,
+                      }}
+                      viewBox="0 0 1000 1000"
+                      preserveAspectRatio="none"
+                    >
+                      <defs>
+                        <filter id="privacy-guard-blur">
+                          <feGaussianBlur stdDeviation="15" />
+                        </filter>
+                        <clipPath id="privacy-guard-clip">
+                          {redactions
+                            .filter((item) => item.status === 'redacted')
+                            .map((item) => (
+                              <rect
+                                key={item.id}
+                                x={item.x * 1000}
+                                y={item.y * 1000}
+                                width={item.w * 1000}
+                                height={item.h * 1000}
+                              />
+                            ))}
+                        </clipPath>
+                      </defs>
+                      <image
+                        href={imageSrc || ''}
+                        width="1000"
+                        height="1000"
+                        preserveAspectRatio="none"
+                        clipPath="url(#privacy-guard-clip)"
+                        filter="url(#privacy-guard-blur)"
+                      />
+                    </svg>
+                  )}
+                  {redactions && redactions.map((item) => {
+                    const isHovered = item.id === hoveredRedactionId;
+                    const isRedacted = item.status === 'redacted';
+                    
+                    return (
+                      <div
+                        key={item.id}
+                        onMouseEnter={() => setHoveredRedactionId(item.id)}
+                        onMouseLeave={() => setHoveredRedactionId(null)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleRedaction(item.id);
+                        }}
+                        style={{
+                          position: 'absolute',
+                          left: `${item.x * 100}%`,
+                          top: `${item.y * 100}%`,
+                          width: `${item.w * 100}%`,
+                          height: `${item.h * 100}%`,
+                          backdropFilter: 'none',
+                          backgroundColor: isRedacted 
+                            ? (redactionStyle === 'solid' ? '#0f172a' : 'rgba(15, 23, 42, 0.35)') 
+                            : 'rgba(16, 185, 129, 0.1)',
+                          border: isRedacted 
+                            ? (isHovered ? '2px solid var(--accent)' : '1px dashed oklch(0.55 0.18 25)') 
+                            : (isHovered ? '2px solid var(--accent)' : '1px dashed rgba(16, 185, 129, 0.6)'),
+                          boxShadow: isHovered ? '0 0 12px var(--accent)' : 'none',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          zIndex: isHovered ? 25 : 20,
+                          pointerEvents: activeTool === 'pointer' ? 'auto' : 'none',
+                          transition: 'backdrop-filter 0.2s, background-color 0.2s, border 0.15s, box-shadow 0.15s',
+                        }}
+                        title={`${item.type}: ${item.text}\nClick to ${isRedacted ? 'reveal' : 'redact'}`}
+                      />
+                    );
+                  })}
                   <AnnotationsLayer
                     annotations={annotations}
                     setAnnotations={setAnnotations}

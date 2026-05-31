@@ -283,6 +283,18 @@ html, body {
 }
 
 .inspector-section-header:hover { color: var(--text-primary); }
+.inspector-section-header:hover .inspector-section-title,
+.inspector-section-header:hover .inspector-section-chevron,
+.inspector-section-header:hover .inspector-section-icon {
+  color: var(--text-primary);
+}
+
+.inspector-section-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-tertiary);
+  transition: color var(--dur-fast) var(--ease-out-quint);
+}
 
 .inspector-section-title {
   font-size: var(--fs-section);
@@ -290,10 +302,11 @@ html, body {
   color: var(--text-tertiary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  transition: color var(--dur-fast) var(--ease-out-quint);
 }
 
 .inspector-section-chevron {
-  transition: transform var(--dur) var(--ease-out-quint);
+  transition: transform var(--dur) var(--ease-out-quint), color var(--dur-fast) var(--ease-out-quint);
   color: var(--text-tertiary);
 }
 

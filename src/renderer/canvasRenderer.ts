@@ -13,7 +13,19 @@ export interface Annotation {
   arrowStyle?: 'classic' | 'dashed' | 'tapered' | 'curved';
 }
 
+export interface RedactionItem {
+  id: string;
+  text: string;
+  type: 'email' | 'api-key' | 'card' | 'phone' | 'ip' | 'address' | 'password';
+  x: number; // 0 to 1 relative to screenshot width
+  y: number; // 0 to 1 relative to screenshot height
+  w: number; // width fraction
+  h: number; // height fraction
+  status: 'redacted' | 'visible';
+}
+
 import { drawArrowOnCanvas } from './arrowUtils';
+
 
 
 export interface RenderConfig {
@@ -51,6 +63,8 @@ export interface RenderConfig {
   noImage?: boolean;
   selectedPreset?: string;
   showSafeZone?: boolean;
+  redactions?: RedactionItem[];
+  redactionStyle?: 'blur' | 'solid';
 }
 
 interface ColorStop {
@@ -651,6 +665,39 @@ export function renderCanvas(
       contentW,
       imgH * scale
     );
+
+    // Apply active redactions destructively
+    if (config.redactions) {
+      config.redactions.forEach((item) => {
+        if (item.status === 'redacted') {
+          const rx = contentX + item.x * contentW;
+          const ry = contentY + scaledChromeHeight + item.y * imgH * scale;
+          const rw = item.w * contentW;
+          const rh = item.h * imgH * scale;
+
+          if (config.redactionStyle === 'blur') {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(rx, ry, rw, rh);
+            ctx.clip();
+
+            ctx.filter = 'blur(20px)'; // strong secure blur
+            ctx.drawImage(
+              imageEl,
+              contentX,
+              contentY + scaledChromeHeight,
+              contentW,
+              imgH * scale
+            );
+            ctx.restore();
+          } else {
+            // Opaque solid block redaction
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(rx, ry, rw, rh);
+          }
+        }
+      });
+    }
   }
 
 function drawAnnotationsOnCanvas(

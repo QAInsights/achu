@@ -1,10 +1,12 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { RenderConfig, Annotation, drawMeshGradient } from './canvasRenderer';
+import { RenderConfig, Annotation, drawMeshGradient, RedactionItem } from './canvasRenderer';
 import { useHistory } from './hooks/useHistory';
 import { useExport } from './hooks/useExport';
 import { usePresets } from './hooks/usePresets';
 import { getZoomStyle as getZoomStyleUtil } from './utils/layoutUtils';
 import { getUserDefault } from './utils/storageUtils';
+import { createWorker } from 'tesseract.js';
+import { processOcrResults, downsampleImageForOcr } from './utils/privacyGuardUtils';
 
 // TypeScript declarations for secure Electron IPC bridge
 declare global {
@@ -55,6 +57,11 @@ interface AppContextType {
   annotations: Annotation[]; setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
   annotationColor: string; setAnnotationColor: React.Dispatch<React.SetStateAction<string>>;
   annotationStrokeWidth: number; setAnnotationStrokeWidth: React.Dispatch<React.SetStateAction<number>>;
+  redactions: RedactionItem[]; setRedactions: React.Dispatch<React.SetStateAction<RedactionItem[]>>;
+  isScanningSecrets: boolean; setIsScanningSecrets: React.Dispatch<React.SetStateAction<boolean>>;
+  scanProgress: number; setScanProgress: React.Dispatch<React.SetStateAction<number>>;
+  hoveredRedactionId: string | null; setHoveredRedactionId: React.Dispatch<React.SetStateAction<string | null>>;
+  redactionStyle: 'blur' | 'solid'; setRedactionStyle: React.Dispatch<React.SetStateAction<'blur' | 'solid'>>;
   promptConfig: { message: string; defaultValue: string; resolve: (val: string | null) => void } | null; setPromptConfig: React.Dispatch<React.SetStateAction<{ message: string; defaultValue: string; resolve: (val: string | null) => void } | null>>;
   sidebarVisible: boolean; setSidebarVisible: React.Dispatch<React.SetStateAction<boolean>>;
   settingsVisible: boolean; setSettingsVisible: React.Dispatch<React.SetStateAction<boolean>>;
@@ -106,6 +113,10 @@ interface AppContextType {
   handlePointerDown: (e: React.PointerEvent, idx: number) => void;
   handlePointerMove: (e: React.PointerEvent) => void;
   handlePointerUp: (e: React.PointerEvent) => void;
+  scanForSecrets: () => Promise<void>;
+  toggleRedaction: (id: string) => void;
+  redactAll: () => void;
+  revealAll: () => void;
   resetStyles: () => void;
 }
 
@@ -161,6 +172,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [annotationColor, setAnnotationColor] = useState<string>('#f43f5e');
   const [annotationStrokeWidth, setAnnotationStrokeWidth] = useState<number>(4);
+  const [redactions, setRedactions] = useState<RedactionItem[]>([]);
+  const [isScanningSecrets, setIsScanningSecrets] = useState<boolean>(false);
+  const [scanProgress, setScanProgress] = useState<number>(0);
+  const [hoveredRedactionId, setHoveredRedactionId] = useState<string | null>(null);
+  const [redactionStyle, setRedactionStyle] = useState<'blur' | 'solid'>(() => getUserDefault('redactionStyle', 'solid'));
 
   const [promptConfig, setPromptConfig] = useState<{ message: string; defaultValue: string; resolve: (val: string | null) => void } | null>(null);
 
@@ -196,6 +212,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     noImage: noImageMode,
     selectedPreset,
     showSafeZone,
+    redactions,
+    redactionStyle,
   });
 
   const applyConfig = (config: RenderConfig) => {
@@ -228,6 +246,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setWatermarkOpacity(config.watermarkOpacity ?? 0.45);
     setPosition(config.position ?? 'Middle center');
     setAnnotations(config.annotations ?? []);
+    setRedactions(config.redactions ?? []);
+    setRedactionStyle(config.redactionStyle ?? 'solid');
     setMeshPoints(config.meshPoints ?? [
       { id: '1', color: '#ff5f6d', x: 0.2, y: 0.2, radius: 180 },
       { id: '2', color: '#ffc371', x: 0.8, y: 0.2, radius: 220 },
@@ -258,7 +278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   } = usePresets(
     setImageSrc, setNoImageMode, setAnnotations,
     backgroundType, setBackgroundType, backgroundValue, setBackgroundValue,
-    getCurrentConfig, pushHistory
+    getCurrentConfig, pushHistory, setRedactions
   );
 
   // 3. Export Hook
@@ -307,6 +327,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return new Promise((resolve) => { setPromptConfig({ message, defaultValue, resolve }); });
   };
 
+  const scanForSecrets = async () => {
+    if (!imageSrc) return;
+    setIsScanningSecrets(true);
+    setScanProgress(0);
+
+    try {
+      const { dataUrl, width, height } = await downsampleImageForOcr(imageSrc, 1600);
+
+      const worker = await createWorker('eng', 1, {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            setScanProgress(Math.round(m.progress * 100));
+          }
+        },
+      });
+
+      const { data } = await worker.recognize(dataUrl, {}, { blocks: true });
+      const blocks = data.blocks || [];
+      const lines = blocks
+        .flatMap((block: any) => block.paragraphs || [])
+        .flatMap((para: any) => para.lines || []);
+      const detected = processOcrResults(lines as any, width, height);
+
+      setRedactions(detected);
+      const newConfig = {
+        ...getCurrentConfig(),
+        redactions: detected,
+      };
+      pushHistory(newConfig);
+
+      await worker.terminate();
+    } catch (e) {
+      console.error('OCR Scanning failed:', e);
+      alert('Failed to scan screenshot: ' + (e as Error).message);
+    } finally {
+      setIsScanningSecrets(false);
+    }
+  };
+
+  const toggleRedaction = (id: string) => {
+    const updated = redactions.map((r) =>
+      r.id === id ? { ...r, status: r.status === 'redacted' ? 'visible' : 'redacted' } : r
+    );
+    setRedactions(updated);
+    pushHistory({ ...getCurrentConfig(), redactions: updated });
+  };
+
+  const redactAll = () => {
+    const updated = redactions.map((r) => ({ ...r, status: 'redacted' }));
+    setRedactions(updated);
+    pushHistory({ ...getCurrentConfig(), redactions: updated });
+  };
+
+  const revealAll = () => {
+    const updated = redactions.map((r) => ({ ...r, status: 'visible' }));
+    setRedactions(updated);
+    pushHistory({ ...getCurrentConfig(), redactions: updated });
+  };
+
   const resetStyles = () => {
     setPadding(38);
     setRounded(10);
@@ -333,6 +412,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setWatermarkPosition('middle');
     setWatermarkOpacity(0.45);
     setPosition('Middle center');
+    setRedactions([]);
+    setRedactionStyle('solid');
     setMeshPoints([
       { id: '1', color: '#ff5f6d', x: 0.2, y: 0.2, radius: 180 },
       { id: '2', color: '#ffc371', x: 0.8, y: 0.2, radius: 220 },
@@ -381,6 +462,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       meshGrain: 15,
       meshOpacity: 100,
       meshSpread: 100,
+      redactions: [],
+      redactionStyle: 'solid',
     });
   };
 
@@ -420,7 +503,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saveSettingsToMain = async () => {
       if (window.snapFrameAPI) {
         const config = getCurrentConfig();
-        const settings = { windowBounds: {}, lastConfig: { ...config, annotations: [] }, presets: customPresets };
+        const settings = { windowBounds: {}, lastConfig: { ...config, annotations: [], redactions: [] }, presets: customPresets };
         await window.snapFrameAPI.saveSettings(settings);
       }
     };
@@ -431,7 +514,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     borderColor, scale, backgroundType, backgroundValue, aspectRatio, canvasWidth,
     canvasHeight, paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled,
     watermarkText, watermarkSize, watermarkPosition, watermarkOpacity, position, customPresets, meshPoints, meshBlur, meshGrain, meshOpacity,
-    meshSpread, noImageMode
+    meshSpread, noImageMode, redactions, redactionStyle
   ]);
 
   // Global hotkeys
@@ -562,6 +645,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showHollywoodMeshPalettes, setShowHollywoodMeshPalettes,
       appTheme, setAppTheme,
       fileInputRef, colorInputRef,
+      redactions, setRedactions,
+      isScanningSecrets, setIsScanningSecrets,
+      scanProgress, setScanProgress,
+      hoveredRedactionId, setHoveredRedactionId,
+      redactionStyle, setRedactionStyle,
+      scanForSecrets, toggleRedaction, redactAll, revealAll,
       getCurrentConfig, pushHistory, applyConfig, handleUndo, handleRedo, selectFile, handleHTMLFileInput,
       pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport,
       selectBackgroundPreset, handleSliderRelease, getZoomStyle, applyMeshPalette, generateRandomPalette,

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { RenderConfig, Annotation } from '../canvasRenderer';
+import { RenderConfig, Annotation, RedactionItem } from '../canvasRenderer';
 
 export function usePresets(
   setImageSrc: React.Dispatch<React.SetStateAction<string | null>>,
@@ -10,7 +10,8 @@ export function usePresets(
   backgroundValue: string,
   setBackgroundValue: React.Dispatch<React.SetStateAction<string>>,
   getCurrentConfig: () => RenderConfig,
-  pushHistory: (config: any) => void
+  pushHistory: (config: any) => void,
+  setRedactions?: React.Dispatch<React.SetStateAction<RedactionItem[]>>
 ) {
   const [customPresets, setCustomPresets] = useState<any[]>([]);
   const [newPresetName, setNewPresetName] = useState<string>('');
@@ -20,9 +21,11 @@ export function usePresets(
     setImageSrc(src);
     setNoImageMode(false);
     setAnnotations([]);
+    if (setRedactions) setRedactions([]);
     pushHistory({
       ...getCurrentConfig(),
       annotations: [],
+      redactions: [],
       noImage: false,
     });
   };

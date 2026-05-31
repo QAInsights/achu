@@ -1,5 +1,6 @@
 import { useAppContext } from '../AppContext';
 import InspectorSection from './InspectorSection';
+import { Sparkles } from 'lucide-react';
 
 export default function ExtraSettings() {
   const {
@@ -17,7 +18,7 @@ export default function ExtraSettings() {
   } = useAppContext();
 
   return (
-    <InspectorSection title="Extras">
+    <InspectorSection title="Extras" icon={<Sparkles className="w-3.5 h-3.5" />}>
       {/* Browser Chrome Overlay */}
       <div className="control-group">
         <span className="control-label">Browser Mockup</span>

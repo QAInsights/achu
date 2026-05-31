@@ -1,5 +1,6 @@
 import { useAppContext } from '../AppContext';
 import InspectorSection from './InspectorSection';
+import { Layout } from 'lucide-react';
 
 export default function LayoutSettings() {
   const {
@@ -21,7 +22,7 @@ export default function LayoutSettings() {
   } = useAppContext();
 
   return (
-    <InspectorSection title="Layout">
+    <InspectorSection title="Layout" icon={<Layout className="w-3.5 h-3.5" />}>
       {/* Position Layout */}
       <div className="control-group">
         <span className="control-label">Position</span>

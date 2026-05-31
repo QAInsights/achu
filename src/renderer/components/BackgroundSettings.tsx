@@ -1,5 +1,5 @@
 import { useAppContext } from '../AppContext';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Paintbrush } from 'lucide-react';
 import InspectorSection from './InspectorSection';
 import Tooltip from './Tooltip';
 import PresetSelector from './PresetSelector';
@@ -28,7 +28,7 @@ export default function BackgroundSettings() {
   } = useAppContext();
 
   return (
-    <InspectorSection title="Background">
+    <InspectorSection title="Background" icon={<Paintbrush className="w-3.5 h-3.5" />}>
       {/* Background Mode Selector */}
       <div className="control-group">
         <span className="control-label">Background Mode</span>
