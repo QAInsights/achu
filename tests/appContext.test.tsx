@@ -291,6 +291,33 @@ describe('AppContext', () => {
       expect(mockUseExport.triggerExport).toHaveBeenCalled();
     });
 
+    it('fires clear workspace on Ctrl+N', () => {
+      let currentCtx: any;
+      function ShortcutConsumer() {
+        currentCtx = useAppContext();
+        return <div>test</div>;
+      }
+      render(
+        <AppProvider>
+          <ShortcutConsumer />
+        </AppProvider>
+      );
+
+      act(() => {
+        currentCtx.setImageSrc('data:image/png;base64,test');
+        currentCtx.setAnnotations([{ id: '1' }]);
+      });
+
+      expect(currentCtx.imageSrc).toBe('data:image/png;base64,test');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 'n', bubbles: true }));
+      });
+
+      expect(currentCtx.imageSrc).toBeNull();
+      expect(currentCtx.annotations).toEqual([]);
+    });
+
     it('does not fire shortcut when focused on input', () => {
       render(
         <AppProvider>

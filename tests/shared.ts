@@ -359,6 +359,7 @@ export function makeFullMockContext(overrides: Record<string, any> = {}) {
     setCustomPresets: noop,
     sidebarPosition: 'left' as const,
     setSidebarPosition: noop,
+    clearWorkspace: noop,
     containerRef: { current: null },
     ...overrides,
   };

@@ -50,6 +50,7 @@ beforeEach(() => {
     handleSliderRelease: vi.fn(),
     getCurrentConfig: vi.fn(() => ({})),
     pushHistory: vi.fn(),
+    clearWorkspace: vi.fn(),
   };
 });
 

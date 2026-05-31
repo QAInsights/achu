@@ -153,6 +153,7 @@ beforeEach(() => {
     handleDragOver: vi.fn(),
     handleDragLeave: vi.fn(),
     handleDrop: vi.fn(),
+    clearWorkspace: vi.fn(),
   };
 });
 
@@ -743,19 +744,16 @@ describe('WorkspaceToolbar', () => {
   it('renders clear workspace button', () => {
     render(<WorkspaceToolbar />);
     
-    const clearButton = screen.getByTitle('Clear workspace');
+    const clearButton = screen.getByTitle('Clear workspace (Ctrl+N)');
     expect(clearButton).toBeInTheDocument();
   });
 
   it('clears workspace on button click', () => {
     render(<WorkspaceToolbar />);
     
-    fireEvent.click(screen.getByTitle('Clear workspace'));
+    fireEvent.click(screen.getByTitle('Clear workspace (Ctrl+N)'));
     
-    expect(mockContext.setImageSrc).toHaveBeenCalledWith(null);
-    expect(mockContext.setHistory).toHaveBeenCalledWith([]);
-    expect(mockContext.setHistoryIndex).toHaveBeenCalledWith(-1);
-    expect(mockContext.setAnnotations).toHaveBeenCalledWith([]);
+    expect(mockContext.clearWorkspace).toHaveBeenCalled();
   });
 
   it('shows exit button in no-image mode', () => {

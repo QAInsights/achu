@@ -32,16 +32,16 @@ export default function WorkspaceToolbar() {
     noImageMode, setNoImageMode,
     historyIndex, history,
     handleUndo, handleRedo,
-    setImageSrc, setHistory, setHistoryIndex,
     activeTool, setActiveTool,
     arrowStyle, setArrowStyle,
-    annotations, setAnnotations,
     annotationColor, setAnnotationColor,
     annotationStrokeWidth, setAnnotationStrokeWidth,
     pushHistory, getCurrentConfig, selectFile, colorInputRef,
     appTheme, setAppTheme,
     settingsVisible, setSettingsVisible,
-    helpVisible, setHelpVisible
+    helpVisible, setHelpVisible,
+    setImageSrc,
+    clearWorkspace
   } = useAppContext();
 
   const tools: Array<{ id: typeof activeTool; icon: React.ReactNode; title: string; tooltip: string }> = [
@@ -115,13 +115,8 @@ export default function WorkspaceToolbar() {
         <Tooltip position="right">
           <button
             className="tool-btn"
-            onClick={() => {
-              setImageSrc(null);
-              setHistory([]);
-              setHistoryIndex(-1);
-              setAnnotations([]);
-            }}
-            title="Clear workspace"
+            onClick={clearWorkspace}
+            title="Clear workspace (Ctrl+N)"
           >
             <RotateCcw className="w-4 h-4" />
           </button>

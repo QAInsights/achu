@@ -119,6 +119,7 @@ interface AppContextType {
   redactAll: () => void;
   revealAll: () => void;
   resetStyles: () => void;
+  clearWorkspace: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -470,6 +471,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const clearWorkspace = () => {
+    setImageSrc(null);
+    setHistory([]);
+    setHistoryIndex(-1);
+    setAnnotations([]);
+    setRedactions([]);
+  };
+
   const onImageLoadedRef = useRef(onImageLoaded);
   useEffect(() => { onImageLoadedRef.current = onImageLoaded; }, [onImageLoaded]);
 
@@ -565,6 +574,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); handleUndo(); }
       if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); handleRedo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') { e.preventDefault(); clearWorkspace(); }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') {
         e.preventDefault(); triggerExport();
       }
@@ -659,7 +669,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport,
       selectBackgroundPreset, handleSliderRelease, getZoomStyle, applyMeshPalette, generateRandomPalette,
       handleDragOver, handleDragLeave, handleDrop, customPrompt, handlePointerDown, handlePointerMove, handlePointerUp,
-      resetStyles
+      resetStyles,
+      clearWorkspace
     }}>
       {children}
     </AppContext.Provider>
