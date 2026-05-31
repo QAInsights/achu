@@ -45,7 +45,7 @@ interface AppContextType {
   watermarkEnabled: boolean; setWatermarkEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   watermarkText: string; setWatermarkText: React.Dispatch<React.SetStateAction<string>>;
   watermarkSize: number; setWatermarkSize: React.Dispatch<React.SetStateAction<number>>;
-  watermarkPosition: string; setWatermarkPosition: React.Dispatch<React.SetStateAction<string>>;
+  watermarkPosition: 'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right'; setWatermarkPosition: React.Dispatch<React.SetStateAction<'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right'>>;
   watermarkOpacity: number; setWatermarkOpacity: React.Dispatch<React.SetStateAction<number>>;
   position: string; setPosition: React.Dispatch<React.SetStateAction<string>>;
   activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'; setActiveTool: React.Dispatch<React.SetStateAction<'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'>>;
@@ -103,6 +103,7 @@ interface AppContextType {
   handlePointerDown: (e: React.PointerEvent, idx: number) => void;
   handlePointerMove: (e: React.PointerEvent) => void;
   handlePointerUp: (e: React.PointerEvent) => void;
+  resetStyles: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -147,7 +148,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [watermarkEnabled, setWatermarkEnabled] = useState<boolean>(() => getUserDefault('watermarkEnabled', false));
   const [watermarkText, setWatermarkText] = useState<string>(() => getUserDefault('watermarkText', 'Achu'));
   const [watermarkSize, setWatermarkSize] = useState<number>(() => getUserDefault('watermarkSize', 20));
-  const [watermarkPosition, setWatermarkPosition] = useState<string>(() => getUserDefault('watermarkPosition', 'middle'));
+  const [watermarkPosition, setWatermarkPosition] = useState<'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right'>(() => getUserDefault('watermarkPosition', 'middle') as any);
   const [watermarkOpacity, setWatermarkOpacity] = useState<number>(() => getUserDefault('watermarkOpacity', 0.45));
   const [position, setPosition] = useState<string>('Middle center');
   const [activeTool, setActiveTool] = useState<'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'>('pointer');
@@ -294,6 +295,79 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const customPrompt = (message: string, defaultValue: string = ''): Promise<string | null> => {
     return new Promise((resolve) => { setPromptConfig({ message, defaultValue, resolve }); });
+  };
+
+  const resetStyles = () => {
+    setPadding(38);
+    setRounded(10);
+    setShadow(30);
+    setShadowColor('rgba(0, 0, 0, 0.45)');
+    setShadowEnabled(true);
+    setInset(0);
+    setInsetColor('rgba(255, 255, 255, 0.25)');
+    setBorder(0);
+    setBorderColor('#ffffff');
+    setScale(100);
+    setBackgroundType('gradient');
+    setBackgroundValue('linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)');
+    setAspectRatio('Auto');
+    setPaddingMode('fit');
+    setChromeStyle('mac');
+    setChromeTheme('dark');
+    setBlurDensity(40);
+    setWatermarkEnabled(false);
+    setWatermarkText('Achu');
+    setWatermarkSize(14);
+    setWatermarkPosition('middle');
+    setWatermarkOpacity(0.45);
+    setPosition('Middle center');
+    setMeshPoints([
+      { id: '1', color: '#ff5f6d', x: 0.2, y: 0.2, radius: 180 },
+      { id: '2', color: '#ffc371', x: 0.8, y: 0.2, radius: 220 },
+      { id: '3', color: '#00c6ff', x: 0.2, y: 0.8, radius: 200 },
+      { id: '4', color: '#7209b7', x: 0.8, y: 0.8, radius: 240 },
+    ]);
+    setMeshBlur(60);
+    setMeshGrain(15);
+    setMeshOpacity(100);
+    setMeshSpread(100);
+
+    pushHistory({
+      ...getCurrentConfig(),
+      padding: 38,
+      rounded: 20,
+      shadow: 30,
+      shadowColor: 'rgba(0, 0, 0, 0.45)',
+      shadowEnabled: true,
+      inset: 0,
+      insetColor: 'rgba(255, 255, 255, 0.25)',
+      border: 0,
+      borderColor: '#ffffff',
+      scale: 100,
+      backgroundType: 'gradient',
+      backgroundValue: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+      aspectRatio: 'Auto',
+      paddingMode: 'fit',
+      chromeStyle: 'mac',
+      chromeTheme: 'dark',
+      blurDensity: 40,
+      watermarkEnabled: false,
+      watermarkText: 'Achu',
+      watermarkSize: 20,
+      watermarkPosition: 'middle',
+      watermarkOpacity: 0.45,
+      position: 'Middle center',
+      meshPoints: [
+        { id: '1', color: '#ff5f6d', x: 0.2, y: 0.2, radius: 180 },
+        { id: '2', color: '#ffc371', x: 0.8, y: 0.2, radius: 220 },
+        { id: '3', color: '#00c6ff', x: 0.2, y: 0.8, radius: 200 },
+        { id: '4', color: '#7209b7', x: 0.8, y: 0.8, radius: 240 },
+      ],
+      meshBlur: 60,
+      meshGrain: 15,
+      meshOpacity: 100,
+      meshSpread: 100,
+    });
   };
 
   const onImageLoadedRef = useRef(onImageLoaded);
@@ -475,7 +549,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       getCurrentConfig, pushHistory, applyConfig, handleUndo, handleRedo, selectFile, handleHTMLFileInput,
       pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport,
       selectBackgroundPreset, handleSliderRelease, getZoomStyle, applyMeshPalette, generateRandomPalette,
-      handleDragOver, handleDragLeave, handleDrop, customPrompt, handlePointerDown, handlePointerMove, handlePointerUp
+      handleDragOver, handleDragLeave, handleDrop, customPrompt, handlePointerDown, handlePointerMove, handlePointerUp,
+      resetStyles
     }}>
       {children}
     </AppContext.Provider>

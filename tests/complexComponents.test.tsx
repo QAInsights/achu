@@ -60,6 +60,7 @@ beforeEach(() => {
     saveCustomPreset: vi.fn(),
     deleteCustomPreset: vi.fn(),
     selectBackgroundPreset: vi.fn(),
+    resetStyles: vi.fn(),
     
     // Settings
     settingsVisible: false,
@@ -161,22 +162,49 @@ describe('Sidebar', () => {
   it('renders action buttons', () => {
     render(<Sidebar />);
     
-    expect(screen.getByText('New snap')).toBeInTheDocument();
-    expect(screen.getByText('Paste')).toBeInTheDocument();
+    expect(screen.getByTitle('New snap')).toBeInTheDocument();
+    expect(screen.getByTitle('Paste')).toBeInTheDocument();
   });
 
   it('calls selectFile on New snap click', () => {
     render(<Sidebar />);
     
-    fireEvent.click(screen.getByText('New snap'));
+    fireEvent.click(screen.getByTitle('New snap'));
     expect(mockContext.selectFile).toHaveBeenCalled();
   });
 
   it('calls pasteFromClipboard on Paste click', () => {
     render(<Sidebar />);
     
-    fireEvent.click(screen.getByText('Paste'));
+    fireEvent.click(screen.getByTitle('Paste'));
     expect(mockContext.pasteFromClipboard).toHaveBeenCalled();
+  });
+
+  it('renders Reset settings button', () => {
+    render(<Sidebar />);
+    expect(screen.getByTitle('Reset Styles')).toBeInTheDocument();
+  });
+
+  it('calls resetStyles when Reset settings click is confirmed', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => true);
+    render(<Sidebar />);
+    
+    fireEvent.click(screen.getByTitle('Reset Styles'));
+    
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(mockContext.resetStyles).toHaveBeenCalled();
+    confirmSpy.mockRestore();
+  });
+
+  it('does not call resetStyles when Reset settings click is cancelled', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => false);
+    render(<Sidebar />);
+    
+    fireEvent.click(screen.getByTitle('Reset Styles'));
+    
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(mockContext.resetStyles).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
   });
 
   it('renders preset input and save button', () => {

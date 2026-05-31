@@ -1,4 +1,4 @@
-import { Plus, Trash2, Clipboard } from 'lucide-react';
+import { Plus, Trash2, Clipboard, Brush } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import logoUrl from '../../../assets/logo.svg';
 import LayoutSettings from './LayoutSettings';
@@ -15,8 +15,16 @@ export default function Sidebar() {
     pasteFromClipboard,
     saveCustomPreset,
     deleteCustomPreset,
-    selectBackgroundPreset
+    selectBackgroundPreset,
+    resetStyles
   } = useAppContext();
+
+  const handleResetClick = () => {
+    const confirmReset = window.confirm("Are you sure you want to reset all layout, background, and style settings to their beautiful defaults?");
+    if (confirmReset) {
+      resetStyles();
+    }
+  };
 
   return (
     <div className={`sidebar ${sidebarVisible ? '' : 'collapsed'}`}>
@@ -30,12 +38,36 @@ export default function Sidebar() {
       <div className="sidebar-content">
         {/* Snap / Change Actions */}
         <div className="sidebar-actions">
-          <button className="btn btn-primary" style={{ flex: 1 }} onClick={selectFile}>
-            <Plus className="w-4 h-4" /> New snap
-          </button>
-          <button className="btn btn-secondary" style={{ flex: 1 }} onClick={pasteFromClipboard}>
-            <Clipboard className="w-4 h-4" /> Paste
-          </button>
+          <Tooltip content="New snap" position="top">
+            <button
+              className="btn btn-primary"
+              title="New snap"
+              onClick={selectFile}
+              style={{ width: '36px', height: '36px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </Tooltip>
+          <Tooltip content="Paste image" position="top">
+            <button
+              className="btn btn-secondary"
+              title="Paste"
+              onClick={pasteFromClipboard}
+              style={{ width: '36px', height: '36px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Clipboard className="w-4 h-4" />
+            </button>
+          </Tooltip>
+          <Tooltip content="Reset Styles" position="top">
+            <button
+              className="btn btn-secondary"
+              title="Reset Styles"
+              onClick={handleResetClick}
+              style={{ width: '36px', height: '36px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Brush className="w-4 h-4" />
+            </button>
+          </Tooltip>
         </div>
 
         {/* User Presets */}
