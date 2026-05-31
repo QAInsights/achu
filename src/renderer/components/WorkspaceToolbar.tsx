@@ -32,6 +32,7 @@ export default function WorkspaceToolbar() {
     setImageSrc, setHistory, setHistoryIndex,
     activeTool, setActiveTool,
     arrowStyle, setArrowStyle,
+    annotations, setAnnotations,
     annotationColor, setAnnotationColor,
     annotationStrokeWidth, setAnnotationStrokeWidth,
     pushHistory, getCurrentConfig, selectFile, colorInputRef,
@@ -114,6 +115,7 @@ export default function WorkspaceToolbar() {
               setImageSrc(null);
               setHistory([]);
               setHistoryIndex(-1);
+              setAnnotations([]);
             }}
             title="Clear workspace"
           >

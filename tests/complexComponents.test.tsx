@@ -707,6 +707,7 @@ describe('WorkspaceToolbar', () => {
     expect(mockContext.setImageSrc).toHaveBeenCalledWith(null);
     expect(mockContext.setHistory).toHaveBeenCalledWith([]);
     expect(mockContext.setHistoryIndex).toHaveBeenCalledWith(-1);
+    expect(mockContext.setAnnotations).toHaveBeenCalledWith([]);
   });
 
   it('shows exit button in no-image mode', () => {
