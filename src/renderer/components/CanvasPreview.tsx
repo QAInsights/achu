@@ -5,6 +5,7 @@ import AnnotationsLayer from '../AnnotationsLayer';
 import { zoomIn, zoomOut, getFixedSizeFromAspectRatio } from '../utils/layoutUtils';
 import { getCanvasDimensions } from '../canvasRenderer';
 import Tooltip from './Tooltip';
+import { platformPresets } from '../presetsData';
 
 export default function CanvasPreview() {
   const [imgDims, setImgDims] = useState<{ width: number; height: number } | null>(null);
@@ -56,7 +57,9 @@ export default function CanvasPreview() {
     customPrompt,
     handlePointerDown,
     handlePointerMove,
-    handlePointerUp
+    handlePointerUp,
+    selectedPreset,
+    showSafeZone
   } = useAppContext();
 
   const handleZoomIn = () => setZoomLevel(zoomIn(zoomLevel));
@@ -176,7 +179,25 @@ export default function CanvasPreview() {
               })(),
             }}
           >
-            
+            {/* Safe Zone Overlay */}
+            {showSafeZone && (() => {
+              const activePreset = platformPresets.find(p => `${p.platform} - ${p.name}` === selectedPreset);
+              if (!activePreset || !activePreset.safeZone) return null;
+              return (
+                <div 
+                  className="safe-zone-overlay"
+                  style={{
+                    width: `${(activePreset.safeZone.width / activePreset.width) * 100}%`,
+                    height: `${(activePreset.safeZone.height / activePreset.height) * 100}%`,
+                  }}
+                >
+                  <div className="safe-zone-label">
+                    Safe Area ({activePreset.safeZone.width}×{activePreset.safeZone.height})
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Embedded Blurred overlay if blur background */}
             {backgroundType === 'blur' && imageSrc && (
               <div style={{

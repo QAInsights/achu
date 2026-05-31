@@ -49,6 +49,8 @@ export interface RenderConfig {
   meshOpacity?: number;
   meshSpread?: number;
   noImage?: boolean;
+  selectedPreset?: string;
+  showSafeZone?: boolean;
 }
 
 interface ColorStop {

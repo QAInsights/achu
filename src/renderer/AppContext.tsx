@@ -30,6 +30,8 @@ interface AppContextType {
   aspectRatio: string; setAspectRatio: React.Dispatch<React.SetStateAction<string>>;
   canvasWidth: number; setCanvasWidth: React.Dispatch<React.SetStateAction<number>>;
   canvasHeight: number; setCanvasHeight: React.Dispatch<React.SetStateAction<number>>;
+  selectedPreset: string; setSelectedPreset: React.Dispatch<React.SetStateAction<string>>;
+  showSafeZone: boolean; setShowSafeZone: React.Dispatch<React.SetStateAction<boolean>>;
   paddingMode: 'fit' | 'fill'; setPaddingMode: React.Dispatch<React.SetStateAction<'fit' | 'fill'>>;
   chromeStyle: 'mac' | 'windows' | 'none'; setChromeStyle: React.Dispatch<React.SetStateAction<'mac' | 'windows' | 'none'>>;
   chromeTheme: 'dark' | 'light'; setChromeTheme: React.Dispatch<React.SetStateAction<'dark' | 'light'>>;
@@ -126,6 +128,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [aspectRatio, setAspectRatio] = useState<string>('Auto');
   const [canvasWidth, setCanvasWidth] = useState<number>(800);
   const [canvasHeight, setCanvasHeight] = useState<number>(600);
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
+  const [showSafeZone, setShowSafeZone] = useState<boolean>(true);
   const [paddingMode, setPaddingMode] = useState<'fit' | 'fill'>('fit');
   const [chromeStyle, setChromeStyle] = useState<'mac' | 'windows' | 'none'>('mac');
   const [chromeTheme, setChromeTheme] = useState<'dark' | 'light'>('dark');
@@ -190,6 +194,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     watermarkPosition, watermarkOpacity,
     position, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread,
     noImage: noImageMode,
+    selectedPreset,
+    showSafeZone,
   });
 
   const applyConfig = (config: RenderConfig) => {
@@ -209,6 +215,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAspectRatio(config.aspectRatio ?? 'Auto');
     setCanvasWidth(config.canvasWidth ?? 800);
     setCanvasHeight(config.canvasHeight ?? 600);
+    setSelectedPreset(config.selectedPreset ?? '');
+    setShowSafeZone(config.showSafeZone ?? true);
     setPaddingMode(config.paddingMode ?? 'fit');
     setChromeStyle(config.chromeStyle ?? 'mac');
     setChromeTheme(config.chromeTheme ?? 'dark');
@@ -313,6 +321,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBackgroundType('gradient');
     setBackgroundValue('linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)');
     setAspectRatio('Auto');
+    setSelectedPreset('');
+    setShowSafeZone(true);
     setPaddingMode('fit');
     setChromeStyle('mac');
     setChromeTheme('dark');
@@ -349,6 +359,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       backgroundType: 'gradient',
       backgroundValue: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
       aspectRatio: 'Auto',
+      selectedPreset: '',
+      showSafeZone: true,
       paddingMode: 'fit',
       chromeStyle: 'mac',
       chromeTheme: 'dark',
@@ -532,7 +544,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       shadowEnabled, setShadowEnabled, inset, setInset, insetColor, setInsetColor, border, setBorder,
       borderColor, setBorderColor, scale, setScale, backgroundType, setBackgroundType,
       backgroundValue, setBackgroundValue, aspectRatio, setAspectRatio, canvasWidth, setCanvasWidth,
-      canvasHeight, setCanvasHeight, paddingMode, setPaddingMode, chromeStyle, setChromeStyle,
+      canvasHeight, setCanvasHeight, selectedPreset, setSelectedPreset, showSafeZone, setShowSafeZone,
+      paddingMode, setPaddingMode, chromeStyle, setChromeStyle,
       chromeTheme, setChromeTheme, blurDensity, setBlurDensity, noImageMode, setNoImageMode,
       meshPoints, setMeshPoints, meshBlur, setMeshBlur, meshGrain, setMeshGrain, meshOpacity, setMeshOpacity,
       meshSpread, setMeshSpread, meshDataUrl, setMeshDataUrl, activePointIdx, setActivePointIdx,

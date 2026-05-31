@@ -27,22 +27,53 @@ export function useExport(
     return 90;
   });
 
+  const checkOgSizeLimit = (base64Data: string): boolean => {
+    const config = getCurrentConfig();
+    const selectedPreset = config.selectedPreset || '';
+    const isOgPreset = selectedPreset && (
+      selectedPreset.includes('OG') || 
+      selectedPreset.includes('Link') || 
+      selectedPreset.includes('Ad') || 
+      selectedPreset.includes('Facebook') || 
+      selectedPreset.includes('LinkedIn')
+    );
+    if (!isOgPreset) return true;
+
+    const sizeInBytes = base64Data.length * 0.75;
+    const sizeInMb = sizeInBytes / (1024 * 1024);
+    if (sizeInMb > 8) {
+      return confirm(
+        `Warning: The image is ${sizeInMb.toFixed(2)}MB, which exceeds the 8MB limit for social media/Open Graph previews (iMessage, WhatsApp, Facebook, etc.).\n\nIt is highly recommended to export as JPEG or reduce padding/scale to bring the file size under 300KB.\n\nDo you want to proceed anyway?`
+      );
+    }
+    return true;
+  };
+
   const copyBeautifiedImage = async () => {
     if (!noImageMode && !imageSrc) return;
     const runCopy = (img: HTMLImageElement | null) => {
       const canvas = document.createElement('canvas');
       renderCanvas(canvas, img, getCurrentConfig());
       const base64Data = canvas.toDataURL('image/png');
+      
+      if (!checkOgSizeLimit(base64Data)) return;
+
+      const sizeInKb = base64Data ? (base64Data.length * 0.75) / 1024 : 0;
+      const config = getCurrentConfig();
+      const selectedPreset = config.selectedPreset || '';
+      const isOgPreset = selectedPreset && (selectedPreset.includes('OG') || selectedPreset.includes('Link'));
+      const suffix = (isOgPreset && sizeInKb > 300) ? '\n\nTip: Keep Open Graph images under 300KB for best link preview performance.' : '';
+
       if (window.snapFrameAPI) {
         window.snapFrameAPI.copyImageToClipboard(base64Data).then((success: boolean) => {
-          if (success) alert('Beautified image copied to clipboard!');
+          if (success) alert('Beautified image copied to clipboard!' + suffix);
           else alert('Failed to copy to clipboard.');
         });
       } else {
         canvas.toBlob((blob) => {
           if (blob) {
             navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-              .then(() => alert('Copied to clipboard (Browser)!'));
+              .then(() => alert('Copied to clipboard (Browser)!' + suffix));
           }
         }, 'image/png');
       }
@@ -62,13 +93,24 @@ export function useExport(
       renderCanvas(canvas, img, getCurrentConfig());
       const mime = exportFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
       const base64Data = canvas.toDataURL(mime, jpegQuality / 100);
+      
+      if (!checkOgSizeLimit(base64Data)) return;
+
+      const sizeInKb = base64Data ? (base64Data.length * 0.75) / 1024 : 0;
+      const config = getCurrentConfig();
+      const selectedPreset = config.selectedPreset || '';
+      const isOgPreset = selectedPreset && (selectedPreset.includes('OG') || selectedPreset.includes('Link'));
+      const suffix = (isOgPreset && sizeInKb > 300) ? 'Tip: Keep Open Graph images under 300KB for best link preview performance.' : '';
+
       if (window.snapFrameAPI) {
         window.snapFrameAPI.saveFile(base64Data, exportFormat, jpegQuality);
+        if (suffix) alert(suffix);
       } else {
         const link = document.createElement('a');
         link.download = `snapframe-export.${exportFormat === 'jpeg' ? 'jpg' : 'png'}`;
         link.href = base64Data;
         link.click();
+        if (suffix) alert(suffix);
       }
     };
     if (noImageMode || !imageSrc) runExport(null);

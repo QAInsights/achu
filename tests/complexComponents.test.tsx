@@ -851,6 +851,8 @@ describe('HelpModal', () => {
     const copyButton = screen.getByTitle('Copy version info');
     fireEvent.click(copyButton);
 
+    expect(await screen.findByText('Copied!')).toBeInTheDocument();
+
     expect(mockWriteText).toHaveBeenCalledWith([
       'Achu Version: 2026.5.30',
       'Electron: 31.3.1',
