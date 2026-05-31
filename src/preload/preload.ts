@@ -1,8 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import os from 'os';
 
 // Expose safe IPC channels to the renderer process
 contextBridge.exposeInMainWorld('snapFrameAPI', {
   platform: process.platform,
+  osInfo: `${os.type ? os.type() : 'Unknown OS'} ${os.arch ? os.arch() : ''} ${os.release ? os.release() : ''}`.trim(),
+  versions: {
+    electron: process.versions.electron || 'N/A',
+    chrome: process.versions.chrome || 'N/A',
+    node: process.versions.node || 'N/A',
+    v8: process.versions.v8 || 'N/A',
+  },
   setTheme: (theme: 'dark' | 'light') => ipcRenderer.send('theme:changed', theme),
 
   // Settings API

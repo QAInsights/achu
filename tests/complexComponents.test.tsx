@@ -798,6 +798,69 @@ describe('HelpModal', () => {
     expect(screen.getByText(`© ${currentYear} QAInsights`)).toBeInTheDocument();
   });
 
+  it('renders detailed system specifications', () => {
+    (window as any).snapFrameAPI = {
+      platform: 'win32',
+      osInfo: 'Windows_NT x64 10.0.26200',
+      versions: {
+        electron: '31.3.1',
+        chrome: '124.0.0.0',
+        node: '20.11.0',
+        v8: '12.4.254.15-electron.0'
+      }
+    };
+    mockContext.helpVisible = true;
+    render(<HelpModal />);
+
+    expect(screen.getByText(/Electron:/)).toBeInTheDocument();
+    expect(screen.getByText('31.3.1')).toBeInTheDocument();
+    expect(screen.getByText(/Chromium:/)).toBeInTheDocument();
+    expect(screen.getByText('124.0.0.0')).toBeInTheDocument();
+    expect(screen.getByText(/Node\.js:/)).toBeInTheDocument();
+    expect(screen.getByText('20.11.0')).toBeInTheDocument();
+    expect(screen.getByText(/V8:/)).toBeInTheDocument();
+    expect(screen.getByText('12.4.254.15-electron.0')).toBeInTheDocument();
+    expect(screen.getByText(/OS:/)).toBeInTheDocument();
+    expect(screen.getByText('Windows_NT x64 10.0.26200')).toBeInTheDocument();
+  });
+
+  it('copies system specifications on Copy click', async () => {
+    const mockWriteText = vi.fn().mockImplementation(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
+        writeText: mockWriteText,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    (window as any).snapFrameAPI = {
+      platform: 'win32',
+      osInfo: 'Windows_NT x64 10.0.26200',
+      versions: {
+        electron: '31.3.1',
+        chrome: '124.0.0.0',
+        node: '20.11.0',
+        v8: '12.4.254.15-electron.0'
+      }
+    };
+
+    mockContext.helpVisible = true;
+    render(<HelpModal />);
+
+    const copyButton = screen.getByTitle('Copy version info');
+    fireEvent.click(copyButton);
+
+    expect(mockWriteText).toHaveBeenCalledWith([
+      'Achu Version: 2026.5.30',
+      'Electron: 31.3.1',
+      'Chromium: 124.0.0.0',
+      'Node.js: 20.11.0',
+      'V8: 12.4.254.15-electron.0',
+      'OS: Windows_NT x64 10.0.26200'
+    ].join('\n'));
+  });
+
   it('calls setHelpVisible(false) when close button is clicked', () => {
     mockContext.helpVisible = true;
     render(<HelpModal />);

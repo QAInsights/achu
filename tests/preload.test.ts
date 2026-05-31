@@ -38,6 +38,8 @@ describe('Preload Script', () => {
     expect(api).toHaveProperty('readImageFromClipboard');
     expect(api).toHaveProperty('openURL');
     expect(api).toHaveProperty('onGlobalHotkeyTriggered');
+    expect(api).toHaveProperty('versions');
+    expect(api).toHaveProperty('osInfo');
 
     expect(typeof api.getSettings).toBe('function');
     expect(typeof api.saveSettings).toBe('function');

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
 import { X, Heart, Github } from 'lucide-react';
 import logoUrl from '../../../assets/logo.svg';
@@ -6,11 +6,54 @@ import packageJson from '../../../package.json';
 
 export default function HelpModal() {
   const { helpVisible, setHelpVisible } = useAppContext();
+  const [copied, setCopied] = useState(false);
 
   if (!helpVisible) return null;
 
   const currentYear = new Date().getFullYear();
   const platformName = window.snapFrameAPI ? window.snapFrameAPI.platform : navigator.platform;
+  
+  const getVersions = () => {
+    const apiVersions = window.snapFrameAPI?.versions;
+    // If we have actual Electron version from API, use it
+    if (apiVersions && apiVersions.electron && apiVersions.electron !== 'N/A') {
+      return apiVersions;
+    }
+    
+    // Fallback: Parse from userAgent if preload script is stale or running in browser
+    const ua = navigator.userAgent;
+    const electronMatch = ua.match(/Electron\/([\d.]+)/);
+    const chromeMatch = ua.match(/Chrome\/([\d.]+)/);
+    return {
+      electron: electronMatch ? electronMatch[1] : 'N/A',
+      chrome: chromeMatch ? chromeMatch[1] : 'N/A',
+      node: apiVersions?.node || 'N/A',
+      v8: apiVersions?.v8 || 'N/A'
+    };
+  };
+
+  const versions = getVersions();
+  const osInfo = window.snapFrameAPI?.osInfo || navigator.userAgent || 'Unknown OS';
+
+  const handleCopy = () => {
+    const textToCopy = [
+      `Achu Version: ${packageJson.version}`,
+      `Electron: ${versions.electron}`,
+      `Chromium: ${versions.chrome}`,
+      `Node.js: ${versions.node}`,
+      `V8: ${versions.v8}`,
+      `OS: ${osInfo}`
+    ].join('\n');
+
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch((err) => {
+        console.error('Failed to copy text: ', err);
+      });
+  };
 
   return (
     <div className="modal-overlay" onClick={() => setHelpVisible(false)}>
@@ -58,9 +101,33 @@ export default function HelpModal() {
         </div>
 
         {/* Description */}
-        <p style={{ margin: '0 0 20px 0', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+        <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
           A lightweight, beautiful, and feature-rich screenshot beautifier designed to instantly elevate your snaps with layouts, mesh gradients, borders, shadows, and annotations.
         </p>
+
+        {/* System Specs List */}
+        <div
+          style={{
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            borderRadius: '6px',
+            padding: '12px',
+            fontSize: '0.78rem',
+            fontFamily: 'SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace',
+            color: 'var(--text-secondary)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            marginBottom: '20px'
+          }}
+        >
+          <div><strong>Achu Version:</strong> {packageJson.version}</div>
+          <div><strong>Electron:</strong> {versions.electron}</div>
+          <div><strong>Chromium:</strong> {versions.chrome}</div>
+          <div><strong>Node.js:</strong> {versions.node}</div>
+          <div><strong>V8:</strong> {versions.v8}</div>
+          <div><strong>OS:</strong> {osInfo}</div>
+        </div>
 
         {/* Link / Action Buttons */}
         <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
@@ -95,9 +162,19 @@ export default function HelpModal() {
           }}
         >
           <span>&copy; {currentYear} QAInsights</span>
-          <button className="btn btn-primary" onClick={() => setHelpVisible(false)} style={{ padding: '0 16px', height: '32px' }}>
-            Done
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="btn btn-secondary"
+              onClick={handleCopy}
+              style={{ padding: '0 12px', height: '32px', fontSize: '0.8rem' }}
+              title="Copy version info"
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+            <button className="btn btn-primary" onClick={() => setHelpVisible(false)} style={{ padding: '0 16px', height: '32px' }}>
+              Done
+            </button>
+          </div>
         </div>
       </div>
     </div>
