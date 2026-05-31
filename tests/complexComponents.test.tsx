@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import Sidebar from '../src/renderer/components/Sidebar';
 import SettingsModal from '../src/renderer/components/SettingsModal';
+import HelpModal from '../src/renderer/components/HelpModal';
 import WorkspaceToolbar from '../src/renderer/components/WorkspaceToolbar';
 import CanvasPreview from '../src/renderer/components/CanvasPreview';
 import AnnotationsLayer from '../src/renderer/AnnotationsLayer';
@@ -65,6 +66,8 @@ beforeEach(() => {
     // Settings
     settingsVisible: false,
     setSettingsVisible: vi.fn(),
+    helpVisible: false,
+    setHelpVisible: vi.fn(),
     padding: 38,
     setPadding: vi.fn(),
     rounded: 20,
@@ -720,6 +723,21 @@ describe('WorkspaceToolbar', () => {
     expect(settingsButton).toHaveClass('active');
   });
 
+  it('renders help button and handles click', () => {
+    render(<WorkspaceToolbar />);
+    const helpButton = screen.getByTitle('Help');
+    expect(helpButton).toBeInTheDocument();
+    fireEvent.click(helpButton);
+    expect(mockContext.setHelpVisible).toHaveBeenCalled();
+  });
+
+  it('renders help button as active when help is visible', () => {
+    mockContext.helpVisible = true;
+    render(<WorkspaceToolbar />);
+    const helpButton = screen.getByTitle('Help');
+    expect(helpButton).toHaveClass('active');
+  });
+
   it('renders clear workspace button', () => {
     render(<WorkspaceToolbar />);
     
@@ -756,6 +774,44 @@ describe('WorkspaceToolbar', () => {
     
     expect(mockContext.setNoImageMode).toHaveBeenCalledWith(false);
     expect(mockContext.setImageSrc).toHaveBeenCalledWith(null);
+  });
+});
+
+describe('HelpModal', () => {
+  it('renders nothing when helpVisible is false', () => {
+    mockContext.helpVisible = false;
+    const { container } = render(<HelpModal />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('renders logo, name, version, links and dynamic copyright when helpVisible is true', () => {
+    mockContext.helpVisible = true;
+    render(<HelpModal />);
+
+    expect(screen.getByText('Achu')).toBeInTheDocument();
+    expect(screen.getByText(/Version 2026\.5\.30/)).toBeInTheDocument();
+    expect(screen.getByAltText('Achu Logo')).toBeInTheDocument();
+    expect(screen.getByTitle('Donate')).toBeInTheDocument();
+    expect(screen.getByTitle('GitHub Repository')).toBeInTheDocument();
+
+    const currentYear = new Date().getFullYear();
+    expect(screen.getByText(`© ${currentYear} QAInsights`)).toBeInTheDocument();
+  });
+
+  it('calls setHelpVisible(false) when close button is clicked', () => {
+    mockContext.helpVisible = true;
+    render(<HelpModal />);
+
+    fireEvent.click(screen.getByTitle('Close help'));
+    expect(mockContext.setHelpVisible).toHaveBeenCalledWith(false);
+  });
+
+  it('calls setHelpVisible(false) when Done button is clicked', () => {
+    mockContext.helpVisible = true;
+    render(<HelpModal />);
+
+    fireEvent.click(screen.getByText('Done'));
+    expect(mockContext.setHelpVisible).toHaveBeenCalledWith(false);
   });
 });
 

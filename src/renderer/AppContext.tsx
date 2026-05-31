@@ -56,6 +56,7 @@ interface AppContextType {
   promptConfig: { message: string; defaultValue: string; resolve: (val: string | null) => void } | null; setPromptConfig: React.Dispatch<React.SetStateAction<{ message: string; defaultValue: string; resolve: (val: string | null) => void } | null>>;
   sidebarVisible: boolean; setSidebarVisible: React.Dispatch<React.SetStateAction<boolean>>;
   settingsVisible: boolean; setSettingsVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  helpVisible: boolean; setHelpVisible: React.Dispatch<React.SetStateAction<boolean>>;
   imageSrc: string | null; setImageSrc: React.Dispatch<React.SetStateAction<string | null>>;
   isDragging: boolean; setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
   customPresets: any[]; setCustomPresets: React.Dispatch<React.SetStateAction<any[]>>;
@@ -161,6 +162,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [sidebarVisible, setSidebarVisible] = useState<boolean>(true);
   const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
+  const [helpVisible, setHelpVisible] = useState<boolean>(false);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [showAdvancedInset, setShowAdvancedInset] = useState<boolean>(false);
@@ -539,6 +541,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       activeTool, setActiveTool, arrowStyle, setArrowStyle, annotations, setAnnotations, annotationColor, setAnnotationColor,
       annotationStrokeWidth, setAnnotationStrokeWidth, promptConfig, setPromptConfig, sidebarVisible, setSidebarVisible,
       settingsVisible, setSettingsVisible,
+      helpVisible, setHelpVisible,
       imageSrc, setImageSrc, isDragging, setIsDragging, customPresets, setCustomPresets, newPresetName, setNewPresetName,
       showAdvancedInset, setShowAdvancedInset, showAdvancedShadow, setShowAdvancedShadow, showAdvancedBorder, setShowAdvancedBorder,
       exportFormat, setExportFormat, jpegQuality, setJpegQuality, zoomLevel, setZoomLevel, history, setHistory,

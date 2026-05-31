@@ -5,6 +5,7 @@ import CanvasPreview from './components/CanvasPreview';
 import WorkspaceFooter from './components/WorkspaceFooter';
 import PromptModal from './components/PromptModal';
 import SettingsModal from './components/SettingsModal';
+import HelpModal from './components/HelpModal';
 import logoUrl from '../../assets/logo.svg';
 
 function AppContent() {
@@ -31,6 +32,7 @@ function AppContent() {
       </div>
       <PromptModal />
       <SettingsModal />
+      <HelpModal />
     </div>
   );
 }

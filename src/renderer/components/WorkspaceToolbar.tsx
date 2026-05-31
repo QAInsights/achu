@@ -37,7 +37,8 @@ export default function WorkspaceToolbar() {
     annotationStrokeWidth, setAnnotationStrokeWidth,
     pushHistory, getCurrentConfig, selectFile, colorInputRef,
     appTheme, setAppTheme,
-    settingsVisible, setSettingsVisible
+    settingsVisible, setSettingsVisible,
+    helpVisible, setHelpVisible
   } = useAppContext();
 
   const tools: Array<{ id: typeof activeTool; icon: React.ReactNode; title: string }> = [
@@ -264,7 +265,11 @@ export default function WorkspaceToolbar() {
           </button>
         </Tooltip>
         <Tooltip position="right">
-          <button className="tool-btn" title="Help">
+          <button
+            className={`tool-btn ${helpVisible ? 'active' : ''}`}
+            onClick={() => setHelpVisible(prev => !prev)}
+            title="Help"
+          >
             <HelpCircle className="w-4 h-4" />
           </button>
         </Tooltip>
