@@ -181,18 +181,34 @@ html, body {
   z-index: 10;
   opacity: 1;
   pointer-events: auto;
-  transition: width var(--dur-slow) var(--ease-out-quint),
-              min-width var(--dur-slow) var(--ease-out-quint),
-              opacity var(--dur) var(--ease-out-quint),
+  position: relative;
+  transition: opacity var(--dur) var(--ease-out-quint),
               border-color var(--dur) var(--ease-out-quint);
 }
 
 .sidebar.collapsed {
-  width: 0;
-  min-width: 0;
+  width: 0 !important;
+  min-width: 0 !important;
   opacity: 0;
   pointer-events: none;
   border-right-color: transparent;
+}
+
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 20;
+  transition: background-color var(--dur-fast);
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle:active {
+  background-color: var(--accent);
+  opacity: 0.5;
 }
 
 .sidebar-header {
@@ -492,6 +508,7 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 .btn-group-item {
   flex: 1;
   min-width: 0;
+  max-width: 100%;
   padding: 0.4rem 0.5rem;
   background-color: var(--surface-2);
   border: 1px solid var(--border);
@@ -503,6 +520,9 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out-quint);
   font-family: var(--font-sans);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn-group-item:hover { background-color: var(--surface-3); color: var(--text-primary); }
@@ -516,7 +536,7 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 /* === PRESETS === */
 .preset-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   gap: var(--space-2);
 }
 
@@ -1058,8 +1078,9 @@ input:checked + .slider-switch:before {
 .preset-trigger-content {
   flex: 1;
   overflow: hidden;
-  margin-right: 8px;
   min-width: 0;
+  max-width: 100%;
+  margin-right: 8px;
 }
 
 .preset-trigger-placeholder {

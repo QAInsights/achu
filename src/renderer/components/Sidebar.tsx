@@ -1,3 +1,4 @@
+import { useState, useRef, useCallback } from 'react';
 import { Plus, Trash2, Clipboard, Brush } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import logoUrl from '../../../assets/logo.svg';
@@ -5,6 +6,10 @@ import LayoutSettings from './LayoutSettings';
 import BackgroundSettings from './BackgroundSettings';
 import ExtraSettings from './ExtraSettings';
 import Tooltip from './Tooltip';
+
+const MIN_WIDTH = 425;
+const MAX_WIDTH = 560;
+const DEFAULT_WIDTH = 425;
 
 export default function Sidebar() {
   const {
@@ -19,15 +24,48 @@ export default function Sidebar() {
     resetStyles
   } = useAppContext();
 
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const startWidth = useRef(DEFAULT_WIDTH);
+
   const handleResetClick = () => {
     const confirmReset = window.confirm("Are you sure you want to reset all layout, background, and style settings to their beautiful defaults?");
-    if (confirmReset) {
-      resetStyles();
-    }
+    if (confirmReset) resetStyles();
   };
 
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    startX.current = e.clientX;
+    startWidth.current = sidebarWidth;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return;
+      const delta = ev.clientX - startX.current;
+      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth.current + delta));
+      setSidebarWidth(next);
+    };
+
+    const onMouseUp = () => {
+      isDragging.current = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [sidebarWidth]);
+
   return (
-    <div className={`sidebar ${sidebarVisible ? '' : 'collapsed'}`}>
+    <div
+      className={`sidebar ${sidebarVisible ? '' : 'collapsed'}`}
+      style={{ width: sidebarWidth, minWidth: sidebarWidth }}
+    >
       <div className="sidebar-header">
         <div className="sidebar-title">
           <img src={logoUrl} alt="Achu" className="sidebar-logo" />
@@ -113,6 +151,9 @@ export default function Sidebar() {
         <ExtraSettings />
 
       </div>
+
+      {/* Resize handle */}
+      <div className="sidebar-resize-handle" onMouseDown={onMouseDown} />
     </div>
   );
 }
