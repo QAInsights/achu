@@ -22,8 +22,11 @@ import {
 import { useAppContext } from '../AppContext';
 import { toggleTheme } from '../utils/uiUtils';
 import Tooltip from './Tooltip';
+import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 
 export default function WorkspaceToolbar() {
+  useToolbarShortcuts();
+
   const {
     sidebarVisible, setSidebarVisible,
     noImageMode, setNoImageMode,
@@ -41,17 +44,17 @@ export default function WorkspaceToolbar() {
     helpVisible, setHelpVisible
   } = useAppContext();
 
-  const tools: Array<{ id: typeof activeTool; icon: React.ReactNode; title: string }> = [
-    { id: 'pointer', icon: <MousePointer className="w-4 h-4" />, title: 'Select / Move' },
-    { id: 'rect', icon: <Square className="w-4 h-4" />, title: 'Rectangle Outline' },
-    { id: 'filled-rect', icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="4" /></svg>, title: 'Rectangle Filled' },
-    { id: 'circle', icon: <Circle className="w-4 h-4" />, title: 'Circle Outline' },
-    { id: 'filled-circle', icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9" /></svg>, title: 'Circle Filled' },
-    { id: 'line', icon: <Slash className="w-4 h-4" />, title: 'Straight Line' },
-    { id: 'arrow', icon: <ArrowUpRight className="w-4 h-4" />, title: 'Draw Arrow' },
-    { id: 'text', icon: <Type className="w-4 h-4" />, title: 'Draw Text' },
-    { id: 'pen', icon: <Pencil className="w-4 h-4" />, title: 'Freehand Draw' },
-    { id: 'emoji', icon: <Smile className="w-4 h-4" />, title: 'Add Emoji' },
+  const tools: Array<{ id: typeof activeTool; icon: React.ReactNode; title: string; tooltip: string }> = [
+    { id: 'pointer', icon: <MousePointer className="w-4 h-4" />, title: 'Select / Move', tooltip: 'Select / Move (V or 1)' },
+    { id: 'rect', icon: <Square className="w-4 h-4" />, title: 'Rectangle Outline', tooltip: 'Rectangle Outline (R or 2)' },
+    { id: 'filled-rect', icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="4" /></svg>, title: 'Rectangle Filled', tooltip: 'Rectangle Filled (F, Shift+R, or 3)' },
+    { id: 'circle', icon: <Circle className="w-4 h-4" />, title: 'Circle Outline', tooltip: 'Circle Outline (O, C, or 4)' },
+    { id: 'filled-circle', icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9" /></svg>, title: 'Circle Filled', tooltip: 'Circle Filled (Shift+O, Shift+C, or 5)' },
+    { id: 'line', icon: <Slash className="w-4 h-4" />, title: 'Straight Line', tooltip: 'Straight Line (L or 6)' },
+    { id: 'arrow', icon: <ArrowUpRight className="w-4 h-4" />, title: 'Draw Arrow', tooltip: 'Draw Arrow (A or 7)' },
+    { id: 'text', icon: <Type className="w-4 h-4" />, title: 'Draw Text', tooltip: 'Draw Text (T or 8)' },
+    { id: 'pen', icon: <Pencil className="w-4 h-4" />, title: 'Freehand Draw', tooltip: 'Freehand Draw (P, D, or 9)' },
+    { id: 'emoji', icon: <Smile className="w-4 h-4" />, title: 'Add Emoji', tooltip: 'Add Emoji (E or 0)' },
   ];
 
   return (
@@ -130,7 +133,7 @@ export default function WorkspaceToolbar() {
       {/* Center: Annotation tools */}
       <div className="toolbar-group">
         {tools.map((tool) => (
-          <Tooltip key={tool.id} position="right">
+          <Tooltip key={tool.id} content={tool.tooltip} position="right">
             <button
               className={`tool-btn ${activeTool === tool.id ? 'active' : ''}`}
               onClick={() => setActiveTool(tool.id)}

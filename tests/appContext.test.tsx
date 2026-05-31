@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import React from 'react';
 import { AppProvider, useAppContext } from '../src/renderer/AppContext';
+import { useToolbarShortcuts } from '../src/renderer/hooks/useToolbarShortcuts';
 
 // Mock dependency hooks
 vi.mock('../src/renderer/hooks/useHistory', () => ({
@@ -304,6 +305,117 @@ describe('AppContext', () => {
         input.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 'z', bubbles: true }));
       });
       expect(mockUseHistory.handleUndo).not.toHaveBeenCalled();
+    });
+
+    it('switches active tools via keyboard shortcuts', () => {
+      function ShortcutConsumer() {
+        const ctx = useAppContext();
+        useToolbarShortcuts();
+        return <div data-testid="tool">{ctx.activeTool}</div>;
+      }
+      render(
+        <AppProvider>
+          <ShortcutConsumer />
+        </AppProvider>
+      );
+      
+      expect(screen.getByTestId('tool')).toHaveTextContent('pointer');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('rect');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '3', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('filled-rect');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('circle');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'O', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('filled-circle');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '6', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('line');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('arrow');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '8', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('text');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('pen');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '0', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('emoji');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '1', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('pointer');
+    });
+
+    it('ignores toolbar shortcuts when modifier keys are pressed', () => {
+      function ShortcutConsumer() {
+        const ctx = useAppContext();
+        useToolbarShortcuts();
+        return <div data-testid="tool">{ctx.activeTool}</div>;
+      }
+      render(
+        <AppProvider>
+          <ShortcutConsumer />
+        </AppProvider>
+      );
+      
+      expect(screen.getByTestId('tool')).toHaveTextContent('pointer');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 'r', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('pointer');
+    });
+
+    it('ignores toolbar shortcuts when typing inside a textarea', () => {
+      function ShortcutConsumer() {
+        const ctx = useAppContext();
+        useToolbarShortcuts();
+        return (
+          <div>
+            <div data-testid="tool">{ctx.activeTool}</div>
+            <textarea data-testid="editor" />
+          </div>
+        );
+      }
+      render(
+        <AppProvider>
+          <ShortcutConsumer />
+        </AppProvider>
+      );
+
+      const textarea = screen.getByTestId('editor') as HTMLTextAreaElement;
+      textarea.focus();
+
+      act(() => {
+        textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', bubbles: true }));
+      });
+      expect(screen.getByTestId('tool')).toHaveTextContent('pointer');
     });
   });
 
