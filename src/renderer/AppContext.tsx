@@ -82,6 +82,7 @@ interface AppContextType {
   selectedGradientCategory: 'classic' | 'disney' | 'marvel' | 'hollywood'; setSelectedGradientCategory: React.Dispatch<React.SetStateAction<'classic' | 'disney' | 'marvel' | 'hollywood'>>;
   showHollywoodMeshPalettes: boolean; setShowHollywoodMeshPalettes: React.Dispatch<React.SetStateAction<boolean>>;
   appTheme: 'dark' | 'light'; setAppTheme: React.Dispatch<React.SetStateAction<'dark' | 'light'>>;
+  sidebarPosition: 'left' | 'right'; setSidebarPosition: React.Dispatch<React.SetStateAction<'left' | 'right'>>;
 
 
   // Refs
@@ -200,6 +201,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('snapframe-app-theme');
     return (saved as 'dark' | 'light') || 'dark';
   });
+
+  const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>(() => getUserDefault('sidebarPosition', 'left'));
 
 
   const getCurrentConfig = (): RenderConfig => ({
@@ -644,6 +647,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       historyIndex, setHistoryIndex, showHollywoodPalettes, setShowHollywoodPalettes, selectedGradientCategory, setSelectedGradientCategory,
       showHollywoodMeshPalettes, setShowHollywoodMeshPalettes,
       appTheme, setAppTheme,
+      sidebarPosition, setSidebarPosition,
       fileInputRef, colorInputRef,
       redactions, setRedactions,
       isScanningSecrets, setIsScanningSecrets,

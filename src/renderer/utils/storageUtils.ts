@@ -35,4 +35,5 @@ export const DEFAULT_SETTINGS = {
   watermarkOpacity: 0.45,
   exportFormat: 'png' as const,
   jpegQuality: 90,
+  sidebarPosition: 'left' as const,
 };

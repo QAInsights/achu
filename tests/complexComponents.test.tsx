@@ -53,6 +53,8 @@ beforeEach(() => {
   mockContext = {
     // Sidebar
     sidebarVisible: true,
+    sidebarPosition: 'left',
+    setSidebarPosition: vi.fn(),
     customPresets: [],
     newPresetName: '',
     setNewPresetName: vi.fn(),

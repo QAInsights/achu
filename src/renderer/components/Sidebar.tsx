@@ -22,7 +22,8 @@ export default function Sidebar() {
     saveCustomPreset,
     deleteCustomPreset,
     selectBackgroundPreset,
-    resetStyles
+    resetStyles,
+    sidebarPosition
   } = useAppContext();
 
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
@@ -43,7 +44,7 @@ export default function Sidebar() {
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!isDragging.current) return;
-      const delta = ev.clientX - startX.current;
+      const delta = sidebarPosition === 'right' ? (startX.current - ev.clientX) : (ev.clientX - startX.current);
       const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth.current + delta));
       setSidebarWidth(next);
     };
@@ -60,11 +61,11 @@ export default function Sidebar() {
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [sidebarWidth]);
+  }, [sidebarWidth, sidebarPosition]);
 
   return (
     <div
-      className={`sidebar ${sidebarVisible ? '' : 'collapsed'}`}
+      className={`sidebar ${sidebarPosition === 'right' ? 'right' : 'left'} ${sidebarVisible ? '' : 'collapsed'}`}
       style={{ width: sidebarWidth, minWidth: sidebarWidth }}
     >
       <div className="sidebar-header">

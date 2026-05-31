@@ -28,6 +28,8 @@ export default function SettingsModal() {
     setJpegQuality,
     pushHistory,
     getCurrentConfig,
+    sidebarPosition,
+    setSidebarPosition,
   } = useAppContext();
 
   if (!settingsVisible) return null;
@@ -49,6 +51,7 @@ export default function SettingsModal() {
     setWatermarkOpacity(DEFAULT_SETTINGS.watermarkOpacity);
     setExportFormat(DEFAULT_SETTINGS.exportFormat);
     setJpegQuality(DEFAULT_SETTINGS.jpegQuality);
+    setSidebarPosition(DEFAULT_SETTINGS.sidebarPosition);
     pushHistory({
       ...getCurrentConfig(),
       padding: DEFAULT_SETTINGS.padding,
@@ -90,6 +93,31 @@ export default function SettingsModal() {
         {/* Scrollable Content */}
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '4px' }}>
           
+          {/* General Settings Section */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>General Settings</h3>
+            
+            <div className="control-group">
+              <span className="control-label">Sidebar Position</span>
+              <div className="format-toggle" style={{ marginTop: '4px' }}>
+                <button
+                  className={`format-toggle-btn ${sidebarPosition === 'left' ? 'active' : ''}`}
+                  onClick={() => updateSetting('sidebarPosition', 'left', setSidebarPosition)}
+                  style={{ flex: 1 }}
+                >
+                  Left
+                </button>
+                <button
+                  className={`format-toggle-btn ${sidebarPosition === 'right' ? 'active' : ''}`}
+                  onClick={() => updateSetting('sidebarPosition', 'right', setSidebarPosition)}
+                  style={{ flex: 1 }}
+                >
+                  Right
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Canvas Defaults Section */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>Canvas Defaults</h3>

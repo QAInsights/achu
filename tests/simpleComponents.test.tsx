@@ -17,6 +17,8 @@ beforeEach(() => {
   mockContext = {
     imageSrc: 'data:image/png;base64,test',
     noImageMode: false,
+    sidebarPosition: 'left',
+    setSidebarPosition: vi.fn(),
     exportFormat: 'png',
     setExportFormat: vi.fn(),
     jpegQuality: 90,

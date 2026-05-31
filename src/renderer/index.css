@@ -211,6 +211,22 @@ html, body {
   opacity: 0.5;
 }
 
+/* Right-aligned sidebar overrides */
+.sidebar.right {
+  border-left: 1px solid var(--border);
+  border-right: none;
+}
+
+.sidebar.right.collapsed {
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+
+.sidebar.right .sidebar-resize-handle {
+  left: -2px;
+  right: auto;
+}
+
 .sidebar-header {
   height: 48px;
   padding: 0 var(--space-4);

@@ -9,14 +9,15 @@ import HelpModal from './components/HelpModal';
 import logoUrl from '../../assets/logo.svg';
 
 function AppContent() {
-  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput } = useAppContext();
+  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput, sidebarPosition } = useAppContext();
   const isFrameless = window.snapFrameAPI && (window.snapFrameAPI.platform === 'win32' || window.snapFrameAPI.platform === 'darwin');
   const platformClass = window.snapFrameAPI ? `platform-${window.snapFrameAPI.platform}` : '';
   const collapsedClass = !sidebarVisible ? 'sidebar-collapsed' : '';
+  const positionClass = sidebarPosition === 'right' ? 'sidebar-right-aligned' : 'sidebar-left-aligned';
 
   return (
-    <div className={`app-container app-load ${platformClass} ${collapsedClass}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
-      <Sidebar />
+    <div className={`app-container app-load ${platformClass} ${collapsedClass} ${positionClass}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+      {sidebarPosition === 'left' && <Sidebar />}
       <div className="workspace">
         {isFrameless && (
           <div className="workspace-titlebar">
@@ -30,6 +31,7 @@ function AppContent() {
         <CanvasPreview />
         <WorkspaceFooter />
       </div>
+      {sidebarPosition === 'right' && <Sidebar />}
       <PromptModal />
       <SettingsModal />
       <HelpModal />
