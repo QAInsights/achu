@@ -1,13 +1,14 @@
+import { useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Sparkles, Paintbrush } from 'lucide-react';
+import { Sparkles, Paintbrush, Wand2 } from 'lucide-react';
 import InspectorSection from './InspectorSection';
 import Tooltip from './Tooltip';
 import PresetSelector from './PresetSelector';
 import MeshGradientControls from './MeshGradientControls';
-import { 
-  disneyHollywoodGradients, 
-  defaultGradients, 
-  solidPresets 
+import {
+  disneyHollywoodGradients,
+  defaultGradients,
+  solidPresets
 } from '../presetsData';
 
 export default function BackgroundSettings() {
@@ -24,11 +25,76 @@ export default function BackgroundSettings() {
     selectedPreset, setSelectedPreset,
     showSafeZone, setShowSafeZone,
     getCurrentConfig, pushHistory, selectBackgroundPreset,
-    handleSliderRelease
+    handleSliderRelease,
+    imageSrc,
+    vibePalette, vibeVariantIndex, vibeUpdateDrawColor, setVibeUpdateDrawColor,
+    applyAutoVibe,
   } = useAppContext();
+
+  const [vibeToast, setVibeToast] = useState(false);
+
+  const handleAutoVibe = async () => {
+    await applyAutoVibe();
+    setVibeToast(true);
+    setTimeout(() => setVibeToast(false), 2500);
+  };
 
   return (
     <InspectorSection title="Background" icon={<Paintbrush className="w-3.5 h-3.5" />}>
+
+      {/* === AUTO-VIBE === */}
+      <div className="vibe-card">
+        <div className="vibe-card-header">
+          <button
+            id="auto-vibe-btn"
+            className={`vibe-trigger-btn ${vibeVariantIndex >= 0 ? 'vibe-active' : ''}`}
+            onClick={handleAutoVibe}
+            disabled={!imageSrc}
+            title={imageSrc ? 'Extract palette and apply style' : 'Load an image first'}
+          >
+            <Wand2 className={`w-4 h-4 ${vibeVariantIndex >= 0 ? 'vibe-wand-spin' : ''}`} />
+            Auto-Vibe
+          </button>
+          {vibeVariantIndex >= 0 && (
+            <div className="vibe-pips">
+              {[0, 1, 2, 3].map((i) => (
+                <span key={i} className={`vibe-pip ${i === vibeVariantIndex ? 'active' : ''}`} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {vibePalette && (
+          <div className="vibe-swatch-strip">
+            {(['dominant', 'vibrant', 'lightVibrant', 'darkVibrant', 'muted', 'lightMuted', 'darkMuted'] as const).map((key) => (
+              <Tooltip key={key} position="top">
+                <span
+                  className="vibe-swatch"
+                  style={{ background: vibePalette[key] }}
+                  title={key}
+                />
+              </Tooltip>
+            ))}
+          </div>
+        )}
+
+        <div className="switch-container" style={{ marginTop: '0.4rem' }}>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Update annotation color</span>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={vibeUpdateDrawColor}
+              onChange={(e) => setVibeUpdateDrawColor(e.target.checked)}
+            />
+            <span className="slider-switch" />
+          </label>
+        </div>
+
+        {vibeToast && (
+          <p className="vibe-toast">✨ Vibe applied! Press Ctrl+Z to undo</p>
+        )}
+      </div>
+
       {/* Background Mode Selector */}
       <div className="control-group">
         <span className="control-label">Background Mode</span>

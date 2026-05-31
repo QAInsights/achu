@@ -1416,3 +1416,125 @@ input:checked + .slider-switch:before {
   box-shadow: var(--elev-1);
 }
 
+/* === BACKGROUND TRANSITION === */
+.canvas-container-outer {
+  transition: background 0.15s ease-in-out, background-image 0.15s ease-in-out;
+}
+
+/* === AUTO-VIBE === */
+.vibe-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.vibe-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.vibe-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  background: linear-gradient(135deg, var(--surface-2) 0%, var(--surface-3) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease-out-quint);
+}
+
+.vibe-trigger-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--surface-3) 0%, var(--border) 100%);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--elev-2);
+}
+
+.vibe-trigger-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.vibe-trigger-btn.vibe-active {
+  background: linear-gradient(135deg, color-mix(in oklch, var(--accent) 25%, var(--surface-2)) 0%, var(--surface-3) 100%);
+  border-color: color-mix(in oklch, var(--accent) 45%, var(--border));
+  box-shadow: 0 0 12px color-mix(in oklch, var(--accent) 30%, transparent);
+}
+
+.vibe-wand-spin {
+  animation: vibe-wand 0.5s ease-out;
+}
+
+@keyframes vibe-wand {
+  0%   { transform: rotate(-20deg) scale(1.2); }
+  60%  { transform: rotate(15deg) scale(1.1); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.vibe-pips {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vibe-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border-strong);
+  transition: background var(--dur-fast) ease, transform var(--dur-fast) ease;
+}
+
+.vibe-pip.active {
+  background: var(--accent);
+  transform: scale(1.4);
+  box-shadow: 0 0 6px color-mix(in oklch, var(--accent) 60%, transparent);
+}
+
+.vibe-swatch-strip {
+  display: flex;
+  gap: 5px;
+  margin-top: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.vibe-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  display: inline-block;
+  box-shadow: var(--elev-1);
+  transition: transform var(--dur-fast) ease;
+  cursor: default;
+}
+
+.vibe-swatch:hover {
+  transform: scale(1.25);
+}
+
+.vibe-toast {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--accent);
+  animation: vibe-fade-in 0.2s ease, vibe-fade-out 0.4s ease 2.1s forwards;
+}
+
+@keyframes vibe-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes vibe-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}

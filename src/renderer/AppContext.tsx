@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { RenderConfig, Annotation, drawMeshGradient, RedactionItem } from './canvasRenderer';
 import { useHistory } from './hooks/useHistory';
 import { useExport } from './hooks/useExport';
@@ -7,6 +7,8 @@ import { getZoomStyle as getZoomStyleUtil } from './utils/layoutUtils';
 import { getUserDefault } from './utils/storageUtils';
 import { createWorker } from 'tesseract.js';
 import { processOcrResults, downsampleImageForOcr } from './utils/privacyGuardUtils';
+import { VibePalette, extractPalette } from './utils/colorExtractor';
+import { generateVibeConfigs } from './utils/vibeUtils';
 
 // TypeScript declarations for secure Electron IPC bridge
 declare global {
@@ -83,6 +85,10 @@ interface AppContextType {
   showHollywoodMeshPalettes: boolean; setShowHollywoodMeshPalettes: React.Dispatch<React.SetStateAction<boolean>>;
   appTheme: 'dark' | 'light'; setAppTheme: React.Dispatch<React.SetStateAction<'dark' | 'light'>>;
   sidebarPosition: 'left' | 'right'; setSidebarPosition: React.Dispatch<React.SetStateAction<'left' | 'right'>>;
+  vibePalette: VibePalette | null;
+  vibeVariantIndex: number;
+  vibeUpdateDrawColor: boolean; setVibeUpdateDrawColor: React.Dispatch<React.SetStateAction<boolean>>;
+  applyAutoVibe: () => Promise<void>;
 
 
   // Refs
@@ -205,6 +211,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>(() => getUserDefault('sidebarPosition', 'left'));
 
+  // Auto-Vibe state
+  const [vibePalette, setVibePalette] = useState<VibePalette | null>(null);
+  const [vibeVariantIndex, setVibeVariantIndex] = useState<number>(-1);
+  const [vibeUpdateDrawColor, setVibeUpdateDrawColor] = useState<boolean>(true);
 
   const getCurrentConfig = (): RenderConfig => ({
     padding, rounded, shadow, shadowColor, shadowEnabled,
@@ -477,7 +487,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setHistoryIndex(-1);
     setAnnotations([]);
     setRedactions([]);
+    setVibePalette(null);
+    setVibeVariantIndex(-1);
   };
+
+  const applyAutoVibe = useCallback(async () => {
+    if (!imageSrc) return;
+    let palette = vibePalette;
+    if (!palette) {
+      palette = await extractPalette(imageSrc);
+      setVibePalette(palette);
+    }
+    const nextIdx = (vibeVariantIndex + 1) % 4;
+    setVibeVariantIndex(nextIdx);
+    const variant = generateVibeConfigs(palette)[nextIdx];
+    const base = getCurrentConfig();
+    const update: Partial<RenderConfig> = {
+      backgroundType: variant.backgroundType,
+      shadowColor: variant.shadowColor,
+      chromeTheme: variant.chromeTheme,
+    };
+    if (variant.backgroundType === 'mesh' && variant.meshColors) {
+      setMeshPoints((prev) => prev.map((pt, i) => ({ ...pt, color: variant.meshColors![i % 4] })));
+    } else if (variant.backgroundValue) {
+      update.backgroundValue = variant.backgroundValue;
+      setBackgroundValue(variant.backgroundValue);
+    }
+    if (vibeUpdateDrawColor) {
+      setAnnotationColor(variant.annotationColor);
+    }
+    setBackgroundType(variant.backgroundType);
+    setShadowColor(variant.shadowColor);
+    setChromeTheme(variant.chromeTheme);
+    pushHistory({ ...base, ...update });
+  }, [imageSrc, vibePalette, vibeVariantIndex, vibeUpdateDrawColor]);
+
+  // Reset vibe when a new image is loaded
+  const prevImageSrc = useRef<string | null>(null);
+  useEffect(() => {
+    if (imageSrc && imageSrc !== prevImageSrc.current) {
+      setVibePalette(null);
+      setVibeVariantIndex(-1);
+      prevImageSrc.current = imageSrc;
+    }
+  }, [imageSrc]);
 
   const onImageLoadedRef = useRef(onImageLoaded);
   useEffect(() => { onImageLoadedRef.current = onImageLoaded; }, [onImageLoaded]);
@@ -658,6 +711,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showHollywoodMeshPalettes, setShowHollywoodMeshPalettes,
       appTheme, setAppTheme,
       sidebarPosition, setSidebarPosition,
+      vibePalette, vibeVariantIndex, vibeUpdateDrawColor, setVibeUpdateDrawColor,
       fileInputRef, colorInputRef,
       redactions, setRedactions,
       isScanningSecrets, setIsScanningSecrets,
@@ -670,7 +724,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       selectBackgroundPreset, handleSliderRelease, getZoomStyle, applyMeshPalette, generateRandomPalette,
       handleDragOver, handleDragLeave, handleDrop, customPrompt, handlePointerDown, handlePointerMove, handlePointerUp,
       resetStyles,
-      clearWorkspace
+      clearWorkspace,
+      applyAutoVibe
     }}>
       {children}
     </AppContext.Provider>
