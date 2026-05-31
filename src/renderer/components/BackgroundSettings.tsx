@@ -52,16 +52,17 @@ export default function BackgroundSettings() {
             disabled={!imageSrc}
             title={imageSrc ? 'Extract palette and apply style' : 'Load an image first'}
           >
-            <Wand2 className={`w-4 h-4 ${vibeVariantIndex >= 0 ? 'vibe-wand-spin' : ''}`} />
+            <Wand2 size={20} className={vibeVariantIndex >= 0 ? 'vibe-wand-spin' : ''} />
             Auto-Vibe
           </button>
-          {vibeVariantIndex >= 0 && (
-            <div className="vibe-pips">
-              {[0, 1, 2, 3].map((i) => (
-                <span key={i} className={`vibe-pip ${i === vibeVariantIndex ? 'active' : ''}`} />
-              ))}
-            </div>
-          )}
+
+          {/* Connected dot stepper */}
+          <div className="vibe-stepper" aria-label="Variant indicator">
+            {[0, 1, 2, 3].map((i) => [
+              i > 0 && <span key={`t${i}`} className={`vibe-stepper-track ${i <= vibeVariantIndex ? 'done' : ''}`} />,
+              <span key={`d${i}`} className={`vibe-stepper-dot ${i === vibeVariantIndex ? 'active' : i < vibeVariantIndex ? 'done' : ''}`} />,
+            ])}
+          </div>
         </div>
 
         {vibePalette && (
