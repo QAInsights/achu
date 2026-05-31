@@ -1436,7 +1436,7 @@ input:checked + .slider-switch:before {
   gap: 0.75rem;
 }
 
-/* Compact button */
+/* Compact button with Gemini-style rotating gradient border */
 .vibe-trigger-btn {
   display: inline-flex;
   align-items: center;
@@ -1453,13 +1453,54 @@ input:checked + .slider-switch:before {
   transition: all var(--dur) var(--ease-out-quint);
   white-space: nowrap;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.vibe-trigger-btn::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: conic-gradient(
+    from 0deg,
+    #4285f4 0deg,
+    #34a853 72deg,
+    #fbbc04 144deg,
+    #ea4335 216deg,
+    #9c27b0 288deg,
+    #4285f4 360deg
+  );
+  border-radius: calc(var(--radius-sm) + 2px);
+  z-index: -2;
+  animation: vibe-gradient-rotate 3s linear infinite;
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease-out-quint);
+}
+
+.vibe-trigger-btn::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  background: linear-gradient(135deg, var(--surface-2) 0%, var(--surface-3) 100%);
+  border-radius: calc(var(--radius-sm) - 1px);
+  z-index: -1;
+}
+
+@keyframes vibe-gradient-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .vibe-trigger-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--surface-3) 0%, var(--border) 100%);
-  border-color: var(--border-strong);
+  background: transparent;
+  border-color: transparent;
   transform: translateY(-1px);
   box-shadow: var(--elev-2);
+}
+
+.vibe-trigger-btn:hover:not(:disabled)::before {
+  opacity: 1;
 }
 
 .vibe-trigger-btn:disabled {
@@ -1467,10 +1508,22 @@ input:checked + .slider-switch:before {
   cursor: not-allowed;
 }
 
+.vibe-trigger-btn:disabled::before {
+  opacity: 0;
+}
+
 .vibe-trigger-btn.vibe-active {
-  background: linear-gradient(135deg, color-mix(in oklch, var(--accent) 25%, var(--surface-2)) 0%, var(--surface-3) 100%);
-  border-color: color-mix(in oklch, var(--accent) 45%, var(--border));
+  background: transparent;
+  border-color: transparent;
   box-shadow: 0 0 10px color-mix(in oklch, var(--accent) 28%, transparent);
+}
+
+.vibe-trigger-btn.vibe-active::before {
+  opacity: 1;
+}
+
+.vibe-trigger-btn.vibe-active::after {
+  background: linear-gradient(135deg, color-mix(in oklch, var(--accent) 15%, var(--surface-2)) 0%, var(--surface-3) 100%);
 }
 
 .vibe-wand-spin {
