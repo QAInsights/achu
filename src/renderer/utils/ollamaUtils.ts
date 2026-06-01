@@ -18,11 +18,14 @@ export async function fetchInstalledModels(endpoint: string): Promise<string[]> 
     
     // filter to vision-capable models only
     const visionModels = ['llava', 'moondream', 'llava-phi3', 'bakllava'];
+    const visionKeywords = ['vision', 'vl', 'v-'];
     return models
       .map((m: { name: string }) => m.name)
-      .filter((name: string) =>
-        visionModels.some(v => name.toLowerCase().includes(v))
-      );
+      .filter((name: string) => {
+        const lowerName = name.toLowerCase();
+        return visionModels.some(v => lowerName.includes(v)) ||
+               visionKeywords.some(k => lowerName.includes(k));
+      });
   } catch {
     return [];
   }

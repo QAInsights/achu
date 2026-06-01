@@ -122,7 +122,10 @@ describe('GitHub Issue Agent Utils', () => {
           { name: 'llama3:8b' },
           { name: 'llava-phi3:latest' },
           { name: 'moondream:latest' },
-          { name: 'codegemma:latest' }
+          { name: 'codegemma:latest' },
+          { name: 'llama3.2-vision:latest' },
+          { name: 'qwen-vl:latest' },
+          { name: 'minicpm-v-vlm:latest' }
         ]
       };
       vi.stubGlobal('fetch', () => Promise.resolve({
@@ -131,9 +134,12 @@ describe('GitHub Issue Agent Utils', () => {
       }));
 
       const models = await fetchInstalledModels('http://localhost:11434');
-      expect(models.length).toBe(2);
+      expect(models.length).toBe(5);
       expect(models).toContain('llava-phi3:latest');
       expect(models).toContain('moondream:latest');
+      expect(models).toContain('llama3.2-vision:latest');
+      expect(models).toContain('qwen-vl:latest');
+      expect(models).toContain('minicpm-v-vlm:latest');
       expect(models).not.toContain('llama3:8b');
       expect(models).not.toContain('codegemma:latest');
 
