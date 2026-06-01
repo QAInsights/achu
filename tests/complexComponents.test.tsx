@@ -324,9 +324,12 @@ describe('SettingsModal', () => {
     expect(screen.getByText('Canvas Defaults')).toBeInTheDocument();
     expect(screen.getByText('Export Preferences')).toBeInTheDocument();
     expect(screen.getByText('Watermark Defaults')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Shortcuts & Support'));
     expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument();
     expect(screen.getByText('Support & Project')).toBeInTheDocument();
   });
+
 
   it('updates padding on slider change', () => {
     mockContext.settingsVisible = true;
@@ -497,6 +500,8 @@ describe('SettingsModal', () => {
     
     render(<SettingsModal />);
     
+    fireEvent.click(screen.getByText('Shortcuts & Support'));
+    
     expect(screen.getByText('Paste Image')).toBeInTheDocument();
     expect(screen.getByText('Undo / Redo')).toBeInTheDocument();
     expect(screen.getByText('Copy beautified snap')).toBeInTheDocument();
@@ -506,14 +511,17 @@ describe('SettingsModal', () => {
   it('renders Donate button', () => {
     mockContext.settingsVisible = true;
     render(<SettingsModal />);
+    fireEvent.click(screen.getByText('Shortcuts & Support'));
     expect(screen.getByText('Donate')).toBeInTheDocument();
   });
 
   it('renders GitHub Repo button', () => {
     mockContext.settingsVisible = true;
     render(<SettingsModal />);
+    fireEvent.click(screen.getByText('Shortcuts & Support'));
     expect(screen.getByText('GitHub Repo')).toBeInTheDocument();
   });
+
 
   it('updates JPEG quality slider', () => {
     mockContext.settingsVisible = true;

@@ -3,13 +3,14 @@ import { RenderConfig, Annotation, drawMeshGradient, RedactionItem, renderCanvas
 import { useHistory } from './hooks/useHistory';
 import { useExport } from './hooks/useExport';
 import { usePresets } from './hooks/usePresets';
+import { useConnectionPoll } from './hooks/useConnectionPoll';
 import { getZoomStyle as getZoomStyleUtil } from './utils/layoutUtils';
 import { getUserDefault, updateUserDefault } from './utils/storageUtils';
 import { createWorker } from 'tesseract.js';
 import { processOcrResults, downsampleImageForOcr } from './utils/privacyGuardUtils';
 import { VibePalette, extractPalette } from './utils/colorExtractor';
 import { generateVibeConfigs } from './utils/vibeUtils';
-import { WordBoundingBox, GitHubIssuePayload, generateIssueFromScreenshot, buildMarkdown } from './utils/githubAgentUtils';
+import { WordBoundingBox, GitHubIssuePayload, generateIssueFromScreenshot, buildMarkdown, safeParseJSON } from './utils/githubAgentUtils';
 import { checkOllamaHealth } from './utils/ollamaUtils';
 import { fetchUserRepos, pushToGitHub } from './utils/githubApiUtils';
 
@@ -134,8 +135,12 @@ interface AppContextType {
   issuePayload: GitHubIssuePayload | null; setIssuePayload: React.Dispatch<React.SetStateAction<GitHubIssuePayload | null>>;
   isGeneratingIssue: boolean; setIsGeneratingIssue: React.Dispatch<React.SetStateAction<boolean>>;
   issueError: string | null; setIssueError: React.Dispatch<React.SetStateAction<string | null>>;
+  aiProvider: 'ollama' | 'openai' | 'google' | 'claude'; setAiProvider: (provider: 'ollama' | 'openai' | 'google' | 'claude') => void;
   ollamaEndpoint: string; setOllamaEndpoint: (endpoint: string) => void;
   ollamaModel: string; setOllamaModel: (model: string) => void;
+  openaiModel: string; setOpenaiModel: (model: string) => void;
+  googleModel: string; setGoogleModel: (model: string) => void;
+  claudeModel: string; setClaudeModel: (model: string) => void;
   ollamaAvailable: boolean; setOllamaAvailable: React.Dispatch<React.SetStateAction<boolean>>;
   githubRepo: string; setGithubRepo: (repo: string) => void;
   githubRepoList: string[]; setGithubRepoList: React.Dispatch<React.SetStateAction<string[]>>;
@@ -144,12 +149,16 @@ interface AppContextType {
   appendAttribution: boolean; setAppendAttribution: (append: boolean) => void;
   cachedOcrResult: { text: string; words: WordBoundingBox[] } | null; setCachedOcrResult: React.Dispatch<React.SetStateAction<{ text: string; words: WordBoundingBox[] } | null>>;
   highlightedComponents: string[]; setHighlightedComponents: React.Dispatch<React.SetStateAction<string[]>>;
+  localFallbackAvailable: boolean; setLocalFallbackAvailable: React.Dispatch<React.SetStateAction<boolean>>;
+  userInstruction: string; setUserInstruction: React.Dispatch<React.SetStateAction<string>>;
 
   // Issue Agent actions
   generateIssue: () => Promise<void>;
+  generateIssueOffline: () => void;
   pushIssueToGitHub: () => Promise<void>;
   resetIssue: () => void;
   exportBeautifiedScreenshot: (burnHighlights?: boolean) => Promise<string>;
+  triggerAiHealthCheck: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -214,9 +223,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [issuePayload, setIssuePayload] = useState<GitHubIssuePayload | null>(null);
   const [isGeneratingIssue, setIsGeneratingIssue] = useState<boolean>(false);
   const [issueError, setIssueError] = useState<string | null>(null);
+  const [aiProvider, setAiProviderState] = useState<'ollama' | 'openai' | 'google' | 'claude'>(() => getUserDefault('aiProvider', 'ollama') as any);
   const [ollamaEndpoint, setOllamaEndpointState] = useState<string>(() => getUserDefault('ollamaEndpoint', 'http://localhost:11434'));
   const [ollamaModel, setOllamaModelState] = useState<string>(() => getUserDefault('ollamaModel', 'llava-phi3'));
-  const [ollamaAvailable, setOllamaAvailable] = useState<boolean>(false);
+  const [openaiModel, setOpenaiModelState] = useState<string>(() => getUserDefault('openaiModel', 'gpt-5.4-mini'));
+  const [googleModel, setGoogleModelState] = useState<string>(() => getUserDefault('googleModel', 'gemini-3.5-flash'));
+  const [claudeModel, setClaudeModelState] = useState<string>(() => getUserDefault('claudeModel', 'claude-4-6-sonnet'));
+  
+  const [aiCheckTrigger, setAiCheckTrigger] = useState(0);
+  const triggerAiHealthCheck = useCallback(() => {
+    setAiCheckTrigger(prev => prev + 1);
+  }, []);
+
+  const checkAI = useCallback(async () => {
+    if (window.snapFrameAPI && typeof window.snapFrameAPI.checkAIHealth === 'function') {
+      const endpoint = aiProvider === 'ollama' ? ollamaEndpoint : '';
+      return await window.snapFrameAPI.checkAIHealth(aiProvider, endpoint);
+    }
+    return false;
+  }, [aiProvider, ollamaEndpoint]);
+
+  const pollInterval = aiProvider === 'ollama' ? 10000 : 0; // 10s for local Ollama, no background polling timer for cloud providers
+  const [ollamaAvailable, setOllamaAvailable] = useConnectionPoll(checkAI, `${aiProvider}-${ollamaEndpoint}-${aiCheckTrigger}`, pollInterval);
   const [githubRepo, setGithubRepoState] = useState<string>(() => getUserDefault('githubRepo', ''));
   const [githubRepoList, setGithubRepoList] = useState<string[]>([]);
   const [showComponentHighlights, setShowComponentHighlightsState] = useState<boolean>(() => getUserDefault('showComponentHighlights', true));
@@ -224,8 +252,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [appendAttribution, setAppendAttributionState] = useState<boolean>(() => getUserDefault('appendAttribution', true));
   const [cachedOcrResult, setCachedOcrResult] = useState<{ text: string; words: WordBoundingBox[] } | null>(null);
   const [highlightedComponents, setHighlightedComponents] = useState<string[]>([]);
+  const [localFallbackAvailable, setLocalFallbackAvailable] = useState<boolean>(false);
+  const [userInstruction, setUserInstruction] = useState<string>('');
 
   // Wrapper setters to sync defaults automatically
+  const setAiProvider = (val: 'ollama' | 'openai' | 'google' | 'claude') => {
+    setAiProviderState(val);
+    updateUserDefault('aiProvider', val);
+  };
   const setOllamaEndpoint = (val: string) => {
     setOllamaEndpointState(val);
     updateUserDefault('ollamaEndpoint', val);
@@ -233,6 +267,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setOllamaModel = (val: string) => {
     setOllamaModelState(val);
     updateUserDefault('ollamaModel', val);
+  };
+  const setOpenaiModel = (val: string) => {
+    setOpenaiModelState(val);
+    updateUserDefault('openaiModel', val);
+  };
+  const setGoogleModel = (val: string) => {
+    setGoogleModelState(val);
+    updateUserDefault('googleModel', val);
+  };
+  const setClaudeModel = (val: string) => {
+    setClaudeModelState(val);
+    updateUserDefault('claudeModel', val);
   };
   const setGithubRepo = (val: string) => {
     setGithubRepoState(val);
@@ -246,9 +292,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBurnHighlightsState(val);
     updateUserDefault('burnHighlights', val);
   };
-  const setAppendAttribution = (val: boolean) => {
-    setAppendAttributionState(val);
-    updateUserDefault('appendAttribution', val);
+  const setAppendAttribution = (val: string | boolean) => {
+    const boolVal = typeof val === 'string' ? val === 'true' : val;
+    setAppendAttributionState(boolVal);
+    updateUserDefault('appendAttribution', boolVal);
   };
 
   const [promptConfig, setPromptConfig] = useState<{ message: string; defaultValue: string; resolve: (val: string | null) => void } | null>(null);
@@ -481,6 +528,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!imageSrc) return;
     setIsGeneratingIssue(true);
     setIssueError(null);
+    setLocalFallbackAvailable(false);
 
     try {
       let ocrResult = cachedOcrResult;
@@ -493,12 +541,89 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsScanningSecrets(false);
       }
 
-      const payload = await generateIssueFromScreenshot(
-        { ocrText: ocrResult.text, ocrWords: ocrResult.words, imageSrc },
-        { endpoint: ollamaEndpoint, model: ollamaModel }
-      );
+      // Determine model based on provider
+      let activeModel = ollamaModel;
+      if (aiProvider === 'openai') activeModel = openaiModel;
+      else if (aiProvider === 'google') activeModel = googleModel;
+      else if (aiProvider === 'claude') activeModel = claudeModel;
 
-      // Append attribution if option is active
+      // Downsample for cloud providers
+      let finalImg = imageSrc;
+      if (aiProvider !== 'ollama') {
+        const downsampled = await downsampleImageForOcr(imageSrc, 1024);
+        finalImg = downsampled.dataUrl;
+      }
+
+      // Format prompt
+      let prompt = `
+You are analyzing a software bug screenshot.
+OCR text extracted from the screenshot: "${ocrResult.text}"
+
+Reply with ONLY this JSON object, no explanation, no markdown:
+{
+  "title": "concise bug title under 72 characters",
+  "severity": "critical or high or medium or low",
+  "severityReason": "one sentence explanation",
+  "reproSteps": ["step 1", "step 2", "step 3"],
+  "expected": "what should have happened",
+  "actual": "what actually happened",
+  "components": ["UI component names visible in screenshot"],
+  "labels": ["bug", "suggested-github-label"]
+}
+
+Severity rules:
+- critical: data loss, security issue, app crash, broken auth
+- high: core feature broken, no workaround
+- medium: feature partially broken, workaround exists  
+- low: cosmetic or minor UX issue
+`;
+
+      if (userInstruction && userInstruction.trim()) {
+        prompt += `\nAdditional user instruction/context to consider: "${userInstruction.trim()}"\n`;
+      }
+
+      const base64Image = finalImg.split(',')[1];
+      
+      let rawResponse = '';
+      if (window.snapFrameAPI && typeof window.snapFrameAPI.generateAIResponse === 'function') {
+        rawResponse = await window.snapFrameAPI.generateAIResponse({
+          provider: aiProvider,
+          model: activeModel,
+          prompt,
+          imageBase64: base64Image,
+          endpoint: ollamaEndpoint
+        });
+      } else {
+        throw new Error('LLM Service API not available in this environment');
+      }
+
+      const parsed = safeParseJSON(rawResponse);
+      
+      // Build final issue payload
+      const title = typeof parsed?.title === 'string' ? parsed.title : 'Untitled Bug';
+      let severity: GitHubIssuePayload['severity'] = 'medium';
+      if (['critical', 'high', 'medium', 'low'].includes(parsed?.severity)) {
+        severity = parsed.severity;
+      }
+      const severityReason = typeof parsed?.severityReason === 'string' ? parsed.severityReason : '';
+      const reproSteps = Array.isArray(parsed?.reproSteps) ? parsed.reproSteps.map(String) : [];
+      const expected = typeof parsed?.expected === 'string' ? parsed.expected : '';
+      const actual = typeof parsed?.actual === 'string' ? parsed.actual : '';
+      const components = Array.isArray(parsed?.components) ? parsed.components.map(String) : [];
+      const labels = Array.isArray(parsed?.labels) ? parsed.labels.map(String) : ['bug'];
+
+      const payload: GitHubIssuePayload = {
+        title,
+        severity,
+        severityReason,
+        reproSteps,
+        expected,
+        actual,
+        components,
+        labels,
+        markdownBody: ''
+      };
+
       const markdownSuffix = appendAttribution 
         ? '\n\n---\n*Generated by [Achu](https://achu.design) · Screenshot Agent*' 
         : '';
@@ -509,11 +634,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       pushHistory({ ...getCurrentConfig(), issuePayload: payload });
     } catch (err: any) {
       console.error('Issue generation failed:', err);
-      setIssueError(err.message || 'Generation failed. Check Ollama is running.');
+      setIssueError(err.message || 'Generation failed.');
+      setLocalFallbackAvailable(true);
     } finally {
       setIsGeneratingIssue(false);
       setIsScanningSecrets(false);
     }
+  };
+
+  const generateIssueOffline = () => {
+    if (!cachedOcrResult) return;
+    const text = cachedOcrResult.text;
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const title = lines[0] ? `OCR Fallback: ${lines[0].slice(0, 50)}...` : 'OCR Generated Bug Report';
+    
+    const payload: GitHubIssuePayload = {
+      title,
+      severity: 'medium',
+      severityReason: 'Offline template generated directly from OCR raw text.',
+      reproSteps: lines.slice(1, 6),
+      expected: 'Refer to OCR text below.',
+      actual: text,
+      components: [],
+      labels: ['bug', 'ocr-fallback'],
+      markdownBody: ''
+    };
+    
+    const markdownSuffix = appendAttribution 
+      ? '\n\n---\n*Generated by [Achu](https://achu.design) · OCR Fallback Template*' 
+      : '';
+      
+    payload.markdownBody = buildMarkdown(payload) + markdownSuffix;
+    setIssuePayload(payload);
+    setHighlightedComponents([]);
+    setLocalFallbackAvailable(false);
   };
 
   const pushIssueToGitHub = async () => {
@@ -786,6 +940,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     meshSpread, noImageMode, redactions, redactionStyle
   ]);
 
+
   // Global hotkeys
   useEffect(() => {
     if (window.snapFrameAPI) {
@@ -935,8 +1090,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       issuePayload, setIssuePayload,
       isGeneratingIssue, setIsGeneratingIssue,
       issueError, setIssueError,
+      aiProvider, setAiProvider,
       ollamaEndpoint, setOllamaEndpoint,
       ollamaModel, setOllamaModel,
+      openaiModel, setOpenaiModel,
+      googleModel, setGoogleModel,
+      claudeModel, setClaudeModel,
       ollamaAvailable, setOllamaAvailable,
       githubRepo, setGithubRepo,
       githubRepoList, setGithubRepoList,
@@ -945,7 +1104,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       appendAttribution, setAppendAttribution,
       cachedOcrResult, setCachedOcrResult,
       highlightedComponents, setHighlightedComponents,
-      generateIssue, pushIssueToGitHub, resetIssue, exportBeautifiedScreenshot
+      localFallbackAvailable, setLocalFallbackAvailable,
+      userInstruction, setUserInstruction,
+      generateIssue, generateIssueOffline, pushIssueToGitHub, resetIssue, exportBeautifiedScreenshot,
+      triggerAiHealthCheck
     }}>
       {children}
     </AppContext.Provider>

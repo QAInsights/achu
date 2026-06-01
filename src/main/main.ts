@@ -352,7 +352,13 @@ ipcMain.handle('settings:get', () => {
 });
 
 ipcMain.handle('settings:set', (_event, newSettings) => {
-  saveSettings(newSettings);
+  const current = loadSettings();
+  const merged = {
+    ...newSettings,
+    githubToken: (current as any).githubToken,
+    secureKeys: (current as any).secureKeys
+  };
+  saveSettings(merged);
   return true;
 });
 
@@ -385,6 +391,81 @@ ipcMain.handle('get-github-token', () => {
   } catch (error) {
     console.error('Failed to get github token:', error);
     return null;
+  }
+});
+
+ipcMain.handle('set-secure-key', (_event, keyName: string, keyValue: string) => {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error('Encryption is not available on this platform.');
+    }
+    const encrypted = safeStorage.encryptString(keyValue);
+    const currentSettings = loadSettings();
+    if (!(currentSettings as any).secureKeys) {
+      (currentSettings as any).secureKeys = {};
+    }
+    (currentSettings as any).secureKeys[keyName] = encrypted.toString('base64');
+    saveSettings(currentSettings);
+    return true;
+  } catch (error) {
+    console.error(`Failed to set secure key ${keyName}:`, error);
+    return false;
+  }
+});
+
+ipcMain.handle('get-secure-key', (_event, keyName: string) => {
+  try {
+    const currentSettings = loadSettings();
+    const raw = (currentSettings as any).secureKeys?.[keyName];
+    if (!raw) return null;
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error('Encryption is not available on this platform.');
+    }
+    const buf = Buffer.from(raw, 'base64');
+    return safeStorage.decryptString(buf);
+  } catch (error) {
+    console.error(`Failed to get secure key ${keyName}:`, error);
+    return null;
+  }
+});
+
+ipcMain.handle('llm:check-health', async (_event, { provider, endpoint }) => {
+  try {
+    let apiKey = '';
+    if (provider !== 'ollama') {
+      const currentSettings = loadSettings();
+      const raw = (currentSettings as any).secureKeys?.[provider];
+      if (raw && safeStorage.isEncryptionAvailable()) {
+        const buf = Buffer.from(raw, 'base64');
+        apiKey = safeStorage.decryptString(buf);
+      } else {
+        console.warn(`[IPC] No encrypted key found in settings for provider "${provider}" or encryption unavailable.`);
+      }
+    }
+    const { checkAIHealth } = require('./aiService');
+    return await checkAIHealth(provider, endpoint, apiKey);
+  } catch (error) {
+    console.error('[IPC] Failed checking AI health:', error);
+    return false;
+  }
+});
+
+ipcMain.handle('llm:generate-issue', async (_event, { provider, model, prompt, imageBase64, endpoint }) => {
+  try {
+    let apiKey = '';
+    if (provider !== 'ollama') {
+      const currentSettings = loadSettings();
+      const raw = (currentSettings as any).secureKeys?.[provider];
+      if (raw && safeStorage.isEncryptionAvailable()) {
+        const buf = Buffer.from(raw, 'base64');
+        apiKey = safeStorage.decryptString(buf);
+      }
+    }
+    const { generateAIResponse } = require('./aiService');
+    return await generateAIResponse(provider, model, prompt, imageBase64, endpoint, apiKey);
+  } catch (error) {
+    console.error('Failed generating AI response:', error);
+    throw error;
   }
 });
 

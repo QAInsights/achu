@@ -1612,3 +1612,35 @@ input:checked + .slider-switch:before {
   from { opacity: 1; }
   to   { opacity: 0; }
 }
+
+/* === SETTINGS TABS === */
+.settings-tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+  padding-bottom: 4px;
+}
+
+.settings-tab-btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--dur-fast) var(--ease-out-quint);
+}
+
+.settings-tab-btn:hover {
+  color: var(--text-primary);
+  background-color: var(--surface-2);
+}
+
+.settings-tab-btn.active {
+  color: var(--accent);
+  background-color: var(--accent-soft);
+}
+

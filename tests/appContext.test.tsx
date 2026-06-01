@@ -693,4 +693,64 @@ describe('AppContext', () => {
       expect(screen.getByTestId('sidebar-pos')).toHaveTextContent('right');
     });
   });
+
+  describe('generateIssue with userInstruction', () => {
+    it('appends userInstruction to prompt and calls generateAIResponse without error', async () => {
+      const mockGenerateAIResponse = vi.fn().mockResolvedValue(JSON.stringify({
+        title: 'Custom Instruction Bug',
+        severity: 'high',
+        severityReason: 'Assigned correctly',
+        reproSteps: ['Step 1'],
+        expected: 'Expected behavior',
+        actual: 'Actual behavior',
+        components: ['Button'],
+        labels: ['bug']
+      }));
+
+      vi.stubGlobal('snapFrameAPI', {
+        getSettings: vi.fn().mockResolvedValue({}),
+        saveSettings: vi.fn().mockResolvedValue(undefined),
+        onGlobalHotkeyTriggered: vi.fn(() => vi.fn()),
+        generateAIResponse: mockGenerateAIResponse
+      });
+
+      let contextValues: any;
+      function IssueConsumer() {
+        const ctx = useAppContext();
+        contextValues = ctx;
+        return (
+          <div>
+            <button data-testid="gen-btn" onClick={ctx.generateIssue}>Generate</button>
+            <span data-testid="payload-title">{ctx.issuePayload?.title || ''}</span>
+          </div>
+        );
+      }
+
+      render(
+        <AppProvider>
+          <IssueConsumer />
+        </AppProvider>
+      );
+
+      await act(async () => {
+        contextValues.setImageSrc('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+      });
+
+      await act(async () => {
+        contextValues.setAiProvider('ollama');
+        contextValues.setCachedOcrResult({ text: 'Some OCR text', words: [] });
+        contextValues.setUserInstruction('Focus on error and generate detailed report');
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('gen-btn'));
+      });
+
+      expect(mockGenerateAIResponse).toHaveBeenCalled();
+      const callArgs = mockGenerateAIResponse.mock.calls[0][0];
+      expect(callArgs.prompt).toContain('Focus on error and generate detailed report');
+      expect(screen.getByTestId('payload-title')).toHaveTextContent('Custom Instruction Bug');
+    });
+  });
 });
+

@@ -1,10 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import os from 'os';
 
 // Expose safe IPC channels to the renderer process
 contextBridge.exposeInMainWorld('snapFrameAPI', {
   platform: process.platform,
-  osInfo: `${os.type ? os.type() : 'Unknown OS'} ${os.arch ? os.arch() : ''} ${os.release ? os.release() : ''}`.trim(),
+  osInfo: `${process.platform || 'Unknown OS'} ${process.arch || ''}`.trim(),
   versions: {
     electron: process.versions.electron || 'N/A',
     chrome: process.versions.chrome || 'N/A',
@@ -30,6 +29,13 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
   // GitHub token APIs
   getGitHubToken: () => ipcRenderer.invoke('get-github-token'),
   setGitHubToken: (token: string) => ipcRenderer.invoke('set-github-token', token),
+
+  // Secure key storage APIs (for OpenAI, Google, Claude, etc.)
+  getSecureKey: (keyName: string) => ipcRenderer.invoke('get-secure-key', keyName),
+  setSecureKey: (keyName: string, keyValue: string) => ipcRenderer.invoke('set-secure-key', keyName, keyValue),
+  checkAIHealth: (provider: string, endpoint: string) => ipcRenderer.invoke('llm:check-health', { provider, endpoint }),
+  generateAIResponse: (payload: { provider: string; model: string; prompt: string; imageBase64: string; endpoint: string }) =>
+    ipcRenderer.invoke('llm:generate-issue', payload),
 
   // Event listener for global hotkey
   onGlobalHotkeyTriggered: (callback: (imageUrl: string) => void) => {
