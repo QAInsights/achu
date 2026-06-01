@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, clipboard, globalShortcut, shell, Tray, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, clipboard, globalShortcut, shell, Tray, Menu, safeStorage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -354,6 +354,38 @@ ipcMain.handle('settings:get', () => {
 ipcMain.handle('settings:set', (_event, newSettings) => {
   saveSettings(newSettings);
   return true;
+});
+
+ipcMain.handle('set-github-token', (_event, token: string) => {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error('Encryption is not available on this platform.');
+    }
+    const encrypted = safeStorage.encryptString(token);
+    const currentSettings = loadSettings();
+    (currentSettings as any).githubToken = encrypted.toString('base64');
+    saveSettings(currentSettings);
+    return true;
+  } catch (error) {
+    console.error('Failed to set github token:', error);
+    return false;
+  }
+});
+
+ipcMain.handle('get-github-token', () => {
+  try {
+    const currentSettings = loadSettings();
+    const raw = (currentSettings as any).githubToken;
+    if (!raw) return null;
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error('Encryption is not available on this platform.');
+    }
+    const buf = Buffer.from(raw, 'base64');
+    return safeStorage.decryptString(buf);
+  } catch (error) {
+    console.error('Failed to get github token:', error);
+    return null;
+  }
 });
 
 ipcMain.on('url:open', (_event, url) => {

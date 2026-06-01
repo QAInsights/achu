@@ -65,6 +65,10 @@ export interface RenderConfig {
   showSafeZone?: boolean;
   redactions?: RedactionItem[];
   redactionStyle?: 'blur' | 'solid';
+  issuePayload?: any;
+  showComponentHighlights?: boolean;
+  highlightedComponents?: string[];
+  ocrWords?: any[];
 }
 
 interface ColorStop {
@@ -799,6 +803,37 @@ function drawAnnotationsOnCanvas(
     ctx.rect(contentX, contentY + scaledChromeHeight, contentW, imgH * scale);
     ctx.clip();
     drawAnnotationsOnCanvas(ctx, contentW, imgH * scale, config.annotations, contentX, contentY + scaledChromeHeight, scale);
+    ctx.restore();
+  }
+
+  // Draw component highlights on the screenshot image area
+  if (config.showComponentHighlights && config.ocrWords && config.highlightedComponents && config.highlightedComponents.length > 0) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(contentX, contentY + scaledChromeHeight, contentW, imgH * scale);
+    ctx.clip();
+
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = Math.max(1, 1.5 * scale);
+    ctx.setLineDash([4 * scale, 4 * scale]);
+    ctx.fillStyle = 'rgba(250, 204, 21, 0.05)';
+
+    config.ocrWords.forEach((word: any) => {
+      const isMatch = config.highlightedComponents!.some((comp: string) =>
+        comp.toLowerCase().includes(word.text.toLowerCase()) ||
+        word.text.toLowerCase().includes(comp.toLowerCase())
+      );
+      if (isMatch) {
+        const wx = contentX + word.x * contentW;
+        const wy = contentY + scaledChromeHeight + word.y * imgH * scale;
+        const ww = word.w * contentW;
+        const wh = word.h * imgH * scale;
+
+        ctx.fillRect(wx, wy, ww, wh);
+        ctx.strokeRect(wx, wy, ww, wh);
+      }
+    });
+
     ctx.restore();
   }
 

@@ -27,6 +27,10 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
   readImageFromClipboard: () => ipcRenderer.invoke('clipboard:read-image'),
   openURL: (url: string) => ipcRenderer.send('url:open', url),
 
+  // GitHub token APIs
+  getGitHubToken: () => ipcRenderer.invoke('get-github-token'),
+  setGitHubToken: (token: string) => ipcRenderer.invoke('set-github-token', token),
+
   // Event listener for global hotkey
   onGlobalHotkeyTriggered: (callback: (imageUrl: string) => void) => {
     const subscription = (_event: any, imageUrl: string) => callback(imageUrl);

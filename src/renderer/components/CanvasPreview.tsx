@@ -66,7 +66,10 @@ export default function CanvasPreview() {
     toggleRedaction = () => {},
     hoveredRedactionId = null,
     setHoveredRedactionId = () => {},
-    redactionStyle = 'solid'
+    redactionStyle = 'solid',
+    showComponentHighlights = true,
+    cachedOcrResult = null,
+    highlightedComponents = []
   } = useAppContext();
 
   const handleZoomIn = () => setZoomLevel(zoomIn(zoomLevel));
@@ -416,6 +419,34 @@ export default function CanvasPreview() {
                       />
                     );
                   })}
+                  {/* Yellow dashed component highlights */}
+                  {showComponentHighlights && cachedOcrResult && highlightedComponents && highlightedComponents.length > 0 && 
+                    cachedOcrResult.words.map((word, idx) => {
+                      const isMatch = highlightedComponents.some(comp => 
+                        comp.toLowerCase().includes(word.text.toLowerCase()) || 
+                        word.text.toLowerCase().includes(comp.toLowerCase())
+                      );
+                      if (!isMatch) return null;
+                      return (
+                        <div
+                          key={`highlight-${idx}`}
+                          style={{
+                            position: 'absolute',
+                            left: `${word.x * 100}%`,
+                            top: `${word.y * 100}%`,
+                            width: `${word.w * 100}%`,
+                            height: `${word.h * 100}%`,
+                            border: '1.5px dashed #facc15',
+                            boxShadow: '0 0 6px rgba(250, 204, 21, 0.4)',
+                            backgroundColor: 'rgba(250, 204, 21, 0.05)',
+                            borderRadius: '2px',
+                            pointerEvents: 'none',
+                            zIndex: 22,
+                          }}
+                        />
+                      );
+                    })
+                  }
                   <AnnotationsLayer
                     annotations={annotations}
                     setAnnotations={setAnnotations}

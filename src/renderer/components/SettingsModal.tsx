@@ -30,7 +30,40 @@ export default function SettingsModal() {
     getCurrentConfig,
     sidebarPosition,
     setSidebarPosition,
+    ollamaEndpoint,
+    setOllamaEndpoint,
+    ollamaModel,
+    setOllamaModel,
+    githubRepo,
+    setGithubRepo,
+    appendAttribution,
+    setAppendAttribution,
+    showComponentHighlights,
+    setShowComponentHighlights,
+    burnHighlights,
+    setBurnHighlights,
   } = useAppContext();
+
+  const [githubTokenInput, setGithubTokenInput] = React.useState('');
+
+  React.useEffect(() => {
+    const loadToken = async () => {
+      if (window.snapFrameAPI) {
+        const token = await window.snapFrameAPI.getGitHubToken();
+        if (token) setGithubTokenInput(token);
+      }
+    };
+    if (settingsVisible) {
+      loadToken();
+    }
+  }, [settingsVisible]);
+
+  const handleSaveToken = async (val: string) => {
+    setGithubTokenInput(val);
+    if (window.snapFrameAPI) {
+      await window.snapFrameAPI.setGitHubToken(val);
+    }
+  };
 
   if (!settingsVisible) return null;
 
@@ -261,6 +294,75 @@ export default function SettingsModal() {
                 onChange={(e) => updateSetting('watermarkOpacity', parseFloat(e.target.value) / 100, setWatermarkOpacity)}
                 style={{ marginTop: '4px' }}
               />
+            </div>
+          </div>
+
+          {/* Issue Agent & Integrations Section */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>Issue Agent & Integrations</h3>
+            
+            <div className="control-group">
+              <span className="control-label">Ollama Endpoint</span>
+              <input
+                type="text"
+                value={ollamaEndpoint}
+                onChange={(e) => updateSetting('ollamaEndpoint', e.target.value, setOllamaEndpoint)}
+                style={{ marginTop: '4px', width: '100%' }}
+              />
+            </div>
+
+            <div className="control-group">
+              <span className="control-label">Default Model</span>
+              <input
+                type="text"
+                value={ollamaModel}
+                onChange={(e) => updateSetting('ollamaModel', e.target.value, setOllamaModel)}
+                style={{ marginTop: '4px', width: '100%' }}
+              />
+            </div>
+
+            <div className="control-group">
+              <span className="control-label">Default Repository (owner/repo)</span>
+              <input
+                type="text"
+                value={githubRepo}
+                onChange={(e) => updateSetting('githubRepo', e.target.value, setGithubRepo)}
+                style={{ marginTop: '4px', width: '100%' }}
+              />
+            </div>
+
+            <div className="control-group">
+              <span className="control-label">GitHub Personal Access Token (PAT)</span>
+              <input
+                type="password"
+                placeholder="ghp_..."
+                value={githubTokenInput}
+                onChange={(e) => handleSaveToken(e.target.value)}
+                style={{ marginTop: '4px', width: '100%' }}
+              />
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px', display: 'block' }}>
+                Stored locally and encrypted via OS-level safe storage. Never shared.
+              </span>
+            </div>
+
+            <div className="control-group">
+              <span className="control-label">Append Achu attribution in Markdown</span>
+              <div className="format-toggle" style={{ marginTop: '4px' }}>
+                <button
+                  className={`format-toggle-btn ${appendAttribution ? 'active' : ''}`}
+                  onClick={() => updateSetting('appendAttribution', true, setAppendAttribution)}
+                  style={{ flex: 1 }}
+                >
+                  Yes
+                </button>
+                <button
+                  className={`format-toggle-btn ${!appendAttribution ? 'active' : ''}`}
+                  onClick={() => updateSetting('appendAttribution', false, setAppendAttribution)}
+                  style={{ flex: 1 }}
+                >
+                  No
+                </button>
+              </div>
             </div>
           </div>
 

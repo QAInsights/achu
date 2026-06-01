@@ -1,14 +1,17 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { RenderConfig, Annotation, drawMeshGradient, RedactionItem } from './canvasRenderer';
+import { RenderConfig, Annotation, drawMeshGradient, RedactionItem, renderCanvas } from './canvasRenderer';
 import { useHistory } from './hooks/useHistory';
 import { useExport } from './hooks/useExport';
 import { usePresets } from './hooks/usePresets';
 import { getZoomStyle as getZoomStyleUtil } from './utils/layoutUtils';
-import { getUserDefault } from './utils/storageUtils';
+import { getUserDefault, updateUserDefault } from './utils/storageUtils';
 import { createWorker } from 'tesseract.js';
 import { processOcrResults, downsampleImageForOcr } from './utils/privacyGuardUtils';
 import { VibePalette, extractPalette } from './utils/colorExtractor';
 import { generateVibeConfigs } from './utils/vibeUtils';
+import { WordBoundingBox, GitHubIssuePayload, generateIssueFromScreenshot, buildMarkdown } from './utils/githubAgentUtils';
+import { checkOllamaHealth } from './utils/ollamaUtils';
+import { fetchUserRepos, pushToGitHub } from './utils/githubApiUtils';
 
 // TypeScript declarations for secure Electron IPC bridge
 declare global {
@@ -126,6 +129,27 @@ interface AppContextType {
   revealAll: () => void;
   resetStyles: () => void;
   clearWorkspace: () => void;
+
+  // Issue Agent states & config
+  issuePayload: GitHubIssuePayload | null; setIssuePayload: React.Dispatch<React.SetStateAction<GitHubIssuePayload | null>>;
+  isGeneratingIssue: boolean; setIsGeneratingIssue: React.Dispatch<React.SetStateAction<boolean>>;
+  issueError: string | null; setIssueError: React.Dispatch<React.SetStateAction<string | null>>;
+  ollamaEndpoint: string; setOllamaEndpoint: (endpoint: string) => void;
+  ollamaModel: string; setOllamaModel: (model: string) => void;
+  ollamaAvailable: boolean; setOllamaAvailable: React.Dispatch<React.SetStateAction<boolean>>;
+  githubRepo: string; setGithubRepo: (repo: string) => void;
+  githubRepoList: string[]; setGithubRepoList: React.Dispatch<React.SetStateAction<string[]>>;
+  showComponentHighlights: boolean; setShowComponentHighlights: (show: boolean) => void;
+  burnHighlights: boolean; setBurnHighlights: (burn: boolean) => void;
+  appendAttribution: boolean; setAppendAttribution: (append: boolean) => void;
+  cachedOcrResult: { text: string; words: WordBoundingBox[] } | null; setCachedOcrResult: React.Dispatch<React.SetStateAction<{ text: string; words: WordBoundingBox[] } | null>>;
+  highlightedComponents: string[]; setHighlightedComponents: React.Dispatch<React.SetStateAction<string[]>>;
+
+  // Issue Agent actions
+  generateIssue: () => Promise<void>;
+  pushIssueToGitHub: () => Promise<void>;
+  resetIssue: () => void;
+  exportBeautifiedScreenshot: (burnHighlights?: boolean) => Promise<string>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -186,6 +210,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [hoveredRedactionId, setHoveredRedactionId] = useState<string | null>(null);
   const [redactionStyle, setRedactionStyle] = useState<'blur' | 'solid'>(() => getUserDefault('redactionStyle', 'solid'));
 
+  // Issue Agent states
+  const [issuePayload, setIssuePayload] = useState<GitHubIssuePayload | null>(null);
+  const [isGeneratingIssue, setIsGeneratingIssue] = useState<boolean>(false);
+  const [issueError, setIssueError] = useState<string | null>(null);
+  const [ollamaEndpoint, setOllamaEndpointState] = useState<string>(() => getUserDefault('ollamaEndpoint', 'http://localhost:11434'));
+  const [ollamaModel, setOllamaModelState] = useState<string>(() => getUserDefault('ollamaModel', 'llava-phi3'));
+  const [ollamaAvailable, setOllamaAvailable] = useState<boolean>(false);
+  const [githubRepo, setGithubRepoState] = useState<string>(() => getUserDefault('githubRepo', ''));
+  const [githubRepoList, setGithubRepoList] = useState<string[]>([]);
+  const [showComponentHighlights, setShowComponentHighlightsState] = useState<boolean>(() => getUserDefault('showComponentHighlights', true));
+  const [burnHighlights, setBurnHighlightsState] = useState<boolean>(() => getUserDefault('burnHighlights', true));
+  const [appendAttribution, setAppendAttributionState] = useState<boolean>(() => getUserDefault('appendAttribution', true));
+  const [cachedOcrResult, setCachedOcrResult] = useState<{ text: string; words: WordBoundingBox[] } | null>(null);
+  const [highlightedComponents, setHighlightedComponents] = useState<string[]>([]);
+
+  // Wrapper setters to sync defaults automatically
+  const setOllamaEndpoint = (val: string) => {
+    setOllamaEndpointState(val);
+    updateUserDefault('ollamaEndpoint', val);
+  };
+  const setOllamaModel = (val: string) => {
+    setOllamaModelState(val);
+    updateUserDefault('ollamaModel', val);
+  };
+  const setGithubRepo = (val: string) => {
+    setGithubRepoState(val);
+    updateUserDefault('githubRepo', val);
+  };
+  const setShowComponentHighlights = (val: boolean) => {
+    setShowComponentHighlightsState(val);
+    updateUserDefault('showComponentHighlights', val);
+  };
+  const setBurnHighlights = (val: boolean) => {
+    setBurnHighlightsState(val);
+    updateUserDefault('burnHighlights', val);
+  };
+  const setAppendAttribution = (val: boolean) => {
+    setAppendAttributionState(val);
+    updateUserDefault('appendAttribution', val);
+  };
+
   const [promptConfig, setPromptConfig] = useState<{ message: string; defaultValue: string; resolve: (val: string | null) => void } | null>(null);
 
   const [sidebarVisible, setSidebarVisible] = useState<boolean>(true);
@@ -228,6 +293,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showSafeZone,
     redactions,
     redactionStyle,
+    issuePayload,
   });
 
   const applyConfig = (config: RenderConfig) => {
@@ -273,6 +339,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMeshOpacity(config.meshOpacity ?? 100);
     setMeshSpread(config.meshSpread ?? 100);
     setNoImageMode(config.noImage ?? false);
+    
+    // Restore Issue Agent payload
+    setIssuePayload(config.issuePayload ?? null);
+    setHighlightedComponents(config.issuePayload?.components ?? []);
   };
 
   // 1. History Hook
@@ -341,43 +411,170 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return new Promise((resolve) => { setPromptConfig({ message, defaultValue, resolve }); });
   };
 
+  const runOCR = async (src: string, progressCallback?: (progress: number) => void) => {
+    const { dataUrl, width, height } = await downsampleImageForOcr(src, 1600);
+
+    const worker = await createWorker('eng', 1, {
+      logger: (m) => {
+        if (m.status === 'recognizing text' && progressCallback) {
+          progressCallback(Math.round(m.progress * 100));
+        }
+      },
+    });
+
+    const { data } = await worker.recognize(dataUrl, {}, { blocks: true });
+    const blocks = data.blocks || [];
+    const lines = blocks
+      .flatMap((block: any) => block.paragraphs || [])
+      .flatMap((para: any) => para.lines || []);
+
+    const ocrWords: WordBoundingBox[] = [];
+    lines.forEach((line: any) => {
+      const words = line.words || [];
+      words.forEach((word: any) => {
+        ocrWords.push({
+          text: word.text,
+          x: Math.max(0, word.bbox.x0 / width),
+          y: Math.max(0, word.bbox.y0 / height),
+          w: Math.min(1 - Math.max(0, word.bbox.x0 / width), (word.bbox.x1 - word.bbox.x0) / width),
+          h: Math.min(1 - Math.max(0, word.bbox.y0 / height), (word.bbox.y1 - word.bbox.y0) / height)
+        });
+      });
+    });
+
+    await worker.terminate();
+
+    return {
+      text: data.text || '',
+      words: ocrWords,
+      lines,
+      width,
+      height
+    };
+  };
+
   const scanForSecrets = async () => {
     if (!imageSrc) return;
     setIsScanningSecrets(true);
     setScanProgress(0);
 
     try {
-      const { dataUrl, width, height } = await downsampleImageForOcr(imageSrc, 1600);
-
-      const worker = await createWorker('eng', 1, {
-        logger: (m) => {
-          if (m.status === 'recognizing text') {
-            setScanProgress(Math.round(m.progress * 100));
-          }
-        },
-      });
-
-      const { data } = await worker.recognize(dataUrl, {}, { blocks: true });
-      const blocks = data.blocks || [];
-      const lines = blocks
-        .flatMap((block: any) => block.paragraphs || [])
-        .flatMap((para: any) => para.lines || []);
-      const detected = processOcrResults(lines as any, width, height);
+      const ocrResult = await runOCR(imageSrc, setScanProgress);
+      const detected = processOcrResults(ocrResult.lines as any, ocrResult.width, ocrResult.height);
 
       setRedactions(detected);
+      setCachedOcrResult({ text: ocrResult.text, words: ocrResult.words });
       const newConfig = {
         ...getCurrentConfig(),
         redactions: detected,
       };
       pushHistory(newConfig);
-
-      await worker.terminate();
     } catch (e) {
       console.error('OCR Scanning failed:', e);
       alert('Failed to scan screenshot: ' + (e as Error).message);
     } finally {
       setIsScanningSecrets(false);
     }
+  };
+
+  const generateIssue = async () => {
+    if (!imageSrc) return;
+    setIsGeneratingIssue(true);
+    setIssueError(null);
+
+    try {
+      let ocrResult = cachedOcrResult;
+      if (!ocrResult) {
+        setIsScanningSecrets(true);
+        setScanProgress(0);
+        const res = await runOCR(imageSrc, setScanProgress);
+        ocrResult = { text: res.text, words: res.words };
+        setCachedOcrResult(ocrResult);
+        setIsScanningSecrets(false);
+      }
+
+      const payload = await generateIssueFromScreenshot(
+        { ocrText: ocrResult.text, ocrWords: ocrResult.words, imageSrc },
+        { endpoint: ollamaEndpoint, model: ollamaModel }
+      );
+
+      // Append attribution if option is active
+      const markdownSuffix = appendAttribution 
+        ? '\n\n---\n*Generated by [Achu](https://achu.design) · Screenshot Agent*' 
+        : '';
+      
+      payload.markdownBody = buildMarkdown(payload) + markdownSuffix;
+      setIssuePayload(payload);
+      setHighlightedComponents(payload.components);
+      pushHistory({ ...getCurrentConfig(), issuePayload: payload });
+    } catch (err: any) {
+      console.error('Issue generation failed:', err);
+      setIssueError(err.message || 'Generation failed. Check Ollama is running.');
+    } finally {
+      setIsGeneratingIssue(false);
+      setIsScanningSecrets(false);
+    }
+  };
+
+  const pushIssueToGitHub = async () => {
+    if (!issuePayload) return;
+    try {
+      const token = await window.snapFrameAPI?.getGitHubToken?.();
+      if (!token) {
+        throw new Error('GitHub Personal Access Token (PAT) is missing. Add it in settings.');
+      }
+      if (!githubRepo || !githubRepo.includes('/')) {
+        throw new Error('Invalid repository specified. Format: owner/repo');
+      }
+
+      const screenshotBase64 = await exportBeautifiedScreenshot(burnHighlights);
+      const [owner, repo] = githubRepo.split('/');
+      const issueUrl = await pushToGitHub(token, owner, repo, issuePayload, screenshotBase64);
+      
+      if (window.snapFrameAPI) {
+        window.snapFrameAPI.openURL(issueUrl);
+      } else {
+        window.open(issueUrl, '_blank');
+      }
+    } catch (err: any) {
+      console.error('Push to GitHub failed:', err);
+      alert('GitHub Publish Failed: ' + err.message);
+    }
+  };
+
+  const resetIssue = () => {
+    setIssuePayload(null);
+    setHighlightedComponents([]);
+    setIssueError(null);
+  };
+
+  const exportBeautifiedScreenshot = async (burn = false): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const runExport = (img: HTMLImageElement | null) => {
+        try {
+          const canvas = document.createElement('canvas');
+          const config = getCurrentConfig();
+          if (burn) {
+            (config as any).showComponentHighlights = true;
+            (config as any).highlightedComponents = highlightedComponents;
+            (config as any).ocrWords = cachedOcrResult?.words || [];
+          }
+          renderCanvas(canvas, img, config);
+          resolve(canvas.toDataURL('image/png'));
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      if (noImageMode || !imageSrc) {
+        runExport(null);
+      } else {
+        const img = new Image();
+        img.src = imageSrc;
+        img.onload = () => runExport(img);
+        img.onerror = () => reject(new Error('Failed to load image for export'));
+      }
+    });
   };
 
   const toggleRedaction = (id: string) => {
@@ -489,6 +686,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRedactions([]);
     setVibePalette(null);
     setVibeVariantIndex(-1);
+    resetIssue();
+    setCachedOcrResult(null);
   };
 
   const applyAutoVibe = useCallback(async () => {
@@ -528,6 +727,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (imageSrc && imageSrc !== prevImageSrc.current) {
       setVibePalette(null);
       setVibeVariantIndex(-1);
+      
+      // Clear issue agent state on new image load
+      resetIssue();
+      setCachedOcrResult(null);
+      
       prevImageSrc.current = imageSrc;
     }
   }, [imageSrc]);
@@ -725,7 +929,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       handleDragOver, handleDragLeave, handleDrop, customPrompt, handlePointerDown, handlePointerMove, handlePointerUp,
       resetStyles,
       clearWorkspace,
-      applyAutoVibe
+      applyAutoVibe,
+
+      // Issue Agent states & functions
+      issuePayload, setIssuePayload,
+      isGeneratingIssue, setIsGeneratingIssue,
+      issueError, setIssueError,
+      ollamaEndpoint, setOllamaEndpoint,
+      ollamaModel, setOllamaModel,
+      ollamaAvailable, setOllamaAvailable,
+      githubRepo, setGithubRepo,
+      githubRepoList, setGithubRepoList,
+      showComponentHighlights, setShowComponentHighlights,
+      burnHighlights, setBurnHighlights,
+      appendAttribution, setAppendAttribution,
+      cachedOcrResult, setCachedOcrResult,
+      highlightedComponents, setHighlightedComponents,
+      generateIssue, pushIssueToGitHub, resetIssue, exportBeautifiedScreenshot
     }}>
       {children}
     </AppContext.Provider>

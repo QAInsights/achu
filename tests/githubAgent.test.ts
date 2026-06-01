@@ -1,0 +1,127 @@
+import { describe, it, expect, vi } from 'vitest';
+import { safeParseJSON, buildMarkdown, capitalize } from '../src/renderer/utils/githubAgentUtils';
+import { checkOllamaHealth, fetchInstalledModels } from '../src/renderer/utils/ollamaUtils';
+
+describe('GitHub Issue Agent Utils', () => {
+  describe('capitalize helper', () => {
+    it('should capitalize the first character of a string', () => {
+      expect(capitalize('critical')).toBe('Critical');
+      expect(capitalize('high')).toBe('High');
+      expect(capitalize('')).toBe('');
+    });
+  });
+
+  describe('safeParseJSON', () => {
+    it('should parse a perfectly valid JSON object', () => {
+      const valid = '{"title":"Login Bug","severity":"high","expected":"Login to work","actual":"Crash","reproSteps":["Click login","Crash"],"components":["login_btn"],"labels":["bug"]}';
+      const parsed = safeParseJSON(valid);
+      expect(parsed.title).toBe('Login Bug');
+      expect(parsed.severity).toBe('high');
+      expect(parsed.expected).toBe('Login to work');
+      expect(parsed.actual).toBe('Crash');
+      expect(parsed.reproSteps).toEqual(['Click login', 'Crash']);
+    });
+
+    it('should parse and repair semi-malformed JSON', () => {
+      // Missing closing brace and incomplete commas
+      const broken = '{"title": "Unclosed Bug", "severity": "medium", "expected": "Works"';
+      const parsed = safeParseJSON(broken);
+      expect(parsed.title).toBe('Unclosed Bug');
+      expect(parsed.severity).toBe('medium');
+      expect(parsed.expected).toBe('Works');
+    });
+
+    it('should fallback to regex extraction for completely malformed output', () => {
+      const text = 'Here is the bug title: "Regex Fallback Title" and actual: "Regex Fallback Actual" severity is "critical".';
+      const parsed = safeParseJSON(text);
+      expect(parsed.title).toBe('Regex Fallback Title');
+      expect(parsed.actual).toBe('Regex Fallback Actual');
+      expect(parsed.severity).toBe('critical');
+    });
+  });
+
+  describe('buildMarkdown', () => {
+    it('should build formatted markdown with severity emojis', () => {
+      const payload = {
+        title: 'Crash on click',
+        severity: 'critical' as const,
+        severityReason: 'Auth failure causing crash',
+        reproSteps: ['Step one', 'Step two'],
+        expected: 'Should authenticate',
+        actual: 'Crashed with exception',
+        components: ['AuthButton'],
+        labels: ['bug'],
+        markdownBody: ''
+      };
+      const markdown = buildMarkdown(payload);
+      expect(markdown).toContain('## Bug Report');
+      expect(markdown).toContain('🔴 Critical');
+      expect(markdown).toContain('Auth failure causing crash');
+      expect(markdown).toContain('1. Step one');
+      expect(markdown).toContain('2. Step two');
+      expect(markdown).toContain('Should authenticate');
+      expect(markdown).toContain('Crashed with exception');
+      expect(markdown).toContain('`AuthButton`');
+    });
+
+    it('should handle empty steps or components gracefully without crashing', () => {
+      const payload = {
+        title: 'Empty steps bug',
+        severity: 'low' as const,
+        severityReason: '',
+        reproSteps: [],
+        expected: '',
+        actual: '',
+        components: [],
+        labels: [],
+        markdownBody: ''
+      };
+      const markdown = buildMarkdown(payload);
+      expect(markdown).toContain('🟢 Low');
+      expect(markdown).toContain('No steps specified.');
+      expect(markdown).toContain('None detected.');
+    });
+  });
+
+  describe('checkOllamaHealth', () => {
+    it('should return false on fetch exception', async () => {
+      vi.stubGlobal('fetch', () => Promise.reject(new Error('Connection refused')));
+      const ok = await checkOllamaHealth('http://localhost:11434');
+      expect(ok).toBe(false);
+      vi.unstubAllGlobals();
+    });
+
+    it('should return true on 200 OK response', async () => {
+      vi.stubGlobal('fetch', () => Promise.resolve({ ok: true }));
+      const ok = await checkOllamaHealth('http://localhost:11434');
+      expect(ok).toBe(true);
+      vi.unstubAllGlobals();
+    });
+  });
+
+  describe('fetchInstalledModels', () => {
+    it('should filter only vision-capable models', async () => {
+      const mockTags = {
+        models: [
+          { name: 'llama3:8b' },
+          { name: 'llava-phi3:latest' },
+          { name: 'moondream:latest' },
+          { name: 'codegemma:latest' }
+        ]
+      };
+      vi.stubGlobal('fetch', () => Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockTags)
+      }));
+
+      const models = await fetchInstalledModels('http://localhost:11434');
+      expect(models.length).toBe(2);
+      expect(models).toContain('llava-phi3:latest');
+      expect(models).toContain('moondream:latest');
+      expect(models).not.toContain('llama3:8b');
+      expect(models).not.toContain('codegemma:latest');
+
+      vi.unstubAllGlobals();
+    });
+  });
+});

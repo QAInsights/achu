@@ -6,6 +6,7 @@ import LayoutSettings from './LayoutSettings';
 import BackgroundSettings from './BackgroundSettings';
 import ExtraSettings from './ExtraSettings';
 import PrivacyGuardSettings from './PrivacyGuardSettings';
+import GitHubAgentSettings from './GitHubAgentSettings';
 import Tooltip from './Tooltip';
 
 const MIN_WIDTH = 425;
@@ -149,6 +150,7 @@ export default function Sidebar() {
         </div>
 
         {/* Modular Sidebar Control Groups */}
+        <GitHubAgentSettings />
         <PrivacyGuardSettings />
         <LayoutSettings />
         <BackgroundSettings />

@@ -6,18 +6,22 @@ interface InspectorSectionProps {
   icon?: React.ReactNode;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  headerActions?: React.ReactNode;
 }
 
-export default function InspectorSection({ title, icon, children, defaultOpen = true }: InspectorSectionProps) {
+export default function InspectorSection({ title, icon, children, defaultOpen = true, headerActions }: InspectorSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className={`inspector-section ${open ? 'open' : ''}`}>
       <div className="inspector-section-header" onClick={() => setOpen(!open)}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
           {icon && <span className="inspector-section-icon">{icon}</span>}
           <span className="inspector-section-title">{title}</span>
         </div>
-        <ChevronDown className="inspector-section-chevron w-4 h-4" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+          {headerActions}
+          <ChevronDown className="inspector-section-chevron w-4 h-4" />
+        </div>
       </div>
       <div className="inspector-section-content">
         <div className="inspector-section-inner">
