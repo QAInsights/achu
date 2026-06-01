@@ -15,6 +15,11 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-mediumseagreen?style=flat-square" alt="Platform Support" />
   <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License" />
   <img src="https://img.shields.io/badge/Tests-Vitest-729B1B?style=flat-square&logo=vitest" alt="Vitest Tests" />
+  <br />
+  <img src="https://img.shields.io/badge/Ollama-black?style=flat-square&logo=ollama" alt="Ollama" />
+  <img src="https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai" alt="OpenAI" />
+  <img src="https://img.shields.io/badge/Gemini-8E75B2?style=flat-square&logo=googlegemini" alt="Gemini" />
+  <img src="https://img.shields.io/badge/Claude-D97706?style=flat-square&logo=anthropic" alt="Claude" />
 </p>
 
 ---
