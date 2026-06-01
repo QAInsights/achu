@@ -2,10 +2,16 @@
   <img src="assets/logo.svg" alt="Achu Logo" width="128" height="128" />
 </p>
 
-<h1 align="center">Achu</h1>
+<p align="center">
+  <img src="assets/title.svg" alt="Achu" width="580" />
+</p>
 
 <p align="center">
   <strong>A lightweight, gorgeous desktop utility for Windows, macOS, and Linux that turns raw screenshots into polished visual assets.</strong>
+</p>
+
+<p align="center" style="font-size: 1.1em; color: #64748b;">
+  Achu (அச்சு) means `print` in Tamil. 🖨️
 </p>
 
 <p align="center">
@@ -144,5 +150,4 @@ Achu uses `electron-builder` to package lightweight native binaries for Windows,
 If you find Achu useful, consider supporting development or checking out QAInsights resources:
 
 * **Sponsor & Donate:** [Buy Me a Coffee](https://buymeacoffee.com/qainsights)
-* **GitHub Repository:** [QAInsights/achu](https://github.com/QAInsights/achu)
 * **License:** MIT License. See [LICENSE](./LICENSE) for details.
