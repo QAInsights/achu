@@ -155,4 +155,35 @@ describe('aiService - generateAIResponse', () => {
       generateAIResponse('openai', 'gpt-4o-mini', 'prompt', 'image64', '', '')
     ).rejects.toThrow('API key is missing for openai');
   });
+
+  it('should detect MIME types dynamically based on base64 content', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        choices: [{ message: { content: '{"title": "OpenAI Bug"}' } }],
+        candidates: [{ content: { parts: [{ text: '{"title": "Gemini Bug"}' }] } }],
+        content: [{ text: '{"title": "Claude Bug"}' }]
+      })
+    } as Response);
+
+    // JPEG prefix
+    await generateAIResponse('openai', 'gpt-4o-mini', 'prompt', '/9j/mockjpegdata', '', 'test-key');
+    expect(mockFetch).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({
+      body: expect.stringContaining('data:image/jpeg;base64,/9j/mockjpegdata')
+    }));
+
+    // PNG prefix
+    await generateAIResponse('google', 'gemini-2.5-flash', 'prompt', 'iVBORw0KGgomockpngdata', '', 'test-key');
+    expect(mockFetch).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({
+      body: expect.stringContaining('"mimeType":"image/png"')
+    }));
+
+    // WebP prefix
+    await generateAIResponse('claude', 'claude-3-5-sonnet-latest', 'prompt', 'UklGRmockwebpdata', '', 'test-key');
+    expect(mockFetch).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({
+      body: expect.stringContaining('"media_type":"image/webp"')
+    }));
+  });
 });
+

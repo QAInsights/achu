@@ -93,6 +93,10 @@ export async function generateAIResponse(
     throw new Error(`API key is missing for ${provider}. Configure it in Settings.`);
   }
 
+  const mimeType = imageBase64.startsWith('/9j/') ? 'image/jpeg' :
+                   imageBase64.startsWith('iVBORw0KGgo') ? 'image/png' :
+                   imageBase64.startsWith('UklGR') ? 'image/webp' : 'image/jpeg';
+
   if (provider === 'openai') {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -107,7 +111,7 @@ export async function generateAIResponse(
             role: 'user',
             content: [
               { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: `data:image/png;base64,${imageBase64}` } }
+              { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
             ]
           }
         ],
@@ -133,7 +137,7 @@ export async function generateAIResponse(
           {
             parts: [
               { text: prompt },
-              { inlineData: { mimeType: 'image/png', data: imageBase64 } }
+              { inlineData: { mimeType, data: imageBase64 } }
             ]
           }
         ],
@@ -173,7 +177,7 @@ export async function generateAIResponse(
                 type: 'image',
                 source: {
                   type: 'base64',
-                  media_type: 'image/png',
+                  media_type: mimeType,
                   data: imageBase64
                 }
               }
@@ -194,3 +198,4 @@ export async function generateAIResponse(
 
   throw new Error(`Unsupported AI provider: ${provider}`);
 }
+

@@ -477,35 +477,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
     });
 
-    const { data } = await worker.recognize(dataUrl, {}, { blocks: true });
-    const blocks = data.blocks || [];
-    const lines = blocks
-      .flatMap((block: any) => block.paragraphs || [])
-      .flatMap((para: any) => para.lines || []);
+    try {
+      const { data } = await worker.recognize(dataUrl, {}, { blocks: true });
+      const blocks = data.blocks || [];
+      const lines = blocks
+        .flatMap((block: any) => block.paragraphs || [])
+        .flatMap((para: any) => para.lines || []);
 
-    const ocrWords: WordBoundingBox[] = [];
-    lines.forEach((line: any) => {
-      const words = line.words || [];
-      words.forEach((word: any) => {
-        ocrWords.push({
-          text: word.text,
-          x: Math.max(0, word.bbox.x0 / width),
-          y: Math.max(0, word.bbox.y0 / height),
-          w: Math.min(1 - Math.max(0, word.bbox.x0 / width), (word.bbox.x1 - word.bbox.x0) / width),
-          h: Math.min(1 - Math.max(0, word.bbox.y0 / height), (word.bbox.y1 - word.bbox.y0) / height)
+      const ocrWords: WordBoundingBox[] = [];
+      lines.forEach((line: any) => {
+        const words = line.words || [];
+        words.forEach((word: any) => {
+          ocrWords.push({
+            text: word.text,
+            x: Math.max(0, word.bbox.x0 / width),
+            y: Math.max(0, word.bbox.y0 / height),
+            w: Math.min(1 - Math.max(0, word.bbox.x0 / width), (word.bbox.x1 - word.bbox.x0) / width),
+            h: Math.min(1 - Math.max(0, word.bbox.y0 / height), (word.bbox.y1 - word.bbox.y0) / height)
+          });
         });
       });
-    });
 
-    await worker.terminate();
-
-    return {
-      text: data.text || '',
-      words: ocrWords,
-      lines,
-      width,
-      height
-    };
+      return {
+        text: data.text || '',
+        words: ocrWords,
+        lines,
+        width,
+        height
+      };
+    } finally {
+      await worker.terminate();
+    }
   };
 
   const scanForSecrets = async () => {

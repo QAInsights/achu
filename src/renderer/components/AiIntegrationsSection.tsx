@@ -151,7 +151,13 @@ export default function AiIntegrationsSection() {
                 autoComplete="new-password"
                 placeholder="sk-..."
                 value={openaiKeyInput}
-                onChange={(e) => handleSaveSecureKey('openai', e.target.value, setOpenaiKeyInput)}
+                onChange={(e) => setOpenaiKeyInput(e.target.value)}
+                onBlur={() => handleSaveSecureKey('openai', openaiKeyInput, setOpenaiKeyInput)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveSecureKey('openai', openaiKeyInput, setOpenaiKeyInput);
+                  }
+                }}
                 style={{ marginTop: '4px', width: '100%' }}
               />
             </div>
@@ -194,7 +200,13 @@ export default function AiIntegrationsSection() {
                 autoComplete="new-password"
                 placeholder="AIzaSy..."
                 value={googleKeyInput}
-                onChange={(e) => handleSaveSecureKey('google', e.target.value, setGoogleKeyInput)}
+                onChange={(e) => setGoogleKeyInput(e.target.value)}
+                onBlur={() => handleSaveSecureKey('google', googleKeyInput, setGoogleKeyInput)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveSecureKey('google', googleKeyInput, setGoogleKeyInput);
+                  }
+                }}
                 style={{ marginTop: '4px', width: '100%' }}
               />
             </div>
@@ -237,7 +249,13 @@ export default function AiIntegrationsSection() {
                 autoComplete="new-password"
                 placeholder="sk-ant-..."
                 value={claudeKeyInput}
-                onChange={(e) => handleSaveSecureKey('claude', e.target.value, setClaudeKeyInput)}
+                onChange={(e) => setClaudeKeyInput(e.target.value)}
+                onBlur={() => handleSaveSecureKey('claude', claudeKeyInput, setClaudeKeyInput)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveSecureKey('claude', claudeKeyInput, setClaudeKeyInput);
+                  }
+                }}
                 style={{ marginTop: '4px', width: '100%' }}
               />
             </div>
@@ -326,7 +344,13 @@ export default function AiIntegrationsSection() {
             autoComplete="new-password"
             placeholder="ghp_..."
             value={githubTokenInput}
-            onChange={(e) => handleSaveToken(e.target.value)}
+            onChange={(e) => setGithubTokenInput(e.target.value)}
+            onBlur={() => handleSaveToken(githubTokenInput)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSaveToken(githubTokenInput);
+              }
+            }}
             style={{ marginTop: '4px', width: '100%' }}
           />
           <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px', display: 'block' }}>

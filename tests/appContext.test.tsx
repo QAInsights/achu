@@ -21,6 +21,20 @@ vi.mock('../src/renderer/canvasRenderer', () => ({
   drawMeshGradient: vi.fn(),
 }));
 
+const mockWorker = {
+  recognize: vi.fn().mockResolvedValue({ data: { blocks: [] } }),
+  terminate: vi.fn().mockResolvedValue(undefined),
+};
+
+vi.mock('tesseract.js', () => ({
+  createWorker: vi.fn(() => Promise.resolve(mockWorker)),
+}));
+
+vi.mock('../src/renderer/utils/privacyGuardUtils', () => ({
+  downsampleImageForOcr: vi.fn(() => Promise.resolve({ dataUrl: 'mockDataUrl', width: 100, height: 100 })),
+  processOcrResults: vi.fn(() => []),
+}));
+
 let mockUseHistory: any;
 let mockUsePresets: any;
 let mockUseExport: any;
@@ -750,6 +764,42 @@ describe('AppContext', () => {
       const callArgs = mockGenerateAIResponse.mock.calls[0][0];
       expect(callArgs.prompt).toContain('Focus on error and generate detailed report');
       expect(screen.getByTestId('payload-title')).toHaveTextContent('Custom Instruction Bug');
+    });
+  });
+
+  describe('scanForSecrets error handling', () => {
+    it('always terminates tesseract worker even if recognize fails', async () => {
+      mockWorker.recognize.mockRejectedValueOnce(new Error('OCR recognition failed'));
+      mockWorker.terminate.mockClear();
+
+      let contextValues: any;
+      function Consumer() {
+        contextValues = useAppContext();
+        return <button data-testid="scan-btn" onClick={contextValues.scanForSecrets}>Scan</button>;
+      }
+
+      render(
+        <AppProvider>
+          <Consumer />
+        </AppProvider>
+      );
+
+      // Set image source so scanning can run
+      await act(async () => {
+        contextValues.setImageSrc('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+      });
+
+      // Suppress alert
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      await act(async () => {
+        try {
+          await contextValues.scanForSecrets();
+        } catch (e) {}
+      });
+
+      expect(mockWorker.terminate).toHaveBeenCalled();
+      alertSpy.mockRestore();
     });
   });
 });
