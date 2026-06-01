@@ -14,26 +14,6 @@ import IssueReviewForm from './IssueReviewForm';
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-const OPENAI_MODELS = [
-  { value: 'gpt-5.4-mini', label: 'GPT-5.4 Mini' },
-  { value: 'gpt-5.4-pro', label: 'GPT-5.4 Pro' },
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-  { value: 'gpt-4o', label: 'GPT-4o' }
-];
-
-const GEMINI_MODELS = [
-  { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
-  { value: 'gemini-3.5-pro', label: 'Gemini 3.5 Pro' },
-  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' }
-];
-
-const CLAUDE_MODELS = [
-  { value: 'claude-4-6-sonnet', label: 'Claude 4.6 Sonnet' },
-  { value: 'claude-4-8-opus', label: 'Claude 4.8 Opus' },
-  { value: 'claude-3-5-sonnet-latest', label: 'Claude 3.5 Sonnet' }
-];
-
 export default function GitHubAgentSettings() {
   const {
     imageSrc = null,
@@ -57,7 +37,10 @@ export default function GitHubAgentSettings() {
     setSettingsVisible = () => {},
     localFallbackAvailable = false,
     userInstruction = '',
-    setUserInstruction = () => {}
+    setUserInstruction = () => {},
+    openaiModelsList = [],
+    googleModelsList = [],
+    claudeModelsList = []
   } = useAppContext() || {};
 
   const [installedModels, setInstalledModels] = useState<string[]>([]);
@@ -116,9 +99,9 @@ export default function GitHubAgentSettings() {
 
   // Check if standard model
   const isStandardModel = () => {
-    if (aiProvider === 'openai') return OPENAI_MODELS.some(m => m.value === openaiModel);
-    if (aiProvider === 'google') return GEMINI_MODELS.some(m => m.value === googleModel);
-    if (aiProvider === 'claude') return CLAUDE_MODELS.some(m => m.value === claudeModel);
+    if (aiProvider === 'openai') return openaiModelsList.some(m => m.value === openaiModel);
+    if (aiProvider === 'google') return googleModelsList.some(m => m.value === googleModel);
+    if (aiProvider === 'claude') return claudeModelsList.some(m => m.value === claudeModel);
     return true;
   };
 
@@ -224,7 +207,7 @@ export default function GitHubAgentSettings() {
                   width: '120px'
                 }}
               >
-                {OPENAI_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                {openaiModelsList.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                 {!isStandardModel() && <option value="custom">Custom...</option>}
               </select>
             )}
@@ -246,7 +229,7 @@ export default function GitHubAgentSettings() {
                   width: '120px'
                 }}
               >
-                {GEMINI_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                {googleModelsList.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                 {!isStandardModel() && <option value="custom">Custom...</option>}
               </select>
             )}
@@ -268,7 +251,7 @@ export default function GitHubAgentSettings() {
                   width: '120px'
                 }}
               >
-                {CLAUDE_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                {claudeModelsList.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                 {!isStandardModel() && <option value="custom">Custom...</option>}
               </select>
             )}

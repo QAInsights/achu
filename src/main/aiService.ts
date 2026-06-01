@@ -153,6 +153,7 @@ export async function generateAIResponse(
   }
 
   if (provider === 'claude') {
+    const finalModel = model === 'claude-3-5-haiku-latest' ? 'claude-3-5-haiku-20241022' : model;
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -161,7 +162,7 @@ export async function generateAIResponse(
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model,
+        model: finalModel,
         max_tokens: 4000,
         messages: [
           {

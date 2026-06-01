@@ -13,6 +13,8 @@ import { generateVibeConfigs } from './utils/vibeUtils';
 import { WordBoundingBox, GitHubIssuePayload, generateIssueFromScreenshot, buildMarkdown, safeParseJSON } from './utils/githubAgentUtils';
 import { checkOllamaHealth } from './utils/ollamaUtils';
 import { fetchUserRepos, pushToGitHub } from './utils/githubApiUtils';
+import { fetchAndParseModels, DEFAULT_OPENAI_MODELS, DEFAULT_GEMINI_MODELS, DEFAULT_CLAUDE_MODELS } from './utils/modelsDevUtils';
+
 
 // TypeScript declarations for secure Electron IPC bridge
 declare global {
@@ -141,6 +143,9 @@ interface AppContextType {
   openaiModel: string; setOpenaiModel: (model: string) => void;
   googleModel: string; setGoogleModel: (model: string) => void;
   claudeModel: string; setClaudeModel: (model: string) => void;
+  openaiModelsList: { value: string; label: string }[];
+  googleModelsList: { value: string; label: string }[];
+  claudeModelsList: { value: string; label: string }[];
   ollamaAvailable: boolean; setOllamaAvailable: React.Dispatch<React.SetStateAction<boolean>>;
   githubRepo: string; setGithubRepo: (repo: string) => void;
   githubRepoList: string[]; setGithubRepoList: React.Dispatch<React.SetStateAction<string[]>>;
@@ -226,9 +231,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [aiProvider, setAiProviderState] = useState<'ollama' | 'openai' | 'google' | 'claude'>(() => getUserDefault('aiProvider', 'ollama') as any);
   const [ollamaEndpoint, setOllamaEndpointState] = useState<string>(() => getUserDefault('ollamaEndpoint', 'http://localhost:11434'));
   const [ollamaModel, setOllamaModelState] = useState<string>(() => getUserDefault('ollamaModel', 'llava-phi3'));
-  const [openaiModel, setOpenaiModelState] = useState<string>(() => getUserDefault('openaiModel', 'gpt-5.4-mini'));
-  const [googleModel, setGoogleModelState] = useState<string>(() => getUserDefault('googleModel', 'gemini-3.5-flash'));
-  const [claudeModel, setClaudeModelState] = useState<string>(() => getUserDefault('claudeModel', 'claude-4-6-sonnet'));
+  const [openaiModel, setOpenaiModelState] = useState<string>(() => getUserDefault('openaiModel', 'gpt-4o-mini'));
+  const [googleModel, setGoogleModelState] = useState<string>(() => getUserDefault('googleModel', 'gemini-2.5-flash'));
+  const [claudeModel, setClaudeModelState] = useState<string>(() => getUserDefault('claudeModel', 'claude-3-5-sonnet-latest'));
   
   const [aiCheckTrigger, setAiCheckTrigger] = useState(0);
   const triggerAiHealthCheck = useCallback(() => {
@@ -252,6 +257,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [appendAttribution, setAppendAttributionState] = useState<boolean>(() => getUserDefault('appendAttribution', true));
   const [cachedOcrResult, setCachedOcrResult] = useState<{ text: string; words: WordBoundingBox[] } | null>(null);
   const [highlightedComponents, setHighlightedComponents] = useState<string[]>([]);
+  const [openaiModelsList, setOpenaiModelsList] = useState<{ value: string; label: string }[]>(DEFAULT_OPENAI_MODELS);
+  const [googleModelsList, setGoogleModelsList] = useState<{ value: string; label: string }[]>(DEFAULT_GEMINI_MODELS);
+  const [claudeModelsList, setClaudeModelsList] = useState<{ value: string; label: string }[]>(DEFAULT_CLAUDE_MODELS);
   const [localFallbackAvailable, setLocalFallbackAvailable] = useState<boolean>(false);
   const [userInstruction, setUserInstruction] = useState<string>('');
 
@@ -531,15 +539,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setLocalFallbackAvailable(false);
 
     try {
-      let ocrResult = cachedOcrResult;
-      if (!ocrResult) {
-        setIsScanningSecrets(true);
-        setScanProgress(0);
-        const res = await runOCR(imageSrc, setScanProgress);
-        ocrResult = { text: res.text, words: res.words };
-        setCachedOcrResult(ocrResult);
-        setIsScanningSecrets(false);
-      }
+      // Use cached OCR result if available, otherwise default to empty
+      const ocrResult = cachedOcrResult || { text: '', words: [] };
 
       // Determine model based on provider
       let activeModel = ollamaModel;
@@ -638,7 +639,6 @@ Severity rules:
       setLocalFallbackAvailable(true);
     } finally {
       setIsGeneratingIssue(false);
-      setIsScanningSecrets(false);
     }
   };
 
@@ -907,6 +907,21 @@ Severity rules:
     initApp();
   }, []);
 
+  // Load dynamic models from models.dev with localStorage caching
+  useEffect(() => {
+    const loadDynamicModels = async () => {
+      try {
+        const res = await fetchAndParseModels();
+        setOpenaiModelsList(res.openai);
+        setGoogleModelsList(res.google);
+        setClaudeModelsList(res.claude);
+      } catch (err) {
+        console.error('Failed to load dynamic models:', err);
+      }
+    };
+    loadDynamicModels();
+  }, []);
+
   // Sync appTheme to localStorage and toggle body class
   useEffect(() => {
     localStorage.setItem('snapframe-app-theme', appTheme);
@@ -1096,6 +1111,7 @@ Severity rules:
       openaiModel, setOpenaiModel,
       googleModel, setGoogleModel,
       claudeModel, setClaudeModel,
+      openaiModelsList, googleModelsList, claudeModelsList,
       ollamaAvailable, setOllamaAvailable,
       githubRepo, setGithubRepo,
       githubRepoList, setGithubRepoList,

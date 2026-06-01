@@ -3,29 +3,6 @@ import { useAppContext } from '../AppContext';
 import { Cpu } from 'lucide-react';
 import { updateUserDefault } from '../utils/storageUtils';
 
-const OPENAI_MODELS = [
-  { value: 'gpt-5.4-mini', label: 'GPT-5.4 Mini (Default)' },
-  { value: 'gpt-5.4-pro', label: 'GPT-5.4 Pro' },
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-  { value: 'gpt-4o', label: 'GPT-4o' },
-  { value: 'custom', label: 'Custom Model...' }
-];
-
-const GEMINI_MODELS = [
-  { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash (Default)' },
-  { value: 'gemini-3.5-pro', label: 'Gemini 3.5 Pro' },
-  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-  { value: 'custom', label: 'Custom Model...' }
-];
-
-const CLAUDE_MODELS = [
-  { value: 'claude-4-6-sonnet', label: 'Claude 4.6 Sonnet (Default)' },
-  { value: 'claude-4-8-opus', label: 'Claude 4.8 Opus' },
-  { value: 'claude-3-5-sonnet-latest', label: 'Claude 3.5 Sonnet' },
-  { value: 'custom', label: 'Custom Model...' }
-];
-
 export default function AiIntegrationsSection() {
   const {
     aiProvider, setAiProvider,
@@ -37,7 +14,10 @@ export default function AiIntegrationsSection() {
     githubRepo, setGithubRepo,
     appendAttribution, setAppendAttribution,
     pushHistory, getCurrentConfig,
-    triggerAiHealthCheck
+    triggerAiHealthCheck,
+    openaiModelsList,
+    googleModelsList,
+    claudeModelsList
   } = useAppContext();
 
   const [githubTokenInput, setGithubTokenInput] = React.useState('');
@@ -107,13 +87,13 @@ export default function AiIntegrationsSection() {
   };
 
   // Model detection helpers
-  const isStandardOpenaiModel = ['gpt-5.4-mini', 'gpt-5.4-pro', 'gpt-4o-mini', 'gpt-4o'].includes(openaiModel);
+  const isStandardOpenaiModel = ['gpt-4o-mini', 'gpt-4o', 'o1-mini', 'o3-mini'].includes(openaiModel);
   const openaiSelectValue = isStandardOpenaiModel ? openaiModel : 'custom';
 
-  const isStandardGoogleModel = ['gemini-3.5-flash', 'gemini-3.5-pro', 'gemini-2.5-flash', 'gemini-2.5-pro'].includes(googleModel);
+  const isStandardGoogleModel = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-flash', 'gemini-1.5-pro'].includes(googleModel);
   const googleSelectValue = isStandardGoogleModel ? googleModel : 'custom';
 
-  const isStandardClaudeModel = ['claude-4-6-sonnet', 'claude-4-8-opus', 'claude-3-5-sonnet-latest'].includes(claudeModel);
+  const isStandardClaudeModel = ['claude-3-5-sonnet-latest', 'claude-3-7-sonnet-latest', 'claude-3-5-opus-latest'].includes(claudeModel);
   const claudeSelectValue = isStandardClaudeModel ? claudeModel : 'custom';
 
   return (
@@ -185,7 +165,8 @@ export default function AiIntegrationsSection() {
                 }}
                 style={{ marginTop: '4px', width: '100%' }}
               >
-                {OPENAI_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                {openaiModelsList.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                <option value="custom">Custom Model...</option>
               </select>
             </div>
             {!isStandardOpenaiModel && (
@@ -227,7 +208,8 @@ export default function AiIntegrationsSection() {
                 }}
                 style={{ marginTop: '4px', width: '100%' }}
               >
-                {GEMINI_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                {googleModelsList.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                <option value="custom">Custom Model...</option>
               </select>
             </div>
             {!isStandardGoogleModel && (
@@ -269,7 +251,8 @@ export default function AiIntegrationsSection() {
                 }}
                 style={{ marginTop: '4px', width: '100%' }}
               >
-                {CLAUDE_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                {claudeModelsList.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                <option value="custom">Custom Model...</option>
               </select>
             </div>
             {!isStandardClaudeModel && (
