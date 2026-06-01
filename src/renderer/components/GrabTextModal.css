@@ -1,0 +1,159 @@
+/* Context Menu Container */
+.custom-context-menu {
+  position: fixed;
+  z-index: 10000;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-3);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  animation: dropdownFadeIn 140ms var(--ease-out-quint);
+  backdrop-filter: blur(8px);
+}
+
+/* Context Menu Item */
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+
+.context-menu-item:hover:not(:disabled) {
+  background-color: var(--surface-3);
+  color: var(--accent);
+}
+
+.context-menu-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: var(--text-tertiary);
+}
+
+.context-menu-divider {
+  height: 1px;
+  background-color: var(--border);
+  margin: 4px 0;
+}
+
+/* Grab Text Modal Styles */
+.grab-text-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 480px;
+  max-width: 90vw;
+}
+
+.grab-text-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.grab-text-textarea {
+  width: 100%;
+  height: 220px;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--dur-fast), background-color var(--dur-fast);
+}
+
+.grab-text-textarea:focus {
+  border-color: var(--accent);
+  background-color: var(--surface-3);
+}
+
+.grab-text-checkbox-container {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  user-select: none;
+  font-size: var(--fs-label);
+  color: var(--text-secondary);
+  transition: color var(--dur-fast);
+  margin-top: 4px;
+}
+
+.grab-text-checkbox-container:hover {
+  color: var(--text-primary);
+}
+
+.grab-text-checkbox {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* OCR Progress & Loader */
+.grab-text-loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5) 0;
+  gap: var(--space-4);
+}
+
+.grab-text-progress-wrapper {
+  width: 100%;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.grab-text-progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-label);
+  color: var(--text-secondary);
+}
+
+.grab-text-progress-track {
+  height: 5px;
+  background-color: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.grab-text-progress-fill {
+  height: 100%;
+  background-color: var(--accent);
+  transition: width 0.15s var(--ease-out-quint);
+}
+
+.grab-text-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: oklch(0.55 0.18 25);
+  font-size: var(--fs-body);
+  background: rgba(239, 68, 68, 0.1);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}

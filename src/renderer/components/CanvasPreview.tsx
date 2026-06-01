@@ -6,6 +6,8 @@ import { zoomIn, zoomOut, getFixedSizeFromAspectRatio } from '../utils/layoutUti
 import { getCanvasDimensions } from '../canvasRenderer';
 import Tooltip from './Tooltip';
 import { platformPresets } from '../presetsData';
+import ContextMenu from './ContextMenu';
+import GrabTextModal from './GrabTextModal';
 
 export default function CanvasPreview() {
   const [imgDims, setImgDims] = useState<{ width: number; height: number } | null>(null);
@@ -69,6 +71,25 @@ export default function CanvasPreview() {
 
   const handleZoomIn = () => setZoomLevel(zoomIn(zoomLevel));
   const handleZoomOut = () => setZoomLevel(zoomOut(zoomLevel));
+
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [grabTextVisible, setGrabTextVisible] = useState<boolean>(false);
+
+  useEffect(() => {
+    const closeMenu = () => setContextMenu(null);
+    window.addEventListener('click', closeMenu);
+    window.addEventListener('contextmenu', closeMenu);
+    return () => {
+      window.removeEventListener('click', closeMenu);
+      window.removeEventListener('contextmenu', closeMenu);
+    };
+  }, []);
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
 
   useEffect(() => {
     if (!imageSrc) {
@@ -146,6 +167,7 @@ export default function CanvasPreview() {
           {/* Output Preview Container Card */}
           <div 
             className="preview-background-card"
+            onContextMenu={handleContextMenu}
             style={{
               padding: `${padding}px`,
               boxSizing: 'content-box',
@@ -580,6 +602,20 @@ export default function CanvasPreview() {
             </button>
           </Tooltip>
         </div>
+      )}
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          onGrabText={() => setGrabTextVisible(true)}
+          hasImage={!!imageSrc}
+        />
+      )}
+
+      {grabTextVisible && (
+        <GrabTextModal onClose={() => setGrabTextVisible(false)} />
       )}
     </div>
   );
