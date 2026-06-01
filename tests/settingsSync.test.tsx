@@ -1,0 +1,98 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import React from 'react';
+import { AppProvider, useAppContext } from '../src/renderer/AppContext';
+
+// Mock snapFrameAPI on window
+const mockSaveSettings = vi.fn();
+(window as any).snapFrameAPI = {
+  getSettings: vi.fn().mockResolvedValue({ lastConfig: null, presets: [] }),
+  saveSettings: mockSaveSettings,
+  getGitHubToken: vi.fn().mockResolvedValue(''),
+  getSecureKey: vi.fn().mockResolvedValue(''),
+  onGlobalHotkeyTriggered: vi.fn().mockReturnValue(() => {}),
+};
+
+// Test consumer to trigger changes
+function TestConsumer() {
+  const {
+    exportFormat, setExportFormat,
+    jpegQuality, setJpegQuality,
+    sidebarPosition, setSidebarPosition,
+  } = useAppContext();
+
+  return (
+    <div>
+      <span data-testid="exportFormat">{exportFormat}</span>
+      <span data-testid="jpegQuality">{jpegQuality}</span>
+      <span data-testid="sidebarPosition">{sidebarPosition}</span>
+      
+      <button data-testid="change-format" onClick={() => setExportFormat('jpeg')}>Change Format</button>
+      <button data-testid="change-quality" onClick={() => setJpegQuality(75)}>Change Quality</button>
+      <button data-testid="change-sidebar" onClick={() => setSidebarPosition('right')}>Change Sidebar</button>
+    </div>
+  );
+}
+
+describe('Settings Synchronization', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+  });
+
+  it('updates localStorage and saves to snapFrameAPI when exportFormat, jpegQuality, or sidebarPosition change', async () => {
+    render(
+      <AppProvider>
+        <TestConsumer />
+      </AppProvider>
+    );
+
+    // Initial values
+    expect(screen.getByTestId('exportFormat').textContent).toBe('png');
+    expect(screen.getByTestId('jpegQuality').textContent).toBe('90');
+    expect(screen.getByTestId('sidebarPosition').textContent).toBe('left');
+
+    // Change exportFormat
+    act(() => {
+      fireEvent.click(screen.getByTestId('change-format'));
+    });
+    expect(screen.getByTestId('exportFormat').textContent).toBe('jpeg');
+    
+    // Check localStorage is updated
+    await waitFor(() => {
+      const defaults = JSON.parse(localStorage.getItem('snapframe-user-defaults') || '{}');
+      expect(defaults.exportFormat).toBe('jpeg');
+    });
+
+    // Change jpegQuality
+    act(() => {
+      fireEvent.click(screen.getByTestId('change-quality'));
+    });
+    expect(screen.getByTestId('jpegQuality').textContent).toBe('75');
+
+    await waitFor(() => {
+      const defaults = JSON.parse(localStorage.getItem('snapframe-user-defaults') || '{}');
+      expect(defaults.jpegQuality).toBe(75);
+    });
+
+    // Change sidebarPosition
+    act(() => {
+      fireEvent.click(screen.getByTestId('change-sidebar'));
+    });
+    expect(screen.getByTestId('sidebarPosition').textContent).toBe('right');
+
+    await waitFor(() => {
+      const defaults = JSON.parse(localStorage.getItem('snapframe-user-defaults') || '{}');
+      expect(defaults.sidebarPosition).toBe('right');
+    });
+
+    // Verify snapFrameAPI.saveSettings is eventually called with the updated config
+    await waitFor(() => {
+      expect(mockSaveSettings).toHaveBeenCalled();
+      const lastCallArgs = mockSaveSettings.mock.calls[mockSaveSettings.mock.calls.length - 1][0];
+      expect(lastCallArgs.lastConfig.exportFormat).toBe('jpeg');
+      expect(lastCallArgs.lastConfig.jpegQuality).toBe(75);
+      expect(lastCallArgs.lastConfig.sidebarPosition).toBe('right');
+    }, { timeout: 2500 });
+  });
+});

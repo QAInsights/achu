@@ -62,6 +62,9 @@ export function getCurrentConfig(state: {
   meshOpacity: number;
   meshSpread: number;
   noImageMode: boolean;
+  exportFormat?: 'png' | 'jpeg';
+  jpegQuality?: number;
+  sidebarPosition?: 'left' | 'right';
 }): RenderConfig {
   return {
     padding: state.padding,
@@ -96,6 +99,9 @@ export function getCurrentConfig(state: {
     meshOpacity: state.meshOpacity,
     meshSpread: state.meshSpread,
     noImage: state.noImageMode,
+    exportFormat: state.exportFormat,
+    jpegQuality: state.jpegQuality,
+    sidebarPosition: state.sidebarPosition,
   };
 }
 
@@ -134,6 +140,9 @@ export function applyConfig(
     setMeshOpacity: (v: number) => void;
     setMeshSpread: (v: number) => void;
     setNoImageMode: (v: boolean) => void;
+    setExportFormat?: (v: 'png' | 'jpeg') => void;
+    setJpegQuality?: (v: number) => void;
+    setSidebarPosition?: (v: 'left' | 'right') => void;
   }
 ) {
   if (!config) return;
@@ -169,6 +178,9 @@ export function applyConfig(
   setters.setMeshOpacity(config.meshOpacity ?? 100);
   setters.setMeshSpread(config.meshSpread ?? 100);
   setters.setNoImageMode(config.noImage ?? false);
+  if (config.exportFormat && setters.setExportFormat) setters.setExportFormat(config.exportFormat);
+  if (config.jpegQuality !== undefined && setters.setJpegQuality) setters.setJpegQuality(config.jpegQuality);
+  if (config.sidebarPosition && setters.setSidebarPosition) setters.setSidebarPosition(config.sidebarPosition);
 }
 
 export const BACKGROUND_TYPES = ['gradient', 'color', 'blur', 'mesh'] as const;

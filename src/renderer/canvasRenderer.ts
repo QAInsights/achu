@@ -69,6 +69,9 @@ export interface RenderConfig {
   showComponentHighlights?: boolean;
   highlightedComponents?: string[];
   ocrWords?: any[];
+  exportFormat?: 'png' | 'jpeg';
+  jpegQuality?: number;
+  sidebarPosition?: 'left' | 'right';
 }
 
 interface ColorStop {

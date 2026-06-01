@@ -349,6 +349,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     redactions,
     redactionStyle,
     issuePayload,
+    exportFormat,
+    jpegQuality,
+    sidebarPosition,
   });
 
   const applyConfig = (config: RenderConfig) => {
@@ -398,6 +401,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Restore Issue Agent payload
     setIssuePayload(config.issuePayload ?? null);
     setHighlightedComponents(config.issuePayload?.components ?? []);
+
+    if (config.exportFormat) setExportFormat(config.exportFormat);
+    if (config.jpegQuality !== undefined) setJpegQuality(config.jpegQuality);
+    if (config.sidebarPosition) setSidebarPosition(config.sidebarPosition);
   };
 
   // 1. History Hook
@@ -938,6 +945,19 @@ Severity rules:
   }, [appTheme]);
 
 
+  // Synchronize exportFormat, jpegQuality, and sidebarPosition to localStorage
+  useEffect(() => {
+    updateUserDefault('exportFormat', exportFormat);
+  }, [exportFormat]);
+
+  useEffect(() => {
+    updateUserDefault('jpegQuality', jpegQuality);
+  }, [jpegQuality]);
+
+  useEffect(() => {
+    updateUserDefault('sidebarPosition', sidebarPosition);
+  }, [sidebarPosition]);
+
   // Settings sync effect
   useEffect(() => {
     const saveSettingsToMain = async () => {
@@ -954,7 +974,7 @@ Severity rules:
     borderColor, scale, backgroundType, backgroundValue, aspectRatio, canvasWidth,
     canvasHeight, paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled,
     watermarkText, watermarkSize, watermarkPosition, watermarkOpacity, position, customPresets, meshPoints, meshBlur, meshGrain, meshOpacity,
-    meshSpread, noImageMode, redactions, redactionStyle
+    meshSpread, noImageMode, redactions, redactionStyle, exportFormat, jpegQuality, sidebarPosition
   ]);
 
 
