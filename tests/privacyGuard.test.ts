@@ -34,13 +34,13 @@ describe('Privacy Guard Utils', () => {
     });
 
     it('should detect JWT and Stripe keys', () => {
-      const stripeKey = 'xx_test_stripe_key_FAKE123NOTREAL'; // Test fixture - NOT a real key
+      const stripeKey = 'sk_test_abcdefghijklmnopqrstuvwx'; // Test fixture - matches STRIPE_KEY_REGEX
       const jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
       const text = `Keys: ${stripeKey} and token ${jwt}`;
-      
+
       const matches = detectSecretsInText(text);
       const keys = matches.filter(m => m.type === 'api-key');
-      
+
       expect(keys.length).toBe(2);
       expect(keys.map(k => k.text)).toContain(stripeKey);
       expect(keys.map(k => k.text)).toContain(jwt);
@@ -139,12 +139,12 @@ describe('Privacy Guard Utils', () => {
     it('should align OCR words and map coordinates', () => {
       const ocrLines = [
         {
-          text: 'Send key xx_test_stripe_key_FAKE123NOTREAL here', // Test fixture
+          text: 'Send key sk_test_abcdefghijklmnopqrstuvwx here', // Test fixture - matches STRIPE_KEY_REGEX
           bbox: { x0: 0, y0: 0, x1: 500, y1: 50 },
           words: [
             { text: 'Send', bbox: { x0: 0, y0: 10, x1: 40, y1: 40 } },
             { text: 'key', bbox: { x0: 50, y0: 10, x1: 80, y1: 40 } },
-            { text: 'xx_test_stripe_key_FAKE123NOTREAL', bbox: { x0: 90, y0: 10, x1: 400, y1: 40 } }, // Test fixture
+            { text: 'sk_test_abcdefghijklmnopqrstuvwx', bbox: { x0: 90, y0: 10, x1: 400, y1: 40 } }, // Test fixture
             { text: 'here', bbox: { x0: 410, y0: 10, x1: 450, y1: 40 } }
           ]
         }
@@ -152,7 +152,7 @@ describe('Privacy Guard Utils', () => {
 
       const result = processOcrResults(ocrLines, 500, 100);
       expect(result.length).toBe(1);
-      expect(result[0].text).toBe('xx_test_stripe_key_FAKE123NOTREAL');
+      expect(result[0].text).toBe('sk_test_abcdefghijklmnopqrstuvwx');
       expect(result[0].type).toBe('api-key');
       expect(result[0].x).toBeCloseTo(90 / 500);
       expect(result[0].y).toBeCloseTo(10 / 100);

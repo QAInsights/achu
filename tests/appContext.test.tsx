@@ -475,4 +475,222 @@ describe('AppContext', () => {
       }, { timeout: 2000 });
     });
   });
+
+  describe('ExtendedContext operations', () => {
+    function ExtendedTestConsumer() {
+      const ctx = useAppContext();
+      return (
+        <div>
+          <span data-testid="padding">{ctx.padding}</span>
+          <span data-testid="backgroundType">{ctx.backgroundType}</span>
+          <span data-testid="watermarkText">{ctx.watermarkText}</span>
+          <span data-testid="annotations-count">{ctx.annotations.length}</span>
+          <span data-testid="redactions-count">{ctx.redactions.length}</span>
+          <span data-testid="meshPoints-count">{ctx.meshPoints.length}</span>
+          <button data-testid="reset-btn" onClick={ctx.resetStyles}>Reset Styles</button>
+          <button data-testid="clear-btn" onClick={ctx.clearWorkspace}>Clear Workspace</button>
+          <button data-testid="redact-all-btn" onClick={ctx.redactAll}>Redact All</button>
+          <button data-testid="reveal-all-btn" onClick={ctx.revealAll}>Reveal All</button>
+          <button data-testid="apply-mesh" onClick={() => ctx.applyMeshPalette(['#ff0000', '#00ff00'])}>Apply Mesh</button>
+          <button data-testid="random-palette" onClick={ctx.generateRandomPalette}>Random Palette</button>
+          <button data-testid="slider-btn" onClick={ctx.handleSliderRelease}>Slider Release</button>
+        </div>
+      );
+    }
+
+    it('resetStyles sets all state to defaults via setters', () => {
+      render(
+        <AppProvider>
+          <ExtendedTestConsumer />
+        </AppProvider>
+      );
+
+      // Verify initial state
+      expect(screen.getByTestId('backgroundType')).toHaveTextContent('gradient');
+
+      // Click reset
+      fireEvent.click(screen.getByTestId('reset-btn'));
+
+      // After resetStyles, background type should reset to 'gradient'
+      expect(screen.getByTestId('backgroundType')).toHaveTextContent('gradient');
+      // Redactions should be cleared
+      expect(screen.getByTestId('redactions-count')).toHaveTextContent('0');
+    });
+
+    it('clearWorkspace clears image, history, annotations, and redactions', () => {
+      render(
+        <AppProvider>
+          <ExtendedTestConsumer />
+        </AppProvider>
+      );
+
+      fireEvent.click(screen.getByTestId('clear-btn'));
+
+      // After clear, annotations and redactions should be empty
+      expect(screen.getByTestId('annotations-count')).toHaveTextContent('0');
+      expect(screen.getByTestId('redactions-count')).toHaveTextContent('0');
+    });
+
+    it('applyMeshPalette calls pushHistory', () => {
+      mockUseHistory.pushHistory = vi.fn();
+      render(
+        <AppProvider>
+          <ExtendedTestConsumer />
+        </AppProvider>
+      );
+
+      fireEvent.click(screen.getByTestId('apply-mesh'));
+      // Mesh points should still be 4 (just colors changed)
+      expect(screen.getByTestId('meshPoints-count')).toHaveTextContent('4');
+    });
+
+    it('generateRandomPalette preserves point count and calls pushHistory', () => {
+      mockUseHistory.pushHistory = vi.fn();
+      render(
+        <AppProvider>
+          <ExtendedTestConsumer />
+        </AppProvider>
+      );
+
+      fireEvent.click(screen.getByTestId('random-palette'));
+      // Should still have 4 points
+      expect(screen.getByTestId('meshPoints-count')).toHaveTextContent('4');
+    });
+
+    it('handleSliderRelease delegates to pushHistory', () => {
+      mockUseHistory.pushHistory = vi.fn();
+      render(
+        <AppProvider>
+          <ExtendedTestConsumer />
+        </AppProvider>
+      );
+
+      fireEvent.click(screen.getByTestId('slider-btn'));
+      expect(mockUseHistory.pushHistory).toHaveBeenCalled();
+    });
+  });
+
+  describe('drag and drop', () => {
+    function DragConsumer() {
+      const ctx = useAppContext();
+      return (
+        <div>
+          <span data-testid="dragging">{ctx.isDragging ? 'yes' : 'no'}</span>
+          <div
+            data-testid="drop-zone"
+            onDragOver={ctx.handleDragOver}
+            onDragLeave={ctx.handleDragLeave}
+            onDrop={ctx.handleDrop}
+          >
+            Drop Zone
+          </div>
+        </div>
+      );
+    }
+
+    it('handleDragOver prevents default and sets isDragging', () => {
+      render(
+        <AppProvider>
+          <DragConsumer />
+        </AppProvider>
+      );
+
+      const zone = screen.getByTestId('drop-zone');
+      const event = new Event('dragover', { bubbles: true, cancelable: true }) as React.DragEvent;
+      Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
+
+      fireEvent(zone, event);
+      // After drag over, isDragging should be true
+      expect(screen.getByTestId('dragging')).toHaveTextContent('yes');
+    });
+
+    it('handleDragLeave sets isDragging false', () => {
+      render(
+        <AppProvider>
+          <DragConsumer />
+        </AppProvider>
+      );
+
+      // First set dragging to true
+      const zone = screen.getByTestId('drop-zone');
+      const dragOverEvent = new Event('dragover', { bubbles: true, cancelable: true }) as React.DragEvent;
+      Object.defineProperty(dragOverEvent, 'preventDefault', { value: vi.fn() });
+      fireEvent(zone, dragOverEvent);
+
+      expect(screen.getByTestId('dragging')).toHaveTextContent('yes');
+
+      // Now drag leave
+      fireEvent.dragLeave(zone);
+      expect(screen.getByTestId('dragging')).toHaveTextContent('no');
+    });
+  });
+
+  describe('redaction operations', () => {
+    function RedactionConsumer() {
+      const ctx = useAppContext();
+      return (
+        <div>
+          <span data-testid="redact-count">{ctx.redactions.length}</span>
+          <button data-testid="redact-all-btn" onClick={ctx.redactAll}>Redact All</button>
+          <button data-testid="reveal-all-btn" onClick={ctx.revealAll}>Reveal All</button>
+          <button data-testid="toggle-btn" onClick={() => ctx.toggleRedaction('test-id')}>Toggle</button>
+        </div>
+      );
+    }
+
+    it('redactAll and revealAll are no-ops with empty redactions', () => {
+      render(
+        <AppProvider>
+          <RedactionConsumer />
+        </AppProvider>
+      );
+
+      fireEvent.click(screen.getByTestId('redact-all-btn'));
+      expect(screen.getByTestId('redact-count')).toHaveTextContent('0');
+
+      fireEvent.click(screen.getByTestId('reveal-all-btn'));
+      expect(screen.getByTestId('redact-count')).toHaveTextContent('0');
+    });
+
+    it('toggleRedaction is a safe no-op with empty redactions', () => {
+      render(
+        <AppProvider>
+          <RedactionConsumer />
+        </AppProvider>
+      );
+
+      fireEvent.click(screen.getByTestId('toggle-btn'));
+      expect(screen.getByTestId('redact-count')).toHaveTextContent('0');
+    });
+  });
+
+  describe('sidebar position', () => {
+    function SidebarConsumer() {
+      const ctx = useAppContext();
+      return (
+        <div>
+          <span data-testid="sidebar-pos">{ctx.sidebarPosition}</span>
+        </div>
+      );
+    }
+
+    it('defaults sidebar position to left', () => {
+      render(
+        <AppProvider>
+          <SidebarConsumer />
+        </AppProvider>
+      );
+      expect(screen.getByTestId('sidebar-pos')).toHaveTextContent('left');
+    });
+
+    it('reads sidebar position from localStorage', () => {
+      localStorage.setItem('snapframe-user-defaults', JSON.stringify({ sidebarPosition: 'right' }));
+      render(
+        <AppProvider>
+          <SidebarConsumer />
+        </AppProvider>
+      );
+      expect(screen.getByTestId('sidebar-pos')).toHaveTextContent('right');
+    });
+  });
 });
