@@ -32,12 +32,10 @@
 
 ## 📸 Screenshots & Showcase
 
-> **Note:** *Screenshots showing the application interfaces, canvas controls, and advanced workflows will be uploaded here soon.*
-
 | 🎨 Canvas Beautification & Presets | 🛡️ Privacy Guard & Redaction |
 | :---: | :---: |
 | ![Presets](./assets/presets.png) | ![Privacy](./assets/privacy.png) |
-| | |
+| **🤖 AI Issue Agent Integration** | **🔍 OCR Text Extraction** |
 | ![AI Issue Agent](./assets/issue-agent.png) | ![OCR](./assets/ocr.png) |
 
 ---
