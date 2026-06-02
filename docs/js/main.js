@@ -139,13 +139,10 @@ function initLightbox() {
 
   if (!modal || !modalImg || !modalCaption || !modalClose) return;
 
-  const openLightbox = (index) => {
-    const item = config.gallery[index];
-    if (!item) return;
-
-    modalImg.src = item.image;
-    modalImg.alt = item.title;
-    modalCaption.textContent = item.title;
+  const showLightbox = (src, alt, caption) => {
+    modalImg.src = src;
+    modalImg.alt = alt;
+    modalCaption.textContent = caption;
     modal.classList.add('active');
     document.body.style.overflow = 'hidden'; // Disable background scrolling
   };
@@ -164,9 +161,20 @@ function initLightbox() {
     const card = e.target.closest('.gallery-card');
     if (card) {
       const index = parseInt(card.getAttribute('data-index'), 10);
-      openLightbox(index);
+      const item = config.gallery[index];
+      if (item) {
+        showLightbox(item.image, item.title, item.title);
+      }
     }
   });
+
+  // Attach click listener to hero mockup
+  const heroMockup = document.getElementById('hero-mockup');
+  if (heroMockup) {
+    heroMockup.addEventListener('click', () => {
+      showLightbox('assets/achu.png', 'Achu Application Interface Screenshot', 'Achu App Preset Customizer Interface');
+    });
+  }
 
   // Close triggers
   modalClose.addEventListener('click', closeLightbox);
