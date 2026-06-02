@@ -36,10 +36,9 @@
 
 | 🎨 Canvas Beautification & Presets | 🛡️ Privacy Guard & Redaction |
 | :---: | :---: |
-| *Placeholder for Canvas Editor Showcase* | *Placeholder for Privacy Guard Scanning* |
+| ![Presets](./assets/presets.png) | ![Privacy](./assets/privacy.png) |
 | | |
-| **🤖 AI Issue Agent Integration** | **🔍 OCR Text Extraction** |
-| *Placeholder for GitHub AI Agent Showcase* | *Placeholder for Grab Text OCR Showcase* |
+| ![AI Issue Agent](./assets/issue-agent.png) | ![OCR](./assets/ocr.png) |
 
 ---
 
