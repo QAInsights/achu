@@ -1,0 +1,21 @@
+{
+  "name": "Achu - Screenshot Beautifier",
+  "short_name": "Achu",
+  "description": "A lightweight desktop application that turns raw screenshots into polished visual assets.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#202421",
+  "theme_color": "#b2ff59",
+  "icons": [
+    {
+      "src": "assets/icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ]
+}
