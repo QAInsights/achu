@@ -166,7 +166,7 @@ function initLightbox() {
   const heroMockup = document.getElementById('hero-mockup');
   if (heroMockup) {
     heroMockup.addEventListener('click', () => {
-      showLightbox('assets/achu.png', 'achu Application Interface Screenshot', 'achu App Preset Customizer Interface');
+      showLightbox('assets/achu.png', 'achu Application Interface Screenshot', 'achu App');
     });
   }
 
