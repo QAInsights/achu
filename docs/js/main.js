@@ -76,8 +76,8 @@ function initGallery() {
   if (!container) return;
 
   container.innerHTML = config.gallery.map((item, index) => `
-    <div class="gallery-card glass-panel" data-index="${index}" id="gallery-card-${index}" role="button" aria-label="Open image preview for ${item.title}">
-      <div class="gallery-image-container">
+    <div class="gallery-card" data-index="${index}" id="gallery-card-${index}" role="button" aria-label="Open image preview for ${item.title}">
+      <div class="gallery-image-container glass-panel">
         <img src="${item.image}" alt="Achu interface showing ${item.title}" loading="lazy" />
         <div class="gallery-hover-overlay">
           <div class="zoom-icon-wrapper" aria-hidden="true">
