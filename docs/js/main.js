@@ -45,15 +45,9 @@ function initLinks() {
 
   // Partners Grid
   const partnersGrid = document.getElementById('partners-grid');
-  if (partnersGrid) {
-    const partners = [
-      { name: 'qainsights.com', url: config.links.qainsights },
-      { name: 'dosa.dev', url: config.links.dosa },
-      { name: 'ai.dosa.dev', url: config.links.aiDosa }
-    ];
-
-    partnersGrid.innerHTML = partners.map(p => `
-      <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="partner-card glass-panel" id="partner-${p.name.replace('.', '-')}">
+  if (partnersGrid && config.ecosystem) {
+    partnersGrid.innerHTML = config.ecosystem.map(p => `
+      <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="partner-card glass-panel" id="partner-${p.name.replace(/\./g, '-')}">
         <span class="partner-name">${p.name}</span>
       </a>
     `).join('');
@@ -172,7 +166,7 @@ function initLightbox() {
   const heroMockup = document.getElementById('hero-mockup');
   if (heroMockup) {
     heroMockup.addEventListener('click', () => {
-      showLightbox('assets/achu.png', 'Achu Application Interface Screenshot', 'Achu App Preset Customizer Interface');
+      showLightbox('assets/achu.png', 'achu Application Interface Screenshot', 'achu App Preset Customizer Interface');
     });
   }
 

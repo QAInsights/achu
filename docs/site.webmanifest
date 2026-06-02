@@ -1,6 +1,6 @@
 {
-  "name": "Achu - Screenshot Beautifier",
-  "short_name": "Achu",
+  "name": "achu - Screenshot Beautifier",
+  "short_name": "achu",
   "description": "A lightweight desktop application that turns raw screenshots into polished visual assets.",
   "start_url": "/",
   "display": "standalone",

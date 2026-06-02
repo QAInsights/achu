@@ -1,18 +1,22 @@
 window.config = {
   branding: {
-    name: "Achu",
+    name: "achu",
     tagline: "Turn Raw Screenshots into Beautiful Assets",
     subtagline: "A lightweight, gorgeous desktop utility for Windows, macOS, and Linux that turns raw captures into polished visual graphics, featuring an integrated <span class=\"gradient-text\">AI Issue Agent</span> and fully local, <span class=\"gradient-text\">offline OCR</span> text extraction.",
-    meaning: "Achu (அச்சு) means 'print' or 'mold' in Tamil. 🖨️",
+    meaning: "achu (அச்சு) means 'print' or 'mold' in Tamil. 🖨️",
     customDomain: "achu.app"
   },
   links: {
     github: "https://github.com/QAInsights/achu",
-    qainsights: "https://qainsights.com",
-    dosa: "https://dosa.dev",
-    aiDosa: "https://ai.dosa.dev",
     coffee: "https://buymeacoffee.com/qainsights"
   },
+  ecosystem: [
+    { name: "qainsights.com", url: "https://qainsights.com" },
+    { name: "dosa.dev", url: "https://dosa.dev" },
+    { name: "ai.dosa.dev", url: "https://ai.dosa.dev" },
+    { name: "jmeter.ai", url: "https://jmeter.ai" },
+    { name: "plugins.jmeter.ai", url: "https://plugins.jmeter.ai" }
+  ],
   features: [
     {
       id: "beautification",
