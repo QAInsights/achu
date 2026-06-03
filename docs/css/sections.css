@@ -1,6 +1,6 @@
 /* === HERO SECTION === */
 .hero {
-  padding-top: 150px;
+  padding-top: 120px;
   padding-bottom: 80px;
   display: grid;
   grid-template-columns: 0.9fr 1.3fr;
@@ -406,10 +406,10 @@
   }
   .nav-menu {
     position: fixed;
-    top: 70px;
+    top: 52px;
     left: 0;
     right: 0;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 52px);
     background: rgba(20, 24, 21, 0.98);
     backdrop-filter: blur(20px);
     flex-direction: column;

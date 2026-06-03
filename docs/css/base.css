@@ -188,12 +188,14 @@ section {
   top: 0;
   left: 0;
   right: 0;
-  height: 70px;
+  height: 52px;
+  width: 100vw;
+  max-width: none;
+  margin: 0;
   z-index: 100;
-  background: rgba(20, 24, 21, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
+  background: rgba(22, 22, 23, 0.92);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 .navbar-container {
@@ -201,7 +203,7 @@ section {
   justify-content: space-between;
   align-items: center;
   height: 100%;
-  max-width: var(--max-width);
+  max-width: 1024px;
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -213,8 +215,8 @@ section {
 }
 
 .brand-logo {
-  width: 32px;
-  height: 32px;
+  width: 18px;
+  height: 18px;
   transition: transform var(--transition-slow);
 }
 
@@ -223,8 +225,8 @@ section {
 }
 
 .brand-name {
-  font-family: var(--font-serif);
-  font-size: 1.5rem;
+  font-family: var(--font-sans);
+  font-size: 1.2rem;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -232,35 +234,38 @@ section {
 .nav-menu {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 36px;
 }
 
 .nav-link {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: -0.01em;
+  transition: color 0.2s ease;
 }
 
 .nav-link:hover {
-  color: var(--accent);
+  color: #fff;
 }
 
 .btn-nav-github {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  font-size: 0.9rem;
-  font-weight: 600;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.8);
+  transition: color 0.2s ease;
 }
 
 .btn-nav-github:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
+  color: #fff;
+}
+
+.btn-nav-github svg {
+  width: 14px;
+  height: 14px;
 }
 
 .menu-toggle {
