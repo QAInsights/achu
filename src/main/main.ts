@@ -113,6 +113,7 @@ function createWindow(settings: AppSettings) {
     show: false,
     icon: process.platform === 'win32'
       ? path.join(__dirname, 'assets/icon.ico')
+      : process.platform === 'darwin' ? path.join(__dirname, 'assets/icon.icns')
       : path.join(__dirname, 'assets/icon-256.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
