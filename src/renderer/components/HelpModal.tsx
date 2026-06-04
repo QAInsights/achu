@@ -3,6 +3,7 @@ import { useAppContext } from '../AppContext';
 import { X, Heart, Github } from 'lucide-react';
 import logoUrl from '../../../assets/logo.svg';
 import packageJson from '../../../package.json';
+import UpdateChecker from './UpdateChecker';
 
 export default function HelpModal() {
   const { helpVisible, setHelpVisible } = useAppContext();
@@ -37,7 +38,7 @@ export default function HelpModal() {
 
   const handleCopy = () => {
     const textToCopy = [
-      `Achu Version: ${packageJson.version}`,
+      `achu Version: ${packageJson.version}`,
       `Electron: ${versions.electron}`,
       `Chromium: ${versions.chrome}`,
       `Node.js: ${versions.node}`,
@@ -89,10 +90,10 @@ export default function HelpModal() {
 
         {/* Content Row: Logo on left, App name & Version info on right */}
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '20px', marginTop: '8px' }}>
-          <img src={logoUrl} alt="Achu Logo" style={{ width: '64px', height: '64px' }} />
+          <img src={logoUrl} alt="achu Logo" style={{ width: '64px', height: '64px' }} />
           <div>
             <h2 className="modal-title" style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              Achu
+              achu
             </h2>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
               Version {packageJson.version} ({platformName})
@@ -121,13 +122,15 @@ export default function HelpModal() {
             marginBottom: '20px'
           }}
         >
-          <div><strong>Achu Version:</strong> {packageJson.version}</div>
+          <div><strong>achu Version:</strong> {packageJson.version}</div>
           <div><strong>Electron:</strong> {versions.electron}</div>
           <div><strong>Chromium:</strong> {versions.chrome}</div>
           <div><strong>Node.js:</strong> {versions.node}</div>
           <div><strong>V8:</strong> {versions.v8}</div>
           <div><strong>OS:</strong> {osInfo}</div>
         </div>
+
+        <UpdateChecker />
 
         {/* Link / Action Buttons */}
         <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>

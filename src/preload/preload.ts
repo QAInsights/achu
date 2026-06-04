@@ -44,5 +44,16 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
     return () => {
       ipcRenderer.removeListener('hotkey:triggered', subscription);
     };
+  },
+
+  // Update check APIs
+  checkForUpdates: () => ipcRenderer.invoke('update:check'),
+  startUpdate: (downloadUrl: string) => ipcRenderer.invoke('update:start', downloadUrl),
+  onUpdateProgress: (callback: (progress: number) => void) => {
+    const subscription = (_event: any, progress: number) => callback(progress);
+    ipcRenderer.on('update:progress', subscription);
+    return () => {
+      ipcRenderer.removeListener('update:progress', subscription);
+    };
   }
 });

@@ -40,7 +40,7 @@
   },
   "build": {
     "appId": "com.navee.achu",
-    "productName": "Achu",
+    "productName": "achu",
     "directories": {
       "output": "release"
     },

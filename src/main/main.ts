@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, clipboard, globalShortcut, shell, Tray, Menu, safeStorage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import { registerUpdaterHandlers } from './updater';
 
 const isDev = process.env.NODE_ENV === 'development';
 let mainWindow: BrowserWindow | null = null;
@@ -71,7 +72,7 @@ const defaultSettings: AppSettings = {
     paddingMode: 'fit',
     chromeStyle: 'mac',
     watermarkEnabled: false,
-    watermarkText: 'Achu',
+    watermarkText: 'achu',
     position: 'Middle center',
   },
   presets: [],
@@ -191,11 +192,11 @@ function getTrayIconPath(): string {
 function createTray() {
   if (tray) return;
   tray = new Tray(getTrayIconPath());
-  tray.setToolTip('Achu');
+  tray.setToolTip('achu');
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show Achu',
+      label: 'Show achu',
       click: () => {
         mainWindow?.show();
         mainWindow?.focus();
@@ -311,6 +312,9 @@ app.whenReady().then(() => {
   globalShortcut.register('CommandOrControl+Alt+V', () => {
     pasteFromClipboard();
   });
+
+  // Register Auto-Updater IPC Handlers
+  registerUpdaterHandlers(ipcMain, () => mainWindow);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

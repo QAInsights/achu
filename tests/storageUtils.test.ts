@@ -141,7 +141,7 @@ describe('storageUtils', () => {
       expect(DEFAULT_SETTINGS).toHaveProperty('rounded', 20);
       expect(DEFAULT_SETTINGS).toHaveProperty('shadow', 30);
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkEnabled', false);
-      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkText', 'Achu');
+      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkText', 'achu');
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkSize', 20);
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkPosition', 'middle');
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkOpacity', 0.45);

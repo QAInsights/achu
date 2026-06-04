@@ -30,7 +30,7 @@ describe('Sidebar', () => {
   describe('rendering', () => {
     it('renders sidebar with app name', () => {
       render(<Sidebar />);
-      expect(screen.getByText('Achu')).toBeInTheDocument();
+      expect(screen.getByText('achu')).toBeInTheDocument();
     });
 
     it('shows collapsed class when not visible', () => {

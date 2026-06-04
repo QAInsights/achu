@@ -166,7 +166,7 @@ export function applyConfig(
   setters.setChromeTheme(config.chromeTheme ?? 'dark');
   setters.setBlurDensity(config.blurDensity ?? 40);
   setters.setWatermarkEnabled(config.watermarkEnabled ?? false);
-  setters.setWatermarkText(config.watermarkText ?? 'Achu');
+  setters.setWatermarkText(config.watermarkText ?? 'achu');
   setters.setWatermarkSize(config.watermarkSize ?? 20);
   setters.setWatermarkPosition(config.watermarkPosition ?? 'middle');
   setters.setWatermarkOpacity(config.watermarkOpacity ?? 0.45);

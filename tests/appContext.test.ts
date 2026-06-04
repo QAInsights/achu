@@ -42,7 +42,7 @@ describe('AppContext', () => {
       expect(getUserDefault('rounded', 20)).toBe(30);
       expect(getUserDefault('shadow', 30)).toBe(40);
       expect(getUserDefault('watermarkEnabled', false)).toBe(true);
-      expect(getUserDefault('watermarkText', 'Achu')).toBe('Custom');
+      expect(getUserDefault('watermarkText', 'achu')).toBe('Custom');
       expect(getUserDefault('scale', 100)).toBe(100);
       expect(getUserDefault('nonexistent', 'default')).toBe('default');
     });
@@ -175,7 +175,7 @@ describe('AppContext', () => {
         chromeTheme: 'dark' as const,
         blurDensity: 40,
         watermarkEnabled: false,
-        watermarkText: 'Achu',
+        watermarkText: 'achu',
         watermarkSize: 20,
         position: 'Middle center',
         annotations: [],

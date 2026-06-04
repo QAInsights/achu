@@ -22,8 +22,8 @@ function AppContent() {
         {isFrameless && (
           <div className="workspace-titlebar">
             <div className="workspace-titlebar-brand">
-              <img src={logoUrl} alt="Achu" className="workspace-titlebar-logo" />
-              <span>Achu</span>
+              <img src={logoUrl} alt="achu" className="workspace-titlebar-logo" />
+              <span>achu</span>
             </div>
           </div>
         )}

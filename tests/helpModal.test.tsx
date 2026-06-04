@@ -29,7 +29,7 @@ describe('HelpModal', () => {
     it('renders modal when helpVisible is true', () => {
       mockContext.helpVisible = true;
       render(<HelpModal />);
-      expect(screen.getByText('Achu')).toBeInTheDocument();
+      expect(screen.getByText('achu')).toBeInTheDocument();
     });
   });
 
@@ -40,7 +40,7 @@ describe('HelpModal', () => {
 
     it('displays the app name and version', () => {
       render(<HelpModal />);
-      expect(screen.getByText('Achu')).toBeInTheDocument();
+      expect(screen.getByText('achu')).toBeInTheDocument();
       // Version is rendered in two places
       const versionElements = screen.getAllByText(/Version/);
       expect(versionElements.length).toBeGreaterThanOrEqual(1);
@@ -131,7 +131,7 @@ describe('HelpModal', () => {
 
       expect(writeTextMock).toHaveBeenCalled();
       const copiedText = writeTextMock.mock.calls[0][0];
-      expect(copiedText).toContain('Achu Version:');
+      expect(copiedText).toContain('achu Version:');
       expect(copiedText).toContain('Electron:');
       expect(copiedText).toContain('Chromium:');
       expect(copiedText).toContain('Node.js:');

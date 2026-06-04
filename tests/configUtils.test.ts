@@ -173,7 +173,7 @@ describe('configUtils', () => {
       chromeTheme: 'dark' as const,
       blurDensity: 40,
       watermarkEnabled: false,
-      watermarkText: 'Achu',
+      watermarkText: 'achu',
       watermarkSize: 20,
       watermarkPosition: 'middle',
       watermarkOpacity: 0.45,
@@ -211,7 +211,7 @@ describe('configUtils', () => {
       expect(config.chromeTheme).toBe('dark');
       expect(config.blurDensity).toBe(40);
       expect(config.watermarkEnabled).toBe(false);
-      expect(config.watermarkText).toBe('Achu');
+      expect(config.watermarkText).toBe('achu');
       expect(config.watermarkSize).toBe(20);
       expect(config.watermarkPosition).toBe('middle');
       expect(config.watermarkOpacity).toBe(0.45);

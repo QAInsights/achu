@@ -23,7 +23,7 @@ function getApi() {
 }
 
 describe('Preload Script', () => {
-  it('exposes snapFrameAPI via contextBridge with all 8 methods', () => {
+  it('exposes snapFrameAPI via contextBridge with updater methods', () => {
     expect(mockContextBridge.exposeInMainWorld).toHaveBeenCalledWith(
       'snapFrameAPI',
       expect.any(Object)
@@ -40,6 +40,9 @@ describe('Preload Script', () => {
     expect(api).toHaveProperty('onGlobalHotkeyTriggered');
     expect(api).toHaveProperty('versions');
     expect(api).toHaveProperty('osInfo');
+    expect(api).toHaveProperty('checkForUpdates');
+    expect(api).toHaveProperty('startUpdate');
+    expect(api).toHaveProperty('onUpdateProgress');
 
     expect(typeof api.getSettings).toBe('function');
     expect(typeof api.saveSettings).toBe('function');
@@ -49,6 +52,9 @@ describe('Preload Script', () => {
     expect(typeof api.readImageFromClipboard).toBe('function');
     expect(typeof api.openURL).toBe('function');
     expect(typeof api.onGlobalHotkeyTriggered).toBe('function');
+    expect(typeof api.checkForUpdates).toBe('function');
+    expect(typeof api.startUpdate).toBe('function');
+    expect(typeof api.onUpdateProgress).toBe('function');
   });
 
   it('getSettings calls ipcRenderer.invoke with correct channel', () => {
@@ -126,6 +132,37 @@ describe('Preload Script', () => {
     unsubscribe();
     expect(mockIpcRenderer.removeListener).toHaveBeenCalledWith(
       'hotkey:triggered',
+      expect.any(Function)
+    );
+  });
+
+  it('checkForUpdates calls ipcRenderer.invoke', () => {
+    const api = getApi();
+    api.checkForUpdates();
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('update:check');
+  });
+
+  it('startUpdate calls ipcRenderer.invoke with downloadUrl', () => {
+    const api = getApi();
+    api.startUpdate('https://example.com/update');
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('update:start', 'https://example.com/update');
+  });
+
+  it('onUpdateProgress subscribes and returns unsubscribe', () => {
+    const api = getApi();
+    const callback = vi.fn();
+    const unsubscribe = api.onUpdateProgress(callback);
+
+    expect(mockIpcRenderer.on).toHaveBeenCalledWith(
+      'update:progress',
+      expect.any(Function)
+    );
+
+    expect(typeof unsubscribe).toBe('function');
+
+    unsubscribe();
+    expect(mockIpcRenderer.removeListener).toHaveBeenCalledWith(
+      'update:progress',
       expect.any(Function)
     );
   });

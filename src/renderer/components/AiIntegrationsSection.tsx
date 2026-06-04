@@ -359,7 +359,7 @@ export default function AiIntegrationsSection() {
         </div>
 
         <div className="control-group">
-          <span className="control-label">Append Achu attribution in Markdown</span>
+          <span className="control-label">Append achu attribution in Markdown</span>
           <div className="format-toggle" style={{ marginTop: '4px' }}>
             <button
               className={`format-toggle-btn ${appendAttribution ? 'active' : ''}`}

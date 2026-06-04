@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="Achu Logo" width="128" height="128" />
+  <img src="assets/logo.svg" alt="achu Logo" width="128" height="128" />
 </p>
 
 <p align="center">
-  <img src="assets/title.svg" alt="Achu" width="580" />
+  <img src="assets/title.svg" alt="achu" width="580" />
 </p>
 
 <p align="center">
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center" style="font-size: 1.1em; color: #64748b;">
-  Achu (அச்சு) means `print` in Tamil. 🖨️
+  achu (அச்சு) means `print` in Tamil. 🖨️
 </p>
 
 <p align="center">
@@ -120,7 +120,7 @@
 
 ## 🛠️ Build & Package
 
-Achu uses `electron-builder` to package lightweight native binaries for Windows, macOS, and Linux.
+achu uses `electron-builder` to package lightweight native binaries for Windows, macOS, and Linux.
 
 | Script | Action | Output / Description |
 | :--- | :--- | :--- |
@@ -144,7 +144,7 @@ Achu uses `electron-builder` to package lightweight native binaries for Windows,
 
 ## ☕ Support & Community
 
-If you find Achu useful, consider supporting development or checking out QAInsights resources:
+If you find achu useful, consider supporting development or checking out QAInsights resources:
 
 * **Sponsor & Donate:** [Buy Me a Coffee](https://buymeacoffee.com/qainsights)
 * **License:** MIT License. See [LICENSE](./LICENSE) for details.

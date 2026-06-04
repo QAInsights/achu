@@ -71,8 +71,8 @@ export default function Sidebar() {
     >
       <div className="sidebar-header">
         <div className="sidebar-title">
-          <img src={logoUrl} alt="Achu" className="sidebar-logo" />
-          <span>Achu</span>
+          <img src={logoUrl} alt="achu" className="sidebar-logo" />
+          <span>achu</span>
         </div>
       </div>
 

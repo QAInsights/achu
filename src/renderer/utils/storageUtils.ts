@@ -29,7 +29,7 @@ export const DEFAULT_SETTINGS = {
   rounded: 20,
   shadow: 30,
   watermarkEnabled: false,
-  watermarkText: 'Achu',
+  watermarkText: 'achu',
   watermarkSize: 20,
   watermarkPosition: 'middle',
   watermarkOpacity: 0.45,

@@ -84,7 +84,7 @@ beforeEach(() => {
     setShadow: vi.fn(),
     watermarkEnabled: false,
     setWatermarkEnabled: vi.fn(),
-    watermarkText: 'Achu',
+    watermarkText: 'achu',
     setWatermarkText: vi.fn(),
     watermarkSize: 20,
     setWatermarkSize: vi.fn(),
@@ -167,8 +167,8 @@ describe('Sidebar', () => {
   it('renders sidebar with logo and title', () => {
     render(<Sidebar />);
     
-    expect(screen.getByText('Achu')).toBeInTheDocument();
-    expect(screen.getByAltText('Achu')).toBeInTheDocument();
+    expect(screen.getByText('achu')).toBeInTheDocument();
+    expect(screen.getByAltText('achu')).toBeInTheDocument();
   });
 
   it('renders action buttons', () => {
@@ -414,7 +414,7 @@ describe('SettingsModal', () => {
     
     render(<SettingsModal />);
     
-    const input = screen.getByDisplayValue('Achu');
+    const input = screen.getByDisplayValue('achu');
     fireEvent.change(input, { target: { value: 'New Watermark' } });
     
     expect(mockContext.setWatermarkText).toHaveBeenCalledWith('New Watermark');
@@ -489,7 +489,7 @@ describe('SettingsModal', () => {
     expect(mockContext.setRounded).toHaveBeenCalledWith(20);
     expect(mockContext.setShadow).toHaveBeenCalledWith(30);
     expect(mockContext.setWatermarkEnabled).toHaveBeenCalledWith(false);
-    expect(mockContext.setWatermarkText).toHaveBeenCalledWith('Achu');
+    expect(mockContext.setWatermarkText).toHaveBeenCalledWith('achu');
     expect(mockContext.setWatermarkPosition).toHaveBeenCalledWith('middle');
     expect(mockContext.setWatermarkOpacity).toHaveBeenCalledWith(0.45);
     expect(mockContext.setExportFormat).toHaveBeenCalledWith('png');
@@ -802,9 +802,9 @@ describe('HelpModal', () => {
     mockContext.helpVisible = true;
     render(<HelpModal />);
 
-    expect(screen.getByText('Achu')).toBeInTheDocument();
+    expect(screen.getByText('achu')).toBeInTheDocument();
     expect(screen.getByText(new RegExp(`Version ${packageJson.version.replace(/\./g, '\\.')}`))).toBeInTheDocument();
-    expect(screen.getByAltText('Achu Logo')).toBeInTheDocument();
+    expect(screen.getByAltText('achu Logo')).toBeInTheDocument();
     expect(screen.getByTitle('Donate')).toBeInTheDocument();
     expect(screen.getByTitle('GitHub Repository')).toBeInTheDocument();
 
@@ -868,7 +868,7 @@ describe('HelpModal', () => {
     expect(await screen.findByText('Copied!')).toBeInTheDocument();
 
     expect(mockWriteText).toHaveBeenCalledWith([
-      `Achu Version: ${packageJson.version}`,
+      `achu Version: ${packageJson.version}`,
       'Electron: 31.3.1',
       'Chromium: 124.0.0.0',
       'Node.js: 20.11.0',
