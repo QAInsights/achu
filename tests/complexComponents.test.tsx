@@ -8,6 +8,7 @@ import WorkspaceToolbar from '../src/renderer/components/WorkspaceToolbar';
 import CanvasPreview from '../src/renderer/components/CanvasPreview';
 import AnnotationsLayer from '../src/renderer/AnnotationsLayer';
 import App from '../src/renderer/App';
+import packageJson from '../package.json';
 
 // Mock AppContext
 vi.mock('../src/renderer/AppContext', () => ({
@@ -802,7 +803,7 @@ describe('HelpModal', () => {
     render(<HelpModal />);
 
     expect(screen.getByText('Achu')).toBeInTheDocument();
-    expect(screen.getByText(/Version 2026\.5\.30/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`Version ${packageJson.version.replace(/\./g, '\\.')}`))).toBeInTheDocument();
     expect(screen.getByAltText('Achu Logo')).toBeInTheDocument();
     expect(screen.getByTitle('Donate')).toBeInTheDocument();
     expect(screen.getByTitle('GitHub Repository')).toBeInTheDocument();
@@ -867,7 +868,7 @@ describe('HelpModal', () => {
     expect(await screen.findByText('Copied!')).toBeInTheDocument();
 
     expect(mockWriteText).toHaveBeenCalledWith([
-      'Achu Version: 2026.5.30',
+      `Achu Version: ${packageJson.version}`,
       'Electron: 31.3.1',
       'Chromium: 124.0.0.0',
       'Node.js: 20.11.0',

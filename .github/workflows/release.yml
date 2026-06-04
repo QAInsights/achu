@@ -28,7 +28,8 @@ jobs:
             RELEASE_COUNT=$(curl -s \
               "https://api.github.com/repos/${{ github.repository }}/releases?per_page=100" | \
               jq --arg prefix "v$YEAR_MONTH" '[.[] | select(.tag_name | startswith($prefix))] | length')
-            VERSION="${YEAR_MONTH}.${RELEASE_COUNT}"
+            PADDED_COUNT=$(printf "%02d" $RELEASE_COUNT)
+            VERSION="${YEAR_MONTH}.${PADDED_COUNT}"
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Release version: v$VERSION"
@@ -59,6 +60,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Update package.json version
+        run: npm version ${{ needs.version.outputs.version }} --no-git-tag-version
 
       - name: Build renderer + main + preload
         run: npm run build
