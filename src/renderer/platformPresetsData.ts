@@ -10,7 +10,8 @@ export type PlatformType =
   | 'Pinterest'
   | 'WordPress'
   | 'Google Business'
-  | 'Apple / Android';
+  | 'Apple / Android'
+  | 'Product Hunt';
 
 export interface PlatformPreset {
   platform: PlatformType;
@@ -441,5 +442,23 @@ export const platformPresets: PlatformPreset[] = [
     height: 1024,
     ratio: '1:1',
     note: 'UI Rounded Corner. Must be a full bleed square without pre-transpired corners.'
+  },
+
+  // PRODUCT HUNT PRESETS
+  {
+    platform: 'Product Hunt',
+    name: 'Thumbnail',
+    width: 240,
+    height: 240,
+    ratio: '1:1',
+    note: 'Product Hunt post thumbnail/icon (square display).'
+  },
+  {
+    platform: 'Product Hunt',
+    name: 'Gallery',
+    width: 1270,
+    height: 760,
+    ratio: '~1.67:1',
+    note: 'Product Hunt product gallery image display dimension.'
   }
 ];

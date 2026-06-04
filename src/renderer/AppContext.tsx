@@ -741,7 +741,7 @@ Severity rules:
   };
 
   const toggleRedaction = (id: string) => {
-    const updated = redactions.map((r) =>
+    const updated: RedactionItem[] = redactions.map((r) =>
       r.id === id ? { ...r, status: r.status === 'redacted' ? 'visible' : 'redacted' } : r
     );
     setRedactions(updated);
@@ -749,13 +749,13 @@ Severity rules:
   };
 
   const redactAll = () => {
-    const updated = redactions.map((r) => ({ ...r, status: 'redacted' }));
+    const updated: RedactionItem[] = redactions.map((r) => ({ ...r, status: 'redacted' }));
     setRedactions(updated);
     pushHistory({ ...getCurrentConfig(), redactions: updated });
   };
 
   const revealAll = () => {
-    const updated = redactions.map((r) => ({ ...r, status: 'visible' }));
+    const updated: RedactionItem[] = redactions.map((r) => ({ ...r, status: 'visible' }));
     setRedactions(updated);
     pushHistory({ ...getCurrentConfig(), redactions: updated });
   };
@@ -772,7 +772,7 @@ Severity rules:
     setBorderColor('#ffffff');
     setScale(100);
     setBackgroundType('gradient');
-    setBackgroundValue('linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)');
+    setBackgroundValue('linear-gradient(135deg, #0575e6 0%, #00f260 100%)');
     setAspectRatio('Auto');
     setSelectedPreset('');
     setShowSafeZone(true);
