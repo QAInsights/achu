@@ -65,15 +65,11 @@ export function useExport(
       const suffix = (isOgPreset && sizeInKb > 300) ? '\n\nTip: Keep Open Graph images under 300KB for best link preview performance.' : '';
 
       if (window.snapFrameAPI) {
-        window.snapFrameAPI.copyImageToClipboard(base64Data).then((success: boolean) => {
-          if (success) alert('Beautified image copied to clipboard!' + suffix);
-          else alert('Failed to copy to clipboard.');
-        });
+        window.snapFrameAPI.copyImageToClipboard(base64Data);
       } else {
         canvas.toBlob((blob) => {
           if (blob) {
-            navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-              .then(() => alert('Copied to clipboard (Browser)!' + suffix));
+            navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
           }
         }, 'image/png');
       }

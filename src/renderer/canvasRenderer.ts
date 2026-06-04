@@ -79,6 +79,14 @@ interface ColorStop {
   stop: number;
 }
 
+const IGNORED_WORDS = new Set([
+  'circle', 'at', 'ellipse', 'to', 'deg', 'rad', 'grad', 'turn',
+  'closest-side', 'farthest-side', 'closest-corner', 'farthest-corner',
+  'left', 'right', 'top', 'bottom', 'center',
+  'closest', 'farthest', 'side', 'corner',
+  'px', 'em', 'rem', 'vh', 'vw', 'vmin', 'vmax', 'ch', 'ex', 'cm', 'mm', 'in', 'pt', 'pc'
+]);
+
 // Parse colors and stops from CSS gradient parts
 function parseColorStops(partStr: string): ColorStop[] {
   const stops: ColorStop[] = [];
@@ -88,7 +96,10 @@ function parseColorStops(partStr: string): ColorStop[] {
   const matches: { color: string; stopStr?: string }[] = [];
 
   while ((match = regex.exec(partStr)) !== null) {
-    matches.push({ color: match[1], stopStr: match[2] });
+    const val = match[1];
+    if (!IGNORED_WORDS.has(val.toLowerCase())) {
+      matches.push({ color: val, stopStr: match[2] });
+    }
   }
 
   matches.forEach((item, index) => {
@@ -103,6 +114,7 @@ function parseColorStops(partStr: string): ColorStop[] {
 
   return stops;
 }
+
 
 // Draw linear gradient
 function drawLinearGradient(ctx: CanvasRenderingContext2D, w: number, h: number, cssStr: string) {
@@ -145,24 +157,18 @@ function drawRadialGradient(ctx: CanvasRenderingContext2D, w: number, h: number,
   let cx = w / 2;
   let cy = h / 2;
 
-  const centerMatch = cssStr.match(/circle\s+at\s+(\d+)%\s+(\d+)%/);
+  const centerMatch = cssStr.match(/(?:circle|ellipse)?\s*at\s+(\d+)%\s+(\d+)%/);
   if (centerMatch) {
     cx = (parseInt(centerMatch[1], 10) / 100) * w;
     cy = (parseInt(centerMatch[2], 10) / 100) * h;
   }
 
-  // Parse radius percentage if any, or default to max of w or h
-  let radius = Math.max(w, h);
-  const radiusMatch = cssStr.match(/transparent\s+(\d+)%/);
-  if (radiusMatch) {
-    radius = (parseInt(radiusMatch[1], 10) / 100) * Math.max(w, h);
-  } else {
-    // Look for any percentage at the end of the stops
-    const stopsMatch = cssStr.match(/(\d+)%\s*\)$/);
-    if (stopsMatch) {
-      radius = (parseInt(stopsMatch[1], 10) / 100) * Math.max(w, h);
-    }
-  }
+  // Calculate farthest-corner radius to match standard CSS spec behavior
+  const d1 = Math.sqrt(cx * cx + cy * cy);
+  const d2 = Math.sqrt((w - cx) * (w - cx) + cy * cy);
+  const d3 = Math.sqrt(cx * cx + (h - cy) * (h - cy));
+  const d4 = Math.sqrt((w - cx) * (w - cx) + (h - cy) * (h - cy));
+  const radius = Math.max(d1, d2, d3, d4);
 
   const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
   const content = cssStr.substring(cssStr.indexOf('(') + 1, cssStr.lastIndexOf(')'));
@@ -305,7 +311,7 @@ export function drawBackground(
   } else if (config.backgroundType === 'gradient') {
     const val = config.backgroundValue || 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)';
     const layers = val.split(/,(?![^(]*\))/);
-    layers.forEach((layer) => {
+    [...layers].reverse().forEach((layer) => {
       const trimmed = layer.trim();
       if (trimmed.startsWith('radial-gradient')) {
         drawRadialGradient(ctx, w, h, trimmed);

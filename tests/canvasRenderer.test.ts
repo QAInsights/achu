@@ -210,6 +210,79 @@ describe('drawBackground', () => {
     // Should call both linear and radial
     expect(ctx.calls.some(c => c.startsWith('createLinearGradient'))).toBe(true);
     expect(ctx.calls.some(c => c.startsWith('createRadialGradient'))).toBe(true);
+    
+    // Back-to-front rendering check: bottommost layer (radial-gradient, listed second) drawn BEFORE topmost layer (linear-gradient, listed first)
+    const linearIdx = ctx.calls.findIndex(c => c.startsWith('createLinearGradient'));
+    const radialIdx = ctx.calls.findIndex(c => c.startsWith('createRadialGradient'));
+    expect(radialIdx).toBeLessThan(linearIdx);
+  });
+
+  it('renders Mesh Aurora preset with correct multi-layer order (radial gradients on top of linear gradient)', () => {
+    const ctx = makeMockCtx();
+    const config = {
+      ...baseConfig,
+      backgroundType: 'gradient' as const,
+      backgroundValue: 'radial-gradient(circle at 20% 20%, #ff8a00 0%, transparent 50%), radial-gradient(circle at 80% 80%, #da00ff 0%, transparent 50%), linear-gradient(135deg, #00b4db 0%, #0083b0 100%)',
+    };
+    drawBackground(ctx, 800, 600, config, null);
+
+    // Should call both linear and radial gradients
+    const linearCalls = ctx.calls.filter(c => c.startsWith('createLinearGradient'));
+    const radialCalls = ctx.calls.filter(c => c.startsWith('createRadialGradient'));
+    expect(linearCalls).toHaveLength(1);
+    expect(radialCalls).toHaveLength(2);
+
+    // Finding call indices in ctx.calls to ensure correct drawing order:
+    // Order in string: [radial1, radial2, linear]
+    // Drawn order (back-to-front): [linear (drawn first), radial2 (drawn second), radial1 (drawn last)]
+    const linearIdx = ctx.calls.indexOf(linearCalls[0]);
+    const radial2Idx = ctx.calls.indexOf(radialCalls[0]); // first call to radial (drawn second)
+    const radial1Idx = ctx.calls.indexOf(radialCalls[1]); // second call to radial (drawn last)
+
+    expect(linearIdx).toBeLessThan(radial2Idx);
+    expect(radial2Idx).toBeLessThan(radial1Idx);
+  });
+
+  it('filters out shape, position, angle, and unit keywords from parsed color stops', () => {
+    const ctx = makeMockCtx();
+    const config = {
+      ...baseConfig,
+      backgroundType: 'gradient' as const,
+      backgroundValue: 'radial-gradient(circle at 20% 30%, #ff8a00 0%, transparent 50%)',
+    };
+    drawBackground(ctx, 800, 600, config, null);
+
+    expect(ctx.calls.some(c => c.startsWith('createRadialGradient'))).toBe(true);
+
+    const addColorStopCalls = ctx.calls.filter(c => c.startsWith('addColorStop'));
+    expect(addColorStopCalls).toEqual([
+      'addColorStop(0,#ff8a00)',
+      'addColorStop(0.5,transparent)'
+    ]);
+  });
+
+  it('calculates the correct farthest-corner radius for radial gradients', () => {
+    const ctx = makeMockCtx();
+    const config = {
+      ...baseConfig,
+      backgroundType: 'gradient' as const,
+      backgroundValue: 'radial-gradient(circle at 20% 30%, #ff8a00 0%, transparent 50%)',
+    };
+    drawBackground(ctx, 800, 600, config, null);
+
+    const radialCall = ctx.calls.find(c => c.startsWith('createRadialGradient'));
+    expect(radialCall).toBeDefined();
+
+    const match = radialCall!.match(/createRadialGradient\(([^)]+)\)/);
+    expect(match).not.toBeNull();
+    const params = match![1].split(',').map(Number);
+
+    expect(params[0]).toBe(160); // cx
+    expect(params[1]).toBe(180); // cy
+    expect(params[2]).toBe(0);   // inner radius
+    expect(params[3]).toBe(160); // cx
+    expect(params[4]).toBe(180); // cy
+    expect(params[5]).toBeCloseTo(765.506, 3); // farthest-corner radius
   });
 
   it('draws gradient background with default value', () => {
