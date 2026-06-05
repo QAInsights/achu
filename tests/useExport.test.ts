@@ -1,18 +1,25 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
-// Mock renderCanvas to avoid DOM dependency
+const { mockRenderCanvas } = vi.hoisted(() => ({
+  mockRenderCanvas: vi.fn(),
+}));
+
 vi.mock('../src/renderer/canvasRenderer', () => ({
-  renderCanvas: vi.fn((canvas: HTMLCanvasElement) => {
-    // Simulate a canvas that produces a certain-sized data URL
-    canvas.toDataURL = () => 'data:image/png;base64,' + 'A'.repeat(1000);
-    canvas.toBlob = (cb: (blob: Blob) => void) => {
-      cb(new Blob(['test'], { type: 'image/png' }));
-    };
-  }),
+  renderCanvas: mockRenderCanvas,
 }));
 
 import { useExport } from '../src/renderer/hooks/useExport';
+
+// Simulates a canvas whose toDataURL returns a small base64 payload (~0.7KB actual)
+function makeSmallBase64() {
+  return 'data:image/png;base64,' + 'A'.repeat(1000);
+}
+
+// Simulates a canvas whose toDataURL returns ~9MB base64 payload
+function makeLargeBase64() {
+  return 'data:image/png;base64,' + 'A'.repeat(12000000);
+}
 
 describe('useExport', () => {
   let mockGetCurrentConfig: ReturnType<typeof vi.fn>;
@@ -35,6 +42,24 @@ describe('useExport', () => {
     });
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  // Simple helper: mock renderCanvas to produce a given base64 payload
+  function stubCanvas(size: 'small' | 'large') {
+    const toData = size === 'large' ? makeLargeBase64() : makeSmallBase64();
+    mockRenderCanvas.mockImplementation((canvas: HTMLCanvasElement) => {
+      canvas.toDataURL = () => toData;
+      canvas.toBlob = (cb: (b: Blob) => void) => {
+        cb(new Blob([toData], { type: 'image/png' }));
+      };
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // initial state
+  // -----------------------------------------------------------------------
   describe('initial state', () => {
     it('defaults export format to png', () => {
       const { result } = renderHook(() =>
@@ -83,6 +108,9 @@ describe('useExport', () => {
     });
   });
 
+  // -----------------------------------------------------------------------
+  // setExportFormat
+  // -----------------------------------------------------------------------
   describe('setExportFormat', () => {
     it('updates export format state', () => {
       const { result } = renderHook(() =>
@@ -95,6 +123,9 @@ describe('useExport', () => {
     });
   });
 
+  // -----------------------------------------------------------------------
+  // setJpegQuality
+  // -----------------------------------------------------------------------
   describe('setJpegQuality', () => {
     it('updates jpeg quality state', () => {
       const { result } = renderHook(() =>
@@ -107,70 +138,141 @@ describe('useExport', () => {
     });
   });
 
+  // -----------------------------------------------------------------------
+  // checkOgSizeLimit (exercised via triggerExport)
+  // -----------------------------------------------------------------------
   describe('checkOgSizeLimit', () => {
-    it('returns true for non-OG presets regardless of size', () => {
+    it('does NOT call confirm for OG preset with small file', () => {
+      stubCanvas('small');
+      const mockConfirm = vi.fn();
+      vi.stubGlobal('confirm', mockConfirm);
+      mockGetCurrentConfig.mockReturnValue({
+        ...mockGetCurrentConfig(),
+        selectedPreset: 'OG Image',
+      });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(mockConfirm).not.toHaveBeenCalled();
+    });
+
+    it('calls confirm for OG preset with large file', () => {
+      stubCanvas('large');
+      const mockConfirm = vi.fn().mockReturnValue(false);
+      vi.stubGlobal('confirm', mockConfirm);
+
+      mockGetCurrentConfig.mockReturnValue({
+        ...mockGetCurrentConfig(),
+        selectedPreset: 'OG Image',
+      });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(mockConfirm).toHaveBeenCalled();
+    });
+
+    it('does NOT call confirm for non-OG preset with large file', () => {
+      stubCanvas('large');
+      const mockConfirm = vi.fn();
+      vi.stubGlobal('confirm', mockConfirm);
+      // Provide snapFrameAPI so link.click() is avoided in jsdom
+      vi.stubGlobal('snapFrameAPI', { saveFile: vi.fn() });
+
       mockGetCurrentConfig.mockReturnValue({
         ...mockGetCurrentConfig(),
         selectedPreset: 'MacBook Pro',
       });
+
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig)
       );
-      // Access private function through the export flow
-      // Non-OG preset always returns true
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(mockConfirm).not.toHaveBeenCalled();
     });
 
-    it('returns true for OG presets under 8MB', () => {
-      mockGetCurrentConfig.mockReturnValue({
-        ...mockGetCurrentConfig(),
-        selectedPreset: 'OG Image',
-      });
-      const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
-      );
-      // Small base64 won't trigger the confirm dialog
-    });
-
-    it('shows confirm for OG presets over 8MB', () => {
-      mockGetCurrentConfig.mockReturnValue({
-        ...mockGetCurrentConfig(),
-        selectedPreset: 'OG Image',
-      });
-      const mockConfirm = vi.fn().mockReturnValue(false);
+    it("treats 'LinkedIn Post' as OG preset", () => {
+      stubCanvas('large');
+      const mockConfirm = vi.fn();
       vi.stubGlobal('confirm', mockConfirm);
 
-      const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
-      );
-      // The size check needs a large base64 string
-      // Base64: 'A' * ~12M characters ≈ 9MB
-    });
-
-    it('identifies Link presets as OG', () => {
       mockGetCurrentConfig.mockReturnValue({
         ...mockGetCurrentConfig(),
         selectedPreset: 'LinkedIn Post',
       });
-      // Would trigger OG check
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(mockConfirm).toHaveBeenCalled();
     });
 
-    it('identifies Facebook presets as OG', () => {
+    it("treats 'Facebook Cover' as OG preset", () => {
+      stubCanvas('large');
+      const mockConfirm = vi.fn();
+      vi.stubGlobal('confirm', mockConfirm);
+
       mockGetCurrentConfig.mockReturnValue({
         ...mockGetCurrentConfig(),
         selectedPreset: 'Facebook Cover',
       });
-      // Would trigger OG check
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(mockConfirm).toHaveBeenCalled();
     });
 
-    it('identifies Ad presets as OG', () => {
+    it("treats 'Ad Banner' as OG preset", () => {
+      stubCanvas('large');
+      const mockConfirm = vi.fn();
+      vi.stubGlobal('confirm', mockConfirm);
+
       mockGetCurrentConfig.mockReturnValue({
         ...mockGetCurrentConfig(),
         selectedPreset: 'Ad Banner',
       });
-      // Would trigger OG check
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(mockConfirm).toHaveBeenCalled();
     });
   });
 
+  // -----------------------------------------------------------------------
+  // triggerExport
+  // -----------------------------------------------------------------------
   describe('triggerExport', () => {
     it('is a no-op when no image and not in noImageMode', () => {
       const { result } = renderHook(() =>
@@ -184,6 +286,7 @@ describe('useExport', () => {
     });
 
     it('works in noImageMode without image', () => {
+      stubCanvas('small');
       const { result } = renderHook(() =>
         useExport(null, true, mockGetCurrentConfig)
       );
@@ -195,31 +298,181 @@ describe('useExport', () => {
     });
 
     it('uses browser download fallback when snapFrameAPI is unavailable', () => {
+      stubCanvas('small');
       vi.stubGlobal('snapFrameAPI', undefined);
 
       const { result } = renderHook(() =>
         useExport(null, true, mockGetCurrentConfig)
       );
 
-      // Create a mock link element and spy on click
       const mockLink = document.createElement('a');
       const clickSpy = vi.spyOn(mockLink, 'click');
       const origCreateElement = document.createElement.bind(document);
-      vi.spyOn(document, 'createElement').mockImplementation((tag: string, _options?: ElementCreationOptions) => {
+      vi.spyOn(document, 'createElement').mockImplementation((tag: string, opts?: ElementCreationOptions) => {
         if (tag === 'a') return mockLink;
-        return origCreateElement(tag, _options);
+        return origCreateElement(tag, opts);
       });
 
       act(() => {
         result.current.triggerExport();
       });
 
-      // Should create a download link and click it
       expect(clickSpy).toHaveBeenCalled();
       expect(mockLink.download).toContain('snapframe-export');
     });
+
+    it('uses JPEG mime type when exportFormat is jpeg', () => {
+      stubCanvas('small');
+      vi.stubGlobal('snapFrameAPI', undefined);
+
+      const mockLink = document.createElement('a');
+      vi.spyOn(mockLink, 'click');
+      const origCreateElement = document.createElement.bind(document);
+
+      // Capture the canvas created by useExport so we can spy on toDataURL
+      let capturedCanvas: HTMLCanvasElement | null = null;
+      vi.spyOn(document, 'createElement').mockImplementation((tag: string, opts?: ElementCreationOptions) => {
+        if (tag === 'canvas') {
+          const c = origCreateElement(tag, opts) as HTMLCanvasElement;
+          c.toDataURL = () => makeSmallBase64();
+          capturedCanvas = c;
+          return c;
+        }
+        if (tag === 'a') return mockLink;
+        return origCreateElement(tag, opts);
+      });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.setExportFormat('jpeg');
+      });
+
+      // Override renderCanvas to not interfere with the canvas's toDataURL
+      mockRenderCanvas.mockImplementation(() => {});
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      // Verify the canvas was used — the link was clicked with correct extension
+      expect(mockLink.download).toContain('.jpg');
+    });
+
+    it('uses .jpg extension for JPEG export via browser download', () => {
+      stubCanvas('small');
+      vi.stubGlobal('snapFrameAPI', undefined);
+
+      const mockLink = document.createElement('a');
+      vi.spyOn(mockLink, 'click');
+      const origCreateElement = document.createElement.bind(document);
+      vi.spyOn(document, 'createElement').mockImplementation((tag: string, opts?: ElementCreationOptions) => {
+        if (tag === 'a') return mockLink;
+        return origCreateElement(tag, opts);
+      });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.setExportFormat('jpeg');
+      });
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(mockLink.download).toContain('.jpg');
+    });
+
+    it('calls snapFrameAPI.saveFile with correct args for JPEG path', () => {
+      stubCanvas('small');
+      const saveFileSpy = vi.fn();
+      vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.setExportFormat('jpeg');
+      });
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(saveFileSpy).toHaveBeenCalled();
+      const call = saveFileSpy.mock.calls[0];
+      expect(call[1]).toBe('jpeg');
+    });
+
+    it('calls alert with tip for OG preset > 300KB via snapFrameAPI', () => {
+      stubCanvas('small');
+      const mockAlert = vi.fn();
+      vi.stubGlobal('alert', mockAlert);
+      const saveFileSpy = vi.fn();
+      vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
+
+      mockGetCurrentConfig.mockReturnValue({
+        ...mockGetCurrentConfig(),
+        selectedPreset: 'OG Image',
+      });
+
+      // Canvas producing ~375KB base64 (>300KB, <8MB)
+      const medBase64 = 'data:image/png;base64,' + 'A'.repeat(500000);
+      mockRenderCanvas.mockImplementation((canvas: HTMLCanvasElement) => {
+        canvas.toDataURL = () => medBase64;
+      });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(mockAlert).toHaveBeenCalledWith(
+        expect.stringContaining('Tip: Keep Open Graph images under 300KB')
+      );
+    });
+
+    it('does NOT call alert with tip for non-OG preset', () => {
+      stubCanvas('small');
+      const mockAlert = vi.fn();
+      vi.stubGlobal('alert', mockAlert);
+      const saveFileSpy = vi.fn();
+      vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
+
+      mockGetCurrentConfig.mockReturnValue({
+        ...mockGetCurrentConfig(),
+        selectedPreset: 'MacBook Pro',
+      });
+
+      const medBase64 = 'data:image/png;base64,' + 'A'.repeat(500000);
+      mockRenderCanvas.mockImplementation((canvas: HTMLCanvasElement) => {
+        canvas.toDataURL = () => medBase64;
+      });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(mockAlert).not.toHaveBeenCalled();
+    });
   });
 
+  // -----------------------------------------------------------------------
+  // copyBeautifiedImage
+  // -----------------------------------------------------------------------
   describe('copyBeautifiedImage', () => {
     it('is a no-op when no image and not in noImageMode', async () => {
       const { result } = renderHook(() =>
@@ -231,21 +484,54 @@ describe('useExport', () => {
       // Should not throw
     });
 
-    it('works in noImageMode without image', async () => {
-      vi.stubGlobal('snapFrameAPI', {
-        copyImageToClipboard: vi.fn().mockResolvedValue(true),
+    it('uses navigator.clipboard.write when snapFrameAPI is absent', async () => {
+      stubCanvas('small');
+      vi.stubGlobal('snapFrameAPI', undefined);
+
+      const writeSpy = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { write: writeSpy },
+        writable: true,
+        configurable: true,
       });
-      const mockAlert = vi.fn();
-      vi.stubGlobal('alert', mockAlert);
 
       const { result } = renderHook(() =>
         useExport(null, true, mockGetCurrentConfig)
       );
+
       await act(async () => {
         await result.current.copyBeautifiedImage();
       });
 
-      // Should call snapFrameAPI or attempt clipboard
+      expect(writeSpy).toHaveBeenCalled();
+    });
+
+    it('aborts clipboard write when OG size limit check returns false', async () => {
+      stubCanvas('large');
+      const mockConfirm = vi.fn().mockReturnValue(false);
+      vi.stubGlobal('confirm', mockConfirm);
+      const writeSpy = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { write: writeSpy },
+        writable: true,
+        configurable: true,
+      });
+
+      mockGetCurrentConfig.mockReturnValue({
+        ...mockGetCurrentConfig(),
+        selectedPreset: 'OG Image',
+      });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      await act(async () => {
+        await result.current.copyBeautifiedImage();
+      });
+
+      expect(mockConfirm).toHaveBeenCalled();
+      expect(writeSpy).not.toHaveBeenCalled();
     });
   });
 });

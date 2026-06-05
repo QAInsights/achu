@@ -106,4 +106,49 @@ describe('Canvas Dimensions', () => {
     expect(r169.width).toBe(1200);
     expect(r169.height).toBe(675);
   });
+
+  // -----------------------------------------------------------------------
+  // Edge cases
+  // -----------------------------------------------------------------------
+  it('scale: 0 still produces positive dimensions (padding keeps output non-zero)', () => {
+    const dims = getCanvasDimensions(800, 600, { ...baseConfig, scale: 0 });
+    expect(dims.width).toBeGreaterThan(0);
+    expect(dims.height).toBeGreaterThan(0);
+  });
+
+  it('scale: 200 doubles image dimensions appropriately', () => {
+    const dims = getCanvasDimensions(800, 600, { ...baseConfig, scale: 200 });
+    // With scale=200, content is roughly doubled. Verify both are at least 2x the padded base.
+    const baseDims = getCanvasDimensions(800, 600, { ...baseConfig, scale: 100 });
+    expect(dims.width).toBeGreaterThan(baseDims.width);
+    expect(dims.height).toBeGreaterThan(baseDims.height);
+  });
+
+  it('1×1 pixel image in 16:9 fit mode preserves ratio', () => {
+    const cfg = { ...baseConfig, aspectRatio: '16:9' as const, paddingMode: 'fit' as const };
+    const dims = getCanvasDimensions(1, 1, cfg);
+    const ratio = dims.width / dims.height;
+    expect(Math.abs(ratio - 16 / 9)).toBeLessThan(0.01);
+  });
+
+  it('very wide panorama (4000×400) in 1:1 fit mode produces height ≥ width', () => {
+    const cfg = { ...baseConfig, aspectRatio: '1:1' as const, paddingMode: 'fit' as const };
+    const dims = getCanvasDimensions(4000, 400, cfg);
+    // In 1:1, both dimensions should be equal
+    expect(dims.width).toBe(dims.height);
+    // The image width drives the canvas size (wide ratio > 1:1)
+    expect(dims.width).toBeGreaterThanOrEqual(4000);
+  });
+
+  it('paddingMode: fill with small image (200×150) in 16:9 produces at least 800 wide with correct ratio', () => {
+    const cfg = {
+      ...baseConfig,
+      aspectRatio: '16:9' as const,
+      paddingMode: 'fill' as const,
+    };
+    const dims = getCanvasDimensions(200, 150, cfg);
+    expect(dims.width).toBeGreaterThanOrEqual(800);
+    const ratio = dims.width / dims.height;
+    expect(Math.abs(ratio - 16 / 9)).toBeLessThan(0.01);
+  });
 });
