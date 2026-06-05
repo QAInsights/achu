@@ -1145,24 +1145,41 @@ describe('CanvasPreview', () => {
     expect(box).toHaveStyle({ position: 'relative' });
   });
 
-  it('uses auto width for container box at scale 100', () => {
+  it('uses fallback calc width for container box at scale 100 before image loads', () => {
     mockContext.imageSrc = 'data:image/png;base64,test';
     mockContext.aspectRatio = '1:1';
     mockContext.scale = 100;
-
+    // imgDims is null (onLoad not yet fired) → fallback percentage formula
     const { container } = render(<CanvasPreview />);
     const box = container.querySelector('.preview-container-box');
     expect(box).toHaveStyle({ width: 'calc(1 * (100% - 76px))' });
   });
 
-  it('uses percentage width for container box when scale is below 100', () => {
+  it('uses fallback calc width for container box when scale is below 100 and image not loaded', () => {
     mockContext.imageSrc = 'data:image/png;base64,test';
     mockContext.aspectRatio = '1:1';
     mockContext.scale = 80;
-
+    // imgDims is null (onLoad not yet fired) → fallback percentage formula
     const { container } = render(<CanvasPreview />);
     const box = container.querySelector('.preview-container-box');
     expect(box).toHaveStyle({ width: 'calc(0.8 * (100% - 76px))' });
+  });
+
+  it('uses pixel width matching image dimensions once image loads', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.aspectRatio = '1:1';
+    mockContext.scale = 100;
+    const { container } = render(<CanvasPreview />);
+    const img = container.querySelector('img[alt="Screenshot"]') as HTMLImageElement | null;
+    if (img) {
+      // Simulate image load with known natural dimensions
+      Object.defineProperty(img, 'naturalWidth', { value: 500, configurable: true });
+      Object.defineProperty(img, 'naturalHeight', { value: 500, configurable: true });
+      fireEvent.load(img);
+    }
+    const box = container.querySelector('.preview-container-box');
+    // At scale=100, width = round(500 * 1) = 500px
+    expect(box).toHaveStyle({ width: '500px' });
   });
 });
 

@@ -391,7 +391,13 @@ export default function CanvasPreview() {
                   border: border > 0 ? `${border}px solid ${borderColor}` : 'none',
                   outline: inset > 0 ? `${inset}px solid ${insetColor}` : 'none',
                   outlineOffset: `-${inset}px`,
-                  width: aspectRatio === 'Auto' ? '100%' : `calc((100% - ${padding * 2}px) * ${scale / 100})`,
+                  // Match canvasRenderer: contentW = imgW * scale. Use imgDims when available,
+                  // fall back to percentage formula until image loads.
+                  width: aspectRatio === 'Auto'
+                    ? '100%'
+                    : imgDims
+                      ? `${Math.round(imgDims.width * (scale / 100))}px`
+                      : `calc((100% - ${padding * 2}px) * ${scale / 100})`,
                   maxWidth: aspectRatio === 'Auto' ? '100%' : `calc(100% - ${padding * 2}px)`,
                   maxHeight: aspectRatio === 'Auto' ? '100%' : `calc(100% - ${padding * 2}px)`,
                   zIndex: 1,
@@ -430,9 +436,11 @@ export default function CanvasPreview() {
                       });
                     }}
                     style={{
-                      maxHeight: '100%',
+                      // In fixed-ratio mode fill the chrome box width (matches canvas drawImage).
+                      // In Auto mode keep natural size with max constraints.
+                      width: aspectRatio === 'Auto' ? 'auto' : '100%',
                       maxWidth: '100%',
-                      width: 'auto',
+                      maxHeight: aspectRatio === 'Auto' ? '100%' : undefined,
                       height: 'auto',
                       display: 'block',
                     }}
