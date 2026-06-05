@@ -29,6 +29,13 @@ export default function BackgroundSettings() {
     imageSrc,
     vibePalette, vibeVariantIndex, vibeUpdateDrawColor, setVibeUpdateDrawColor,
     applyAutoVibe,
+    bgGrain, setBgGrain,
+    lightRaysStyle, setLightRaysStyle,
+    lightRaysOpacity, setLightRaysOpacity,
+    lightRaysAngle, setLightRaysAngle,
+    lightRaysCount, setLightRaysCount,
+    lightRaysSourceX, setLightRaysSourceX,
+    lightRaysSourceY, setLightRaysSourceY,
   } = useAppContext();
 
   const [vibeToast, setVibeToast] = useState(false);
@@ -244,6 +251,127 @@ export default function BackgroundSettings() {
         <MeshGradientControls />
       )}
 
+      {/* Background Effects */}
+      <div className="control-group" style={{ borderTop: '1px solid var(--border)', paddingTop: '0.8rem', marginTop: '0.4rem' }}>
+        <span className="control-label" style={{ fontWeight: '600', color: 'var(--text-primary)' }}>Background Effects</span>
+        
+        {/* Grain Noise Slider */}
+        <div className="control-group" style={{ marginTop: '0.2rem' }}>
+          <div className="control-label-container">
+            <span className="control-label">Grain Overlay</span>
+            <span className="control-value">{bgGrain}%</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={bgGrain}
+            onChange={(e) => setBgGrain(parseInt(e.target.value, 10))}
+            onMouseUp={handleSliderRelease}
+          />
+        </div>
+
+        {/* Light Rays Style */}
+        <div className="control-group">
+          <span className="control-label">Light Rays Style</span>
+          <select
+            value={lightRaysStyle}
+            aria-label="Light Rays Style"
+            onChange={(e) => {
+              const val = e.target.value as any;
+              setLightRaysStyle(val);
+              pushHistory({ ...getCurrentConfig(), lightRaysStyle: val });
+            }}
+            className="input-sm"
+          >
+            <option value="none">None</option>
+            <option value="diagonal">Diagonal Shine</option>
+            <option value="spotlight">Spotlight</option>
+            <option value="aurora">Aurora Beams</option>
+          </select>
+        </div>
+
+        {/* Light Rays Custom Controls */}
+        {lightRaysStyle !== 'none' && (
+          <>
+            <div className="control-group">
+              <div className="control-label-container">
+                <span className="control-label">Ray Opacity</span>
+                <span className="control-value">{lightRaysOpacity}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={lightRaysOpacity}
+                onChange={(e) => setLightRaysOpacity(parseInt(e.target.value, 10))}
+                onMouseUp={handleSliderRelease}
+              />
+            </div>
+
+            <div className="control-group">
+              <div className="control-label-container">
+                <span className="control-label">Ray Angle</span>
+                <span className="control-value">{lightRaysAngle}°</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                value={lightRaysAngle}
+                onChange={(e) => setLightRaysAngle(parseInt(e.target.value, 10))}
+                onMouseUp={handleSliderRelease}
+              />
+            </div>
+
+            <div className="control-group">
+              <div className="control-label-container">
+                <span className="control-label">Streak Count</span>
+                <span className="control-value">{lightRaysCount}</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={lightRaysCount}
+                onChange={(e) => setLightRaysCount(parseInt(e.target.value, 10))}
+                onMouseUp={handleSliderRelease}
+              />
+            </div>
+
+            <div className="control-group">
+              <div className="control-label-container">
+                <span className="control-label">Light Source X</span>
+                <span className="control-value">{lightRaysSourceX}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={lightRaysSourceX}
+                onChange={(e) => setLightRaysSourceX(parseInt(e.target.value, 10))}
+                onMouseUp={handleSliderRelease}
+              />
+            </div>
+
+            <div className="control-group">
+              <div className="control-label-container">
+                <span className="control-label">Light Source Y</span>
+                <span className="control-value">{lightRaysSourceY}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={lightRaysSourceY}
+                onChange={(e) => setLightRaysSourceY(parseInt(e.target.value, 10))}
+                onMouseUp={handleSliderRelease}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Platform Presets */}
       <div className="control-group">
         <span className="control-label">Platform Preset</span>
@@ -319,6 +447,7 @@ export default function BackgroundSettings() {
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Padding Mode</span>
             <select 
               value={paddingMode} 
+              aria-label="Padding Mode"
               onChange={(e) => {
                 setPaddingMode(e.target.value as 'fit' | 'fill');
                 pushHistory({ ...getCurrentConfig(), paddingMode: e.target.value as 'fit' | 'fill' });

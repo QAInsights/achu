@@ -11,7 +11,14 @@ export function usePresets(
   setBackgroundValue: React.Dispatch<React.SetStateAction<string>>,
   getCurrentConfig: () => RenderConfig,
   pushHistory: (config: any) => void,
-  setRedactions?: React.Dispatch<React.SetStateAction<RedactionItem[]>>
+  setRedactions?: React.Dispatch<React.SetStateAction<RedactionItem[]>>,
+  setBgGrain?: React.Dispatch<React.SetStateAction<number>>,
+  setLightRaysStyle?: React.Dispatch<React.SetStateAction<'none' | 'diagonal' | 'spotlight' | 'aurora'>>,
+  setLightRaysOpacity?: React.Dispatch<React.SetStateAction<number>>,
+  setLightRaysAngle?: React.Dispatch<React.SetStateAction<number>>,
+  setLightRaysCount?: React.Dispatch<React.SetStateAction<number>>,
+  setLightRaysSourceX?: React.Dispatch<React.SetStateAction<number>>,
+  setLightRaysSourceY?: React.Dispatch<React.SetStateAction<number>>
 ) {
   const [customPresets, setCustomPresets] = useState<any[]>([]);
   const [newPresetName, setNewPresetName] = useState<string>('');
@@ -80,10 +87,34 @@ export function usePresets(
   const selectBackgroundPreset = (preset: any) => {
     setBackgroundType(preset.type);
     setBackgroundValue(preset.gradient || preset.color);
+    
+    const grain = preset.bgGrain ?? 0;
+    const style = preset.lightRaysStyle ?? 'none';
+    const opacity = preset.lightRaysOpacity ?? 30;
+    const angle = preset.lightRaysAngle ?? 135;
+    const count = preset.lightRaysCount ?? 4;
+    const sourceX = preset.lightRaysSourceX ?? 50;
+    const sourceY = preset.lightRaysSourceY ?? 0;
+
+    if (setBgGrain) setBgGrain(grain);
+    if (setLightRaysStyle) setLightRaysStyle(style);
+    if (setLightRaysOpacity) setLightRaysOpacity(opacity);
+    if (setLightRaysAngle) setLightRaysAngle(angle);
+    if (setLightRaysCount) setLightRaysCount(count);
+    if (setLightRaysSourceX) setLightRaysSourceX(sourceX);
+    if (setLightRaysSourceY) setLightRaysSourceY(sourceY);
+
     pushHistory({
       ...getCurrentConfig(),
       backgroundType: preset.type,
       backgroundValue: preset.gradient || preset.color,
+      bgGrain: grain,
+      lightRaysStyle: style,
+      lightRaysOpacity: opacity,
+      lightRaysAngle: angle,
+      lightRaysCount: count,
+      lightRaysSourceX: sourceX,
+      lightRaysSourceY: sourceY,
     });
   };
 

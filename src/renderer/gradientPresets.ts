@@ -243,5 +243,35 @@ export const disneyHollywoodGradients: GradientPreset[] = [
     gradient: 'linear-gradient(135deg, #030712 0%, #1d4ed8 40%, #06b6d4 75%, #ec4899 100%)',
     type: 'gradient',
     category: 'hollywood'
+  },
+  {
+    id: 'linear-glow',
+    name: 'Linear Glow (Effects)',
+    gradient: 'linear-gradient(135deg, rgba(168, 85, 247, 0.6) 0%, rgba(217, 70, 239, 0) 35%), linear-gradient(120deg, rgba(217, 70, 239, 0.45) 5%, rgba(217, 70, 239, 0) 45%), linear-gradient(135deg, rgba(168, 85, 247, 0.5) 0%, rgba(168, 85, 247, 0) 20%, rgba(217, 70, 239, 0.6) 24%, rgba(217, 70, 239, 0) 38%, rgba(139, 92, 246, 0.5) 42%, rgba(139, 92, 246, 0) 60%), linear-gradient(135deg, #3b0082 0%, #0a0026 50%, #061233 100%)',
+    type: 'gradient',
+    category: 'hollywood',
+    bgGrain: 22,
+    lightRaysStyle: 'diagonal',
+    lightRaysOpacity: 45
+  },
+  {
+    id: 'cyberpunk-aurora',
+    name: 'Cyberpunk Aurora (Effects)',
+    gradient: 'linear-gradient(135deg, #0b132b 0%, #1c2541 40%, #7209b7 100%)',
+    type: 'gradient',
+    category: 'hollywood',
+    bgGrain: 20,
+    lightRaysStyle: 'aurora',
+    lightRaysOpacity: 40
+  },
+  {
+    id: 'studio-spotlight',
+    name: 'Studio Spotlight (Effects)',
+    gradient: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+    type: 'gradient',
+    category: 'hollywood',
+    bgGrain: 10,
+    lightRaysStyle: 'spotlight',
+    lightRaysOpacity: 50
   }
 ];

@@ -72,6 +72,13 @@ export interface RenderConfig {
   exportFormat?: 'png' | 'jpeg';
   jpegQuality?: number;
   sidebarPosition?: 'left' | 'right';
+  bgGrain?: number;
+  lightRaysStyle?: 'none' | 'diagonal' | 'spotlight' | 'aurora';
+  lightRaysOpacity?: number;
+  lightRaysAngle?: number;
+  lightRaysCount?: number;
+  lightRaysSourceX?: number;
+  lightRaysSourceY?: number;
 }
 
 interface ColorStop {
@@ -280,6 +287,218 @@ export function drawMeshGradient(
   }
 }
 
+// Helper to create linear gradients supporting negative/extended percentage stops like CSS
+function createExtendedLinearGradient(
+  ctx: CanvasRenderingContext2D,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  stops: { pct: number; color: string }[]
+): CanvasGradient {
+  if (stops.length === 0) {
+    const grad = ctx.createLinearGradient(x0, y0, x1, y1);
+    grad.addColorStop(0, 'transparent');
+    grad.addColorStop(1, 'transparent');
+    return grad;
+  }
+  const pcts = stops.map((s) => s.pct);
+  const minPct = Math.min(...pcts);
+  const maxPct = Math.max(...pcts);
+  const pStart = Math.min(0, minPct);
+  const pEnd = Math.max(100, maxPct);
+  const pRange = pEnd - pStart;
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const newX0 = x0 + (pStart / 100) * dx;
+  const newY0 = y0 + (pStart / 100) * dy;
+  const newX1 = x0 + (pEnd / 100) * dx;
+  const newY1 = y0 + (pEnd / 100) * dy;
+  const grad = ctx.createLinearGradient(newX0, newY0, newX1, newY1);
+  const sortedStops = [...stops].sort((a, b) => a.pct - b.pct);
+  sortedStops.forEach((stop) => {
+    const offset = pRange > 0 ? (stop.pct - pStart) / pRange : 0;
+    const clampedOffset = Math.max(0, Math.min(1, offset));
+    grad.addColorStop(clampedOffset, stop.color);
+  });
+  return grad;
+}
+
+// Draw glowing linear/radial light ray overlays using screen composite mode
+function drawLightRaysCanvas(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  style: 'none' | 'diagonal' | 'spotlight' | 'aurora',
+  opacity: number,
+  angle: number = 135,
+  count: number = 4,
+  sourceX: number = 50,
+  sourceY: number = 0
+) {
+  if (style === 'none' || opacity <= 0) return;
+
+  ctx.save();
+  ctx.globalAlpha = opacity / 100;
+  ctx.globalCompositeOperation = 'screen';
+
+  if (style === 'diagonal') {
+    // 1. Calculate gradient angle and bounds
+    const angleRad = ((angle - 90) * Math.PI) / 180;
+    const r = Math.sqrt(w * w + h * h) / 2;
+    const cx = w / 2;
+    const cy = h / 2;
+    const x0 = cx - Math.cos(angleRad) * r;
+    const y0 = cy - Math.sin(angleRad) * r;
+    const x1 = cx + Math.cos(angleRad) * r;
+    const y1 = cy + Math.sin(angleRad) * r;
+
+    // 2. Project sourceX/sourceY onto the gradient line
+    const dx = (sourceX / 100) - 0.5;
+    const dy = (sourceY / 100) - 0.5;
+    const gx = Math.cos(angleRad);
+    const gy = Math.sin(angleRad);
+    const proj = dx * gx + dy * gy;
+    const maxProj = 0.5 * (Math.abs(gx) + Math.abs(gy));
+    const cFraction = 0.5 + (maxProj > 0 ? proj / (maxProj * 2) : 0);
+    const C = Math.max(0, Math.min(100, cFraction * 100));
+
+    // 3. Render streaks up to count using the BEAM_TEMPLATES structure
+    const BEAM_TEMPLATES = [
+      { offset: 0, width: 2, opacity: 0.8 },
+      { offset: 2.5, width: 6, opacity: 0.35 },
+      { offset: -7, width: 1.5, opacity: 0.4 },
+      { offset: 16, width: 1, opacity: 0.25 },
+      { offset: 19, width: 0.8, opacity: 0.15 },
+      { offset: 22, width: 1.2, opacity: 0.2 },
+      { offset: -14, width: 0.8, opacity: 0.18 },
+      { offset: 25, width: 0.7, opacity: 0.12 },
+      { offset: -20, width: 1.5, opacity: 0.1 },
+      { offset: 30, width: 1, opacity: 0.08 },
+    ];
+
+    const limit = Math.max(1, Math.min(10, count));
+    for (let i = 0; i < limit; i++) {
+      const beam = BEAM_TEMPLATES[i];
+      const mid = C + beam.offset;
+      const stops = [
+        { pct: mid - beam.width, color: 'rgba(255, 255, 255, 0)' },
+        { pct: mid, color: `rgba(255, 255, 255, ${beam.opacity})` },
+        { pct: mid + beam.width, color: 'rgba(255, 255, 255, 0)' },
+      ];
+      const grad = createExtendedLinearGradient(ctx, x0, y0, x1, y1, stops);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    // 4. Accent perpendicular purple/blue color sweep
+    const perpAngleRad = ((angle - 90 + 90) * Math.PI) / 180;
+    const ax0 = cx - Math.cos(perpAngleRad) * r;
+    const ay0 = cy - Math.sin(perpAngleRad) * r;
+    const ax1 = cx + Math.cos(perpAngleRad) * r;
+    const ay1 = cy + Math.sin(perpAngleRad) * r;
+    const accentGrad = ctx.createLinearGradient(ax0, ay0, ax1, ay1);
+    accentGrad.addColorStop(0, 'rgba(147, 51, 234, 0)');
+    accentGrad.addColorStop(0.3, 'rgba(147, 51, 234, 0.2)');
+    accentGrad.addColorStop(0.55, 'rgba(59, 130, 246, 0.25)');
+    accentGrad.addColorStop(0.75, 'rgba(6, 182, 212, 0.2)');
+    accentGrad.addColorStop(1, 'rgba(6, 182, 212, 0)');
+    ctx.fillStyle = accentGrad;
+    ctx.fillRect(0, 0, w, h);
+
+  } else if (style === 'spotlight') {
+    // Spotlight source radiating dynamically from coordinates to match CSS farthest-corner behavior
+    const sx = (sourceX / 100) * w;
+    const sy = (sourceY / 100) * h;
+    const d1 = Math.sqrt(sx * sx + sy * sy);
+    const d2 = Math.sqrt((w - sx) * (w - sx) + sy * sy);
+    const d3 = Math.sqrt(sx * sx + (h - sy) * (h - sy));
+    const d4 = Math.sqrt((w - sx) * (w - sx) + (h - sy) * (h - sy));
+    const maxR = Math.max(d1, d2, d3, d4);
+    const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, maxR);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+    grad.addColorStop(0.2, 'rgba(255, 255, 255, 0.3)');
+    grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
+    grad.addColorStop(0.8, 'rgba(255, 255, 255, 0)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+  } else if (style === 'aurora') {
+    // Vertical aurora style soft bands offset by custom angle & source position
+    const angleRad = ((angle - 90) * Math.PI) / 180;
+    const r = Math.sqrt(w * w + h * h) / 2;
+    const cx = w / 2;
+    const cy = h / 2;
+    const x0 = cx - Math.cos(angleRad) * r;
+    const y0 = cy - Math.sin(angleRad) * r;
+    const x1 = cx + Math.cos(angleRad) * r;
+    const y1 = cy + Math.sin(angleRad) * r;
+
+    const dx = (sourceX / 100) - 0.5;
+    const dy = (sourceY / 100) - 0.5;
+    const gx = Math.cos(angleRad);
+    const gy = Math.sin(angleRad);
+    const proj = dx * gx + dy * gy;
+    const maxProj = 0.5 * (Math.abs(gx) + Math.abs(gy));
+    const cFraction = 0.5 + (maxProj > 0 ? proj / (maxProj * 2) : 0);
+    const C = Math.max(0, Math.min(100, cFraction * 100));
+
+    const stops = [
+      { pct: C - 50, color: 'rgba(59, 130, 246, 0)' },
+      { pct: C - 30, color: 'rgba(59, 130, 246, 0.2)' },
+      { pct: C - 10, color: 'rgba(147, 51, 234, 0.25)' },
+      { pct: C + 10, color: 'rgba(6, 182, 212, 0.2)' },
+      { pct: C + 30, color: 'rgba(59, 130, 246, 0.1)' },
+      { pct: C + 50, color: 'rgba(59, 130, 246, 0)' },
+    ];
+    const grad = createExtendedLinearGradient(ctx, x0, y0, x1, y1, stops);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Diagonal sweep overlay
+    const perpAngleRad = ((angle - 90 + 90) * Math.PI) / 180;
+    const ax0 = cx - Math.cos(perpAngleRad) * r;
+    const ay0 = cy - Math.sin(perpAngleRad) * r;
+    const ax1 = cx + Math.cos(perpAngleRad) * r;
+    const ay1 = cy + Math.sin(perpAngleRad) * r;
+    const sweep = ctx.createLinearGradient(ax0, ay0, ax1, ay1);
+    sweep.addColorStop(0.2, 'rgba(255, 255, 255, 0)');
+    sweep.addColorStop(0.5, 'rgba(255, 255, 255, 0.15)');
+    sweep.addColorStop(0.8, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = sweep;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  ctx.restore();
+}
+
+// Helper to split multi-layered background gradients correctly, tracking parenthesis depth
+function splitGradientLayers(val: string): string[] {
+  const layers: string[] = [];
+  let currentLayer = '';
+  let depth = 0;
+  for (let i = 0; i < val.length; i++) {
+    const char = val[i];
+    if (char === '(') {
+      depth++;
+      currentLayer += char;
+    } else if (char === ')') {
+      depth--;
+      currentLayer += char;
+    } else if (char === ',' && depth === 0) {
+      layers.push(currentLayer.trim());
+      currentLayer = '';
+    } else {
+      currentLayer += char;
+    }
+  }
+  if (currentLayer.trim()) {
+    layers.push(currentLayer.trim());
+  }
+  return layers;
+}
+
 // Main background drawing orchestrator
 export function drawBackground(
   ctx: CanvasRenderingContext2D,
@@ -310,7 +529,7 @@ export function drawBackground(
     ctx.fillRect(0, 0, w, h);
   } else if (config.backgroundType === 'gradient') {
     const val = config.backgroundValue || 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)';
-    const layers = val.split(/,(?![^(]*\))/);
+    const layers = splitGradientLayers(val);
     [...layers].reverse().forEach((layer) => {
       const trimmed = layer.trim();
       if (trimmed.startsWith('radial-gradient')) {
@@ -329,6 +548,21 @@ export function drawBackground(
     const op = config.meshOpacity !== undefined ? config.meshOpacity : 100;
     const sp = config.meshSpread !== undefined ? config.meshSpread : 100;
     drawMeshGradient(ctx, w, h, pts, bl, gr, op, sp);
+  }
+
+  // Draw Light Rays if configured
+  if (config.lightRaysStyle && config.lightRaysStyle !== 'none') {
+    const raysOpacity = config.lightRaysOpacity ?? 30;
+    const raysAngle = config.lightRaysAngle ?? 135;
+    const raysCount = config.lightRaysCount ?? 4;
+    const raysSourceX = config.lightRaysSourceX ?? 50;
+    const raysSourceY = config.lightRaysSourceY ?? 0;
+    drawLightRaysCanvas(ctx, w, h, config.lightRaysStyle, raysOpacity, raysAngle, raysCount, raysSourceX, raysSourceY);
+  }
+
+  // Draw Grain if configured
+  if (config.bgGrain && config.bgGrain > 0) {
+    drawGrain(ctx, w, h, config.bgGrain);
   }
 
   ctx.restore();

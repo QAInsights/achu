@@ -217,6 +217,19 @@ describe('drawBackground', () => {
     expect(radialIdx).toBeLessThan(linearIdx);
   });
 
+  it('correctly splits and parses layered gradients with nested parentheses and commas in colors', () => {
+    const ctx = makeMockCtx();
+    const config = {
+      ...baseConfig,
+      backgroundType: 'gradient' as const,
+      backgroundValue: 'linear-gradient(135deg, rgba(168, 85, 247, 0.6) 0%, rgba(217, 70, 239, 0) 35%), linear-gradient(135deg, #3b0082 0%, #061233 100%)',
+    };
+    drawBackground(ctx, 800, 600, config, null);
+    // Should create exactly 2 linear gradients (one for each layer)
+    const linearCalls = ctx.calls.filter(c => c.startsWith('createLinearGradient'));
+    expect(linearCalls.length).toBe(2);
+  });
+
   it('renders Mesh Aurora preset with correct multi-layer order (radial gradients on top of linear gradient)', () => {
     const ctx = makeMockCtx();
     const config = {
@@ -375,6 +388,90 @@ describe('drawBackground', () => {
     };
     drawBackground(ctx, 800, 600, config, null);
     expect(ctx.calls.some(c => c.startsWith('fillRect'))).toBe(true);
+  });
+
+  it('draws light rays in drawBackground when configured', () => {
+    const ctx = makeMockCtx();
+    const config = {
+      ...baseConfig,
+      backgroundType: 'color' as const,
+      backgroundValue: '#0b0f19',
+      lightRaysStyle: 'diagonal' as const,
+      lightRaysOpacity: 40,
+      lightRaysAngle: 180,
+      lightRaysCount: 3,
+      lightRaysSourceX: 40,
+      lightRaysSourceY: 20,
+    };
+    drawBackground(ctx, 800, 600, config, null);
+    // Should have created 3 linear gradients for the streaks + 1 for perpendicular sweep = 4 linear gradients
+    const linearCalls = ctx.calls.filter(c => c.startsWith('createLinearGradient'));
+    expect(linearCalls.length).toBe(4);
+  });
+
+  it('draws spotlight rays with custom source coordinates', () => {
+    const ctx = makeMockCtx();
+    const config = {
+      ...baseConfig,
+      backgroundType: 'color' as const,
+      backgroundValue: '#0b0f19',
+      lightRaysStyle: 'spotlight' as const,
+      lightRaysOpacity: 50,
+      lightRaysSourceX: 70, // 70% of 800 = 560
+      lightRaysSourceY: 30, // 30% of 600 = 180
+    };
+    drawBackground(ctx, 800, 600, config, null);
+    const radialCall = ctx.calls.find(c => c.startsWith('createRadialGradient'));
+    expect(radialCall).toBeDefined();
+    expect(radialCall).toContain('560,180,0,560,180');
+  });
+
+  it('draws aurora rays with custom angle and source', () => {
+    const ctx = makeMockCtx();
+    const config = {
+      ...baseConfig,
+      backgroundType: 'color' as const,
+      backgroundValue: '#0b0f19',
+      lightRaysStyle: 'aurora' as const,
+      lightRaysOpacity: 60,
+      lightRaysAngle: 90,
+      lightRaysSourceX: 25,
+      lightRaysSourceY: 75,
+    };
+    drawBackground(ctx, 800, 600, config, null);
+    // Should create a main linear gradient and a sweep linear gradient
+    const linearCalls = ctx.calls.filter(c => c.startsWith('createLinearGradient'));
+    expect(linearCalls.length).toBe(2);
+  });
+
+  it('draws grain in drawBackground when configured', () => {
+    const ctx = makeMockCtx();
+    const config = {
+      ...baseConfig,
+      backgroundType: 'color' as const,
+      backgroundValue: '#0b0f19',
+      bgGrain: 20,
+    };
+    
+    const originalCreateElement = document.createElement;
+    document.createElement = vi.fn().mockImplementation((tagName) => {
+      if (tagName === 'canvas') {
+        return {
+          width: 128,
+          height: 128,
+          getContext: () => ({
+            createImageData: () => ({ data: new Uint8ClampedArray(128 * 128 * 4) }),
+            putImageData: () => {},
+          }),
+        };
+      }
+      return originalCreateElement.call(document, tagName);
+    });
+
+    drawBackground(ctx, 800, 600, config, null);
+    expect(ctx.calls.some(c => c.startsWith('createPattern'))).toBe(true);
+
+    document.createElement = originalCreateElement;
   });
 });
 

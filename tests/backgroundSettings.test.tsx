@@ -35,6 +35,13 @@ beforeEach(() => {
     generateRandomPalette: vi.fn(),
     getCurrentConfig: vi.fn(() => ({ backgroundType: 'gradient', backgroundValue: '', meshPoints: [] })),
     selectBackgroundPreset: vi.fn(),
+    setBgGrain: vi.fn(),
+    setLightRaysStyle: vi.fn(),
+    setLightRaysOpacity: vi.fn(),
+    setLightRaysAngle: vi.fn(),
+    setLightRaysCount: vi.fn(),
+    setLightRaysSourceX: vi.fn(),
+    setLightRaysSourceY: vi.fn(),
     selectFile: vi.fn(),
     setPosition: vi.fn(),
     setScale: vi.fn(),
@@ -283,7 +290,7 @@ describe('BackgroundSettings', () => {
     mockContext.backgroundType = 'mesh';
     render(<BackgroundSettings />);
     const sliders = screen.getAllByRole('slider');
-    fireEvent.change(sliders[sliders.length - 4], { target: { value: '100' } });
+    fireEvent.change(sliders[0], { target: { value: '100' } });
     expect(mockContext.setMeshBlur).toHaveBeenCalledWith(100);
   });
 
@@ -291,8 +298,7 @@ describe('BackgroundSettings', () => {
     mockContext.backgroundType = 'mesh';
     render(<BackgroundSettings />);
     const sliders = screen.getAllByRole('slider');
-    // Grain is the second-to-last set of 4 filter sliders
-    fireEvent.change(sliders[sliders.length - 3], { target: { value: '25' } });
+    fireEvent.change(sliders[1], { target: { value: '25' } });
     expect(mockContext.setMeshGrain).toHaveBeenCalledWith(25);
   });
 
@@ -300,7 +306,7 @@ describe('BackgroundSettings', () => {
     mockContext.backgroundType = 'mesh';
     render(<BackgroundSettings />);
     const sliders = screen.getAllByRole('slider');
-    fireEvent.change(sliders[sliders.length - 2], { target: { value: '75' } });
+    fireEvent.change(sliders[2], { target: { value: '75' } });
     expect(mockContext.setMeshOpacity).toHaveBeenCalledWith(75);
   });
 
@@ -308,7 +314,7 @@ describe('BackgroundSettings', () => {
     mockContext.backgroundType = 'mesh';
     render(<BackgroundSettings />);
     const sliders = screen.getAllByRole('slider');
-    fireEvent.change(sliders[sliders.length - 1], { target: { value: '150' } });
+    fireEvent.change(sliders[3], { target: { value: '150' } });
     expect(mockContext.setMeshSpread).toHaveBeenCalledWith(150);
   });
 
@@ -436,8 +442,61 @@ describe('BackgroundSettings', () => {
   it('changes padding mode', () => {
     mockContext.aspectRatio = '1:1';
     render(<BackgroundSettings />);
-    const select = screen.getByRole('combobox');
+    const select = screen.getByRole('combobox', { name: /padding mode/i });
     fireEvent.change(select, { target: { value: 'fill' } });
     expect(mockContext.setPaddingMode).toHaveBeenCalledWith('fill');
+  });
+
+  describe('Light Rays Custom Settings', () => {
+    beforeEach(() => {
+      mockContext.backgroundType = 'gradient';
+      mockContext.lightRaysStyle = 'diagonal';
+      mockContext.lightRaysOpacity = 40;
+      mockContext.lightRaysAngle = 135;
+      mockContext.lightRaysCount = 4;
+      mockContext.lightRaysSourceX = 50;
+      mockContext.lightRaysSourceY = 0;
+    });
+
+    it('renders customized light ray sliders when style is not none', () => {
+      render(<BackgroundSettings />);
+      expect(screen.getByText('Ray Opacity')).toBeInTheDocument();
+      expect(screen.getByText('Ray Angle')).toBeInTheDocument();
+      expect(screen.getByText('Streak Count')).toBeInTheDocument();
+      expect(screen.getByText('Light Source X')).toBeInTheDocument();
+      expect(screen.getByText('Light Source Y')).toBeInTheDocument();
+    });
+
+    it('changes light ray angle slider', () => {
+      render(<BackgroundSettings />);
+      const angleInput = screen.getByText('Ray Angle').closest('.control-group')?.querySelector('input');
+      expect(angleInput).toBeInTheDocument();
+      fireEvent.change(angleInput!, { target: { value: '180' } });
+      expect(mockContext.setLightRaysAngle).toHaveBeenCalledWith(180);
+    });
+
+    it('changes streak count slider', () => {
+      render(<BackgroundSettings />);
+      const countInput = screen.getByText('Streak Count').closest('.control-group')?.querySelector('input');
+      expect(countInput).toBeInTheDocument();
+      fireEvent.change(countInput!, { target: { value: '6' } });
+      expect(mockContext.setLightRaysCount).toHaveBeenCalledWith(6);
+    });
+
+    it('changes light source X slider', () => {
+      render(<BackgroundSettings />);
+      const sourceXInput = screen.getByText('Light Source X').closest('.control-group')?.querySelector('input');
+      expect(sourceXInput).toBeInTheDocument();
+      fireEvent.change(sourceXInput!, { target: { value: '45' } });
+      expect(mockContext.setLightRaysSourceX).toHaveBeenCalledWith(45);
+    });
+
+    it('changes light source Y slider', () => {
+      render(<BackgroundSettings />);
+      const sourceYInput = screen.getByText('Light Source Y').closest('.control-group')?.querySelector('input');
+      expect(sourceYInput).toBeInTheDocument();
+      fireEvent.change(sourceYInput!, { target: { value: '25' } });
+      expect(mockContext.setLightRaysSourceY).toHaveBeenCalledWith(25);
+    });
   });
 });

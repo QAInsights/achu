@@ -69,7 +69,14 @@ export default function CanvasPreview() {
     redactionStyle = 'solid',
     showComponentHighlights = true,
     cachedOcrResult = null,
-    highlightedComponents = []
+    highlightedComponents = [],
+    bgGrain,
+    lightRaysStyle,
+    lightRaysOpacity,
+    lightRaysAngle,
+    lightRaysCount,
+    lightRaysSourceX,
+    lightRaysSourceY,
   } = useAppContext();
 
   const handleZoomIn = () => setZoomLevel(zoomIn(zoomLevel));
@@ -162,6 +169,63 @@ export default function CanvasPreview() {
     }
   };
 
+  const getDiagonalBackground = () => {
+    const angleRad = ((lightRaysAngle - 90) * Math.PI) / 180;
+    const dx = (lightRaysSourceX / 100) - 0.5;
+    const dy = (lightRaysSourceY / 100) - 0.5;
+    const gx = Math.cos(angleRad);
+    const gy = Math.sin(angleRad);
+    const proj = dx * gx + dy * gy;
+    const maxProj = 0.5 * (Math.abs(gx) + Math.abs(gy));
+    const cFraction = 0.5 + (maxProj > 0 ? proj / (maxProj * 2) : 0);
+    const C = Math.max(0, Math.min(100, cFraction * 100));
+
+    const BEAM_TEMPLATES = [
+      { offset: 0, width: 2, opacity: 0.8 },
+      { offset: 2.5, width: 6, opacity: 0.35 },
+      { offset: -7, width: 1.5, opacity: 0.4 },
+      { offset: 16, width: 1, opacity: 0.25 },
+      { offset: 19, width: 0.8, opacity: 0.15 },
+      { offset: 22, width: 1.2, opacity: 0.2 },
+      { offset: -14, width: 0.8, opacity: 0.18 },
+      { offset: 25, width: 0.7, opacity: 0.12 },
+      { offset: -20, width: 1.5, opacity: 0.1 },
+      { offset: 30, width: 1, opacity: 0.08 },
+    ];
+
+    const limit = Math.max(1, Math.min(10, lightRaysCount));
+    const layers: string[] = [];
+
+    for (let i = 0; i < limit; i++) {
+      const beam = BEAM_TEMPLATES[i];
+      const mid = C + beam.offset;
+      layers.push(`linear-gradient(${lightRaysAngle}deg, transparent ${mid - beam.width}%, rgba(255, 255, 255, ${beam.opacity}) ${mid}%, transparent ${mid + beam.width}%)`);
+    }
+
+    // Perpendicular color sweep
+    layers.push(`linear-gradient(${lightRaysAngle + 90}deg, rgba(147, 51, 234, 0) 0%, rgba(147, 51, 234, 0.2) 30%, rgba(59, 130, 246, 0.25) 55%, rgba(6, 182, 212, 0.2) 75%, rgba(6, 182, 212, 0) 100%)`);
+
+    return layers.join(', ');
+  };
+
+  const getSpotlightBackground = () => {
+    return `radial-gradient(circle at ${lightRaysSourceX}% ${lightRaysSourceY}%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.3) 20%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0) 80%)`;
+  };
+
+  const getAuroraBackground = () => {
+    const angleRad = ((lightRaysAngle - 90) * Math.PI) / 180;
+    const dx = (lightRaysSourceX / 100) - 0.5;
+    const dy = (lightRaysSourceY / 100) - 0.5;
+    const gx = Math.cos(angleRad);
+    const gy = Math.sin(angleRad);
+    const proj = dx * gx + dy * gy;
+    const maxProj = 0.5 * (Math.abs(gx) + Math.abs(gy));
+    const cFraction = 0.5 + (maxProj > 0 ? proj / (maxProj * 2) : 0);
+    const C = Math.max(0, Math.min(100, cFraction * 100));
+
+    return `linear-gradient(${lightRaysAngle}deg, rgba(59, 130, 246, 0) ${C - 50}%, rgba(59, 130, 246, 0.2) ${C - 30}%, rgba(147, 51, 234, 0.25) ${C - 10}%, rgba(6, 182, 212, 0.2) ${C + 10}%, rgba(59, 130, 246, 0.1) ${C + 30}%, rgba(59, 130, 246, 0) ${C + 50}%), linear-gradient(${lightRaysAngle + 90}deg, rgba(255, 255, 255, 0) 20%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0) 80%)`;
+  };
+
   return (
     <div className="workspace-canvas-container">
       {(imageSrc || noImageMode) ? (
@@ -240,6 +304,40 @@ export default function CanvasPreview() {
                 backgroundColor: 'rgba(15, 23, 42, 0.45)',
                 zIndex: 0
               }} />
+            )}
+
+            {/* Light Rays CSS Overlay */}
+            {lightRaysStyle && lightRaysStyle !== 'none' && (
+              <div 
+                className="light-rays-overlay" 
+                style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  opacity: lightRaysOpacity / 100,
+                  pointerEvents: 'none',
+                  zIndex: 0,
+                  backgroundImage: (() => {
+                    if (lightRaysStyle === 'diagonal') return getDiagonalBackground();
+                    if (lightRaysStyle === 'spotlight') return getSpotlightBackground();
+                    if (lightRaysStyle === 'aurora') return getAuroraBackground();
+                    return undefined;
+                  })(),
+                }} 
+              />
+            )}
+
+            {/* Grain Noise CSS Overlay */}
+            {bgGrain > 0 && (
+              <div 
+                className="bg-grain-overlay" 
+                style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  opacity: bgGrain / 100,
+                  pointerEvents: 'none',
+                  zIndex: 0,
+                }} 
+              />
             )}
 
             {/* Draggable Point Handles for Mesh Gradient */}

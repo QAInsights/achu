@@ -12,6 +12,13 @@ describe('usePresets', () => {
   let mockGetCurrentConfig: ReturnType<typeof vi.fn>;
   let mockPushHistory: ReturnType<typeof vi.fn>;
   let mockSetRedactions: ReturnType<typeof vi.fn>;
+  let mockSetBgGrain: ReturnType<typeof vi.fn>;
+  let mockSetLightRaysStyle: ReturnType<typeof vi.fn>;
+  let mockSetLightRaysOpacity: ReturnType<typeof vi.fn>;
+  let mockSetLightRaysAngle: ReturnType<typeof vi.fn>;
+  let mockSetLightRaysCount: ReturnType<typeof vi.fn>;
+  let mockSetLightRaysSourceX: ReturnType<typeof vi.fn>;
+  let mockSetLightRaysSourceY: ReturnType<typeof vi.fn>;
 
   const defaultConfig = {
     padding: 38,
@@ -20,6 +27,13 @@ describe('usePresets', () => {
     backgroundType: 'gradient',
     backgroundValue: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
     annotations: [],
+    bgGrain: 0,
+    lightRaysStyle: 'none' as const,
+    lightRaysOpacity: 30,
+    lightRaysAngle: 135,
+    lightRaysCount: 4,
+    lightRaysSourceX: 50,
+    lightRaysSourceY: 0,
   };
 
   beforeEach(() => {
@@ -31,6 +45,13 @@ describe('usePresets', () => {
     mockGetCurrentConfig = vi.fn().mockReturnValue(defaultConfig);
     mockPushHistory = vi.fn();
     mockSetRedactions = vi.fn();
+    mockSetBgGrain = vi.fn();
+    mockSetLightRaysStyle = vi.fn();
+    mockSetLightRaysOpacity = vi.fn();
+    mockSetLightRaysAngle = vi.fn();
+    mockSetLightRaysCount = vi.fn();
+    mockSetLightRaysSourceX = vi.fn();
+    mockSetLightRaysSourceY = vi.fn();
     vi.restoreAllMocks();
   });
 
@@ -51,6 +72,13 @@ describe('usePresets', () => {
         mockGetCurrentConfig,
         mockPushHistory,
         overrides?.setRedactions ?? mockSetRedactions,
+        mockSetBgGrain,
+        mockSetLightRaysStyle,
+        mockSetLightRaysOpacity,
+        mockSetLightRaysAngle,
+        mockSetLightRaysCount,
+        mockSetLightRaysSourceX,
+        mockSetLightRaysSourceY,
       )
     );
 

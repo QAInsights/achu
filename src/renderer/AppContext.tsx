@@ -37,6 +37,13 @@ interface AppContextType {
   scale: number; setScale: React.Dispatch<React.SetStateAction<number>>;
   backgroundType: 'gradient' | 'color' | 'blur' | 'mesh'; setBackgroundType: React.Dispatch<React.SetStateAction<'gradient' | 'color' | 'blur' | 'mesh'>>;
   backgroundValue: string; setBackgroundValue: React.Dispatch<React.SetStateAction<string>>;
+  bgGrain: number; setBgGrain: React.Dispatch<React.SetStateAction<number>>;
+  lightRaysStyle: 'none' | 'diagonal' | 'spotlight' | 'aurora'; setLightRaysStyle: React.Dispatch<React.SetStateAction<'none' | 'diagonal' | 'spotlight' | 'aurora'>>;
+  lightRaysOpacity: number; setLightRaysOpacity: React.Dispatch<React.SetStateAction<number>>;
+  lightRaysAngle: number; setLightRaysAngle: React.Dispatch<React.SetStateAction<number>>;
+  lightRaysCount: number; setLightRaysCount: React.Dispatch<React.SetStateAction<number>>;
+  lightRaysSourceX: number; setLightRaysSourceX: React.Dispatch<React.SetStateAction<number>>;
+  lightRaysSourceY: number; setLightRaysSourceY: React.Dispatch<React.SetStateAction<number>>;
   aspectRatio: string; setAspectRatio: React.Dispatch<React.SetStateAction<string>>;
   canvasWidth: number; setCanvasWidth: React.Dispatch<React.SetStateAction<number>>;
   canvasHeight: number; setCanvasHeight: React.Dispatch<React.SetStateAction<number>>;
@@ -182,6 +189,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [scale, setScale] = useState<number>(100);
   const [backgroundType, setBackgroundType] = useState<'gradient' | 'color' | 'blur' | 'mesh'>('gradient');
   const [backgroundValue, setBackgroundValue] = useState<string>('linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)');
+  const [bgGrain, setBgGrain] = useState<number>(() => getUserDefault('bgGrain', 0));
+  const [lightRaysStyle, setLightRaysStyle] = useState<'none' | 'diagonal' | 'spotlight' | 'aurora'>(() => getUserDefault('lightRaysStyle', 'none') as any);
+  const [lightRaysOpacity, setLightRaysOpacity] = useState<number>(() => getUserDefault('lightRaysOpacity', 30));
+  const [lightRaysAngle, setLightRaysAngle] = useState<number>(() => getUserDefault('lightRaysAngle', 135));
+  const [lightRaysCount, setLightRaysCount] = useState<number>(() => getUserDefault('lightRaysCount', 4));
+  const [lightRaysSourceX, setLightRaysSourceX] = useState<number>(() => getUserDefault('lightRaysSourceX', 50));
+  const [lightRaysSourceY, setLightRaysSourceY] = useState<number>(() => getUserDefault('lightRaysSourceY', 0));
   const [aspectRatio, setAspectRatio] = useState<string>('Auto');
   const [canvasWidth, setCanvasWidth] = useState<number>(800);
   const [canvasHeight, setCanvasHeight] = useState<number>(600);
@@ -352,6 +366,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     exportFormat,
     jpegQuality,
     sidebarPosition,
+    bgGrain,
+    lightRaysStyle,
+    lightRaysOpacity,
+    lightRaysAngle,
+    lightRaysCount,
+    lightRaysSourceX,
+    lightRaysSourceY,
   });
 
   const applyConfig = (config: RenderConfig) => {
@@ -368,6 +389,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setScale(config.scale ?? 100);
     setBackgroundType(config.backgroundType ?? 'gradient');
     setBackgroundValue(config.backgroundValue ?? 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)');
+    setBgGrain(config.bgGrain ?? 0);
+    setLightRaysStyle(config.lightRaysStyle ?? 'none');
+    setLightRaysOpacity(config.lightRaysOpacity ?? 30);
+    setLightRaysAngle(config.lightRaysAngle ?? 135);
+    setLightRaysCount(config.lightRaysCount ?? 4);
+    setLightRaysSourceX(config.lightRaysSourceX ?? 50);
+    setLightRaysSourceY(config.lightRaysSourceY ?? 0);
     setAspectRatio(config.aspectRatio ?? 'Auto');
     setCanvasWidth(config.canvasWidth ?? 800);
     setCanvasHeight(config.canvasHeight ?? 600);
@@ -424,7 +452,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   } = usePresets(
     setImageSrc, setNoImageMode, setAnnotations,
     backgroundType, setBackgroundType, backgroundValue, setBackgroundValue,
-    getCurrentConfig, pushHistory, setRedactions
+    getCurrentConfig, pushHistory, setRedactions,
+    setBgGrain, setLightRaysStyle, setLightRaysOpacity,
+    setLightRaysAngle, setLightRaysCount, setLightRaysSourceX, setLightRaysSourceY
   );
 
   // 3. Export Hook
@@ -773,6 +803,13 @@ Severity rules:
     setScale(100);
     setBackgroundType('gradient');
     setBackgroundValue('linear-gradient(135deg, #0575e6 0%, #00f260 100%)');
+    setBgGrain(0);
+    setLightRaysStyle('none');
+    setLightRaysOpacity(30);
+    setLightRaysAngle(135);
+    setLightRaysCount(4);
+    setLightRaysSourceX(50);
+    setLightRaysSourceY(0);
     setAspectRatio('Auto');
     setSelectedPreset('');
     setShowSafeZone(true);
@@ -813,6 +850,13 @@ Severity rules:
       scale: 100,
       backgroundType: 'gradient',
       backgroundValue: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+      bgGrain: 0,
+      lightRaysStyle: 'none',
+      lightRaysOpacity: 30,
+      lightRaysAngle: 135,
+      lightRaysCount: 4,
+      lightRaysSourceX: 50,
+      lightRaysSourceY: 0,
       aspectRatio: 'Auto',
       selectedPreset: '',
       showSafeZone: true,
@@ -958,6 +1002,34 @@ Severity rules:
     updateUserDefault('sidebarPosition', sidebarPosition);
   }, [sidebarPosition]);
 
+  useEffect(() => {
+    updateUserDefault('bgGrain', bgGrain);
+  }, [bgGrain]);
+
+  useEffect(() => {
+    updateUserDefault('lightRaysStyle', lightRaysStyle);
+  }, [lightRaysStyle]);
+
+  useEffect(() => {
+    updateUserDefault('lightRaysOpacity', lightRaysOpacity);
+  }, [lightRaysOpacity]);
+
+  useEffect(() => {
+    updateUserDefault('lightRaysAngle', lightRaysAngle);
+  }, [lightRaysAngle]);
+
+  useEffect(() => {
+    updateUserDefault('lightRaysCount', lightRaysCount);
+  }, [lightRaysCount]);
+
+  useEffect(() => {
+    updateUserDefault('lightRaysSourceX', lightRaysSourceX);
+  }, [lightRaysSourceX]);
+
+  useEffect(() => {
+    updateUserDefault('lightRaysSourceY', lightRaysSourceY);
+  }, [lightRaysSourceY]);
+
   // Settings sync effect
   useEffect(() => {
     const saveSettingsToMain = async () => {
@@ -974,7 +1046,8 @@ Severity rules:
     borderColor, scale, backgroundType, backgroundValue, aspectRatio, canvasWidth,
     canvasHeight, paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled,
     watermarkText, watermarkSize, watermarkPosition, watermarkOpacity, position, customPresets, meshPoints, meshBlur, meshGrain, meshOpacity,
-    meshSpread, noImageMode, redactions, redactionStyle, exportFormat, jpegQuality, sidebarPosition
+    meshSpread, noImageMode, redactions, redactionStyle, exportFormat, jpegQuality, sidebarPosition,
+    bgGrain, lightRaysStyle, lightRaysOpacity, lightRaysAngle, lightRaysCount, lightRaysSourceX, lightRaysSourceY
   ]);
 
 
@@ -1088,7 +1161,13 @@ Severity rules:
       padding, setPadding, rounded, setRounded, shadow, setShadow, shadowColor, setShadowColor,
       shadowEnabled, setShadowEnabled, inset, setInset, insetColor, setInsetColor, border, setBorder,
       borderColor, setBorderColor, scale, setScale, backgroundType, setBackgroundType,
-      backgroundValue, setBackgroundValue, aspectRatio, setAspectRatio, canvasWidth, setCanvasWidth,
+      backgroundValue, setBackgroundValue, bgGrain, setBgGrain, lightRaysStyle, setLightRaysStyle,
+      lightRaysOpacity, setLightRaysOpacity,
+      lightRaysAngle, setLightRaysAngle,
+      lightRaysCount, setLightRaysCount,
+      lightRaysSourceX, setLightRaysSourceX,
+      lightRaysSourceY, setLightRaysSourceY,
+      aspectRatio, setAspectRatio, canvasWidth, setCanvasWidth,
       canvasHeight, setCanvasHeight, selectedPreset, setSelectedPreset, showSafeZone, setShowSafeZone,
       paddingMode, setPaddingMode, chromeStyle, setChromeStyle,
       chromeTheme, setChromeTheme, blurDensity, setBlurDensity, noImageMode, setNoImageMode,
