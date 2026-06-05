@@ -53,6 +53,29 @@ describe('Arrow Utils', () => {
       expect(res!.leftPoints.length).toBe(16);
       expect(res!.rightPoints.length).toBe(16);
     });
+
+    it('produces correct tip coordinates', () => {
+      const res = getTaperedCurvedArrowPoints(10, 20, 110, 120, 4);
+      expect(res).not.toBeNull();
+      expect(res!.tip.x).toBe(110);
+      expect(res!.tip.y).toBe(120);
+    });
+
+    it('produces valid head geometry points', () => {
+      const res = getTaperedCurvedArrowPoints(0, 0, 200, 0, 6);
+      expect(res).not.toBeNull();
+      expect(typeof res!.H_left.x).toBe('number');
+      expect(typeof res!.H_right.x).toBe('number');
+      // Left and right head endpoints should have opposite normals
+      expect(res!.H_left.y * res!.H_right.y).toBeLessThan(0);
+    });
+
+    it('handles zero-length stroke gracefully', () => {
+      const res = getTaperedCurvedArrowPoints(0, 0, 100, 100, 0);
+      expect(res).not.toBeNull();
+      expect(res!.leftPoints.length).toBe(16);
+      expect(res!.rightPoints.length).toBe(16);
+    });
   });
 
   describe('drawArrowOnCanvas', () => {

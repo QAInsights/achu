@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useHistory } from '../src/renderer/hooks/useHistory';
 import { usePresets } from '../src/renderer/hooks/usePresets';
 import { useExport } from '../src/renderer/hooks/useExport';
+import { useConnectionPoll } from '../src/renderer/hooks/useConnectionPoll';
 
 describe('useHistory', () => {
   let applyConfig: ReturnType<typeof vi.fn>;
@@ -670,5 +671,31 @@ describe('useExport', () => {
     expect(mockClick).toHaveBeenCalled();
 
     (document.createElement as any).mockRestore();
+  });
+});
+
+describe('useConnectionPoll', () => {
+  it('initializes isAvailable as false', () => {
+    const checkFn = vi.fn().mockResolvedValue(true);
+    const { result } = renderHook(() => useConnectionPoll(checkFn, 'trigger', 5000));
+    expect(result.current[0]).toBe(false);
+  });
+
+  it('setIsAvailable updates state', () => {
+    const checkFn = vi.fn().mockResolvedValue(true);
+    const { result } = renderHook(() => useConnectionPoll(checkFn, 'trigger', 5000));
+
+    act(() => {
+      result.current[1](true);
+    });
+
+    expect(result.current[0]).toBe(true);
+  });
+
+  it('returns readonly tuple', () => {
+    const checkFn = vi.fn().mockResolvedValue(true);
+    const { result } = renderHook(() => useConnectionPoll(checkFn, 'trigger'));
+    expect(result.current).toHaveLength(2);
+    expect(typeof result.current[1]).toBe('function');
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { safeParseJSON, buildMarkdown, capitalize } from '../src/renderer/utils/githubAgentUtils';
+import { safeParseJSON, buildMarkdown, capitalize, generateIssueFromScreenshot } from '../src/renderer/utils/githubAgentUtils';
 import { checkOllamaHealth, fetchInstalledModels } from '../src/renderer/utils/ollamaUtils';
 
 describe('GitHub Issue Agent Utils', () => {
@@ -144,6 +144,129 @@ describe('GitHub Issue Agent Utils', () => {
       expect(models).not.toContain('codegemma:latest');
 
       vi.unstubAllGlobals();
+    });
+
+    it('returns empty array on fetch failure', async () => {
+      vi.stubGlobal('fetch', () => Promise.reject(new Error('network error')));
+      const models = await fetchInstalledModels('http://localhost:11434');
+      expect(models).toEqual([]);
+      vi.unstubAllGlobals();
+    });
+
+    it('returns empty array on non-ok response', async () => {
+      vi.stubGlobal('fetch', () => Promise.resolve({
+        ok: false,
+        status: 500,
+      }));
+      const models = await fetchInstalledModels('http://localhost:11434');
+      expect(models).toEqual([]);
+      vi.unstubAllGlobals();
+    });
+  });
+
+  describe('generateIssueFromScreenshot', () => {
+    it('generates a payload from valid Ollama JSON response', async () => {
+      const ollamaResponse = {
+        response: JSON.stringify({
+          title: 'Login button crashes app',
+          severity: 'critical',
+          severityReason: 'App exits completely on tap',
+          reproSteps: ['Open app', 'Tap login', 'App closes'],
+          expected: 'Login page shows',
+          actual: 'App crashes to home screen',
+          components: ['LoginButton', 'AuthScreen'],
+          labels: ['bug', 'crash'],
+        }),
+      };
+
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(ollamaResponse),
+      }));
+
+      const result = await generateIssueFromScreenshot(
+        { ocrText: 'Error: crash', ocrWords: [], imageSrc: 'data:image/png;base64,ABC' },
+        { endpoint: 'http://localhost:11434', model: 'llava-phi3' }
+      );
+
+      expect(result.title).toBe('Login button crashes app');
+      expect(result.severity).toBe('critical');
+      expect(result.reproSteps).toHaveLength(3);
+      expect(result.components).toContain('LoginButton');
+      expect(result.labels).toContain('bug');
+    });
+
+    it('throws on non-ok Ollama response', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      }));
+
+      await expect(
+        generateIssueFromScreenshot(
+          { ocrText: '', ocrWords: [], imageSrc: 'data:image/png;base64,ABC' },
+          { endpoint: 'http://localhost:11434', model: 'llava-phi3' }
+        )
+      ).rejects.toThrow('Ollama response not OK: 500');
+    });
+
+    it('falls back to safeParseJSON when response is malformed', async () => {
+      const ollamaResponse = {
+        response: 'Here is the bug title: "Fallback Title" and actual: "It broke" severity: "high".',
+      };
+
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(ollamaResponse),
+      }));
+
+      const result = await generateIssueFromScreenshot(
+        { ocrText: '', ocrWords: [], imageSrc: 'data:img,XYZ' },
+        { endpoint: 'http://localhost:11434', model: 'llava-phi3' }
+      );
+
+      expect(result.title).toBe('Fallback Title');
+      expect(result.severity).toBe('high');
+      expect(result.actual).toBe('It broke');
+    });
+
+    it('strips data URL prefix from imageSrc before sending', async () => {
+      let capturedImages: string[] = [];
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(async (_url: string, opts: any) => {
+        capturedImages = JSON.parse(opts.body).images;
+        return {
+          ok: true,
+          json: () => Promise.resolve({ response: '{"title":"T","severity":"low"}' }),
+        };
+      }));
+
+      await generateIssueFromScreenshot(
+        { ocrText: '', ocrWords: [], imageSrc: 'data:image/png;base64,REAL_BASE64' },
+        { endpoint: 'http://localhost:11434', model: 'llava-phi3' }
+      );
+
+      expect(capturedImages[0]).not.toContain('data:');
+      expect(capturedImages[0]).not.toContain(',');
+      expect(capturedImages[0]).toBe('REAL_BASE64');
+    });
+
+    it('handles empty response string gracefully', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ response: '' }),
+      }));
+
+      const result = await generateIssueFromScreenshot(
+        { ocrText: '', ocrWords: [], imageSrc: 'data:img,X' },
+        { endpoint: 'http://localhost:11434', model: 'llava-phi3' }
+      );
+
+      // Fallback produces safe defaults
+      expect(result.title).toBe('Untitled Bug');
+      expect(result.severity).toBe('medium');
+      expect(result.reproSteps).toEqual([]);
+      expect(result.labels).toEqual(['bug']);
     });
   });
 });

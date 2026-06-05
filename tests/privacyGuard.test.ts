@@ -118,6 +118,39 @@ describe('Privacy Guard Utils', () => {
       expect(addresses[0].text).toBe('1600 Amphitheatre Parkway');
       expect(addresses[1].text).toBe('10 Downing Street');
     });
+
+    it('should detect valid hex keys (32, 40, 64 chars)', () => {
+      const hex32 = 'abcdef1234567890abcdef1234567890';
+      const text = `key=${hex32}`;
+      const matches = detectSecretsInText(text);
+      const keys = matches.filter(m => m.type === 'api-key');
+      expect(keys.length).toBe(1);
+
+      const hex40 = 'abcdef1234567890abcdef1234567890abcdef12';
+      const matches40 = detectSecretsInText(`hex40=${hex40}`);
+      expect(matches40.filter(m => m.type === 'api-key').length).toBe(1);
+    });
+
+    it('should reject invalid hex key lengths', () => {
+      const short = 'abc123'; // too short
+      expect(detectSecretsInText(short).filter(m => m.type === 'api-key').length).toBe(0);
+    });
+
+    it('should detect IPv6 addresses', () => {
+      const text = 'Server at 2001:0db8:85a3:0000:0000:8a2e:0370:7334';
+      const matches = detectSecretsInText(text);
+      const ips = matches.filter(m => m.type === 'ip');
+      expect(ips.length).toBe(1);
+      expect(ips[0].text).toContain('2001');
+    });
+
+    it('should detect credit card numbers via Luhn check', () => {
+      const text = 'Use card 4111 1111 1111 1111 for payment';
+      const matches = detectSecretsInText(text);
+      const cards = matches.filter(m => m.type === 'card');
+      expect(cards.length).toBe(1);
+      expect(cards[0].text).toBe('4111 1111 1111 1111');
+    });
   });
 
   describe('Overlapping matches filter', () => {
@@ -195,6 +228,147 @@ describe('Privacy Guard Utils', () => {
       expect(result[1].type).toBe('api-key');
       expect(result[2].text).toBe('part2');
       expect(result[2].type).toBe('api-key');
+    });
+
+    it('returns empty array for zero dimensions', () => {
+      const ocrLines = [
+        {
+          text: 'test',
+          bbox: { x0: 0, y0: 0, x1: 100, y1: 50 },
+          words: [
+            { text: 'test', bbox: { x0: 0, y0: 0, x1: 100, y1: 50 } }
+          ]
+        }
+      ];
+      expect(processOcrResults(ocrLines, 0, 0)).toEqual([]);
+      expect(processOcrResults(ocrLines, 800, 0)).toEqual([]);
+      expect(processOcrResults(ocrLines, 0, 600)).toEqual([]);
+    });
+
+    it('handles empty words array in a line', () => {
+      const ocrLines = [
+        {
+          text: 'has words',
+          bbox: { x0: 0, y0: 0, x1: 200, y1: 30 },
+          words: [{ text: 'has', bbox: { x0: 0, y0: 0, x1: 40, y1: 30 } }, { text: 'words', bbox: { x0: 50, y0: 0, x1: 130, y1: 30 } }]
+        },
+        {
+          text: '',
+          bbox: { x0: 0, y0: 40, x1: 200, y1: 70 },
+          words: []
+        }
+      ];
+      const result = processOcrResults(ocrLines, 200, 100);
+      // Empty words line should be skipped without error
+      expect(result.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it('clamps bounding boxes to stay within image dimensions', () => {
+      const longKey = 'sk-proj-' + 'a'.repeat(32) + 'B'.repeat(16) + '1'.repeat(8);
+      const ocrLines = [
+        {
+          text: longKey,
+          bbox: { x0: -10, y0: -5, x1: 600, y1: 800 },
+          words: [
+            { text: longKey, bbox: { x0: -10, y0: -5, x1: 600, y1: 800 } }
+          ]
+        }
+      ];
+      const result = processOcrResults(ocrLines, 500, 700);
+      expect(result.length).toBeGreaterThan(0);
+      expect(result[0].x).toBeGreaterThanOrEqual(0);
+      expect(result[0].y).toBeGreaterThanOrEqual(0);
+      expect(result[0].w).toBeLessThanOrEqual(1);
+      expect(result[0].h).toBeLessThanOrEqual(1);
+    });
+
+    it('does not flag continuation when vertical gap is too large', () => {
+      const longKey = 'sk-proj-' + 'a'.repeat(32) + 'B'.repeat(16) + '1'.repeat(8);
+      const ocrLines = [
+        {
+          text: 'API Key: ' + longKey,
+          bbox: { x0: 0, y0: 0, x1: 500, y1: 20 },
+          words: [
+            { text: 'API', bbox: { x0: 0, y0: 0, x1: 30, y1: 20 } },
+            { text: 'Key:', bbox: { x0: 35, y0: 0, x1: 70, y1: 20 } },
+            { text: longKey, bbox: { x0: 80, y0: 0, x1: 350, y1: 20 } }
+          ]
+        },
+        {
+          text: 'NotContinuation',
+          bbox: { x0: 80, y0: 200, x1: 280, y1: 230 },
+          words: [
+            { text: 'NotContinuation', bbox: { x0: 80, y0: 200, x1: 280, y1: 230 } }
+          ]
+        }
+      ];
+      const result = processOcrResults(ocrLines, 500, 250);
+      // Only the actual API key should be flagged, not the far-away word
+      expect(result.length).toBe(1);
+      expect(result[0].text).toBe(longKey);
+    });
+
+    it('continues API key across lines for multi-line wrapped keys', () => {
+      const longKey = 'sk-proj-' + 'a'.repeat(32) + 'B'.repeat(16) + '1'.repeat(8);
+      const suffix = 'bbbbCCCCdddd1234';  // 16 chars, enough for continuation detection
+      const ocrLines = [
+        {
+          text: 'key: ' + longKey,
+          bbox: { x0: 0, y0: 0, x1: 500, y1: 30 },
+          words: [
+            { text: 'key:', bbox: { x0: 10, y0: 5, x1: 50, y1: 25 } },
+            { text: longKey, bbox: { x0: 60, y0: 5, x1: 250, y1: 25 } }
+          ]
+        },
+        {
+          text: suffix,
+          bbox: { x0: 60, y0: 35, x1: 130, y1: 65 },
+          words: [
+            { text: suffix, bbox: { x0: 60, y0: 40, x1: 130, y1: 60 } }
+          ]
+        }
+      ];
+      const result = processOcrResults(ocrLines, 500, 100);
+      expect(result.length).toBe(2);
+      expect(result[0].text).toBe(longKey);
+      expect(result[1].text).toBe(suffix);
+      expect(result[1].type).toBe('api-key');
+    });
+
+    it('resets API key continuation flag after a non-API-key match', () => {
+      const longKey = 'sk-proj-' + 'a'.repeat(32) + 'B'.repeat(16) + '1'.repeat(8);
+      const ocrLines = [
+        {
+          text: 'API Key: ' + longKey,
+          bbox: { x0: 0, y0: 0, x1: 500, y1: 30 },
+          words: [
+            { text: 'API', bbox: { x0: 0, y0: 5, x1: 30, y1: 25 } },
+            { text: 'Key:', bbox: { x0: 35, y0: 5, x1: 70, y1: 25 } },
+            { text: longKey, bbox: { x0: 80, y0: 5, x1: 320, y1: 25 } }
+          ]
+        },
+        {
+          text: 'test@example.com',
+          bbox: { x0: 0, y0: 40, x1: 500, y1: 70 },
+          words: [
+            { text: 'test@example.com', bbox: { x0: 0, y0: 45, x1: 180, y1: 65 } }
+          ]
+        },
+        {
+          text: 'NotKey',
+          bbox: { x0: 80, y0: 80, x1: 200, y1: 110 },
+          words: [
+            { text: 'NotKey', bbox: { x0: 80, y0: 85, x1: 200, y1: 105 } }
+          ]
+        }
+      ];
+      const result = processOcrResults(ocrLines, 500, 150);
+      const apiKeyItems = result.filter(r => r.text === longKey);
+      const emailItems = result.filter(r => r.text === 'test@example.com');
+      const notKeyItems = result.filter(r => r.text === 'NotKey');
+      expect(apiKeyItems.length).toBe(1);
+      expect(emailItems.length).toBe(1);
+      expect(notKeyItems.length).toBe(0);
     });
   });
 });

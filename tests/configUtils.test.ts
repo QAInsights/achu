@@ -272,6 +272,9 @@ describe('configUtils', () => {
       setMeshOpacity: vi.fn(),
       setMeshSpread: vi.fn(),
       setNoImageMode: vi.fn(),
+      setExportFormat: vi.fn() as any,
+      setJpegQuality: vi.fn() as any,
+      setSidebarPosition: vi.fn() as any,
     });
 
     it('is a no-op when config is null', () => {
@@ -410,6 +413,67 @@ describe('configUtils', () => {
       expect(setters.setScale).toHaveBeenCalledWith(90);
       expect(setters.setMeshBlur).toHaveBeenCalledWith(70);
       expect(setters.setNoImageMode).toHaveBeenCalledWith(false);
+    });
+
+    it('calls optional exportFormat/jpegQuality/sidebarPosition setters when present', () => {
+      const setters = makeSetters();
+      const config: RenderConfig = {
+        padding: 50,
+        rounded: 20,
+        shadow: 30,
+        shadowColor: '#000',
+        shadowEnabled: false,
+        inset: 0,
+        insetColor: '#fff',
+        border: 0,
+        borderColor: '#ccc',
+        scale: 100,
+        backgroundType: 'gradient',
+        backgroundValue: 'linear-gradient(...)',
+        aspectRatio: 'Auto',
+        canvasWidth: 800,
+        canvasHeight: 600,
+        paddingMode: 'fit',
+        chromeStyle: 'mac',
+        chromeTheme: 'dark',
+        blurDensity: 40,
+        watermarkEnabled: false,
+        watermarkText: 'achu',
+        watermarkSize: 20,
+        watermarkPosition: 'middle',
+        watermarkOpacity: 0.45,
+        position: 'Middle center',
+        annotations: [],
+        meshPoints: DEFAULT_MESH_POINTS,
+        meshBlur: 60,
+        meshGrain: 15,
+        meshOpacity: 100,
+        meshSpread: 100,
+        noImage: false,
+        exportFormat: 'jpeg',
+        jpegQuality: 75,
+        sidebarPosition: 'right',
+      };
+      applyConfig(config, setters);
+
+      expect(setters.setExportFormat).toHaveBeenCalledWith('jpeg');
+      expect(setters.setJpegQuality).toHaveBeenCalledWith(75);
+      expect(setters.setSidebarPosition).toHaveBeenCalledWith('right');
+    });
+
+    it('does not call optional setters when config values are falsy', () => {
+      const setters = makeSetters();
+      const config: RenderConfig = {
+        padding: 50,
+        exportFormat: undefined as any,
+        jpegQuality: undefined as any,
+        sidebarPosition: undefined as any,
+      };
+      applyConfig(config, setters);
+
+      expect(setters.setExportFormat).not.toHaveBeenCalled();
+      expect(setters.setJpegQuality).not.toHaveBeenCalled();
+      expect(setters.setSidebarPosition).not.toHaveBeenCalled();
     });
   });
 

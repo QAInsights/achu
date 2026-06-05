@@ -61,6 +61,33 @@ describe('aiService - checkAIHealth', () => {
     const ok = await checkAIHealth('claude', '', 'bad-key');
     expect(ok).toBe(false);
   });
+
+  it('should return false for empty API key (non-ollama)', async () => {
+    const mockFetch = vi.mocked(fetch);
+    const ok = await checkAIHealth('openai', '', '');
+    expect(ok).toBe(false);
+    // fetch should not be called
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('should return false for unsupported provider', async () => {
+    const ok = await checkAIHealth('unknown', '', 'key');
+    expect(ok).toBe(false);
+  });
+
+  it('should return false when Ollama health check fails', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
+    const ok = await checkAIHealth('ollama', 'http://localhost:11434', '');
+    expect(ok).toBe(false);
+  });
+
+  it('should return false on OpenAI health check exception', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockRejectedValueOnce(new Error('Network error'));
+    const ok = await checkAIHealth('openai', '', 'test-key');
+    expect(ok).toBe(false);
+  });
 });
 
 describe('aiService - generateAIResponse', () => {
@@ -184,6 +211,123 @@ describe('aiService - generateAIResponse', () => {
     expect(mockFetch).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({
       body: expect.stringContaining('"media_type":"image/webp"')
     }));
+  });
+
+  it('should throw on unsupported provider', async () => {
+    await expect(
+      generateAIResponse('unsupported', 'model', 'prompt', 'img', '', 'key')
+    ).rejects.toThrow('Unsupported AI provider');
+  });
+
+  it('should throw on Ollama non-ok response', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+    } as Response);
+
+    await expect(
+      generateAIResponse('ollama', 'llava', 'prompt', 'img', 'http://localhost:11434', '')
+    ).rejects.toThrow('Ollama error: 500');
+  });
+
+  it('should throw on OpenAI non-ok response', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      statusText: 'Too Many Requests',
+      text: () => Promise.resolve('Rate limit'),
+    } as unknown as Response);
+
+    await expect(
+      generateAIResponse('openai', 'gpt-4o', 'prompt', 'img', '', 'key')
+    ).rejects.toThrow('OpenAI API error: 429');
+  });
+
+  it('should throw on Google non-ok response', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      statusText: 'Forbidden',
+      text: () => Promise.resolve('Access denied'),
+    } as unknown as Response);
+
+    await expect(
+      generateAIResponse('google', 'gemini', 'prompt', 'img', '', 'key')
+    ).rejects.toThrow('Google Gemini error: 403');
+  });
+
+  it('should throw on Claude non-ok response', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      text: () => Promise.resolve('Invalid'),
+    } as unknown as Response);
+
+    await expect(
+      generateAIResponse('claude', 'claude-3-5-sonnet-latest', 'prompt', 'img', '', 'key')
+    ).rejects.toThrow('Anthropic Claude error: 400');
+  });
+
+  it('should handle OpenAI response with empty choices', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ choices: [] }),
+    } as Response);
+
+    const res = await generateAIResponse('openai', 'model', 'prompt', 'img', '', 'key');
+    expect(res).toBe('');
+  });
+
+  it('should handle Google response with empty candidates', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ candidates: [] }),
+    } as Response);
+
+    const res = await generateAIResponse('google', 'model', 'prompt', 'img', '', 'key');
+    expect(res).toBe('');
+  });
+
+  it('should handle Claude response with empty content', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ content: [] }),
+    } as Response);
+
+    const res = await generateAIResponse('claude', 'claude-3-5-sonnet-latest', 'prompt', 'img', '', 'key');
+    expect(res).toBe('');
+  });
+
+  it('should remap claude haiku model id', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ content: [{ text: 'x' }] }),
+    } as Response);
+
+    await generateAIResponse('claude', 'claude-3-5-haiku-latest', 'prompt', 'img', '', 'key');
+    const body = JSON.parse(mockFetch.mock.calls[0][1]!.body as string);
+    expect(body.model).toBe('claude-3-5-haiku-20241022');
+  });
+
+  it('should handle Ollama response with empty response field', async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({}),
+    } as Response);
+
+    const res = await generateAIResponse('ollama', 'llava', 'prompt', 'img', 'http://localhost:11434', '');
+    expect(res).toBe('');
   });
 });
 
