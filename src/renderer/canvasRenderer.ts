@@ -208,11 +208,15 @@ function drawGrain(ctx: CanvasRenderingContext2D, w: number, h: number, intensit
   const data = imgData.data;
   
   for (let i = 0; i < data.length; i += 4) {
-    const val = Math.floor(Math.random() * 255);
+    // Average three independent random values to simulate the CSS feColorMatrix variance reduction
+    const r = Math.random() * 255;
+    const g = Math.random() * 255;
+    const b = Math.random() * 255;
+    const val = Math.floor(0.33 * r + 0.33 * g + 0.33 * b);
     data[i] = val;     // R
     data[i+1] = val;   // G
     data[i+2] = val;   // B
-    data[i+3] = Math.floor(intensity * 2.55); // Alpha mapped 0-100 to 0-255
+    data[i+3] = Math.floor(intensity * 2.55 * Math.random()); // Alpha mapped 0-100 to 0-255 with random turbulence factor
   }
   
   noiseCtx.putImageData(imgData, 0, 0);
