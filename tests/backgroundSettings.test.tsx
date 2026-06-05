@@ -128,26 +128,12 @@ describe('BackgroundSettings', () => {
     expect(screen.getByText('Background Colors')).toBeInTheDocument();
   });
 
-  it('shows gradient presets in gradient mode', () => {
+  it('shows gradient presets in gradient mode with category selectors', () => {
     mockContext.backgroundType = 'gradient';
     render(<BackgroundSettings />);
     expect(screen.getByText('Background Colors')).toBeInTheDocument();
-    expect(screen.getByText('Load Hollywood Palettes')).toBeInTheDocument();
-  });
-
-  it('toggles Hollywood palettes', () => {
-    mockContext.backgroundType = 'gradient';
-    render(<BackgroundSettings />);
-    fireEvent.click(screen.getByText('Load Hollywood Palettes'));
-    expect(mockContext.setShowHollywoodPalettes).toHaveBeenCalledWith(true);
-    expect(mockContext.setSelectedGradientCategory).toHaveBeenCalledWith('disney');
-  });
-
-  it('shows category buttons when Hollywood palettes enabled', () => {
-    mockContext.backgroundType = 'gradient';
-    mockContext.showHollywoodPalettes = true;
-    render(<BackgroundSettings />);
     expect(screen.getByText('Classic')).toBeInTheDocument();
+    expect(screen.getByText('OS Themes')).toBeInTheDocument();
     expect(screen.getByText('Disney')).toBeInTheDocument();
     expect(screen.getByText('Marvel')).toBeInTheDocument();
     expect(screen.getByText('Hollywood')).toBeInTheDocument();
@@ -155,7 +141,6 @@ describe('BackgroundSettings', () => {
 
   it('selects gradient category', () => {
     mockContext.backgroundType = 'gradient';
-    mockContext.showHollywoodPalettes = true;
     render(<BackgroundSettings />);
     fireEvent.click(screen.getByText('Marvel'));
     expect(mockContext.setSelectedGradientCategory).toHaveBeenCalledWith('marvel');
@@ -163,7 +148,6 @@ describe('BackgroundSettings', () => {
 
   it('selects a gradient preset', () => {
     mockContext.backgroundType = 'gradient';
-    mockContext.showHollywoodPalettes = true;
     mockContext.selectedGradientCategory = 'disney';
     render(<BackgroundSettings />);
     const swatches = document.querySelectorAll('.preset-swatch');
@@ -333,14 +317,7 @@ describe('BackgroundSettings', () => {
     expect(screen.getByText('Hide Movie')).toBeInTheDocument();
   });
 
-  it('sets gradient category to disney when loading Hollywood palettes', () => {
-    mockContext.backgroundType = 'gradient';
-    mockContext.showHollywoodPalettes = false;
-    render(<BackgroundSettings />);
-    fireEvent.click(screen.getByText('Load Hollywood Palettes'));
-    expect(mockContext.setShowHollywoodPalettes).toHaveBeenCalledWith(true);
-    expect(mockContext.setSelectedGradientCategory).toHaveBeenCalledWith('disney');
-  });
+  // Removed Load Hollywood Palettes test as category bar is always visible
 
   it('disables remove at 2 and enables add at 3 points', () => {
     mockContext.backgroundType = 'mesh';
@@ -357,10 +334,11 @@ describe('BackgroundSettings', () => {
     expect(removeBtn).not.toBeDisabled();
   });
 
-  it('selects category button for all Hollywood categories', () => {
+  it('selects category button for all categories including OS Themes', () => {
     mockContext.backgroundType = 'gradient';
-    mockContext.showHollywoodPalettes = true;
     render(<BackgroundSettings />);
+    fireEvent.click(screen.getByText('OS Themes'));
+    expect(mockContext.setSelectedGradientCategory).toHaveBeenCalledWith('os');
     fireEvent.click(screen.getByText('Disney'));
     expect(mockContext.setSelectedGradientCategory).toHaveBeenCalledWith('disney');
     fireEvent.click(screen.getByText('Classic'));

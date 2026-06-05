@@ -49,20 +49,63 @@ export function useExport(
     return true;
   };
 
+  const loadImages = (
+    screenshotSrc: string | null,
+    backgroundVal: string,
+    callback: (screenshotImg: HTMLImageElement | null) => void
+  ) => {
+    let pending = 0;
+    let screenshotImg: HTMLImageElement | null = null;
+
+    const checkDone = () => {
+      if (pending === 0) {
+        callback(screenshotImg);
+      }
+    };
+
+    if (!noImageMode && screenshotSrc) {
+      pending++;
+      screenshotImg = new Image();
+      screenshotImg.src = screenshotSrc;
+      screenshotImg.onload = () => {
+        pending--;
+        checkDone();
+      };
+      screenshotImg.onerror = () => {
+        pending--;
+        checkDone();
+      };
+    }
+
+    const config = getCurrentConfig();
+    if (config.backgroundType === 'gradient' && backgroundVal.startsWith('url(')) {
+      const match = backgroundVal.match(/url\(['"]?([^'"]+)['"]?\)/);
+      if (match) {
+        pending++;
+        const bgImg = new Image();
+        bgImg.src = match[1];
+        bgImg.onload = () => {
+          pending--;
+          checkDone();
+        };
+        bgImg.onerror = () => {
+          pending--;
+          checkDone();
+        };
+      }
+    }
+
+    checkDone();
+  };
+
   const copyBeautifiedImage = async () => {
     if (!noImageMode && !imageSrc) return;
-    const runCopy = (img: HTMLImageElement | null) => {
+    loadImages(imageSrc, getCurrentConfig().backgroundValue, (img) => {
       const canvas = document.createElement('canvas');
       renderCanvas(canvas, img, getCurrentConfig());
       const base64Data = canvas.toDataURL('image/png');
       
       if (!checkOgSizeLimit(base64Data)) return;
-
-      const sizeInKb = base64Data ? (base64Data.length * 0.75) / 1024 : 0;
-      const config = getCurrentConfig();
-      const selectedPreset = config.selectedPreset || '';
-      const isOgPreset = selectedPreset && (selectedPreset.includes('OG') || selectedPreset.includes('Link'));
-      const suffix = (isOgPreset && sizeInKb > 300) ? '\n\nTip: Keep Open Graph images under 300KB for best link preview performance.' : '';
 
       if (window.snapFrameAPI) {
         window.snapFrameAPI.copyImageToClipboard(base64Data);
@@ -73,18 +116,12 @@ export function useExport(
           }
         }, 'image/png');
       }
-    };
-    if (noImageMode || !imageSrc) runCopy(null);
-    else {
-      const img = new Image();
-      img.src = imageSrc;
-      img.onload = () => runCopy(img);
-    }
+    });
   };
 
   const triggerExport = () => {
     if (!noImageMode && !imageSrc) return;
-    const runExport = (img: HTMLImageElement | null) => {
+    loadImages(imageSrc, getCurrentConfig().backgroundValue, (img) => {
       const canvas = document.createElement('canvas');
       renderCanvas(canvas, img, getCurrentConfig());
       const mime = exportFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
@@ -108,13 +145,7 @@ export function useExport(
         link.click();
         if (suffix) alert(suffix);
       }
-    };
-    if (noImageMode || !imageSrc) runExport(null);
-    else {
-      const img = new Image();
-      img.src = imageSrc;
-      img.onload = () => runExport(img);
-    }
+    });
   };
 
   return {

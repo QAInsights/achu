@@ -1,11 +1,22 @@
 import gradientPresetsImport from '../../assets/presets.json';
+import macosSonomaImg from './backgrounds/macos_sonoma.png';
+import windowsBloomBlueImg from './backgrounds/windows_bloom_blue.png';
+import macosBigSurImg from './backgrounds/macos_big_sur.png';
+import windowsBloomBronzeImg from './backgrounds/windows_bloom_bronze.png';
+import windowsHeroGlowImg from './backgrounds/windows_hero_glow.png';
+import glassLoopFluidImg from './backgrounds/glass_loop_fluid.png';
+import meshRedPinkImg from './backgrounds/mesh_red_pink.png';
+import meshPurpleOrangeImg from './backgrounds/mesh_purple_orange.png';
+import warmOrangeWaveImg from './backgrounds/warm_orange_wave.png';
+import tealYellowWaveImg from './backgrounds/teal_yellow_wave.png';
+import darkVioletWaveImg from './backgrounds/dark_violet_wave.png';
 
 export interface GradientPreset {
   id: string;
   name: string;
   gradient: string;
   type: 'gradient' | 'color';
-  category?: 'classic' | 'disney' | 'marvel' | 'hollywood';
+  category?: 'classic' | 'os' | 'disney' | 'marvel' | 'hollywood';
 }
 
 export const defaultGradients: GradientPreset[] = gradientPresetsImport as GradientPreset[];
@@ -273,5 +284,145 @@ export const disneyHollywoodGradients: GradientPreset[] = [
     bgGrain: 10,
     lightRaysStyle: 'spotlight',
     lightRaysOpacity: 50
+  },
+  {
+    id: 'mesh-red-pink',
+    name: 'Mesh Red Pink',
+    gradient: `url(${meshRedPinkImg})`,
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'mesh-purple-orange',
+    name: 'Mesh Purple Orange',
+    gradient: `url(${meshPurpleOrangeImg})`,
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'warm-orange-wave',
+    name: 'Warm Orange Wave',
+    gradient: `url(${warmOrangeWaveImg})`,
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'teal-yellow-wave',
+    name: 'Teal Yellow Textured Wave',
+    gradient: `url(${tealYellowWaveImg})`,
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'dark-violet-wave',
+    name: 'Dark Violet Wave',
+    gradient: `url(${darkVioletWaveImg})`,
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'macos-big-sur',
+    name: 'macOS Big Sur',
+    gradient: `url(${macosBigSurImg})`,
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'macos-ventura',
+    name: 'macOS Ventura',
+    gradient: 'linear-gradient(135deg, #f97316 0%, #db2777 50%, #7c3aed 100%)',
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'blue-green-wave',
+    name: 'Blue Green Wave',
+    gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0d9488 40%, #10b981 100%)',
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'macos-sonoma',
+    name: 'macOS Sonoma',
+    gradient: `url(${macosSonomaImg})`,
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'peach-cyan-gradient',
+    name: 'Peach Cyan Soft Gradient',
+    gradient: 'linear-gradient(135deg, #fda4af 0%, #fecfef 40%, #a5f3fc 100%)',
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'windows-hero-glow',
+    name: 'Windows Hero Glow',
+    gradient: `url(${windowsHeroGlowImg})`,
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'layered-pastel-ribbons',
+    name: 'Layered Pastel Ribbons',
+    gradient: 'radial-gradient(circle at 10% 20%, rgba(253, 164, 186, 0.4) 0%, transparent 60%), radial-gradient(circle at 80% 80%, rgba(165, 243, 252, 0.5) 0%, transparent 60%), linear-gradient(135deg, #e0f2fe 0%, #fef08a 100%)',
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'windows-bloom-blue',
+    name: 'Windows 11 Bloom Blue',
+    gradient: `url(${windowsBloomBlueImg})`,
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'windows-bloom-dark',
+    name: 'Windows 11 Bloom Dark',
+    gradient: 'radial-gradient(circle at 80% 20%, #1d4ed8 0%, transparent 50%), radial-gradient(circle at 20% 80%, #7c3aed 0%, transparent 50%), linear-gradient(135deg, #0f172a 0%, #020617 100%)',
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'neon-ribbon-splash',
+    name: 'Neon Ribbon Splash',
+    gradient: 'radial-gradient(circle at 30% 30%, #ec4899 0%, transparent 40%), radial-gradient(circle at 70% 70%, #06b6d4 0%, transparent 45%), linear-gradient(135deg, #000000 0%, #0f172a 100%)',
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'glass-loop-fluid',
+    name: 'Glass Loop Fluid',
+    gradient: `url(${glassLoopFluidImg})`,
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'windows-bloom-pink',
+    name: 'Windows 11 Bloom Pink',
+    gradient: 'radial-gradient(circle at 50% 50%, #fecfef 0%, #fda4af 50%, #f43f5e 100%)',
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'windows-bloom-grey',
+    name: 'Windows 11 Bloom Grey',
+    gradient: 'radial-gradient(circle at 30% 30%, #e2e8f0 0%, #cbd5e1 50%, #94a3b8 100%)',
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'glass-liquid-droplets',
+    name: 'Glass Liquid Droplets',
+    gradient: 'radial-gradient(circle at 20% 20%, #ea580c 0%, transparent 50%), radial-gradient(circle at 80% 80%, #475569 0%, transparent 50%), linear-gradient(135deg, #090d16 0%, #000000 100%)',
+    type: 'gradient',
+    category: 'os'
+  },
+  {
+    id: 'colorful-wireframe-ribbon',
+    name: 'Colorful Wireframe Ribbon',
+    gradient: 'linear-gradient(90deg, rgba(239,68,68,0.15) 0%, rgba(245,158,11,0.15) 20%, rgba(16,185,129,0.15) 40%, rgba(59,130,246,0.15) 60%, rgba(139,92,246,0.15) 80%, rgba(236,72,153,0.15) 100%), #000000',
+    type: 'gradient',
+    category: 'os'
   }
 ];

@@ -94,7 +94,7 @@ interface AppContextType {
   history: any[]; setHistory: React.Dispatch<React.SetStateAction<any[]>>;
   historyIndex: number; setHistoryIndex: React.Dispatch<React.SetStateAction<number>>;
   showHollywoodPalettes: boolean; setShowHollywoodPalettes: React.Dispatch<React.SetStateAction<boolean>>;
-  selectedGradientCategory: 'classic' | 'disney' | 'marvel' | 'hollywood'; setSelectedGradientCategory: React.Dispatch<React.SetStateAction<'classic' | 'disney' | 'marvel' | 'hollywood'>>;
+  selectedGradientCategory: 'classic' | 'os' | 'disney' | 'marvel' | 'hollywood'; setSelectedGradientCategory: React.Dispatch<React.SetStateAction<'classic' | 'os' | 'disney' | 'marvel' | 'hollywood'>>;
   showHollywoodMeshPalettes: boolean; setShowHollywoodMeshPalettes: React.Dispatch<React.SetStateAction<boolean>>;
   appTheme: 'dark' | 'light'; setAppTheme: React.Dispatch<React.SetStateAction<'dark' | 'light'>>;
   sidebarPosition: 'left' | 'right'; setSidebarPosition: React.Dispatch<React.SetStateAction<'left' | 'right'>>;
@@ -333,7 +333,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [zoomLevel, setZoomLevel] = useState<string>('Zoom to fit');
 
   const [showHollywoodPalettes, setShowHollywoodPalettes] = useState<boolean>(false);
-  const [selectedGradientCategory, setSelectedGradientCategory] = useState<'classic' | 'disney' | 'marvel' | 'hollywood'>('classic');
+  const [selectedGradientCategory, setSelectedGradientCategory] = useState<'classic' | 'os' | 'disney' | 'marvel' | 'hollywood'>('classic');
   const [showHollywoodMeshPalettes, setShowHollywoodMeshPalettes] = useState<boolean>(false);
 
   const colorInputRef = useRef<HTMLInputElement | null>(null);
@@ -743,30 +743,63 @@ Severity rules:
 
   const exportBeautifiedScreenshot = async (burn = false): Promise<string> => {
     return new Promise((resolve, reject) => {
+      const config = getCurrentConfig();
+      const bgVal = config.backgroundValue || '';
+
       const runExport = (img: HTMLImageElement | null) => {
         try {
           const canvas = document.createElement('canvas');
-          const config = getCurrentConfig();
+          const configToRender = getCurrentConfig();
           if (burn) {
-            (config as any).showComponentHighlights = true;
-            (config as any).highlightedComponents = highlightedComponents;
-            (config as any).ocrWords = cachedOcrResult?.words || [];
+            (configToRender as any).showComponentHighlights = true;
+            (configToRender as any).highlightedComponents = highlightedComponents;
+            (configToRender as any).ocrWords = cachedOcrResult?.words || [];
           }
-          renderCanvas(canvas, img, config);
+          renderCanvas(canvas, img, configToRender);
           resolve(canvas.toDataURL('image/png'));
         } catch (err) {
           reject(err);
         }
       };
 
-      if (noImageMode || !imageSrc) {
-        runExport(null);
-      } else {
-        const img = new Image();
-        img.src = imageSrc;
-        img.onload = () => runExport(img);
-        img.onerror = () => reject(new Error('Failed to load image for export'));
+      let pending = 0;
+      let screenshotImg: HTMLImageElement | null = null;
+
+      const checkDone = () => {
+        if (pending === 0) {
+          runExport(screenshotImg);
+        }
+      };
+
+      if (!noImageMode && imageSrc) {
+        pending++;
+        screenshotImg = new Image();
+        screenshotImg.src = imageSrc;
+        screenshotImg.onload = () => {
+          pending--;
+          checkDone();
+        };
+        screenshotImg.onerror = () => reject(new Error('Failed to load image for export'));
       }
+
+      if (config.backgroundType === 'gradient' && bgVal.startsWith('url(')) {
+        const match = bgVal.match(/url\(['"]?([^'"]+)['"]?\)/);
+        if (match) {
+          pending++;
+          const bgImg = new Image();
+          bgImg.src = match[1];
+          bgImg.onload = () => {
+            pending--;
+            checkDone();
+          };
+          bgImg.onerror = () => {
+            pending--;
+            checkDone();
+          };
+        }
+      }
+
+      checkDone();
     });
   };
 

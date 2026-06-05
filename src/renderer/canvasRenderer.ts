@@ -26,6 +26,19 @@ export interface RedactionItem {
 
 import { drawArrowOnCanvas } from './arrowUtils';
 
+const bgImageCache = new Map<string, HTMLImageElement>();
+
+export function getBgImage(url: string): HTMLImageElement | null {
+  if (!url) return null;
+  if (bgImageCache.has(url)) {
+    return bgImageCache.get(url)!;
+  }
+  const img = new Image();
+  img.src = url;
+  bgImageCache.set(url, img);
+  return img;
+}
+
 
 
 export interface RenderConfig {
@@ -540,6 +553,18 @@ export function drawBackground(
         drawRadialGradient(ctx, w, h, trimmed);
       } else if (trimmed.startsWith('linear-gradient')) {
         drawLinearGradient(ctx, w, h, trimmed);
+      } else if (trimmed.startsWith('url(')) {
+        const match = trimmed.match(/url\(['"]?([^'"]+)['"]?\)/);
+        if (match) {
+          const imgUrl = match[1];
+          const img = getBgImage(imgUrl);
+          if (img && img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, 0, 0, w, h);
+          } else if (img) {
+            ctx.fillStyle = '#0b0f19';
+            ctx.fillRect(0, 0, w, h);
+          }
+        }
       } else {
         ctx.fillStyle = trimmed;
         ctx.fillRect(0, 0, w, h);

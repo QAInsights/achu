@@ -20,7 +20,6 @@ export default function BackgroundSettings() {
     canvasHeight, setCanvasHeight,
     paddingMode, setPaddingMode,
     blurDensity, setBlurDensity,
-    showHollywoodPalettes, setShowHollywoodPalettes,
     selectedGradientCategory, setSelectedGradientCategory,
     selectedPreset, setSelectedPreset,
     showSafeZone, setShowSafeZone,
@@ -171,16 +170,16 @@ export default function BackgroundSettings() {
             </div>
           )}
 
-          {backgroundType === 'gradient' && showHollywoodPalettes && (
+          {backgroundType === 'gradient' && (
             <div className="btn-group" style={{ marginBottom: '0.5rem', gap: '0.2rem' }}>
-              {(['classic', 'disney', 'marvel', 'hollywood'] as const).map((cat) => (
+              {(['classic', 'os', 'disney', 'marvel', 'hollywood'] as const).map((cat) => (
                 <button
                   key={cat}
                   className={`btn-group-item ${selectedGradientCategory === cat ? 'active' : ''}`}
-                  style={{ padding: '0.25rem 0.4rem', fontSize: '0.7rem', textTransform: 'capitalize' }}
+                  style={{ padding: '0.25rem 0.4rem', fontSize: '0.65rem', textTransform: 'capitalize' }}
                   onClick={() => setSelectedGradientCategory(cat)}
                 >
-                  {cat === 'classic' ? 'Classic' : cat === 'disney' ? 'Disney' : cat === 'marvel' ? 'Marvel' : 'Hollywood'}
+                  {cat === 'classic' ? 'Classic' : cat === 'os' ? 'OS Themes' : cat === 'disney' ? 'Disney' : cat === 'marvel' ? 'Marvel' : 'Hollywood'}
                 </button>
               ))}
             </div>
@@ -188,12 +187,12 @@ export default function BackgroundSettings() {
 
           <div className="preset-grid">
             {backgroundType === 'gradient' && (
-              !showHollywoodPalettes || selectedGradientCategory === 'classic' ? (
+              selectedGradientCategory === 'classic' ? (
                 defaultGradients.map((g: any) => (
                   <Tooltip key={g.id} position="top">
                     <div 
                       className={`preset-swatch ${backgroundType === 'gradient' && backgroundValue === g.gradient ? 'active' : ''}`}
-                      style={{ background: g.gradient }}
+                      style={{ backgroundImage: g.gradient }}
                       onClick={() => selectBackgroundPreset(g)}
                       title={g.name}
                     />
@@ -206,7 +205,7 @@ export default function BackgroundSettings() {
                     <Tooltip key={g.id} position="top">
                       <div 
                         className={`preset-swatch ${backgroundType === 'gradient' && backgroundValue === g.gradient ? 'active' : ''}`}
-                        style={{ background: g.gradient }}
+                        style={{ backgroundImage: g.gradient }}
                         onClick={() => selectBackgroundPreset(g)}
                         title={g.name}
                       />
@@ -214,7 +213,7 @@ export default function BackgroundSettings() {
                   ))
               )
             )}
-            {(!showHollywoodPalettes || selectedGradientCategory === 'classic') && solidPresets.map((s: any) => (
+            {(backgroundType === 'color' || (backgroundType === 'gradient' && selectedGradientCategory === 'classic')) && solidPresets.map((s: any) => (
               <Tooltip key={s.id} position="top">
                 <div 
                   className={`preset-swatch ${backgroundType === 'color' && backgroundValue === s.color ? 'active' : ''}`}
@@ -225,25 +224,6 @@ export default function BackgroundSettings() {
               </Tooltip>
             ))}
           </div>
-
-          {backgroundType === 'gradient' && (
-            <button
-              className="btn btn-ghost"
-              style={{ marginTop: '0.5rem', width: '100%' }}
-              onClick={() => {
-                const nextVal = !showHollywoodPalettes;
-                setShowHollywoodPalettes(nextVal);
-                if (nextVal) {
-                  setSelectedGradientCategory('disney');
-                } else {
-                  setSelectedGradientCategory('classic');
-                }
-              }}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              {showHollywoodPalettes ? 'Hide Movie Palettes' : 'Load Hollywood Palettes'}
-            </button>
-          )}
         </div>
       )}
 

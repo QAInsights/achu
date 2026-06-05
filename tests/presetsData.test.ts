@@ -45,9 +45,9 @@ describe('Presets Data', () => {
         ids.add(g.id);
         expect(g.name).toBeTruthy();
         expect(
-          g.gradient.startsWith('linear-gradient') || g.gradient.startsWith('radial-gradient')
+          g.gradient.startsWith('linear-gradient') || g.gradient.startsWith('radial-gradient') || g.gradient.startsWith('url(')
         ).toBe(true);
-        expect(['disney', 'marvel', 'hollywood'].includes(g.category!)).toBe(true);
+        expect(['disney', 'marvel', 'hollywood', 'os'].includes(g.category!)).toBe(true);
       }
     });
   });
