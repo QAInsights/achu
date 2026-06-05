@@ -545,3 +545,5 @@ ipcMain.handle('clipboard:read-image', () => {
   if (image.isEmpty()) return null;
   return image.toDataURL();
 });
+
+// Trigger dev server restart after presets update

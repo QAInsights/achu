@@ -187,31 +187,30 @@ export default function BackgroundSettings() {
 
           <div className="preset-grid">
             {backgroundType === 'gradient' && (
-              selectedGradientCategory === 'classic' ? (
-                defaultGradients.map((g: any) => (
+              (() => {
+                const combinedGradients = [
+                  ...defaultGradients,
+                  ...disneyHollywoodGradients
+                ];
+                const filteredGradients = combinedGradients.filter((g) => {
+                  const cat = g.category || 'classic';
+                  return cat === selectedGradientCategory;
+                });
+                return filteredGradients.map((g: any) => (
                   <Tooltip key={g.id} position="top">
                     <div 
                       className={`preset-swatch ${backgroundType === 'gradient' && backgroundValue === g.gradient ? 'active' : ''}`}
-                      style={{ backgroundImage: g.gradient }}
+                      style={{ 
+                        background: g.gradient,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                      }}
                       onClick={() => selectBackgroundPreset(g)}
                       title={g.name}
                     />
                   </Tooltip>
-                ))
-              ) : (
-                disneyHollywoodGradients
-                  .filter((g) => g.category === selectedGradientCategory)
-                  .map((g) => (
-                    <Tooltip key={g.id} position="top">
-                      <div 
-                        className={`preset-swatch ${backgroundType === 'gradient' && backgroundValue === g.gradient ? 'active' : ''}`}
-                        style={{ backgroundImage: g.gradient }}
-                        onClick={() => selectBackgroundPreset(g)}
-                        title={g.name}
-                      />
-                    </Tooltip>
-                  ))
-              )
+                ));
+              })()
             )}
             {(backgroundType === 'color' || (backgroundType === 'gradient' && selectedGradientCategory === 'classic')) && solidPresets.map((s: any) => (
               <Tooltip key={s.id} position="top">

@@ -92,70 +92,70 @@
   {
     "id": "glass-enterprise",
     "name": "Glass Enterprise",
-    "gradient": "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%), linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+    "gradient": "linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.05) 100%), linear-gradient(135deg, #1e3a8a 0%, #0d9488 50%, #1e1b4b 100%)",
     "type": "gradient",
     "category": "os"
   },
   {
     "id": "startup-aurora",
     "name": "Startup Aurora",
-    "gradient": "radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%), radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.15), transparent 25%), linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%), #0f172a",
+    "gradient": "radial-gradient(circle at 10% 20%, rgba(236, 72, 153, 0.6) 0%, transparent 50%), radial-gradient(circle at 90% 80%, rgba(249, 115, 22, 0.6) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.5) 0%, transparent 60%), linear-gradient(135deg, #2e1065 0%, #0f0728 100%)",
     "type": "gradient",
     "category": "os"
   },
   {
     "id": "fintech-frost",
     "name": "Fintech Frost",
-    "gradient": "linear-gradient(105deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 20%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 80%, rgba(255,255,255,0.1) 100%), linear-gradient(to right, #001f3f, #003366)",
+    "gradient": "linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(circle at 100% 0%, rgba(6, 182, 212, 0.5) 0%, transparent 50%), radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.5) 0%, transparent 50%), linear-gradient(135deg, #0f766e 0%, #1e293b 100%)",
     "type": "gradient",
     "category": "os"
   },
   {
     "id": "SaaS-flow",
     "name": "SaaS Flow",
-    "gradient": "radial-gradient(ellipse at center, rgba(139, 92, 246, 0.2) 0%, transparent 70%), linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%), #020617",
+    "gradient": "radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.7) 0%, transparent 60%), radial-gradient(circle at 80% 70%, rgba(253, 186, 116, 0.6) 0%, transparent 60%), linear-gradient(135deg, #4c1d95 0%, #030712 100%)",
     "type": "gradient",
     "category": "os"
   },
   {
     "id": "crypto-prism",
     "name": "Crypto Prism",
-    "gradient": "linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 40%), linear-gradient(-45deg, rgba(20, 184, 166, 0.15) 0%, transparent 50%), linear-gradient(135deg, #09090b 0%, #18181b 100%)",
+    "gradient": "radial-gradient(circle at 80% 20%, rgba(52, 211, 153, 0.6) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(6, 182, 212, 0.6) 0%, transparent 50%), linear-gradient(135deg, #1e1b4b 0%, #090514 100%)",
     "type": "gradient",
     "category": "os"
   },
   {
     "id": "healthtech-glow",
     "name": "Healthtech Glow",
-    "gradient": "radial-gradient(circle at top right, rgba(14, 165, 233, 0.2), transparent 40%), radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.1), transparent 40%), linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 100%), #ffffff",
+    "gradient": "radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.4) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(16, 185, 129, 0.3) 0%, transparent 50%), linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%)",
     "type": "gradient",
     "category": "os"
   },
   {
     "id": "agile-mesh",
     "name": "Agile Mesh",
-    "gradient": "radial-gradient(at 0% 0%, rgba(244, 63, 94, 0.15) 0, transparent 50%), radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.15) 0, transparent 50%), radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.15) 0, transparent 50%), radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.15) 0, transparent 50%), linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%), #1e293b",
+    "gradient": "radial-gradient(circle at 20% 20%, rgba(239, 68, 68, 0.45) 0%, transparent 45%), radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.45) 0%, transparent 45%), radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.45) 0%, transparent 45%), radial-gradient(circle at 20% 80%, rgba(245, 158, 11, 0.45) 0%, transparent 45%), linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
     "type": "gradient",
     "category": "os"
   },
   {
     "id": "cyber-glass",
     "name": "Cyber Glass",
-    "gradient": "linear-gradient(135deg, rgba(0, 245, 212, 0.15) 0%, rgba(114, 9, 183, 0.15) 100%), linear-gradient(to right, rgba(255,255,255,0.05), transparent), #0b090a",
+    "gradient": "radial-gradient(circle at 30% 30%, rgba(236, 72, 153, 0.6) 0%, transparent 50%), radial-gradient(circle at 70% 70%, rgba(6, 182, 212, 0.6) 0%, transparent 50%), linear-gradient(135deg, #0f172a 0%, #020617 100%)",
     "type": "gradient",
     "category": "os"
   },
   {
     "id": "minimal-exec",
     "name": "Minimal Exec",
-    "gradient": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%), #e2e8f0",
+    "gradient": "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.1) 100%), radial-gradient(circle at 90% 10%, rgba(56, 189, 248, 0.25) 0%, transparent 40%), linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%)",
     "type": "gradient",
     "category": "os"
   },
   {
     "id": "viral-velocity",
     "name": "Viral Velocity",
-    "gradient": "radial-gradient(circle at 50% 0%, rgba(236, 72, 153, 0.2), transparent 50%), radial-gradient(circle at 50% 100%, rgba(234, 88, 12, 0.2), transparent 50%), linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%), #171717",
+    "gradient": "linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 100%), linear-gradient(135deg, #ff007f 0%, #ff7b00 50%, #ffea00 100%)",
     "type": "gradient",
     "category": "os"
   }
