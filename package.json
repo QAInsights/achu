@@ -42,7 +42,8 @@
     "appId": "com.navee.achu",
     "productName": "achu",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "assets"
     },
     "files": [
       {
@@ -68,17 +69,15 @@
             "arm64"
           ]
         }
-      ],
-      "appx": {
-        "identityName": "53225QAInsights.achu",
-        "publisher": "CN=5660CAA6-6766-42C2-A683-A2AC7B11A950",
-        "publisherDisplayName": "QAInsights",
-        "applicationId": "Achu",
-        "backgroundColor": "#1a1a2e",
-        "languages": ["en-US"],
-        "versionOverride": "${env.WIN_APPX_VERSION}",
-        "assets": "assets/store"
-      }
+      ]
+    },
+    "appx": {
+      "identityName": "53225QAInsights.achu",
+      "publisher": "CN=5660CAA6-6766-42C2-A683-A2AC7B11A950",
+      "publisherDisplayName": "QAInsights",
+      "applicationId": "Achu",
+      "backgroundColor": "#1a1a2e",
+      "languages": ["en-US"]
     },
     "mac": {
       "icon": "assets/icon.icns",

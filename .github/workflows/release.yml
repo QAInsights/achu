@@ -71,9 +71,6 @@ jobs:
         run: npx electron-builder --${{ matrix.platform }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Windows Store requires 4-part version (Major.Minor.Build.Revision).
-          # CalVer is 3-part, so we append .0 for the appx manifest only.
-          WIN_APPX_VERSION: ${{ needs.version.outputs.version }}.0
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
