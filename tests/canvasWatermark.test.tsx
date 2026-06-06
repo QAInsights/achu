@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import * as fs from 'fs';
+import * as path from 'path';
 import CanvasWatermark from '../src/renderer/components/CanvasWatermark';
 
 describe('CanvasWatermark', () => {
@@ -97,7 +99,7 @@ describe('CanvasWatermark', () => {
         watermarkEnabled={true}
         watermarkText="Brand"
         watermarkPosition="middle"
-        padding={40}
+        padding={60}
       />
     );
     const el = container.firstChild as HTMLElement;
@@ -111,7 +113,7 @@ describe('CanvasWatermark', () => {
         watermarkEnabled={true}
         watermarkText="Brand"
         watermarkPosition="top left"
-        padding={40}
+        padding={60}
       />
     );
     const el = container.firstChild as HTMLElement;
@@ -125,7 +127,7 @@ describe('CanvasWatermark', () => {
         watermarkEnabled={true}
         watermarkText="Brand"
         watermarkPosition="top right"
-        padding={40}
+        padding={60}
       />
     );
     const el = container.firstChild as HTMLElement;
@@ -139,7 +141,7 @@ describe('CanvasWatermark', () => {
         watermarkEnabled={true}
         watermarkText="Brand"
         watermarkPosition="right"
-        padding={40}
+        padding={60}
       />
     );
     const el = container.firstChild as HTMLElement;
@@ -160,30 +162,30 @@ describe('CanvasWatermark', () => {
       />
     );
     const el = container.firstChild as HTMLElement;
-    // safeInset = max(0/2, 20*0.5) = max(0, 10) = 10px
+    // safeInset = max(0/3, 20*0.5) = max(0, 10) = 10px
     expect(el.style.left).toBe('10px');
     expect(el.style.bottom).toBe('10px');
   });
 
-  it('uses padding/2 when it exceeds fontSize*0.5', () => {
+  it('uses padding/3 when it exceeds fontSize*0.5', () => {
     const { container } = render(
       <CanvasWatermark
         watermarkEnabled={true}
         watermarkText="Brand"
         watermarkPosition="top left"
         watermarkSize={20}
-        padding={60}
+        padding={90}
       />
     );
     const el = container.firstChild as HTMLElement;
-    // safeInset = max(60/2, 20*0.5) = max(30, 10) = 30px
+    // safeInset = max(90/3, 20*0.5) = max(30, 10) = 30px
     expect(el.style.left).toBe('30px');
     expect(el.style.top).toBe('30px');
   });
 
   it('safeInset matches drawWatermark canvas inset formula for same inputs', () => {
-    // Both CSS and canvas use: Math.max(padding/2, fontSize*0.5)
-    // padding=38, fontSize=20 → max(19, 10) = 19
+    // Both CSS and canvas use: Math.round(Math.max(padding/3, fontSize*0.5))
+    // padding=38, fontSize=20 → round(max(12.67, 10)) = 13
     const { container } = render(
       <CanvasWatermark
         watermarkEnabled={true}
@@ -195,7 +197,7 @@ describe('CanvasWatermark', () => {
     );
     const el = container.firstChild as HTMLElement;
     const cssInset = parseFloat(el.style.left);
-    const canvasInset = Math.max(38 / 2, 20 * 0.5); // 19
+    const canvasInset = Math.round(Math.max(38 / 3, 20 * 0.5)); // 13
     expect(cssInset).toBeCloseTo(canvasInset, 1);
   });
 
@@ -272,7 +274,7 @@ import { drawBackground, renderCanvas, RenderConfig } from '../src/renderer/canv
 import { makeMockCanvas, baseConfig } from './shared';
 
 describe('drawWatermark canvas opacity parity', () => {
-  it('fillStyle uses watermarkOpacity directly as 0-1, matching CanvasWatermark CSS', () => {
+  it('globalAlpha uses watermarkOpacity directly as 0-1, matching CanvasWatermark CSS', () => {
     const { canvas, ctx } = makeMockCanvas();
     const config: RenderConfig = {
       ...baseConfig,
@@ -281,8 +283,8 @@ describe('drawWatermark canvas opacity parity', () => {
       watermarkOpacity: 0.45,
     };
     renderCanvas(canvas, null, { ...config, noImage: true });
-    // fillStyle must be rgba(255,255,255,0.45) — NOT rgba(255,255,255,0.0045)
-    expect(ctx._state.fillStyle).toBe('rgba(255, 255, 255, 0.45)');
+    expect(ctx._state.globalAlpha).toBe(0.45);
+    expect(ctx._state.fillStyle).toBe('#ffffff');
   });
 
   it('watermark is invisible (fillText skipped) when watermarkEnabled is false', () => {
@@ -307,5 +309,16 @@ describe('drawWatermark canvas opacity parity', () => {
     };
     renderCanvas(canvas, null, { ...config, noImage: true });
     expect(ctx.calls.some((c: string) => c.startsWith('fillText'))).toBe(true);
+  });
+});
+
+describe('Watermark CSS color parity', () => {
+  it('index.css has .preview-watermark color: #ffffff to prevent double-applied opacity', () => {
+    const cssPath = path.resolve(__dirname, '../src/renderer/index.css');
+    const cssContent = fs.readFileSync(cssPath, 'utf-8');
+    const ruleMatch = cssContent.match(/\.preview-watermark\s*\{([^}]+)\}/);
+    expect(ruleMatch).not.toBeNull();
+    const ruleBody = ruleMatch![1];
+    expect(ruleBody).toContain('color: #ffffff');
   });
 });

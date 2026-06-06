@@ -24,7 +24,7 @@ export default function CanvasWatermark({
   const fontSize = `${fontSizeNum}px`;
   // Safe inset: mirrors canvas drawWatermark logic — at least half a font-height so
   // the text never gets clipped by the card's border-radius / overflow:hidden
-  const safeInset = `${Math.max(padding / 2, fontSizeNum * 0.5)}px`;
+  const safeInset = `${Math.round(Math.max(padding / 3, fontSizeNum * 0.5))}px`;
 
   const getPositionStyles = () => {
     const pos = watermarkPosition || 'middle';

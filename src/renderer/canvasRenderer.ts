@@ -845,14 +845,15 @@ function drawWatermark(
   if (!config.watermarkEnabled || !config.watermarkText) return;
   ctx.save();
   const fontSize = config.watermarkSize || 20;
-  ctx.font = `600 ${fontSize}px sans-serif`;
+  ctx.font = `500 ${fontSize}px sans-serif`;
   
   const opacity = config.watermarkOpacity !== undefined ? config.watermarkOpacity : 0.45;
-  ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+  ctx.globalAlpha = opacity;
+  ctx.fillStyle = '#ffffff';
   
   const position = config.watermarkPosition || 'middle';
   // Safe inset: at least half a font-height from each edge to avoid overflow
-  const inset = Math.max(config.padding / 2, fontSize * 0.5);
+  const inset = Math.round(Math.max(config.padding / 3, fontSize * 0.5));
   const isTop = position.startsWith('top');
 
   let x = width / 2;

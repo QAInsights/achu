@@ -854,7 +854,8 @@ describe('renderCanvas', () => {
         renderCanvas(canvas, img, config);
         
         expect(ctx.calls.some(c => c.startsWith('fillText'))).toBe(true);
-        expect(ctx._state.fillStyle).toBe('rgba(255, 255, 255, 0.75)');
+        expect(ctx._state.globalAlpha).toBe(0.75);
+        expect(ctx._state.fillStyle).toBe('#ffffff');
       });
     });
 
@@ -868,7 +869,8 @@ describe('renderCanvas', () => {
         watermarkOpacity: 0.15,
       };
       renderCanvas(canvas, img, config);
-      expect(ctx._state.fillStyle).toBe('rgba(255, 255, 255, 0.15)');
+      expect(ctx._state.globalAlpha).toBe(0.15);
+      expect(ctx._state.fillStyle).toBe('#ffffff');
     });
 
     it('uses textBaseline bottom for bottom positions', () => {
