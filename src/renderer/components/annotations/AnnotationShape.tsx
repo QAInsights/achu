@@ -1,4 +1,3 @@
-import React from 'react';
 import { Annotation } from '../../canvasRenderer';
 import { getCurvedArrowPoints, getTaperedCurvedArrowPoints } from '../../arrowUtils';
 

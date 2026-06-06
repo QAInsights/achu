@@ -15,11 +15,6 @@ interface UseAnnotationEventsProps {
   containerRef: RefObject<HTMLDivElement | null>;
 }
 
-interface Point {
-  x: number;
-  y: number;
-}
-
 function rotatePoint(x: number, y: number, cx: number, cy: number, angleDeg: number) {
   const rad = (-angleDeg * Math.PI) / 180;
   const cos = Math.cos(rad);

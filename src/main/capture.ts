@@ -87,6 +87,7 @@ export function setupFocusCheck(window: BrowserWindow) {
 
 // Update shortcut and monitoring config
 export function updateCaptureConfigurations(settings: AppSettings, window: BrowserWindow | null) {
+  if (window) {}
   // Update auto-import config
   autoImportEnabled = settings.lastConfig?.autoImportCaptured ?? true;
 

@@ -37,7 +37,7 @@ function AppContent() {
       <HelpModal />
       <input
         type="file"
-        ref={fileInputRef}
+        ref={fileInputRef as any}
         style={{ display: 'none' }}
         accept="image/*"
         onChange={handleHTMLFileInput}

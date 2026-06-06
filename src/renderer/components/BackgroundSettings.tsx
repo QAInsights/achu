@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Sparkles, Paintbrush, Wand2 } from 'lucide-react';
+import { Paintbrush, Wand2 } from 'lucide-react';
 import InspectorSection from './InspectorSection';
 import Tooltip from './Tooltip';
 import PresetSelector from './PresetSelector';

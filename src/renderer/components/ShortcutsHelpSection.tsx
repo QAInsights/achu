@@ -1,4 +1,3 @@
-import React from 'react';
 import { Keyboard, Heart, Github } from 'lucide-react';
 import Tooltip from './Tooltip';
 

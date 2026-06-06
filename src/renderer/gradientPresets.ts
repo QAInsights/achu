@@ -2,7 +2,6 @@ import gradientPresetsImport from '../../assets/presets.json';
 import macosSonomaImg from './backgrounds/macos_sonoma.png';
 import windowsBloomBlueImg from './backgrounds/windows_bloom_blue.png';
 import macosBigSurImg from './backgrounds/macos_big_sur.png';
-import windowsBloomBronzeImg from './backgrounds/windows_bloom_bronze.png';
 import windowsHeroGlowImg from './backgrounds/windows_hero_glow.png';
 import glassLoopFluidImg from './backgrounds/glass_loop_fluid.png';
 import meshRedPinkImg from './backgrounds/mesh_red_pink.png';

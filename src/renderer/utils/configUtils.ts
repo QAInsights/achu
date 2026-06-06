@@ -52,7 +52,7 @@ export function getCurrentConfig(state: {
   watermarkEnabled: boolean;
   watermarkText: string;
   watermarkSize: number;
-  watermarkPosition: string;
+  watermarkPosition: 'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right';
   watermarkOpacity: number;
   position: string;
   annotations: Annotation[];
@@ -130,7 +130,7 @@ export function applyConfig(
     setWatermarkEnabled: (v: boolean) => void;
     setWatermarkText: (v: string) => void;
     setWatermarkSize: (v: number) => void;
-    setWatermarkPosition: (v: string) => void;
+    setWatermarkPosition: (v: 'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right') => void;
     setWatermarkOpacity: (v: number) => void;
     setPosition: (v: string) => void;
     setAnnotations: (v: Annotation[]) => void;

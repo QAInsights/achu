@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAppContext } from '../AppContext';
 import { X, Heart, Github } from 'lucide-react';
 import logoUrl from '../../../assets/logo.svg';

@@ -1,4 +1,3 @@
-import { safeStorage } from 'electron';
 
 export async function checkAIHealth(provider: string, endpoint: string, apiKey: string): Promise<boolean> {
   if (provider === 'ollama') {

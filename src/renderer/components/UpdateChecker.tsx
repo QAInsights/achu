@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowUpCircle, CheckCircle, AlertCircle, RefreshCw, Download } from 'lucide-react';
 
 export default function UpdateChecker() {
@@ -11,14 +11,15 @@ export default function UpdateChecker() {
   const [simulated, setSimulated] = useState<boolean>(false);
 
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
     if (updateStatus === 'downloading') {
-      const unsubscribe = window.snapFrameAPI?.onUpdateProgress((progress: number) => {
+      unsubscribe = window.snapFrameAPI?.onUpdateProgress((progress: number) => {
         setDownloadProgress(progress);
       });
-      return () => {
-        if (unsubscribe) unsubscribe();
-      };
     }
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [updateStatus]);
 
   const handleCheckUpdates = async () => {

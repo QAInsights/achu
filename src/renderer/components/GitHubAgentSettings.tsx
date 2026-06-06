@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Bug, 
   Settings, 
   AlertCircle, 
   RefreshCw, 
-  Info,
   Play
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';

@@ -154,8 +154,9 @@ export default function ExtraSettings() {
               <select 
                 value={watermarkPosition} 
                 onChange={(e) => {
-                  setWatermarkPosition(e.target.value);
-                  pushHistory({ ...getCurrentConfig(), watermarkPosition: e.target.value });
+                  const val = e.target.value as any;
+                  setWatermarkPosition(val);
+                  pushHistory({ ...getCurrentConfig(), watermarkPosition: val });
                 }}
               >
                 <option value="left">Bottom Left</option>

@@ -22,7 +22,6 @@ export default function IssueReviewForm() {
     setShowComponentHighlights = () => {},
     burnHighlights = true,
     setBurnHighlights = () => {},
-    highlightedComponents = [],
     setHighlightedComponents = () => {},
     pushIssueToGitHub = async () => {},
     resetIssue = () => {},

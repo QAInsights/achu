@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "node scripts/dev.js",
     "build": "node scripts/build.js",
+    "lint": "tsc --noEmit",
+    "pretest": "npm run lint",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "package": "npm run build && electron-builder --win portable"

@@ -123,7 +123,7 @@ export default function PresetSelector() {
               >
                 <div className="preset-item-left">
                   <span className="preset-item-name">
-                    {preset.platform !== 'Universal Preset' && (
+                    {preset.platform !== 'Universal' && (
                       <span style={{ color: 'var(--text-secondary)', marginRight: '6px', fontSize: '0.8rem', fontWeight: 'normal' }}>
                         {preset.platform} -
                       </span>

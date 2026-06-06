@@ -10,9 +10,8 @@ import { createWorker } from 'tesseract.js';
 import { processOcrResults, downsampleImageForOcr } from './utils/privacyGuardUtils';
 import { VibePalette, extractPalette } from './utils/colorExtractor';
 import { generateVibeConfigs } from './utils/vibeUtils';
-import { WordBoundingBox, GitHubIssuePayload, generateIssueFromScreenshot, buildMarkdown, safeParseJSON } from './utils/githubAgentUtils';
-import { checkOllamaHealth } from './utils/ollamaUtils';
-import { fetchUserRepos, pushToGitHub } from './utils/githubApiUtils';
+import { WordBoundingBox, GitHubIssuePayload, buildMarkdown, safeParseJSON } from './utils/githubAgentUtils';
+import { pushToGitHub } from './utils/githubApiUtils';
 import { fetchAndParseModels, DEFAULT_OPENAI_MODELS, DEFAULT_GEMINI_MODELS, DEFAULT_CLAUDE_MODELS } from './utils/modelsDevUtils';
 
 

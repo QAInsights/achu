@@ -42,7 +42,7 @@ export default function SettingsModal() {
     setShadow(DEFAULT_SETTINGS.shadow);
     setWatermarkEnabled(DEFAULT_SETTINGS.watermarkEnabled);
     setWatermarkText(DEFAULT_SETTINGS.watermarkText);
-    setWatermarkPosition(DEFAULT_SETTINGS.watermarkPosition);
+    setWatermarkPosition(DEFAULT_SETTINGS.watermarkPosition as any);
     setWatermarkOpacity(DEFAULT_SETTINGS.watermarkOpacity);
     setExportFormat(DEFAULT_SETTINGS.exportFormat);
     setJpegQuality(DEFAULT_SETTINGS.jpegQuality);
@@ -56,7 +56,7 @@ export default function SettingsModal() {
       shadow: DEFAULT_SETTINGS.shadow,
       watermarkEnabled: DEFAULT_SETTINGS.watermarkEnabled,
       watermarkText: DEFAULT_SETTINGS.watermarkText,
-      watermarkPosition: DEFAULT_SETTINGS.watermarkPosition,
+      watermarkPosition: DEFAULT_SETTINGS.watermarkPosition as any,
       watermarkOpacity: DEFAULT_SETTINGS.watermarkOpacity,
       autoImportCaptured: true,
       captureShortcut: 'PrintScreen',

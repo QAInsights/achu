@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../AppContext';
 import AnnotationsLayer from '../AnnotationsLayer';
-import { zoomIn, zoomOut, getFixedSizeFromAspectRatio } from '../utils/layoutUtils';
+import { zoomIn, zoomOut } from '../utils/layoutUtils';
 import Tooltip from './Tooltip';
 import { platformPresets } from '../presetsData';
 import ContextMenu from './ContextMenu';
@@ -45,7 +45,6 @@ export default function CanvasPreview() {
     chromeTheme,
     blurDensity,
     noImageMode,
-    setNoImageMode,
     meshPoints,
     meshDataUrl,
     activePointIdx,
@@ -58,8 +57,6 @@ export default function CanvasPreview() {
     activeTool,
     setActiveTool,
     imageSrc,
-    selectFile,
-    getZoomStyle,
     zoomLevel, setZoomLevel,
     handlePointerDown,
     handlePointerMove,
@@ -192,8 +189,7 @@ export default function CanvasPreview() {
     canvasW: number,
     canvasH: number,
     cW: number,
-    cH: number,
-    aspect: string
+    cH: number
   ) => {
     let cx = (canvasW - cW) / 2;
     let cy = (canvasH - cH) / 2;
@@ -380,7 +376,7 @@ export default function CanvasPreview() {
                   width: `${contentW}px`,
                   height: `${contentH}px`,
                   zIndex: 1,
-                  ...getCanvasContentPosition(position || 'Middle center', padding, dims.width, dims.height, contentW, contentH, aspectRatio),
+                  ...getCanvasContentPosition(position || 'Middle center', padding, dims.width, dims.height, contentW, contentH),
                 }}
               >
                 {/* Title Bar Mockup */}
@@ -557,6 +553,7 @@ export default function CanvasPreview() {
           y={contextMenu.y}
           onClose={() => setContextMenu(null)}
           onGrabText={() => setGrabTextVisible(true)}
+          hasImage={!!imageSrc}
         />
       )}
     </div>

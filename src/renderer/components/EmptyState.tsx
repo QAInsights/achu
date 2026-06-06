@@ -1,4 +1,3 @@
-import React from 'react';
 import { Image as ImageIcon, Sparkles } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 
