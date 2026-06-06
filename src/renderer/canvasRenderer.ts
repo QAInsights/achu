@@ -849,31 +849,28 @@ function drawWatermark(
   ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
   
   const position = config.watermarkPosition || 'middle';
+  // Safe inset: at least half a font-height from each edge to avoid overflow
+  const inset = Math.max(config.padding / 2, fontSize * 0.5);
+  const isTop = position.startsWith('top');
+
   let x = width / 2;
-  let y = height - (config.padding / 2) + (fontSize / 3);
+  let y: number;
   let align: CanvasTextAlign = 'center';
 
-  if (position === 'left') {
-    x = config.padding / 2;
+  // Use textBaseline so text never overflows: 'bottom' anchors at inset from canvas bottom,
+  // 'top' anchors at inset from canvas top.
+  ctx.textBaseline = isTop ? 'top' : 'bottom';
+  y = isTop ? inset : height - inset;
+
+  if (position === 'left' || position === 'top left') {
+    x = inset;
     align = 'left';
-  } else if (position === 'middle') {
+  } else if (position === 'right' || position === 'top right') {
+    x = width - inset;
+    align = 'right';
+  } else if (position === 'middle' || position === 'top middle') {
     x = width / 2;
     align = 'center';
-  } else if (position === 'right') {
-    x = width - (config.padding / 2);
-    align = 'right';
-  } else if (position === 'top left') {
-    x = config.padding / 2;
-    y = (config.padding / 2) + (fontSize / 3);
-    align = 'left';
-  } else if (position === 'top middle') {
-    x = width / 2;
-    y = (config.padding / 2) + (fontSize / 3);
-    align = 'center';
-  } else if (position === 'top right') {
-    x = width - (config.padding / 2);
-    y = (config.padding / 2) + (fontSize / 3);
-    align = 'right';
   }
 
   ctx.textAlign = align;

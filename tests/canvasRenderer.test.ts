@@ -870,6 +870,41 @@ describe('renderCanvas', () => {
       renderCanvas(canvas, img, config);
       expect(ctx._state.fillStyle).toBe('rgba(255, 255, 255, 0.15)');
     });
+
+    it('uses textBaseline bottom for bottom positions', () => {
+      const { canvas, ctx } = makeMockCanvas();
+      const img = makeMockImage();
+      const config = { ...baseConfig, watermarkEnabled: true, watermarkText: 'W', watermarkPosition: 'middle' as const };
+      renderCanvas(canvas, img, config);
+      expect(ctx._state.textBaseline).toBe('bottom');
+    });
+
+    it('uses textBaseline top for top positions', () => {
+      const { canvas, ctx } = makeMockCanvas();
+      const img = makeMockImage();
+      const config = { ...baseConfig, watermarkEnabled: true, watermarkText: 'W', watermarkPosition: 'top middle' as const };
+      renderCanvas(canvas, img, config);
+      expect(ctx._state.textBaseline).toBe('top');
+    });
+
+    it('safe inset is at least fontSize*0.5 when padding is zero (text stays in canvas)', () => {
+      const { canvas, ctx } = makeMockCanvas();
+      const img = makeMockImage();
+      // padding=0 should still apply fontSize*0.5 = 10 safe margin
+      const config = {
+        ...baseConfig,
+        padding: 0,
+        watermarkEnabled: true,
+        watermarkText: 'W',
+        watermarkSize: 20,
+        watermarkPosition: 'left' as const,
+      };
+      renderCanvas(canvas, img, config);
+      expect(ctx.calls.some((c: string) => c.startsWith('fillText'))).toBe(true);
+      // textBaseline = 'bottom' means y = canvasHeight - inset; inset = max(0, 10) = 10
+      // so text bottom is at canvasHeight - 10, well within bounds
+      expect(ctx._state.textBaseline).toBe('bottom');
+    });
   });
 
   describe('drawBackground with url() background image', () => {

@@ -19,12 +19,17 @@ export default function CanvasWatermark({
 }: CanvasWatermarkProps) {
   if (!watermarkEnabled || !watermarkText) return null;
 
-  const opacity = watermarkOpacity !== undefined ? watermarkOpacity / 100 : 0.45;
-  const fontSize = `${watermarkSize || 20}px`;
-  const pad = `${padding / 2}px`;
+  const opacity = watermarkOpacity !== undefined ? watermarkOpacity : 0.45;
+  const fontSizeNum = watermarkSize || 20;
+  const fontSize = `${fontSizeNum}px`;
+  // Safe inset: mirrors canvas drawWatermark logic — at least half a font-height so
+  // the text never gets clipped by the card's border-radius / overflow:hidden
+  const safeInset = `${Math.max(padding / 2, fontSizeNum * 0.5)}px`;
 
   const getPositionStyles = () => {
     const pos = watermarkPosition || 'middle';
+    // Start by resetting all CSS-class position properties so .preview-watermark's
+    // `left: 50%; transform: translateX(-50%); bottom: 12px` never leaks into non-center positions.
     const styles: React.CSSProperties = {
       position: 'absolute',
       opacity,
@@ -32,13 +37,18 @@ export default function CanvasWatermark({
       pointerEvents: 'none',
       whiteSpace: 'nowrap',
       zIndex: 2,
+      left: 'auto',
+      right: 'auto',
+      top: 'auto',
+      bottom: 'auto',
+      transform: 'none',
     };
 
     if (pos === 'left' || pos === 'top left') {
-      styles.left = pad;
+      styles.left = safeInset;
       styles.textAlign = 'left';
     } else if (pos === 'right' || pos === 'top right') {
-      styles.right = pad;
+      styles.right = safeInset;
       styles.textAlign = 'right';
     } else {
       styles.left = '50%';
@@ -47,9 +57,9 @@ export default function CanvasWatermark({
     }
 
     if (pos.startsWith('top')) {
-      styles.top = pad;
+      styles.top = safeInset;
     } else {
-      styles.bottom = pad;
+      styles.bottom = safeInset;
     }
 
     return styles;
