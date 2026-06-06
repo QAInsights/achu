@@ -7,6 +7,8 @@ import {
   renderCanvas,
   RenderConfig,
   Annotation,
+  getBgImage,
+  preloadBgImage,
 } from '../src/renderer/canvasRenderer';
 import { makeMockCtx, makeMockCanvas, makeMockImage, baseConfig } from './shared';
 
@@ -868,5 +870,178 @@ describe('renderCanvas', () => {
       renderCanvas(canvas, img, config);
       expect(ctx._state.fillStyle).toBe('rgba(255, 255, 255, 0.15)');
     });
+  });
+
+  describe('drawBackground with url() background image', () => {
+    it('preloads and draws the background image', () => {
+      const ctx = makeMockCtx();
+      const config = {
+        ...baseConfig,
+        backgroundType: 'gradient' as const,
+        backgroundValue: 'url(test-bg.png)',
+      };
+      
+      // Initially, it is not in cache, and not complete, so it shouldn't draw
+      drawBackground(ctx, 800, 600, config, null);
+      // It shouldn't draw the image yet
+      const drawImageCalls = ctx.calls.filter(c => c === 'drawImage');
+      expect(drawImageCalls).toHaveLength(0);
+
+      // Now we preload it
+      let preloadCallbackCalled = false;
+      preloadBgImage('test-bg.png', () => {
+        preloadCallbackCalled = true;
+      });
+
+      const cachedImg = getBgImage('test-bg.png');
+      expect(cachedImg).not.toBeNull();
+      
+      // Simulate image loaded
+      Object.defineProperty(cachedImg, 'complete', { value: true, configurable: true });
+      Object.defineProperty(cachedImg, 'naturalWidth', { value: 100, configurable: true });
+      
+      // Fire the onload/load event if there are listeners
+      cachedImg.dispatchEvent(new Event('load'));
+
+      // If preloadBgImage ran synchronously (which it might not if onload isn't mocked, but dispatching event triggers it)
+      if (cachedImg.onload) {
+        cachedImg.onload();
+      }
+
+      expect(preloadCallbackCalled).toBe(true);
+
+      // Draw again
+      drawBackground(ctx, 800, 600, config, null);
+      expect(ctx.calls).toContain('drawImage');
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Regression: image-based background export parity with CSS preview
+// ---------------------------------------------------------------------------
+describe('drawBackground url() cover-scale regression', () => {
+  function makeDrawImageCapturingCtx() {
+    const drawImageArgs: number[][] = [];
+    const calls: string[] = [];
+    const state: Record<string, any> = {};
+    const handler: ProxyHandler<object> = {
+      get(_t, prop) {
+        if (prop === 'drawImageArgs') return drawImageArgs;
+        if (prop === 'calls') return calls;
+        if (prop === '_state') return state;
+        if (prop === 'drawImage') {
+          return (_img: unknown, x: number, y: number, w: number, h: number) => {
+            calls.push('drawImage');
+            drawImageArgs.push([x, y, w, h]);
+          };
+        }
+        if (prop === 'createLinearGradient') {
+          return () => ({ addColorStop: () => {} });
+        }
+        if (prop === 'createRadialGradient') {
+          return () => ({ addColorStop: () => {} });
+        }
+        if (prop === 'fillRect' || prop === 'clearRect') {
+          return (...args: number[]) => calls.push(`${String(prop)}(${args.join(',')})`);
+        }
+        if (prop === 'save' || prop === 'restore') return () => calls.push(String(prop));
+        return (..._args: unknown[]) => {};
+      },
+      set(_t, prop, value) { state[String(prop)] = value; return true; },
+    };
+    return new Proxy({} as any, handler) as any;
+  }
+
+  function makeLoadedImage(naturalWidth: number, naturalHeight: number): HTMLImageElement {
+    const img = new Image();
+    Object.defineProperty(img, 'complete', { value: true, configurable: true });
+    Object.defineProperty(img, 'naturalWidth', { value: naturalWidth, configurable: true });
+    Object.defineProperty(img, 'naturalHeight', { value: naturalHeight, configurable: true });
+    return img;
+  }
+
+  it('uses cover scaling (not stretch) for wide image on square canvas', () => {
+    // Image: 2000×1000 (2:1). Canvas: 400×400 (1:1).
+    // cover scale = max(400/2000, 400/1000) = max(0.2, 0.4) = 0.4
+    // sw = 2000*0.4 = 800, sh = 1000*0.4 = 400
+    // sx = (400-800)/2 = -200, sy = (400-400)/2 = 0
+    const bgUrl = 'regression-wide-image.png';
+    const img = makeLoadedImage(2000, 1000);
+    // Inject directly into bgImageCache via preloadBgImage
+    let done = false;
+    preloadBgImage(bgUrl, () => { done = true; });
+    const cached = getBgImage(bgUrl)!;
+    Object.defineProperty(cached, 'complete', { value: true, configurable: true });
+    Object.defineProperty(cached, 'naturalWidth', { value: 2000, configurable: true });
+    Object.defineProperty(cached, 'naturalHeight', { value: 1000, configurable: true });
+    cached.dispatchEvent(new Event('load'));
+    if ((cached as any).onload) (cached as any).onload();
+
+    const ctx = makeDrawImageCapturingCtx();
+    const config = { ...baseConfig, backgroundType: 'gradient' as const, backgroundValue: `url(${bgUrl})` };
+    drawBackground(ctx, 400, 400, config, null);
+
+    expect(ctx.calls).toContain('drawImage');
+    const [x, y, w, h] = ctx.drawImageArgs[0];
+    // Must NOT be plain stretch (0, 0, canvasW, canvasH)
+    expect([x, y, w, h]).not.toEqual([0, 0, 400, 400]);
+    // Cover: scale=0.4, sw=800, sh=400, sx=-200, sy=0
+    expect(w).toBeCloseTo(800, 0);
+    expect(h).toBeCloseTo(400, 0);
+    expect(x).toBeCloseTo(-200, 0);
+    expect(y).toBeCloseTo(0, 0);
+  });
+
+  it('uses cover scaling for tall image on landscape canvas', () => {
+    // Image: 100×500 (tall). Canvas: 600×300 (landscape).
+    // cover scale = max(600/100, 300/500) = max(6, 0.6) = 6
+    // sw = 100*6 = 600, sh = 500*6 = 3000
+    // sx = (600-600)/2 = 0, sy = (300-3000)/2 = -1350
+    const bgUrl = 'regression-tall-image.png';
+    let done = false;
+    preloadBgImage(bgUrl, () => { done = true; });
+    const cached = getBgImage(bgUrl)!;
+    Object.defineProperty(cached, 'complete', { value: true, configurable: true });
+    Object.defineProperty(cached, 'naturalWidth', { value: 100, configurable: true });
+    Object.defineProperty(cached, 'naturalHeight', { value: 500, configurable: true });
+    cached.dispatchEvent(new Event('load'));
+    if ((cached as any).onload) (cached as any).onload();
+
+    const ctx = makeDrawImageCapturingCtx();
+    const config = { ...baseConfig, backgroundType: 'gradient' as const, backgroundValue: `url(${bgUrl})` };
+    drawBackground(ctx, 600, 300, config, null);
+
+    expect(ctx.calls).toContain('drawImage');
+    const [x, y, w, h] = ctx.drawImageArgs[0];
+    expect(w).toBeCloseTo(600, 0);
+    expect(h).toBeCloseTo(3000, 0);
+    expect(x).toBeCloseTo(0, 0);
+    expect(y).toBeCloseTo(-1350, 0);
+  });
+
+  it('does NOT draw image when it is not yet loaded (no fallback regression)', () => {
+    const bgUrl = 'regression-unloaded.png';
+    preloadBgImage(bgUrl, () => {});
+    // Do NOT mark it as complete — simulates still-loading state
+    const ctx = makeDrawImageCapturingCtx();
+    const config = { ...baseConfig, backgroundType: 'gradient' as const, backgroundValue: `url(${bgUrl})` };
+    drawBackground(ctx, 400, 400, config, null);
+    // Should not call drawImage since image is incomplete
+    expect(ctx.drawImageArgs).toHaveLength(0);
+  });
+
+  it('preloadBgImage calls onDone immediately for already-loaded cached image', () => {
+    const bgUrl = 'regression-already-cached.png';
+    // First preload: puts it in cache
+    preloadBgImage(bgUrl, () => {});
+    const cached = getBgImage(bgUrl)!;
+    Object.defineProperty(cached, 'complete', { value: true, configurable: true });
+    Object.defineProperty(cached, 'naturalWidth', { value: 200, configurable: true });
+
+    // Second preload: should call onDone synchronously since complete & valid
+    let calledSync = false;
+    preloadBgImage(bgUrl, () => { calledSync = true; });
+    expect(calledSync).toBe(true);
   });
 });

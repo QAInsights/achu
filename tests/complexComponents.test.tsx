@@ -1090,10 +1090,11 @@ describe('CanvasPreview', () => {
 
     const { container } = render(<CanvasPreview />);
     const box = container.querySelector('.preview-container-box');
-    expect(box).toHaveStyle({ position: 'absolute' });
-    expect(box).toHaveStyle({ top: '50%' });
-    expect(box).toHaveStyle({ right: '38px' });
-    expect(box).toHaveStyle({ transform: 'translateY(-50%)' });
+    expect(box).toHaveStyle({
+      position: 'absolute',
+      left: '-38px',
+      top: '84px',
+    });
   });
 
   it('applies absolute position styles to container box for Top center', () => {
@@ -1103,10 +1104,11 @@ describe('CanvasPreview', () => {
 
     const { container } = render(<CanvasPreview />);
     const box = container.querySelector('.preview-container-box');
-    expect(box).toHaveStyle({ position: 'absolute' });
-    expect(box).toHaveStyle({ top: '38px' });
-    expect(box).toHaveStyle({ left: '50%' });
-    expect(box).toHaveStyle({ transform: 'translateX(-50%)' });
+    expect(box).toHaveStyle({
+      position: 'absolute',
+      left: '0px',
+      top: '38px',
+    });
   });
 
   it('applies absolute position styles to container box for Bottom center', () => {
@@ -1116,10 +1118,11 @@ describe('CanvasPreview', () => {
 
     const { container } = render(<CanvasPreview />);
     const box = container.querySelector('.preview-container-box');
-    expect(box).toHaveStyle({ position: 'absolute' });
-    expect(box).toHaveStyle({ bottom: '38px' });
-    expect(box).toHaveStyle({ left: '50%' });
-    expect(box).toHaveStyle({ transform: 'translateX(-50%)' });
+    expect(box).toHaveStyle({
+      position: 'absolute',
+      left: '0px',
+      top: '130px',
+    });
   });
 
   it('applies absolute position styles to container box for Middle left', () => {
@@ -1129,40 +1132,41 @@ describe('CanvasPreview', () => {
 
     const { container } = render(<CanvasPreview />);
     const box = container.querySelector('.preview-container-box');
-    expect(box).toHaveStyle({ position: 'absolute' });
-    expect(box).toHaveStyle({ top: '50%' });
-    expect(box).toHaveStyle({ left: '38px' });
-    expect(box).toHaveStyle({ transform: 'translateY(-50%)' });
+    expect(box).toHaveStyle({
+      position: 'absolute',
+      left: '38px',
+      top: '84px',
+    });
   });
 
-  it('applies relative position styles in Auto mode', () => {
+  it('applies absolute position styles to container box in Auto mode', () => {
     mockContext.imageSrc = 'data:image/png;base64,test';
     mockContext.aspectRatio = 'Auto';
     mockContext.position = 'Bottom center';
 
     const { container } = render(<CanvasPreview />);
     const box = container.querySelector('.preview-container-box');
-    expect(box).toHaveStyle({ position: 'relative' });
+    expect(box).toHaveStyle({ position: 'absolute' });
   });
 
-  it('uses fallback calc width for container box at scale 100 before image loads', () => {
+  it('uses default pixel width for container box at scale 100 before image loads', () => {
     mockContext.imageSrc = 'data:image/png;base64,test';
     mockContext.aspectRatio = '1:1';
     mockContext.scale = 100;
-    // imgDims is null (onLoad not yet fired) → fallback percentage formula
+    // imgDims is null (onLoad not yet fired) → default fallback width of 800px * scale = 800px
     const { container } = render(<CanvasPreview />);
     const box = container.querySelector('.preview-container-box');
-    expect(box).toHaveStyle({ width: 'calc(1 * (100% - 76px))' });
+    expect(box).toHaveStyle({ width: '800px' });
   });
 
-  it('uses fallback calc width for container box when scale is below 100 and image not loaded', () => {
+  it('uses default pixel width for container box when scale is below 100 and image not loaded', () => {
     mockContext.imageSrc = 'data:image/png;base64,test';
     mockContext.aspectRatio = '1:1';
     mockContext.scale = 80;
-    // imgDims is null (onLoad not yet fired) → fallback percentage formula
+    // imgDims is null (onLoad not yet fired) → default fallback width of 800px * 0.8 = 640px
     const { container } = render(<CanvasPreview />);
     const box = container.querySelector('.preview-container-box');
-    expect(box).toHaveStyle({ width: 'calc(0.8 * (100% - 76px))' });
+    expect(box).toHaveStyle({ width: '640px' });
   });
 
   it('uses pixel width matching image dimensions once image loads', () => {
@@ -1180,6 +1184,41 @@ describe('CanvasPreview', () => {
     const box = container.querySelector('.preview-container-box');
     // At scale=100, width = round(500 * 1) = 500px
     expect(box).toHaveStyle({ width: '500px' });
+  });
+
+  it('aligns preview card dimensions with canvas dimensions and applies scale transform', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.aspectRatio = '16:9';
+    mockContext.paddingMode = 'fill';
+    mockContext.scale = 100;
+    mockContext.chromeStyle = 'none';
+
+    const { container } = render(<CanvasPreview />);
+    const img = container.querySelector('img[alt="Screenshot"]') as HTMLImageElement | null;
+    if (img) {
+      Object.defineProperty(img, 'naturalWidth', { value: 1024, configurable: true });
+      Object.defineProperty(img, 'naturalHeight', { value: 576, configurable: true });
+      fireEvent.load(img);
+    }
+
+    const card = container.querySelector('.preview-background-card');
+    // 16:9 fill with 1024x576 image yields 1024x576 canvas dimensions
+    expect(card).toHaveStyle({ width: '1024px' });
+    expect(card).toHaveStyle({ height: '576px' });
+
+    const box = container.querySelector('.preview-container-box');
+    expect(box).toHaveStyle({ width: '1024px' });
+    expect(box).toHaveStyle({ height: '576px' });
+  });
+
+  it('scales Chrome title bar mockup correctly using the --chrome-scale CSS variable', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.chromeStyle = 'mac';
+    mockContext.scale = 50;
+
+    const { container } = render(<CanvasPreview />);
+    const chrome = container.querySelector('.preview-chrome-mac');
+    expect(chrome).toHaveStyle({ '--chrome-scale': '0.5' });
   });
 });
 

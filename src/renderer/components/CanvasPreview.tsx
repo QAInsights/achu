@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../AppContext';
 import AnnotationsLayer from '../AnnotationsLayer';
 import { zoomIn, zoomOut, getFixedSizeFromAspectRatio } from '../utils/layoutUtils';
@@ -20,6 +20,7 @@ import {
   getAuroraBackground,
   getBackgroundStyle
 } from '../utils/previewBgUtils';
+import { getCanvasDimensions } from '../canvasRenderer';
 
 export default function CanvasPreview() {
   const [imgDims, setImgDims] = useState<{ width: number; height: number } | null>(null);
@@ -87,6 +88,81 @@ export default function CanvasPreview() {
     lightRaysSourceY,
   } = useAppContext();
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 1024, height: 768 });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerSize({
+          width: entry.contentRect.width || 1024,
+          height: entry.contentRect.height || 768,
+        });
+      }
+    });
+    observer.observe(containerRef.current);
+
+    const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      setContainerSize({ width: rect.width, height: rect.height });
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  const imgW = (imageSrc && !noImageMode) ? (imgDims?.width || 800) : 800;
+  const imgH = (imageSrc && !noImageMode) ? (imgDims?.height || 600) : 600;
+
+  const config = {
+    padding,
+    rounded,
+    shadow,
+    shadowColor,
+    shadowEnabled,
+    inset,
+    insetColor,
+    border,
+    borderColor,
+    scale,
+    backgroundType,
+    backgroundValue,
+    aspectRatio,
+    canvasWidth,
+    canvasHeight,
+    paddingMode,
+    chromeStyle,
+    chromeTheme,
+    blurDensity,
+    watermarkEnabled,
+    watermarkText,
+    watermarkSize,
+    watermarkPosition,
+    watermarkOpacity,
+    position,
+    annotations,
+    meshPoints,
+    noImage: noImageMode,
+  };
+
+  const dims = getCanvasDimensions(imgW, imgH, config);
+
+  const getScaleFactor = () => {
+    if (zoomLevel !== 'Zoom to fit') {
+      return parseInt(zoomLevel, 10) / 100;
+    }
+    const maxW = Math.max(100, containerSize.width - 80);
+    const maxH = Math.max(100, containerSize.height - 80);
+    return Math.min(maxW / dims.width, maxH / dims.height, 1.0);
+  };
+
+  const scaleFactor = getScaleFactor();
+
+  const scaleVal = scale / 100;
+  const chromeHeight = chromeStyle !== 'none' ? 32 : 0;
+  const contentW = imgW * scaleVal;
+  const contentH = (imgH + chromeHeight) * scaleVal;
+
   const handleZoomIn = () => setZoomLevel(zoomIn(zoomLevel));
   const handleZoomOut = () => setZoomLevel(zoomOut(zoomLevel));
 
@@ -109,66 +185,42 @@ export default function CanvasPreview() {
     }
   }, [imageSrc]);
 
-  const getPreviewPositionStyle = (pos: string, paddingVal: number, aspect: string) => {
-    if (aspect === 'Auto') {
-      return {
-        position: 'relative' as const,
-        top: undefined,
-        bottom: undefined,
-        left: undefined,
-        right: undefined,
-        transform: undefined,
-      };
+  // Mirror the canvas renderer's contentX/contentY calculation exactly
+  const getCanvasContentPosition = (
+    pos: string,
+    paddingVal: number,
+    canvasW: number,
+    canvasH: number,
+    cW: number,
+    cH: number,
+    aspect: string
+  ) => {
+    let cx = (canvasW - cW) / 2;
+    let cy = (canvasH - cH) / 2;
+
+    if (pos === 'Top center') {
+      cx = (canvasW - cW) / 2;
+      cy = paddingVal;
+    } else if (pos === 'Bottom center') {
+      cx = (canvasW - cW) / 2;
+      cy = canvasH - cH - paddingVal;
+    } else if (pos === 'Middle left') {
+      cx = paddingVal;
+      cy = (canvasH - cH) / 2;
+    } else if (pos === 'Middle right') {
+      cx = canvasW - cW - paddingVal;
+      cy = (canvasH - cH) / 2;
     }
-    const pad = `${paddingVal}px`;
-    switch (pos || 'Middle center') {
-      case 'Top center':
-        return {
-          position: 'absolute' as const,
-          top: pad,
-          bottom: undefined,
-          left: '50%',
-          right: undefined,
-          transform: 'translateX(-50%)',
-        };
-      case 'Bottom center':
-        return {
-          position: 'absolute' as const,
-          top: undefined,
-          bottom: pad,
-          left: '50%',
-          right: undefined,
-          transform: 'translateX(-50%)',
-        };
-      case 'Middle left':
-        return {
-          position: 'absolute' as const,
-          top: '50%',
-          bottom: undefined,
-          left: pad,
-          right: undefined,
-          transform: 'translateY(-50%)',
-        };
-      case 'Middle right':
-        return {
-          position: 'absolute' as const,
-          top: '50%',
-          bottom: undefined,
-          left: undefined,
-          right: pad,
-          transform: 'translateY(-50%)',
-        };
-      case 'Middle center':
-      default:
-        return {
-          position: 'absolute' as const,
-          top: '50%',
-          bottom: undefined,
-          left: '50%',
-          right: undefined,
-          transform: 'translate(-50%, -50%)',
-        };
-    }
+    // Middle center / Auto: cx = (canvasW - cW) / 2, cy = (canvasH - cH) / 2
+
+    return {
+      position: 'absolute' as const,
+      left: `${cx}px`,
+      top: `${cy}px`,
+      bottom: undefined,
+      right: undefined,
+      transform: undefined,
+    };
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -178,43 +230,33 @@ export default function CanvasPreview() {
   };
 
   return (
-    <div className="workspace-canvas-container">
+    <div className="workspace-canvas-container" ref={containerRef}>
       {(imageSrc || noImageMode) ? (
-        <div className="preview-card-wrapper" style={getZoomStyle()}>
+        <div 
+          className="preview-card-wrapper"
+          style={{
+            width: `${dims.width * scaleFactor}px`,
+            height: `${dims.height * scaleFactor}px`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'visible',
+          }}
+        >
           
           {/* Output Preview Container Card */}
           <div 
             className="preview-background-card"
             onContextMenu={handleContextMenu}
             style={{
-              padding: paddingMode === 'fill' ? '0px' : `${padding}px`,
-              boxSizing: 'content-box',
+              position: 'relative',
               ...getBackgroundStyle(backgroundType, backgroundValue, imageSrc, meshDataUrl),
               borderRadius: '12px',
-              maxWidth: '100%',
-              maxHeight: '70vh',
-              // Fixed sizes mapping
-              ...(() => {
-                if (aspectRatio === 'Auto' && !noImageMode && imgDims) {
-                  const s = scale / 100;
-                  const chromeHeight = chromeStyle !== 'none' ? 32 : 0;
-                  const w = Math.round(imgDims.width * s);
-                  const h = Math.round((imgDims.height + chromeHeight) * s);
-                  return {
-                    width: `${w}px`,
-                    height: `${h}px`,
-                    aspectRatio: `${w} / ${h}`,
-                  };
-                }
-                const { width, height } = getFixedSizeFromAspectRatio(aspectRatio, canvasWidth, canvasHeight, noImageMode);
-                const w = typeof width === 'number' ? width : 800;
-                const h = typeof height === 'number' ? height : 450;
-                return {
-                  width: typeof width === 'number' ? `${width}px` : width,
-                  height: typeof height === 'number' ? `${height}px` : height,
-                  aspectRatio: `${w} / ${h}`,
-                };
-              })(),
+              width: `${dims.width}px`,
+              height: `${dims.height}px`,
+              transform: `scale(${scaleFactor})`,
+              transformOrigin: 'center center',
+              flexShrink: 0,
             }}
           >
             {/* Safe Zone Overlay */}
@@ -335,23 +377,14 @@ export default function CanvasPreview() {
                   border: border > 0 ? `${border}px solid ${borderColor}` : 'none',
                   outline: inset > 0 ? `${inset}px solid ${insetColor}` : 'none',
                   outlineOffset: `-${inset}px`,
-                  width: aspectRatio === 'Auto'
-                    ? '100%'
-                    : paddingMode === 'fill'
-                      ? imgDims
-                        ? `${Math.round(imgDims.width * (scale / 100))}px`
-                        : `${scale}%`
-                      : imgDims
-                        ? `${Math.round(imgDims.width * (scale / 100))}px`
-                        : `calc((100% - ${padding * 2}px) * ${scale / 100})`,
-                  maxWidth: aspectRatio === 'Auto' ? '100%' : paddingMode === 'fill' ? 'none' : `calc(100% - ${padding * 2}px)`,
-                  maxHeight: aspectRatio === 'Auto' ? '100%' : paddingMode === 'fill' ? 'none' : `calc(100% - ${padding * 2}px)`,
+                  width: `${contentW}px`,
+                  height: `${contentH}px`,
                   zIndex: 1,
-                  ...getPreviewPositionStyle(position || 'Middle center', padding, aspectRatio),
+                  ...getCanvasContentPosition(position || 'Middle center', padding, dims.width, dims.height, contentW, contentH, aspectRatio),
                 }}
               >
                 {/* Title Bar Mockup */}
-                <ChromeMockup chromeStyle={chromeStyle} chromeTheme={chromeTheme || 'dark'} />
+                <ChromeMockup chromeStyle={chromeStyle} chromeTheme={chromeTheme || 'dark'} scale={scale / 100} />
 
                 {/* Image render element with Annotations layer */}
                 <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>

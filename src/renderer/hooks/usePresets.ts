@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { RenderConfig, Annotation, RedactionItem } from '../canvasRenderer';
+import { RenderConfig, Annotation, RedactionItem, preloadBgImage } from '../canvasRenderer';
 
 export function usePresets(
   setImageSrc: React.Dispatch<React.SetStateAction<string | null>>,
@@ -86,7 +86,17 @@ export function usePresets(
 
   const selectBackgroundPreset = (preset: any) => {
     setBackgroundType(preset.type);
-    setBackgroundValue(preset.gradient || preset.color);
+    const gradientValue = preset.gradient || preset.color;
+    setBackgroundValue(gradientValue);
+
+    // Pre-warm bgImageCache immediately so export doesn't race against image load
+    if (preset.type === 'gradient' && gradientValue) {
+      const urlPattern = /url\(['"]?([^'"()]+)['"]?\)/g;
+      let m;
+      while ((m = urlPattern.exec(gradientValue)) !== null) {
+        preloadBgImage(m[1], () => {});
+      }
+    }
     
     const grain = preset.bgGrain ?? 0;
     const style = preset.lightRaysStyle ?? 'none';

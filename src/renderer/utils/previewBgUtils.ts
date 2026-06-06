@@ -79,7 +79,7 @@ export function getBackgroundStyle(
   }
   if (backgroundType === 'gradient') {
     return { 
-      background: backgroundValue,
+      backgroundImage: backgroundValue,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat'
@@ -87,7 +87,7 @@ export function getBackgroundStyle(
   }
   if (backgroundType === 'blur' && imageSrc) {
     return { 
-      background: `url(${imageSrc})`,
+      backgroundImage: `url(${imageSrc})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat'
@@ -95,7 +95,7 @@ export function getBackgroundStyle(
   }
   if (backgroundType === 'mesh') {
     return { 
-      background: `url(${meshDataUrl})`,
+      backgroundImage: `url(${meshDataUrl})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat'

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { renderCanvas, RenderConfig } from '../canvasRenderer';
+import { renderCanvas, RenderConfig, preloadBgImage } from '../canvasRenderer';
 
 export function useExport(
   imageSrc: string | null,
@@ -54,11 +54,14 @@ export function useExport(
     backgroundVal: string,
     callback: (screenshotImg: HTMLImageElement | null) => void
   ) => {
+    const bgType = getCurrentConfig().backgroundType;
     let pending = 0;
     let screenshotImg: HTMLImageElement | null = null;
+    let called = false;
 
     const checkDone = () => {
-      if (pending === 0) {
+      if (pending === 0 && !called) {
+        called = true;
         callback(screenshotImg);
       }
     };
@@ -77,21 +80,17 @@ export function useExport(
       };
     }
 
-    const config = getCurrentConfig();
-    if (config.backgroundType === 'gradient' && backgroundVal.startsWith('url(')) {
-      const match = backgroundVal.match(/url\(['"]?([^'"]+)['"]?\)/);
-      if (match) {
+    // Preload all url() images into bgImageCache so renderCanvas finds them loaded
+    if (bgType === 'gradient') {
+      const urlPattern = /url\(['"]?([^'"()]+)['"]?\)/g;
+      let urlMatch;
+      while ((urlMatch = urlPattern.exec(backgroundVal)) !== null) {
+        const imgUrl = urlMatch[1];
         pending++;
-        const bgImg = new Image();
-        bgImg.src = match[1];
-        bgImg.onload = () => {
+        preloadBgImage(imgUrl, () => {
           pending--;
           checkDone();
-        };
-        bgImg.onerror = () => {
-          pending--;
-          checkDone();
-        };
+        });
       }
     }
 

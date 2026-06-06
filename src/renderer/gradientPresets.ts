@@ -17,6 +17,9 @@ export interface GradientPreset {
   gradient: string;
   type: 'gradient' | 'color';
   category?: 'classic' | 'os' | 'disney' | 'marvel' | 'hollywood';
+  bgGrain?: number;
+  lightRaysStyle?: 'none' | 'diagonal' | 'spotlight' | 'aurora';
+  lightRaysOpacity?: number;
 }
 
 export const defaultGradients: GradientPreset[] = gradientPresetsImport as GradientPreset[];

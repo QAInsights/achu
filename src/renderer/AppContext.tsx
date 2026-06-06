@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { RenderConfig, Annotation, drawMeshGradient, RedactionItem, renderCanvas } from './canvasRenderer';
+import { RenderConfig, Annotation, drawMeshGradient, RedactionItem, renderCanvas, preloadBgImage } from './canvasRenderer';
 import { useHistory } from './hooks/useHistory';
 import { useExport } from './hooks/useExport';
 import { usePresets } from './hooks/usePresets';
@@ -764,9 +764,11 @@ Severity rules:
 
       let pending = 0;
       let screenshotImg: HTMLImageElement | null = null;
+      let called = false;
 
       const checkDone = () => {
-        if (pending === 0) {
+        if (pending === 0 && !called) {
+          called = true;
           runExport(screenshotImg);
         }
       };
@@ -782,20 +784,16 @@ Severity rules:
         screenshotImg.onerror = () => reject(new Error('Failed to load image for export'));
       }
 
-      if (config.backgroundType === 'gradient' && bgVal.startsWith('url(')) {
-        const match = bgVal.match(/url\(['"]?([^'"]+)['"]?\)/);
-        if (match) {
+      if (config.backgroundType === 'gradient') {
+        const urlPattern = /url\(['"]?([^'"()]+)['"]?\)/g;
+        let urlMatch;
+        while ((urlMatch = urlPattern.exec(bgVal)) !== null) {
+          const imgUrl = urlMatch[1];
           pending++;
-          const bgImg = new Image();
-          bgImg.src = match[1];
-          bgImg.onload = () => {
+          preloadBgImage(imgUrl, () => {
             pending--;
             checkDone();
-          };
-          bgImg.onerror = () => {
-            pending--;
-            checkDone();
-          };
+          });
         }
       }
 

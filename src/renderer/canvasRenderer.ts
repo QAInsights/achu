@@ -28,15 +28,52 @@ import { drawArrowOnCanvas } from './arrowUtils';
 
 const bgImageCache = new Map<string, HTMLImageElement>();
 
+function setCrossOrigin(img: HTMLImageElement, url: string) {
+  const isDataOrFile = url.startsWith('data:') || url.startsWith('file:') || url.startsWith('blob:');
+  if (!isDataOrFile && window.location.protocol !== 'file:') {
+    img.crossOrigin = 'anonymous';
+  }
+}
+
 export function getBgImage(url: string): HTMLImageElement | null {
   if (!url) return null;
   if (bgImageCache.has(url)) {
-    return bgImageCache.get(url)!;
+    const cached = bgImageCache.get(url)!;
+    if (cached.complete && cached.naturalWidth === 0) {
+      bgImageCache.delete(url);
+    } else {
+      return cached;
+    }
   }
   const img = new Image();
+  setCrossOrigin(img, url);
   img.src = url;
   bgImageCache.set(url, img);
   return img;
+}
+
+/** Pre-populates bgImageCache so the image is ready when renderCanvas runs. */
+export function preloadBgImage(url: string, onDone: () => void): void {
+  if (!url) { onDone(); return; }
+  const existing = bgImageCache.get(url);
+  if (existing) {
+    if (existing.complete && existing.naturalWidth > 0) {
+      onDone();
+      return;
+    }
+    if (!existing.complete) {
+      existing.addEventListener('load', () => { onDone(); }, { once: true });
+      existing.addEventListener('error', () => { onDone(); }, { once: true });
+      return;
+    }
+    bgImageCache.delete(url);
+  }
+  const img = new Image();
+  setCrossOrigin(img, url);
+  img.onload = () => { onDone(); };
+  img.onerror = () => { onDone(); };
+  img.src = url;
+  bgImageCache.set(url, img);
 }
 
 
@@ -554,12 +591,18 @@ export function drawBackground(
       } else if (trimmed.startsWith('linear-gradient')) {
         drawLinearGradient(ctx, w, h, trimmed);
       } else if (trimmed.startsWith('url(')) {
-        const match = trimmed.match(/url\(['"]?([^'"]+)['"]?\)/);
+        const match = trimmed.match(/url\(['"]?([^'"()]+)['"]?\)/);
         if (match) {
           const imgUrl = match[1];
           const img = getBgImage(imgUrl);
           if (img && img.complete && img.naturalWidth > 0) {
-            ctx.drawImage(img, 0, 0, w, h);
+            // Match CSS background-size: cover; background-position: center
+            const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+            const sw = img.naturalWidth * scale;
+            const sh = img.naturalHeight * scale;
+            const sx = (w - sw) / 2;
+            const sy = (h - sh) / 2;
+            ctx.drawImage(img, sx, sy, sw, sh);
           } else if (img) {
             ctx.fillStyle = '#0b0f19';
             ctx.fillRect(0, 0, w, h);
