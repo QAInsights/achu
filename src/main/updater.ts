@@ -139,15 +139,19 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
           return { success: true, simulated: true };
         }
         
-        const execPath = process.execPath;
+        const execPath = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
         const batPath = path.join(app.getPath('temp'), 'achu-update.bat');
         
-        // Write standard Windows updater batch script
+        // Write standard Windows updater batch script with retry limit to prevent infinite loop
         const batContent = `@echo off
+set count=0
 :wait
 timeout /t 1 /nobreak >nul
 move /y "${tempPath}" "${execPath}"
-if errorlevel 1 goto wait
+if not errorlevel 1 goto success
+set /a count=count+1
+if %count% LSS 15 goto wait
+:success
 start "" "${execPath}"
 del "%~f0"
 `;

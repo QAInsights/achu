@@ -232,6 +232,10 @@ app.whenReady().then(() => {
   });
 });
 
+app.on('before-quit', () => {
+  isQuitting = true;
+});
+
 app.on('will-quit', () => {
   cleanupCaptureModule();
 });
