@@ -90,6 +90,8 @@ interface AppContextType {
   showAdvancedBorder: boolean; setShowAdvancedBorder: React.Dispatch<React.SetStateAction<boolean>>;
   exportFormat: 'png' | 'jpeg'; setExportFormat: React.Dispatch<React.SetStateAction<'png' | 'jpeg'>>;
   jpegQuality: number; setJpegQuality: React.Dispatch<React.SetStateAction<number>>;
+  autoImportCaptured: boolean; setAutoImportCaptured: (val: boolean) => void;
+  captureShortcut: string; setCaptureShortcut: (val: string) => void;
   zoomLevel: string; setZoomLevel: React.Dispatch<React.SetStateAction<string>>;
   history: any[]; setHistory: React.Dispatch<React.SetStateAction<any[]>>;
   historyIndex: number; setHistoryIndex: React.Dispatch<React.SetStateAction<number>>;
@@ -205,6 +207,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [chromeStyle, setChromeStyle] = useState<'mac' | 'windows' | 'none'>('mac');
   const [chromeTheme, setChromeTheme] = useState<'dark' | 'light'>('dark');
   const [blurDensity, setBlurDensity] = useState<number>(40);
+  const [autoImportCaptured, setAutoImportCapturedState] = useState<boolean>(() => getUserDefault('autoImportCaptured', true));
+  const [captureShortcut, setCaptureShortcutState] = useState<string>(() => getUserDefault('captureShortcut', 'PrintScreen'));
   
   // Better Gradient States
   const [noImageMode, setNoImageMode] = useState<boolean>(false);
@@ -319,6 +323,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAppendAttributionState(boolVal);
     updateUserDefault('appendAttribution', boolVal);
   };
+  const setAutoImportCaptured = (val: boolean) => {
+    setAutoImportCapturedState(val);
+    updateUserDefault('autoImportCaptured', val);
+  };
+  const setCaptureShortcut = (val: string) => {
+    setCaptureShortcutState(val);
+    updateUserDefault('captureShortcut', val);
+  };
 
   const [promptConfig, setPromptConfig] = useState<{ message: string; defaultValue: string; resolve: (val: string | null) => void } | null>(null);
 
@@ -373,6 +385,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     lightRaysCount,
     lightRaysSourceX,
     lightRaysSourceY,
+    autoImportCaptured,
+    captureShortcut,
   });
 
   const applyConfig = (config: RenderConfig) => {
@@ -433,6 +447,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (config.exportFormat) setExportFormat(config.exportFormat);
     if (config.jpegQuality !== undefined) setJpegQuality(config.jpegQuality);
     if (config.sidebarPosition) setSidebarPosition(config.sidebarPosition);
+    if (config.autoImportCaptured !== undefined) setAutoImportCapturedState(config.autoImportCaptured);
+    if (config.captureShortcut) setCaptureShortcutState(config.captureShortcut);
   };
 
   // 1. History Hook
@@ -1078,7 +1094,8 @@ Severity rules:
     canvasHeight, paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled,
     watermarkText, watermarkSize, watermarkPosition, watermarkOpacity, position, customPresets, meshPoints, meshBlur, meshGrain, meshOpacity,
     meshSpread, noImageMode, redactions, redactionStyle, exportFormat, jpegQuality, sidebarPosition,
-    bgGrain, lightRaysStyle, lightRaysOpacity, lightRaysAngle, lightRaysCount, lightRaysSourceX, lightRaysSourceY
+    bgGrain, lightRaysStyle, lightRaysOpacity, lightRaysAngle, lightRaysCount, lightRaysSourceX, lightRaysSourceY,
+    autoImportCaptured, captureShortcut
   ]);
 
 
@@ -1217,6 +1234,8 @@ Severity rules:
       showHollywoodMeshPalettes, setShowHollywoodMeshPalettes,
       appTheme, setAppTheme,
       sidebarPosition, setSidebarPosition,
+      autoImportCaptured, setAutoImportCaptured,
+      captureShortcut, setCaptureShortcut,
       vibePalette, vibeVariantIndex, vibeUpdateDrawColor, setVibeUpdateDrawColor,
       fileInputRef, colorInputRef,
       redactions, setRedactions,

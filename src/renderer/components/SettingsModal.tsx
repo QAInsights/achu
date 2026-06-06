@@ -21,6 +21,8 @@ export default function SettingsModal() {
     pushHistory,
     getCurrentConfig,
     sidebarPosition, setSidebarPosition,
+    autoImportCaptured, setAutoImportCaptured,
+    captureShortcut, setCaptureShortcut,
   } = useAppContext();
 
   const [activeTab, setActiveTab] = React.useState<'general' | 'ai' | 'shortcuts'>('general');
@@ -45,6 +47,8 @@ export default function SettingsModal() {
     setExportFormat(DEFAULT_SETTINGS.exportFormat);
     setJpegQuality(DEFAULT_SETTINGS.jpegQuality);
     setSidebarPosition(DEFAULT_SETTINGS.sidebarPosition);
+    setAutoImportCaptured(true);
+    setCaptureShortcut('PrintScreen');
     pushHistory({
       ...getCurrentConfig(),
       padding: DEFAULT_SETTINGS.padding,
@@ -54,6 +58,8 @@ export default function SettingsModal() {
       watermarkText: DEFAULT_SETTINGS.watermarkText,
       watermarkPosition: DEFAULT_SETTINGS.watermarkPosition,
       watermarkOpacity: DEFAULT_SETTINGS.watermarkOpacity,
+      autoImportCaptured: true,
+      captureShortcut: 'PrintScreen',
     });
   };
 
@@ -140,6 +146,37 @@ export default function SettingsModal() {
                       Right
                     </button>
                   </div>
+                </div>
+              </div>
+
+              {/* Screen Capture Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>Screen Capture</h3>
+                
+                <div className="switch-container">
+                  <span className="control-label">Auto-Import from Clipboard on Focus</span>
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={autoImportCaptured}
+                      onChange={(e) => updateSetting('autoImportCaptured', e.target.checked, setAutoImportCaptured)}
+                    />
+                    <span className="slider-switch" />
+                  </label>
+                </div>
+
+                <div className="control-group">
+                  <span className="control-label">Global Capture Shortcut</span>
+                  <select
+                    value={captureShortcut}
+                    onChange={(e) => updateSetting('captureShortcut', e.target.value, setCaptureShortcut)}
+                    style={{ marginTop: '4px' }}
+                  >
+                    <option value="PrintScreen">Print Screen</option>
+                    <option value="CommandOrControl+Shift+S">Ctrl + Shift + S</option>
+                    <option value="CommandOrControl+Alt+S">Ctrl + Alt + S</option>
+                    <option value="Disabled">Disabled</option>
+                  </select>
                 </div>
               </div>
 

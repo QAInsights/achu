@@ -129,6 +129,8 @@ export interface RenderConfig {
   lightRaysCount?: number;
   lightRaysSourceX?: number;
   lightRaysSourceY?: number;
+  autoImportCaptured?: boolean;
+  captureShortcut?: string;
 }
 
 interface ColorStop {

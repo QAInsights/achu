@@ -36,4 +36,6 @@ export const DEFAULT_SETTINGS = {
   exportFormat: 'png' as const,
   jpegQuality: 90,
   sidebarPosition: 'left' as const,
+  autoImportCaptured: true,
+  captureShortcut: 'PrintScreen',
 };

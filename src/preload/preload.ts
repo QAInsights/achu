@@ -21,6 +21,9 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
   saveFile: (base64Data: string, type: 'png' | 'jpeg', quality?: number) => 
     ipcRenderer.invoke('file:save-dialog', { base64Data, type, quality }),
 
+  // Screen Capture API
+  triggerScreenCapture: () => ipcRenderer.send('capture:trigger'),
+
   // Clipboard API
   copyImageToClipboard: (base64Data: string) => ipcRenderer.invoke('clipboard:copy-image', base64Data),
   readImageFromClipboard: () => ipcRenderer.invoke('clipboard:read-image'),

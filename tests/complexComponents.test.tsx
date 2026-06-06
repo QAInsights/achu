@@ -74,6 +74,10 @@ beforeEach(() => {
     // Settings
     settingsVisible: false,
     setSettingsVisible: vi.fn(),
+    autoImportCaptured: true,
+    setAutoImportCaptured: vi.fn(),
+    captureShortcut: 'PrintScreen',
+    setCaptureShortcut: vi.fn(),
     helpVisible: false,
     setHelpVisible: vi.fn(),
     padding: 38,
@@ -403,7 +407,11 @@ describe('SettingsModal', () => {
     
     render(<SettingsModal />);
     
-    const checkbox = screen.getByRole('checkbox');
+    const checkboxes = screen.getAllByRole('checkbox');
+    const checkbox = checkboxes.find(cb => {
+      const container = cb.closest('.switch-container');
+      return container && container.textContent?.includes('Watermark');
+    })!;
     fireEvent.click(checkbox);
     
     expect(mockContext.setWatermarkEnabled).toHaveBeenCalled();
