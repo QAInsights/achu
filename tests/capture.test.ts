@@ -44,7 +44,8 @@ import {
   cleanupCaptureModule,
   getRegisteredShortcut,
   getAutoImportEnabled,
-  setIgnoreNextClipboardImage
+  setIgnoreNextClipboardImage,
+  getIsCaptureInitiated
 } from '../src/main/capture';
 
 describe('Capture Main Module', () => {
@@ -148,5 +149,52 @@ describe('Capture Main Module', () => {
     expect(getAutoImportEnabled()).toBe(false);
     expect(globalShortcut.register).toHaveBeenCalledWith('PrintScreen', expect.any(Function));
     expect(getRegisteredShortcut()).toBe('PrintScreen');
+  });
+
+  it('disables auto-import on focus if global shortcut is Disabled', () => {
+    const mockSettings = {
+      windowBounds: { width: 100, height: 100 },
+      lastConfig: {
+        padding: 10, rounded: 10, shadow: 10, shadowColor: 'rgba(0,0,0,0.5)', shadowEnabled: true,
+        inset: 0, insetColor: '', border: 0, borderColor: '', scale: 1, backgroundType: 'color' as const,
+        backgroundValue: '', aspectRatio: 'Auto', canvasWidth: 100, canvasHeight: 100, paddingMode: 'fit' as const,
+        chromeStyle: 'mac' as const, watermarkEnabled: false, watermarkText: '', position: '',
+        autoImportCaptured: true,
+        captureShortcut: 'Disabled',
+      },
+      presets: [],
+    };
+
+    updateCaptureConfigurations(mockSettings, mockWindow);
+    expect(getAutoImportEnabled()).toBe(false);
+    expect(globalShortcut.register).not.toHaveBeenCalled();
+    expect(getRegisteredShortcut()).toBeNull();
+  });
+
+  it('sets isCaptureInitiated flag on triggering capture and resets on focus/cleanup', () => {
+    expect(getIsCaptureInitiated()).toBe(false);
+    triggerOSScreenCapture();
+    expect(getIsCaptureInitiated()).toBe(true);
+
+    cleanupCaptureModule();
+    expect(getIsCaptureInitiated()).toBe(false);
+
+    // Test reset on focus
+    triggerOSScreenCapture();
+    expect(getIsCaptureInitiated()).toBe(true);
+
+    let focusCallback: Function = () => {};
+    mockWindow.on.mockImplementation((event: string, callback: Function) => {
+      if (event === 'focus') {
+        focusCallback = callback;
+      }
+    });
+
+    setupFocusCheck(mockWindow);
+    expect(focusCallback).toBeDefined();
+
+    // Trigger focus callback
+    focusCallback();
+    expect(getIsCaptureInitiated()).toBe(false);
   });
 });

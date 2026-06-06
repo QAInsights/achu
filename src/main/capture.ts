@@ -7,6 +7,7 @@ let ignoreBuffer: Buffer | null = null;
 let registeredShortcut: string | null = null;
 let autoImportEnabled = true;
 let isFocusCheckSetup = false;
+let isCaptureInitiated = false;
 
 // Set the buffer that should be ignored (copied by Achu itself)
 export function setIgnoreNextClipboardImage(buffer: Buffer) {
@@ -15,6 +16,7 @@ export function setIgnoreNextClipboardImage(buffer: Buffer) {
 
 // Trigger OS native screen capture
 export function triggerOSScreenCapture() {
+  isCaptureInitiated = true;
   // Capture current clipboard image buffer BEFORE screenshot starts to compare with later
   const currentImage = clipboard.readImage();
   if (!currentImage.isEmpty()) {
@@ -79,8 +81,9 @@ export function setupFocusCheck(window: BrowserWindow) {
 
   // Listen for focus event on main window
   window.on('focus', () => {
-    if (autoImportEnabled) {
+    if (autoImportEnabled || isCaptureInitiated) {
       checkClipboardAndImport(window);
+      isCaptureInitiated = false;
     }
   });
 }
@@ -88,10 +91,10 @@ export function setupFocusCheck(window: BrowserWindow) {
 // Update shortcut and monitoring config
 export function updateCaptureConfigurations(settings: AppSettings, window: BrowserWindow | null) {
   if (window) {}
-  // Update auto-import config
-  autoImportEnabled = settings.lastConfig?.autoImportCaptured ?? true;
-
   const newShortcut = settings.lastConfig?.captureShortcut ?? 'PrintScreen';
+
+  // Update auto-import config
+  autoImportEnabled = (settings.lastConfig?.autoImportCaptured ?? true) && (newShortcut !== 'Disabled');
 
   // If shortcut changed, unregister old one and register new one
   if (registeredShortcut !== newShortcut) {
@@ -130,6 +133,7 @@ export function cleanupCaptureModule() {
   lastCapturedBuffer = null;
   ignoreBuffer = null;
   isFocusCheckSetup = false;
+  isCaptureInitiated = false;
 }
 
 export function getRegisteredShortcut() {
@@ -138,4 +142,8 @@ export function getRegisteredShortcut() {
 
 export function getAutoImportEnabled() {
   return autoImportEnabled;
+}
+
+export function getIsCaptureInitiated() {
+  return isCaptureInitiated;
 }
