@@ -1,6 +1,6 @@
 export interface Annotation {
   id: string;
-  type: 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji';
+  type: 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji' | 'image';
   x: number;          // 0 to 1 relative to screenshot width
   y: number;          // 0 to 1 relative to screenshot height
   w: number;          // width fraction
@@ -15,6 +15,7 @@ export interface Annotation {
   fontSize?: number;
   fontBold?: boolean;
   fontItalic?: boolean;
+  imageSrc?: string;
 }
 
 export interface RedactionItem {
@@ -1121,6 +1122,11 @@ function drawAnnotationsOnCanvas(
         else ctx.lineTo(ptX, ptY);
       });
       ctx.stroke();
+    } else if (ann.type === 'image' && ann.imageSrc) {
+      const img = getBgImage(ann.imageSrc);
+      if (img && img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, -halfW, -halfH, w, h);
+      }
     }
     ctx.restore();
   });

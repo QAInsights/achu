@@ -215,11 +215,14 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
       const buffer = Buffer.from(base64Content, 'base64');
       
       const nativeImage = require('electron').nativeImage.createFromBuffer(buffer);
-
-      // Instruct our capture module to ignore this specific image
-      setIgnoreNextClipboardImage(nativeImage.getBitmap());
-
       clipboard.writeImage(nativeImage);
+
+      // Read back immediately to get the exact OS-converted bitmap bytes
+      const readBackImage = clipboard.readImage();
+      if (!readBackImage.isEmpty()) {
+        setIgnoreNextClipboardImage(readBackImage.getBitmap());
+      }
+      
       return true;
     } catch (error) {
       console.error('Failed to copy image to clipboard:', error);

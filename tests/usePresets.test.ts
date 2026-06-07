@@ -59,6 +59,7 @@ describe('usePresets', () => {
     backgroundType?: 'gradient' | 'color' | 'blur' | 'mesh';
     backgroundValue?: string;
     setRedactions?: ReturnType<typeof vi.fn>;
+    handlePasteImage?: ReturnType<typeof vi.fn>;
   }) =>
     renderHook(() =>
       usePresets(
@@ -79,6 +80,7 @@ describe('usePresets', () => {
         mockSetLightRaysCount,
         mockSetLightRaysSourceX,
         mockSetLightRaysSourceY,
+        overrides?.handlePasteImage
       )
     );
 
@@ -458,6 +460,21 @@ describe('usePresets', () => {
       });
 
       expect(mockAlert).toHaveBeenCalledWith('No image found in clipboard.');
+    });
+
+    it('calls handlePasteImage when provided', async () => {
+      const mockReadClipboard = vi.fn().mockResolvedValue('data:image/png;base64,clipboard-test');
+      vi.stubGlobal('snapFrameAPI', { readImageFromClipboard: mockReadClipboard });
+      const mockHandlePasteImage = vi.fn();
+
+      const { result } = render({ handlePasteImage: mockHandlePasteImage });
+      await act(async () => {
+        await result.current.pasteFromClipboard();
+      });
+
+      expect(mockReadClipboard).toHaveBeenCalled();
+      expect(mockHandlePasteImage).toHaveBeenCalledWith('data:image/png;base64,clipboard-test');
+      expect(mockSetImageSrc).not.toHaveBeenCalled();
     });
   });
 });

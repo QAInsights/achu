@@ -18,7 +18,8 @@ export function usePresets(
   setLightRaysAngle?: React.Dispatch<React.SetStateAction<number>>,
   setLightRaysCount?: React.Dispatch<React.SetStateAction<number>>,
   setLightRaysSourceX?: React.Dispatch<React.SetStateAction<number>>,
-  setLightRaysSourceY?: React.Dispatch<React.SetStateAction<number>>
+  setLightRaysSourceY?: React.Dispatch<React.SetStateAction<number>>,
+  handlePasteImage?: (src: string) => void
 ) {
   const [customPresets, setCustomPresets] = useState<any[]>([]);
   const [newPresetName, setNewPresetName] = useState<string>('');
@@ -60,8 +61,15 @@ export function usePresets(
   const pasteFromClipboard = async () => {
     if (window.snapFrameAPI) {
       const dataUrl = await window.snapFrameAPI.readImageFromClipboard();
-      if (dataUrl) onImageLoaded(dataUrl);
-      else alert('No image found in clipboard.');
+      if (dataUrl) {
+        if (handlePasteImage) {
+          handlePasteImage(dataUrl);
+        } else {
+          onImageLoaded(dataUrl);
+        }
+      } else {
+        alert('No image found in clipboard.');
+      }
     }
   };
 

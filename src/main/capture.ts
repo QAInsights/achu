@@ -44,6 +44,14 @@ export function triggerOSScreenCapture() {
 export function checkClipboardAndImport(window: BrowserWindow) {
   if (window.isDestroyed()) return;
 
+  if (!isCaptureInitiated) {
+    const formats = clipboard.availableFormats();
+    const hasTextOrHtml = formats.includes('text/html') || formats.includes('text/plain') || formats.includes('text/uri-list');
+    if (hasTextOrHtml) {
+      return;
+    }
+  }
+
   const image = clipboard.readImage();
   if (image.isEmpty()) {
     lastCapturedBuffer = null;
@@ -65,7 +73,7 @@ export function checkClipboardAndImport(window: BrowserWindow) {
     const dataUrl = image.toDataURL();
 
     // Send to renderer
-    window.webContents.send('hotkey:triggered', dataUrl);
+    window.webContents.send('hotkey:triggered', dataUrl, isCaptureInitiated);
 
     // Focus and restore window
     if (!window.isVisible()) window.show();

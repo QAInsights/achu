@@ -16,6 +16,7 @@ vi.mock('electron', () => {
     clipboard: {
       readImage: vi.fn().mockReturnValue(mockImage),
       writeImage: vi.fn(),
+      availableFormats: vi.fn().mockReturnValue([]),
     },
     globalShortcut: {
       register: vi.fn().mockReturnValue(true),
@@ -95,7 +96,8 @@ describe('Capture Main Module', () => {
     checkClipboardAndImport(mockWindow);
     expect(mockWindow.webContents.send).toHaveBeenCalledWith(
       'hotkey:triggered',
-      'data:image/png;base64,mock-data'
+      'data:image/png;base64,mock-data',
+      false
     );
   });
 
@@ -196,5 +198,19 @@ describe('Capture Main Module', () => {
     // Trigger focus callback
     focusCallback();
     expect(getIsCaptureInitiated()).toBe(false);
+  });
+
+  it('does not import if clipboard contains text/HTML formats and capture was not initiated', () => {
+    (clipboard.availableFormats as any).mockReturnValue(['text/html', 'image/png']);
+    checkClipboardAndImport(mockWindow);
+    expect(mockWindow.webContents.send).not.toHaveBeenCalled();
+  });
+
+  it('imports even if clipboard contains text/HTML formats if capture was explicitly initiated', () => {
+    (clipboard.availableFormats as any).mockReturnValue(['text/html', 'image/png']);
+    triggerOSScreenCapture();
+    mockImage.getBitmap.mockReturnValue(Buffer.from('new-captured-bitmap'));
+    checkClipboardAndImport(mockWindow);
+    expect(mockWindow.webContents.send).toHaveBeenCalled();
   });
 });

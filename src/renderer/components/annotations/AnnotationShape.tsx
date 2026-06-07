@@ -217,5 +217,18 @@ export default function AnnotationShape({
     );
   }
 
+  if (ann.type === 'image' && ann.imageSrc) {
+    return (
+      <image
+        href={ann.imageSrc}
+        x={-rectW / 2}
+        y={-rectH / 2}
+        width={rectW}
+        height={rectH}
+        preserveAspectRatio="none"
+      />
+    );
+  }
+
   return null;
 }

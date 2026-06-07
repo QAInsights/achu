@@ -524,6 +524,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     pushHistory, handleUndo, handleRedo
   } = useHistory(applyConfig);
 
+  const handlePasteImageRef = useRef<(src: string) => void>(() => {});
+
   // 2. Presets Hook
   const {
     customPresets, setCustomPresets,
@@ -536,8 +538,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     backgroundType, setBackgroundType, backgroundValue, setBackgroundValue,
     getCurrentConfig, pushHistory, setRedactions,
     setBgGrain, setLightRaysStyle, setLightRaysOpacity,
-    setLightRaysAngle, setLightRaysCount, setLightRaysSourceX, setLightRaysSourceY
+    setLightRaysAngle, setLightRaysCount, setLightRaysSourceX, setLightRaysSourceY,
+    (src) => handlePasteImageRef.current(src)
   );
+
+  const handlePasteImage = useCallback((dataUrl: string) => {
+    if (imageSrc) {
+      const img = new Image();
+      img.src = dataUrl;
+      img.onload = () => {
+        const mainImg = new Image();
+        mainImg.src = imageSrc;
+        mainImg.onload = () => {
+          const mainW = mainImg.naturalWidth || 800;
+          const mainH = mainImg.naturalHeight || 600;
+          
+          const relativeW = 0.4;
+          const relativeH = (relativeW * mainW * img.naturalHeight) / (img.naturalWidth * mainH);
+          
+          const annX = 0.5 - relativeW / 2;
+          const annY = 0.5 - relativeH / 2;
+          
+          const newAnn: Annotation = {
+            id: `ann-${Date.now()}`,
+            type: 'image',
+            x: annX,
+            y: annY,
+            w: relativeW,
+            h: relativeH,
+            color: '#ffffff',
+            strokeWidth: 2,
+            rotation: 0,
+            imageSrc: dataUrl,
+          };
+          
+          const updated = [...annotations, newAnn];
+          setAnnotations(updated);
+          pushHistory({
+            ...getCurrentConfig(),
+            annotations: updated,
+          });
+        };
+      };
+    } else {
+      onImageLoaded(dataUrl);
+    }
+  }, [imageSrc, annotations, onImageLoaded, pushHistory, getCurrentConfig]);
+
+  useEffect(() => {
+    handlePasteImageRef.current = handlePasteImage;
+  }, [handlePasteImage]);
 
   // 3. Export Hook
   const {
@@ -879,6 +929,18 @@ Severity rules:
         }
       }
 
+      if (config.annotations) {
+        config.annotations.forEach((ann) => {
+          if (ann.type === 'image' && ann.imageSrc) {
+            pending++;
+            preloadBgImage(ann.imageSrc, () => {
+              pending--;
+              checkDone();
+            });
+          }
+        });
+      }
+
       checkDone();
     });
   };
@@ -1180,7 +1242,7 @@ Severity rules:
     const handlePaste = async (e: ClipboardEvent) => {
       if (window.snapFrameAPI) {
         const dataUrl = await window.snapFrameAPI.readImageFromClipboard();
-        if (dataUrl) { onImageLoadedRef.current(dataUrl); return; }
+        if (dataUrl) { handlePasteImageRef.current(dataUrl); return; }
       }
       const items = e.clipboardData?.items;
       if (items) {
@@ -1190,7 +1252,7 @@ Severity rules:
             if (blob) {
               const reader = new FileReader();
               reader.onload = (event) => {
-                if (event.target?.result) onImageLoadedRef.current(event.target.result as string);
+                if (event.target?.result) handlePasteImageRef.current(event.target.result as string);
               };
               reader.readAsDataURL(blob); break;
             }

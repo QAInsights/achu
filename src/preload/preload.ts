@@ -41,8 +41,8 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
     ipcRenderer.invoke('llm:generate-issue', payload),
 
   // Event listener for global hotkey
-  onGlobalHotkeyTriggered: (callback: (imageUrl: string) => void) => {
-    const subscription = (_event: any, imageUrl: string) => callback(imageUrl);
+  onGlobalHotkeyTriggered: (callback: (imageUrl: string, isCaptureInitiated?: boolean) => void) => {
+    const subscription = (_event: any, imageUrl: string, isCaptureInitiated?: boolean) => callback(imageUrl, isCaptureInitiated);
     ipcRenderer.on('hotkey:triggered', subscription);
     return () => {
       ipcRenderer.removeListener('hotkey:triggered', subscription);

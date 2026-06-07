@@ -471,6 +471,125 @@ describe('AppContext', () => {
       addSpy.mockRestore();
       removeSpy.mockRestore();
     });
+
+    it('calls onImageLoaded when imageSrc is null', async () => {
+      let context: any;
+      function Consumer() {
+        context = useAppContext();
+        return <div>test</div>;
+      }
+
+      vi.stubGlobal('snapFrameAPI', {
+        readImageFromClipboard: vi.fn().mockResolvedValue('data:image/png;base64,pastedimage'),
+        getSettings: vi.fn().mockResolvedValue({}),
+        saveSettings: vi.fn().mockResolvedValue(undefined),
+        onGlobalHotkeyTriggered: vi.fn(() => vi.fn()),
+      });
+
+      render(
+        <AppProvider>
+          <Consumer />
+        </AppProvider>
+      );
+
+      await act(async () => {
+        window.dispatchEvent(new Event('paste'));
+      });
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(mockUsePresets.onImageLoaded).toHaveBeenCalledWith('data:image/png;base64,pastedimage');
+    });
+
+    it('pastes onto existing canvas when imageSrc is present', async () => {
+      const originalImage = global.Image;
+      global.Image = class {
+        onload: (() => void) | null = null;
+        naturalWidth = 1000;
+        naturalHeight = 800;
+        set src(_: string) {
+          setTimeout(() => {
+            if (this.onload) this.onload();
+          }, 0);
+        }
+      } as any;
+
+      let context: any;
+      function Consumer() {
+        context = useAppContext();
+        return (
+          <div>
+            <span data-testid="annotations-count">{context.annotations.length}</span>
+          </div>
+        );
+      }
+
+      vi.stubGlobal('snapFrameAPI', {
+        readImageFromClipboard: vi.fn().mockResolvedValue('data:image/png;base64,pastedimage'),
+        getSettings: vi.fn().mockResolvedValue({}),
+        saveSettings: vi.fn().mockResolvedValue(undefined),
+        onGlobalHotkeyTriggered: vi.fn(() => vi.fn()),
+      });
+
+      render(
+        <AppProvider>
+          <Consumer />
+        </AppProvider>
+      );
+
+      await act(async () => {
+        context.setImageSrc('data:image/png;base64,existing');
+        context.setAnnotations([]);
+      });
+
+      await act(async () => {
+        window.dispatchEvent(new Event('paste'));
+      });
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(context.annotations).toHaveLength(1);
+      expect(context.annotations[0].type).toBe('image');
+      expect(context.annotations[0].imageSrc).toBe('data:image/png;base64,pastedimage');
+
+      global.Image = originalImage;
+    });
+
+    it('creates a new canvas when global hotkey is triggered', async () => {
+      let context: any;
+      let hotkeyCallback: ((src: string) => void) | null = null;
+      function Consumer() {
+        context = useAppContext();
+        return <div>test</div>;
+      }
+
+      vi.stubGlobal('snapFrameAPI', {
+        getSettings: vi.fn().mockResolvedValue({}),
+        saveSettings: vi.fn().mockResolvedValue(undefined),
+        onGlobalHotkeyTriggered: vi.fn((cb) => {
+          hotkeyCallback = cb;
+          return vi.fn();
+        }),
+      });
+
+      render(
+        <AppProvider>
+          <Consumer />
+        </AppProvider>
+      );
+
+      await act(async () => {
+        context.setImageSrc('data:image/png;base64,existing');
+        context.setAnnotations([]);
+      });
+
+      await act(async () => {
+        if (hotkeyCallback) {
+          hotkeyCallback('data:image/png;base64,capturedimage');
+        }
+      });
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(mockUsePresets.onImageLoaded).toHaveBeenCalledWith('data:image/png;base64,capturedimage');
+    });
   });
 
   describe('Settings sync effect', () => {
