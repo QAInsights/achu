@@ -40,6 +40,7 @@ export default function AnnotationsLayer({
     setAnnotationBold,
     annotationItalic,
     setAnnotationItalic,
+    previewFont,
   } = useAppContext();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -161,6 +162,7 @@ export default function AnnotationsLayer({
                         h={h}
                         strokeW={strokeW}
                         editingTextId={editingTextId}
+                        previewFont={ann.id === selectedId ? previewFont : null}
                       />
                     )}
                   </g>
@@ -175,6 +177,7 @@ export default function AnnotationsLayer({
                   h={h}
                   strokeW={strokeW}
                   editingTextId={editingTextId}
+                  previewFont={ann.id === selectedId ? previewFont : null}
                 />
 
                 {isSelected && (

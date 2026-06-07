@@ -10,6 +10,7 @@ interface AnnotationShapeProps {
   h: number;
   strokeW: number;
   editingTextId: string | null;
+  previewFont?: string | null;
 }
 
 export default function AnnotationShape({
@@ -20,6 +21,7 @@ export default function AnnotationShape({
   h,
   strokeW,
   editingTextId,
+  previewFont,
 }: AnnotationShapeProps) {
   if (ann.type === 'rect') {
     return (
@@ -166,7 +168,7 @@ export default function AnnotationShape({
         textAnchor="middle"
         dominantBaseline="middle"
         style={{
-          fontFamily: ann.fontFamily || 'var(--font-sans)',
+          fontFamily: previewFont || ann.fontFamily || 'var(--font-sans)',
           fontWeight: weight,
           fontStyle: style,
           paintOrder: 'stroke',

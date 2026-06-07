@@ -22,6 +22,7 @@ import {
 import { useAppContext } from '../AppContext';
 import { toggleTheme } from '../utils/uiUtils';
 import Tooltip from './Tooltip';
+import FontSelector from './FontSelector';
 import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 
 export default function WorkspaceToolbar() {
@@ -205,30 +206,16 @@ export default function WorkspaceToolbar() {
           <div className="toolbar-divider" />
           <div className="toolbar-group">
             <Tooltip position="right">
-              <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>
-                <span className="toolbar-control-label">Font</span>
-                <select
+                <FontSelector
                   value={annotationFont}
-                  onChange={(e) => {
-                    setAnnotationFont(e.target.value);
-                    pushHistory({ ...getCurrentConfig(), annotationFont: e.target.value });
+                  onChange={(val) => {
+                    setAnnotationFont(val);
+                    pushHistory({ ...getCurrentConfig(), annotationFont: val });
                   }}
-                  style={{
-                    fontSize: '0.75rem',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '4px',
-                    color: 'var(--text-primary)',
-                    padding: '2px 4px',
-                    width: '100px',
-                    outline: 'none',
-                  }}
-                >
-                  {systemFonts.map((f) => (
-                    <option key={f} value={f}>{f}</option>
-                  ))}
-                </select>
-              </div>
+                  systemFonts={systemFonts}
+                  triggerWidth="110px"
+                  styleType="toolbar"
+                />
             </Tooltip>
             <Tooltip position="right">
               <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>

@@ -1,6 +1,7 @@
 import { useAppContext } from '../AppContext';
 import InspectorSection from './InspectorSection';
 import { Sparkles } from 'lucide-react';
+import FontSelector from './FontSelector';
 
 export default function ExtraSettings() {
   const {
@@ -120,17 +121,15 @@ export default function ExtraSettings() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
             <span className="control-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Font Family</span>
-            <select
+            <FontSelector
               value={annotationFont}
-              onChange={(e) => {
-                setAnnotationFont(e.target.value);
-                pushHistory({ ...getCurrentConfig(), annotationFont: e.target.value });
+              onChange={(val) => {
+                setAnnotationFont(val);
+                pushHistory({ ...getCurrentConfig(), annotationFont: val });
               }}
-            >
-              {systemFonts.map((f) => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-            </select>
+              systemFonts={systemFonts}
+              styleType="sidebar"
+            />
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

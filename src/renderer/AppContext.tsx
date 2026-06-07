@@ -73,6 +73,7 @@ interface AppContextType {
   annotationBold: boolean; setAnnotationBold: React.Dispatch<React.SetStateAction<boolean>>;
   annotationItalic: boolean; setAnnotationItalic: React.Dispatch<React.SetStateAction<boolean>>;
   systemFonts: string[]; setSystemFonts: React.Dispatch<React.SetStateAction<string[]>>;
+  previewFont: string | null; setPreviewFont: React.Dispatch<React.SetStateAction<string | null>>;
   position: string; setPosition: React.Dispatch<React.SetStateAction<string>>;
   activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'; setActiveTool: React.Dispatch<React.SetStateAction<'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'>>;
   arrowStyle: 'classic' | 'dashed' | 'tapered' | 'curved'; setArrowStyle: React.Dispatch<React.SetStateAction<'classic' | 'dashed' | 'tapered' | 'curved'>>;
@@ -266,6 +267,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [annotationBold, setAnnotationBold] = useState<boolean>(() => getUserDefault('annotationBold', true));
   const [annotationItalic, setAnnotationItalic] = useState<boolean>(() => getUserDefault('annotationItalic', false));
   const [systemFonts, setSystemFonts] = useState<string[]>(SYSTEM_FONT_FALLBACKS);
+  const [previewFont, setPreviewFont] = useState<string | null>(null);
   const [position, setPosition] = useState<string>('Middle center');
   const [activeTool, setActiveTool] = useState<'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'>('pointer');
   const [arrowStyle, setArrowStyle] = useState<'classic' | 'dashed' | 'tapered' | 'curved'>('classic');
@@ -1290,6 +1292,7 @@ Severity rules:
       watermarkFont, setWatermarkFont, watermarkBold, setWatermarkBold, watermarkItalic, setWatermarkItalic,
       annotationFont, setAnnotationFont, annotationFontSize, setAnnotationFontSize, annotationBold, setAnnotationBold, annotationItalic, setAnnotationItalic,
       systemFonts, setSystemFonts,
+      previewFont, setPreviewFont,
       activeTool, setActiveTool, arrowStyle, setArrowStyle, annotations, setAnnotations, annotationColor, setAnnotationColor,
       annotationStrokeWidth, setAnnotationStrokeWidth, promptConfig, setPromptConfig, sidebarVisible, setSidebarVisible,
       settingsVisible, setSettingsVisible,

@@ -47,52 +47,47 @@ describe('WorkspaceFooter & ShareMenu', () => {
 
     // Popover should be visible
     expect(screen.getByTestId('share-menu-popover')).toBeInTheDocument();
-    expect(screen.getByText('Copy Image')).toBeInTheDocument();
-    expect(screen.getByText('Save File')).toBeInTheDocument();
-    expect(screen.getByText('Share on X')).toBeInTheDocument();
-    expect(screen.getByText('Share on WhatsApp')).toBeInTheDocument();
+    expect(screen.getByText('Copy & post on X')).toBeInTheDocument();
+    expect(screen.getByText('Copy & send on WhatsApp')).toBeInTheDocument();
+    expect(screen.getByText('Copy & share on LinkedIn')).toBeInTheDocument();
 
     // Click Share button again
     fireEvent.click(shareBtn);
     expect(screen.queryByTestId('share-menu-popover')).not.toBeInTheDocument();
   });
 
-  it('triggers copyBeautifiedImage when Copy Image is clicked', async () => {
+  it('triggers copyBeautifiedImage when Copy is clicked', async () => {
     render(<WorkspaceFooter />);
-    fireEvent.click(screen.getByText('Share'));
-    fireEvent.click(screen.getByText('Copy Image'));
+    fireEvent.click(screen.getByText('Copy'));
 
     expect(mockContext.copyBeautifiedImage).toHaveBeenCalled();
-    expect(screen.queryByTestId('share-menu-popover')).not.toBeInTheDocument();
   });
 
-  it('triggers triggerExport when Save File is clicked', () => {
+  it('triggers triggerExport when Export is clicked', () => {
     render(<WorkspaceFooter />);
-    fireEvent.click(screen.getByText('Share'));
-    fireEvent.click(screen.getByText('Save File'));
+    fireEvent.click(screen.getByText('Export'));
 
     expect(mockContext.triggerExport).toHaveBeenCalled();
-    expect(screen.queryByTestId('share-menu-popover')).not.toBeInTheDocument();
   });
 
-  it('copies image and opens X/Twitter intent URL when Share on X is clicked', async () => {
+  it('copies image and opens X/Twitter intent URL when Copy & post on X is clicked', async () => {
     render(<WorkspaceFooter />);
     fireEvent.click(screen.getByText('Share'));
-    fireEvent.click(screen.getByText('Share on X'));
+    fireEvent.click(screen.getByText('Copy & post on X'));
 
     await waitFor(() => {
       expect(mockContext.copyBeautifiedImage).toHaveBeenCalled();
       expect(window.snapFrameAPI.openURL).toHaveBeenCalledWith(
-        expect.stringContaining('twitter.com/intent/tweet')
+        expect.stringContaining('x.com/intent/post')
       );
     });
     expect(screen.queryByTestId('share-menu-popover')).not.toBeInTheDocument();
   });
 
-  it('copies image and opens WhatsApp intent URL when Share on WhatsApp is clicked', async () => {
+  it('copies image and opens WhatsApp intent URL when Copy & send on WhatsApp is clicked', async () => {
     render(<WorkspaceFooter />);
     fireEvent.click(screen.getByText('Share'));
-    fireEvent.click(screen.getByText('Share on WhatsApp'));
+    fireEvent.click(screen.getByText('Copy & send on WhatsApp'));
 
     await waitFor(() => {
       expect(mockContext.copyBeautifiedImage).toHaveBeenCalled();
