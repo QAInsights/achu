@@ -97,24 +97,33 @@ export function useExport(
     checkDone();
   };
 
-  const copyBeautifiedImage = async () => {
+  const copyBeautifiedImage = async (): Promise<void> => {
     if (!noImageMode && !imageSrc) return;
-    loadImages(imageSrc, getCurrentConfig().backgroundValue, (img) => {
-      const canvas = document.createElement('canvas');
-      renderCanvas(canvas, img, getCurrentConfig());
-      const base64Data = canvas.toDataURL('image/png');
-      
-      if (!checkOgSizeLimit(base64Data)) return;
-
-      if (window.snapFrameAPI) {
-        window.snapFrameAPI.copyImageToClipboard(base64Data);
-      } else {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    return new Promise<void>((resolve, reject) => {
+      loadImages(imageSrc, getCurrentConfig().backgroundValue, async (img) => {
+        try {
+          const canvas = document.createElement('canvas');
+          renderCanvas(canvas, img, getCurrentConfig());
+          const base64Data = canvas.toDataURL('image/png');
+          
+          if (!checkOgSizeLimit(base64Data)) {
+            resolve();
+            return;
           }
-        }, 'image/png');
-      }
+
+          if (window.snapFrameAPI) {
+            await window.snapFrameAPI.copyImageToClipboard(base64Data);
+          } else {
+            const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
+            if (blob) {
+              await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            }
+          }
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      });
     });
   };
 

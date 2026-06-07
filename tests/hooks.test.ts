@@ -488,6 +488,13 @@ describe('useExport', () => {
       backgroundValue: 'linear-gradient(...)',
     }));
     vi.stubGlobal('snapFrameAPI', undefined);
+
+    // jsdom doesn't fire Image onload for data URLs — stub it to fire synchronously
+    vi.stubGlobal('Image', class {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_: string) { setTimeout(() => this.onload?.(), 0); }
+    });
   });
 
   it('initializes with PNG format and quality 90', () => {
@@ -599,15 +606,20 @@ describe('useExport', () => {
   });
 
   it('copies to clipboard without snapFrameAPI', async () => {
+    // jsdom's canvas.toBlob never fires its callback — mock it to resolve immediately with null
+    const origToBlob = HTMLCanvasElement.prototype.toBlob;
+    HTMLCanvasElement.prototype.toBlob = (cb: BlobCallback) => cb(null);
+
     const { result } = renderHook(() =>
-      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig)
+      useExport(null, true, mockGetCurrentConfig)
     );
-    
+
     await act(async () => {
       await result.current.copyBeautifiedImage();
     });
-    
+
     expect(result.current).toBeDefined();
+    HTMLCanvasElement.prototype.toBlob = origToBlob;
   });
 
   it('does not export when no image and not in no-image mode', () => {
