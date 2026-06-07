@@ -235,4 +235,14 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
     if (image.isEmpty()) return null;
     return image.toDataURL();
   });
+
+  ipcMain.handle('clipboard:copy-text', (_event, text: string) => {
+    try {
+      clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      console.error('Failed to copy text to clipboard:', error);
+      return false;
+    }
+  });
 }

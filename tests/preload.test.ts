@@ -36,6 +36,7 @@ describe('Preload Script', () => {
     expect(api).toHaveProperty('saveFile');
     expect(api).toHaveProperty('copyImageToClipboard');
     expect(api).toHaveProperty('readImageFromClipboard');
+    expect(api).toHaveProperty('copyTextToClipboard');
     expect(api).toHaveProperty('openURL');
     expect(api).toHaveProperty('onGlobalHotkeyTriggered');
     expect(api).toHaveProperty('versions');
@@ -50,6 +51,7 @@ describe('Preload Script', () => {
     expect(typeof api.saveFile).toBe('function');
     expect(typeof api.copyImageToClipboard).toBe('function');
     expect(typeof api.readImageFromClipboard).toBe('function');
+    expect(typeof api.copyTextToClipboard).toBe('function');
     expect(typeof api.openURL).toBe('function');
     expect(typeof api.onGlobalHotkeyTriggered).toBe('function');
     expect(typeof api.checkForUpdates).toBe('function');
@@ -109,6 +111,21 @@ describe('Preload Script', () => {
     const api = getApi();
     api.readImageFromClipboard();
     expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('clipboard:read-image');
+  });
+
+  it('copyTextToClipboard calls ipcRenderer.invoke with correct channel and text', () => {
+    const api = getApi();
+    api.copyTextToClipboard('## Bug Report\nSome markdown content');
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
+      'clipboard:copy-text',
+      '## Bug Report\nSome markdown content'
+    );
+  });
+
+  it('copyTextToClipboard forwards empty string to ipcRenderer', () => {
+    const api = getApi();
+    api.copyTextToClipboard('');
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('clipboard:copy-text', '');
   });
 
   it('openURL calls ipcRenderer.send with url', () => {

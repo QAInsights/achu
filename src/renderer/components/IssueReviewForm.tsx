@@ -69,10 +69,17 @@ export default function IssueReviewForm() {
     }
   };
 
-  const handleCopyMarkdown = () => {
-    navigator.clipboard.writeText(issuePayload.markdownBody);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
+  const handleCopyMarkdown = async () => {
+    try {
+      const success = await window.snapFrameAPI?.copyTextToClipboard?.(issuePayload.markdownBody);
+      if (!success) throw new Error('Clipboard write returned false');
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch {
+      await navigator.clipboard.writeText(issuePayload.markdownBody);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
   };
 
   const updateField = (updater: (p: GitHubIssuePayload) => GitHubIssuePayload) => {
