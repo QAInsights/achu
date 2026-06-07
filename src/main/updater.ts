@@ -6,6 +6,31 @@ import { Readable } from 'stream';
 const isDev = !app.isPackaged;
 
 /**
+ * Reads the PE header of a Windows executable to determine its target architecture.
+ */
+function getExeArch(filePath: string): 'x64' | 'arm64' | 'x86' | 'unknown' {
+  try {
+    const mzBuf = Buffer.alloc(64);
+    const fd = fs.openSync(filePath, 'r');
+    fs.readSync(fd, mzBuf, 0, 64, 0);
+    fs.closeSync(fd);
+    if (mzBuf[0] !== 0x4D || mzBuf[1] !== 0x5A) return 'unknown';
+    const peOffset = mzBuf.readUInt32LE(60);
+    const peBuf = Buffer.alloc(6);
+    const fd2 = fs.openSync(filePath, 'r');
+    fs.readSync(fd2, peBuf, 0, 6, peOffset);
+    fs.closeSync(fd2);
+    const machine = peBuf.readUInt16LE(4);
+    if (machine === 0x8664) return 'x64';
+    if (machine === 0xAA64) return 'arm64';
+    if (machine === 0x014C) return 'x86';
+    return 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+/**
  * Compares two CalVer or SemVer strings segment by segment.
  * Returns true if latest version is newer than current version.
  */
@@ -51,10 +76,32 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
         
         // Match asset by platform
         if (process.platform === 'win32') {
-          // Portable Windows exe
-          const exeAsset = assets.find((asset: any) => asset.name.endsWith('.exe'));
+          const exeAssets = assets.filter((asset: any) => asset.name.endsWith('.exe'));
+          console.log(`[Updater] Available exe assets: ${exeAssets.map((a: any) => a.name).join(', ')}`);
+          const arch = process.arch;
+          let exeAsset;
+          // Primary: match explicit arch segment e.g. achu-x64-26.6.5.exe / achu-arm64-26.6.5.exe
+          exeAsset = exeAssets.find((asset: any) =>
+            asset.name.toLowerCase().includes(`-${arch}-`)
+          );
+          // Fallback for older releases: arm64 has 'arm64' anywhere; x64 has no 'arm64'
+          if (!exeAsset) {
+            if (arch === 'arm64') {
+              exeAsset = exeAssets.find((asset: any) =>
+                asset.name.toLowerCase().includes('arm64')
+              );
+            } else {
+              exeAsset = exeAssets.find((asset: any) =>
+                !asset.name.toLowerCase().includes('arm64')
+              );
+            }
+          }
+          if (!exeAsset && exeAssets.length > 0) {
+            exeAsset = exeAssets[0];
+          }
           if (exeAsset) {
             downloadUrl = exeAsset.browser_download_url;
+            console.log(`[Updater] Selected asset: ${exeAsset.name} for arch=${process.arch}`);
           }
         } else if (process.platform === 'darwin') {
           // macOS dmg or zip
@@ -141,30 +188,61 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
         
         const execPath = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
         const batPath = path.join(app.getPath('temp'), 'achu-update.bat');
-        
+        const logPath = path.join(app.getPath('temp'), 'achu-update.log');
+
+        const tempExists = fs.existsSync(tempPath);
+        const tempSize = tempExists ? fs.statSync(tempPath).size : 0;
+        const downloadedArch = tempExists ? getExeArch(tempPath) : 'unknown';
+        console.log(`[Updater] execPath        = ${execPath}`);
+        console.log(`[Updater] tempPath        = ${tempPath}`);
+        console.log(`[Updater] tempFile exists = ${tempExists} (${tempSize} bytes)`);
+        console.log(`[Updater] downloaded arch = ${downloadedArch} (process.arch=${process.arch})`);
+        console.log(`[Updater] logPath         = ${logPath}`);
+
+        if (downloadedArch !== 'unknown' && downloadedArch !== process.arch) {
+          throw new Error(`Downloaded exe is ${downloadedArch} but this system is ${process.arch}. Cannot install incompatible update.`);
+        }
+
         // Write standard Windows updater batch script with retry limit to prevent infinite loop
         const batContent = `@echo off
+set LOGFILE=${logPath}
+echo [%DATE% %TIME%] Starting updater >> "%LOGFILE%"
+echo [%DATE% %TIME%] tempPath=${tempPath} >> "%LOGFILE%"
+echo [%DATE% %TIME%] execPath=${execPath} >> "%LOGFILE%"
 set count=0
 :wait
 timeout /t 1 /nobreak >nul
+echo [%DATE% %TIME%] Attempt %count%: moving file >> "%LOGFILE%"
 move /y "${tempPath}" "${execPath}"
 if not errorlevel 1 goto success
+echo [%DATE% %TIME%] Move failed (errorlevel=%ERRORLEVEL%), retrying >> "%LOGFILE%"
 set /a count=count+1
 if %count% LSS 15 goto wait
+echo [%DATE% %TIME%] All retries exhausted, giving up >> "%LOGFILE%"
+goto done
 :success
+echo [%DATE% %TIME%] Move succeeded >> "%LOGFILE%"
+powershell -Command "Unblock-File -LiteralPath '${execPath}'"
+echo [%DATE% %TIME%] Unblocked file, launching >> "%LOGFILE%"
 start "" "${execPath}"
+:done
 del "%~f0"
 `;
         
         fs.writeFileSync(batPath, batContent, 'utf-8');
-        
+
+        const vbsPath = path.join(app.getPath('temp'), 'achu-launcher.vbs');
+        const vbsContent = 'Set oShell = CreateObject("WScript.Shell")\r\noShell.Run "cmd.exe /c " & Chr(34) & WScript.Arguments(0) & Chr(34), 0, False\r\n';
+        fs.writeFileSync(vbsPath, vbsContent, 'utf-8');
+
         const { spawn } = require('child_process');
-        spawn('cmd.exe', ['/c', batPath], {
+        const child = spawn('wscript.exe', ['/nologo', vbsPath, batPath], {
           detached: true,
           stdio: 'ignore',
           windowsHide: true,
         });
-        
+        child.unref();
+
         app.quit();
         return { success: true };
       } else {
