@@ -103,7 +103,7 @@ describe('storageUtils - Extended', () => {
       expect(DEFAULT_SETTINGS.rounded).toBe(20);
       expect(DEFAULT_SETTINGS.shadow).toBe(30);
       expect(DEFAULT_SETTINGS.watermarkEnabled).toBe(false);
-      expect(DEFAULT_SETTINGS.watermarkText).toBe('achu');
+      expect(DEFAULT_SETTINGS.watermarkText).toBe('Made using achu.app');
       expect(DEFAULT_SETTINGS.watermarkSize).toBe(20);
       expect(DEFAULT_SETTINGS.watermarkPosition).toBe('middle');
       expect(DEFAULT_SETTINGS.watermarkOpacity).toBe(0.45);

@@ -14,6 +14,14 @@ export default function ExtraSettings() {
     watermarkSize, setWatermarkSize,
     watermarkPosition, setWatermarkPosition,
     watermarkOpacity, setWatermarkOpacity,
+    watermarkFont = 'sans-serif', setWatermarkFont,
+    watermarkBold = false, setWatermarkBold,
+    watermarkItalic = false, setWatermarkItalic,
+    annotationFont = 'sans-serif', setAnnotationFont,
+    annotationFontSize = 24, setAnnotationFontSize,
+    annotationBold = true, setAnnotationBold,
+    annotationItalic = false, setAnnotationItalic,
+    systemFonts = [],
     getCurrentConfig, pushHistory, handleSliderRelease
   } = useAppContext();
 
@@ -107,6 +115,83 @@ export default function ExtraSettings() {
             onChange={(e) => setAnnotationStrokeWidth(parseInt(e.target.value, 10))}
           />
         </div>
+
+        {/* Font style controls for text tool */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <span className="control-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Font Family</span>
+            <select
+              value={annotationFont}
+              onChange={(e) => {
+                setAnnotationFont(e.target.value);
+                pushHistory({ ...getCurrentConfig(), annotationFont: e.target.value });
+              }}
+            >
+              {systemFonts.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
+              <div className="control-label-container">
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Font Size</span>
+                <span className="control-value">{annotationFontSize}px</span>
+              </div>
+              <input 
+                type="range" 
+                min="12" 
+                max="72" 
+                value={annotationFontSize} 
+                onChange={(e) => {
+                  setAnnotationFontSize(parseInt(e.target.value, 10));
+                }}
+                onMouseUp={handleSliderRelease}
+              />
+            </div>
+            
+            <div style={{ display: 'flex', gap: '4px', alignSelf: 'flex-end', height: '28px' }}>
+              <button
+                className={`btn btn-secondary ${annotationBold ? 'active' : ''}`}
+                style={{
+                  padding: '0 8px',
+                  fontWeight: 'bold',
+                  backgroundColor: annotationBold ? 'var(--accent)' : 'var(--surface-2)',
+                  color: annotationBold ? 'var(--on-accent)' : 'var(--text-secondary)',
+                  border: 'none',
+                  borderRadius: '4px',
+                }}
+                onClick={() => {
+                  setAnnotationBold(!annotationBold);
+                  pushHistory({ ...getCurrentConfig(), annotationBold: !annotationBold });
+                }}
+                title="Bold"
+              >
+                B
+              </button>
+              <button
+                className={`btn btn-secondary ${annotationItalic ? 'active' : ''}`}
+                style={{
+                  padding: '0 8px',
+                  fontStyle: 'italic',
+                  backgroundColor: annotationItalic ? 'var(--accent)' : 'var(--surface-2)',
+                  color: annotationItalic ? 'var(--on-accent)' : 'var(--text-secondary)',
+                  border: 'none',
+                  borderRadius: '4px',
+                }}
+                onClick={() => {
+                  setAnnotationItalic(!annotationItalic);
+                  pushHistory({ ...getCurrentConfig(), annotationItalic: !annotationItalic });
+                }}
+                title="Italic"
+              >
+                I
+              </button>
+            </div>
+          </div>
+        </div>
+
         {annotations.length > 0 && (
           <button 
             className="btn btn-secondary" 
@@ -149,6 +234,61 @@ export default function ExtraSettings() {
               onBlur={() => pushHistory(getCurrentConfig())}
               style={{ marginTop: '0.5rem' }}
             />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
+              <span className="control-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Font Family</span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <select 
+                  value={watermarkFont} 
+                  onChange={(e) => {
+                    setWatermarkFont(e.target.value);
+                    pushHistory({ ...getCurrentConfig(), watermarkFont: e.target.value });
+                  }}
+                  style={{ flex: 1 }}
+                >
+                  {systemFonts.map((f) => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+                <button
+                  className={`btn btn-secondary ${watermarkBold ? 'active' : ''}`}
+                  style={{
+                    padding: '0 8px',
+                    fontWeight: 'bold',
+                    backgroundColor: watermarkBold ? 'var(--accent)' : 'var(--surface-2)',
+                    color: watermarkBold ? 'var(--on-accent)' : 'var(--text-secondary)',
+                    border: 'none',
+                    borderRadius: '4px',
+                    height: '28px',
+                  }}
+                  onClick={() => {
+                    setWatermarkBold(!watermarkBold);
+                    pushHistory({ ...getCurrentConfig(), watermarkBold: !watermarkBold });
+                  }}
+                  title="Bold"
+                >
+                  B
+                </button>
+                <button
+                  className={`btn btn-secondary ${watermarkItalic ? 'active' : ''}`}
+                  style={{
+                    padding: '0 8px',
+                    fontStyle: 'italic',
+                    backgroundColor: watermarkItalic ? 'var(--accent)' : 'var(--surface-2)',
+                    color: watermarkItalic ? 'var(--on-accent)' : 'var(--text-secondary)',
+                    border: 'none',
+                    borderRadius: '4px',
+                    height: '28px',
+                  }}
+                  onClick={() => {
+                    setWatermarkItalic(!watermarkItalic);
+                    pushHistory({ ...getCurrentConfig(), watermarkItalic: !watermarkItalic });
+                  }}
+                  title="Italic"
+                >
+                  I
+                </button>
+              </div>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
               <span className="control-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Position</span>
               <select 

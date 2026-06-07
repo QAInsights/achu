@@ -696,6 +696,29 @@ describe('renderCanvas', () => {
     expect(ctx.calls.some(c => c.startsWith('fillText'))).toBe(true);
   });
 
+  it('renders text annotations with custom font styling', () => {
+    const { canvas, ctx } = makeMockCanvas();
+    const img = makeMockImage();
+    const annotations: Annotation[] = [{
+      id: '1',
+      type: 'text',
+      x: 0.1,
+      y: 0.1,
+      w: 0.3,
+      h: 0.2,
+      color: '#ffffff',
+      strokeWidth: 4,
+      text: 'Hello World',
+      fontFamily: 'Verdana',
+      fontSize: 32,
+      fontBold: true,
+      fontItalic: true,
+    }];
+    const config = { ...baseConfig, annotations };
+    renderCanvas(canvas, img, config);
+    expect(ctx._state.font).toBe('italic bold 32px Verdana');
+  });
+
   it('renders annotations of type emoji', () => {
     const { canvas, ctx } = makeMockCanvas();
     const img = makeMockImage();

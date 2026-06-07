@@ -173,7 +173,7 @@ describe('configUtils', () => {
       chromeTheme: 'dark' as const,
       blurDensity: 40,
       watermarkEnabled: false,
-      watermarkText: 'achu',
+      watermarkText: 'Made using achu.app',
       watermarkSize: 20,
       watermarkPosition: 'middle',
       watermarkOpacity: 0.45,
@@ -211,7 +211,7 @@ describe('configUtils', () => {
       expect(config.chromeTheme).toBe('dark');
       expect(config.blurDensity).toBe(40);
       expect(config.watermarkEnabled).toBe(false);
-      expect(config.watermarkText).toBe('achu');
+      expect(config.watermarkText).toBe('Made using achu.app');
       expect(config.watermarkSize).toBe(20);
       expect(config.watermarkPosition).toBe('middle');
       expect(config.watermarkOpacity).toBe(0.45);
@@ -264,6 +264,13 @@ describe('configUtils', () => {
       setWatermarkSize: vi.fn(),
       setWatermarkPosition: vi.fn(),
       setWatermarkOpacity: vi.fn(),
+      setWatermarkFont: vi.fn(),
+      setWatermarkBold: vi.fn(),
+      setWatermarkItalic: vi.fn(),
+      setAnnotationFont: vi.fn(),
+      setAnnotationFontSize: vi.fn(),
+      setAnnotationBold: vi.fn(),
+      setAnnotationItalic: vi.fn(),
       setPosition: vi.fn(),
       setAnnotations: vi.fn(),
       setMeshPoints: vi.fn(),
@@ -312,6 +319,13 @@ describe('configUtils', () => {
         watermarkSize: 30,
         watermarkPosition: 'top-left',
         watermarkOpacity: 0.5,
+        watermarkFont: 'Arial',
+        watermarkBold: true,
+        watermarkItalic: true,
+        annotationFont: 'Courier',
+        annotationFontSize: 30,
+        annotationBold: false,
+        annotationItalic: true,
         position: 'Top left',
         annotations: [],
         meshPoints: DEFAULT_MESH_POINTS,
@@ -347,6 +361,13 @@ describe('configUtils', () => {
       expect(setters.setWatermarkSize).toHaveBeenCalledWith(30);
       expect(setters.setWatermarkPosition).toHaveBeenCalledWith('top-left');
       expect(setters.setWatermarkOpacity).toHaveBeenCalledWith(0.5);
+      expect(setters.setWatermarkFont).toHaveBeenCalledWith('Arial');
+      expect(setters.setWatermarkBold).toHaveBeenCalledWith(true);
+      expect(setters.setWatermarkItalic).toHaveBeenCalledWith(true);
+      expect(setters.setAnnotationFont).toHaveBeenCalledWith('Courier');
+      expect(setters.setAnnotationFontSize).toHaveBeenCalledWith(30);
+      expect(setters.setAnnotationBold).toHaveBeenCalledWith(false);
+      expect(setters.setAnnotationItalic).toHaveBeenCalledWith(true);
       expect(setters.setPosition).toHaveBeenCalledWith('Top left');
       expect(setters.setAnnotations).toHaveBeenCalledWith([]);
       expect(setters.setMeshBlur).toHaveBeenCalledWith(80);
@@ -394,6 +415,13 @@ describe('configUtils', () => {
         watermarkSize: 24,
         watermarkPosition: 'top-right',
         watermarkOpacity: 0.6,
+        watermarkFont: 'monospace',
+        watermarkBold: true,
+        watermarkItalic: false,
+        annotationFont: 'serif',
+        annotationFontSize: 18,
+        annotationBold: false,
+        annotationItalic: true,
         position: 'Top right',
         annotations: [],
         meshPoints: DEFAULT_MESH_POINTS,
@@ -413,6 +441,13 @@ describe('configUtils', () => {
       expect(setters.setScale).toHaveBeenCalledWith(90);
       expect(setters.setMeshBlur).toHaveBeenCalledWith(70);
       expect(setters.setNoImageMode).toHaveBeenCalledWith(false);
+      expect(setters.setWatermarkFont).toHaveBeenCalledWith('monospace');
+      expect(setters.setWatermarkBold).toHaveBeenCalledWith(true);
+      expect(setters.setWatermarkItalic).toHaveBeenCalledWith(false);
+      expect(setters.setAnnotationFont).toHaveBeenCalledWith('serif');
+      expect(setters.setAnnotationFontSize).toHaveBeenCalledWith(18);
+      expect(setters.setAnnotationBold).toHaveBeenCalledWith(false);
+      expect(setters.setAnnotationItalic).toHaveBeenCalledWith(true);
     });
 
     it('calls optional exportFormat/jpegQuality/sidebarPosition setters when present', () => {
@@ -438,7 +473,7 @@ describe('configUtils', () => {
         chromeTheme: 'dark',
         blurDensity: 40,
         watermarkEnabled: false,
-        watermarkText: 'achu',
+        watermarkText: 'Made using achu.app',
         watermarkSize: 20,
         watermarkPosition: 'middle',
         watermarkOpacity: 0.45,

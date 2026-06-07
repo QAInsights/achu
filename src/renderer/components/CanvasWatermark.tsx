@@ -7,6 +7,9 @@ interface CanvasWatermarkProps {
   watermarkPosition?: string;
   watermarkOpacity?: number;
   padding: number;
+  watermarkFont?: string;
+  watermarkBold?: boolean;
+  watermarkItalic?: boolean;
 }
 
 export default function CanvasWatermark({
@@ -15,7 +18,10 @@ export default function CanvasWatermark({
   watermarkSize,
   watermarkPosition,
   watermarkOpacity,
-  padding
+  padding,
+  watermarkFont,
+  watermarkBold,
+  watermarkItalic,
 }: CanvasWatermarkProps) {
   if (!watermarkEnabled || !watermarkText) return null;
 
@@ -34,6 +40,9 @@ export default function CanvasWatermark({
       position: 'absolute',
       opacity,
       fontSize,
+      fontFamily: watermarkFont || 'var(--font-sans)',
+      fontWeight: watermarkBold ? 'bold' : '500',
+      fontStyle: watermarkItalic ? 'italic' : 'normal',
       pointerEvents: 'none',
       whiteSpace: 'nowrap',
       zIndex: 2,

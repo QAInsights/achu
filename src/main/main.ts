@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, Tray, Menu } from 'electron';
+import { app, BrowserWindow, shell, Tray, Menu, session } from 'electron';
 import * as path from 'path';
 import { loadSettings, saveSettings } from './settings';
 import { registerIpcHandlers } from './ipc';
@@ -147,6 +147,15 @@ function createTray() {
 app.whenReady().then(() => {
   const settings = loadSettings();
   createWindow(settings);
+
+  // Auto-grant local-fonts permission for querying system fonts
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    if ((permission as string) === 'local-fonts') {
+      callback(true);
+    } else {
+      callback(false);
+    }
+  });
 
   // Register all IPC handlers
   registerIpcHandlers(() => mainWindow);

@@ -141,17 +141,24 @@ describe('storageUtils', () => {
       expect(DEFAULT_SETTINGS).toHaveProperty('rounded', 20);
       expect(DEFAULT_SETTINGS).toHaveProperty('shadow', 30);
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkEnabled', false);
-      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkText', 'achu');
+      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkText', 'Made using achu.app');
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkSize', 20);
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkPosition', 'middle');
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkOpacity', 0.45);
+      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkFont', 'sans-serif');
+      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkBold', false);
+      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkItalic', false);
+      expect(DEFAULT_SETTINGS).toHaveProperty('annotationFont', 'sans-serif');
+      expect(DEFAULT_SETTINGS).toHaveProperty('annotationFontSize', 24);
+      expect(DEFAULT_SETTINGS).toHaveProperty('annotationBold', true);
+      expect(DEFAULT_SETTINGS).toHaveProperty('annotationItalic', false);
       expect(DEFAULT_SETTINGS).toHaveProperty('exportFormat', 'png');
       expect(DEFAULT_SETTINGS).toHaveProperty('jpegQuality', 90);
       expect(DEFAULT_SETTINGS).toHaveProperty('sidebarPosition', 'left');
     });
 
-    it('has exactly 13 keys', () => {
-      expect(Object.keys(DEFAULT_SETTINGS)).toHaveLength(13);
+    it('has exactly 20 keys', () => {
+      expect(Object.keys(DEFAULT_SETTINGS)).toHaveLength(20);
     });
   });
 });

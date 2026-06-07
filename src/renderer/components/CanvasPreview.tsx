@@ -53,6 +53,9 @@ export default function CanvasPreview() {
     watermarkSize,
     watermarkPosition,
     watermarkOpacity,
+    watermarkFont,
+    watermarkBold,
+    watermarkItalic,
     position,
     activeTool,
     setActiveTool,
@@ -136,6 +139,9 @@ export default function CanvasPreview() {
     watermarkSize,
     watermarkPosition,
     watermarkOpacity,
+    watermarkFont,
+    watermarkBold,
+    watermarkItalic,
     position,
     annotations,
     meshPoints,
@@ -523,6 +529,9 @@ export default function CanvasPreview() {
               watermarkPosition={watermarkPosition}
               watermarkOpacity={watermarkOpacity}
               padding={padding}
+              watermarkFont={watermarkFont}
+              watermarkBold={watermarkBold}
+              watermarkItalic={watermarkItalic}
             />
 
           </div>

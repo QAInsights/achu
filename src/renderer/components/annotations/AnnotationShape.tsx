@@ -154,17 +154,21 @@ export default function AnnotationShape({
   }
 
   if (ann.type === 'text' && ann.text && ann.id !== editingTextId) {
-    const fSize = Math.max(12, rectH * 0.7);
+    const fSize = ann.fontSize || Math.max(12, rectH * 0.7);
+    const style = ann.fontItalic ? 'italic' : 'normal';
+    const weight = ann.fontBold !== false ? 'bold' : 'normal';
     return (
       <text
         x={0}
         y={0}
         fill={ann.color}
         fontSize={`${fSize}px`}
-        fontWeight="bold"
         textAnchor="middle"
         dominantBaseline="middle"
         style={{
+          fontFamily: ann.fontFamily || 'var(--font-sans)',
+          fontWeight: weight,
+          fontStyle: style,
           paintOrder: 'stroke',
           stroke: '#0f172a',
           strokeWidth: `${Math.max(2, fSize * 0.15)}px`,

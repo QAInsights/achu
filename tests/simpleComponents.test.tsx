@@ -52,6 +52,21 @@ beforeEach(() => {
     setWatermarkPosition: vi.fn(),
     watermarkOpacity: 0.45,
     setWatermarkOpacity: vi.fn(),
+    watermarkFont: 'sans-serif',
+    setWatermarkFont: vi.fn(),
+    watermarkBold: false,
+    setWatermarkBold: vi.fn(),
+    watermarkItalic: false,
+    setWatermarkItalic: vi.fn(),
+    annotationFont: 'sans-serif',
+    setAnnotationFont: vi.fn(),
+    annotationFontSize: 24,
+    setAnnotationFontSize: vi.fn(),
+    annotationBold: true,
+    setAnnotationBold: vi.fn(),
+    annotationItalic: false,
+    setAnnotationItalic: vi.fn(),
+    systemFonts: [],
     handleSliderRelease: vi.fn(),
     getCurrentConfig: vi.fn(() => ({})),
     pushHistory: vi.fn(),
@@ -279,14 +294,14 @@ describe('ExtraSettings', () => {
     render(<ExtraSettings />);
     
     expect(screen.getByText('Browser Mockup')).toBeInTheDocument();
-    const select = screen.getByRole('combobox');
+    const select = screen.getAllByRole('combobox')[0];
     expect(select).toBeInTheDocument();
   });
 
   it('changes chrome style', () => {
     render(<ExtraSettings />);
     
-    const select = screen.getByRole('combobox');
+    const select = screen.getAllByRole('combobox')[0];
     fireEvent.change(select, { target: { value: 'mac' } });
     
     expect(mockContext.setChromeStyle).toHaveBeenCalledWith('mac');
@@ -349,7 +364,7 @@ describe('ExtraSettings', () => {
   it('changes stroke width', () => {
     render(<ExtraSettings />);
     
-    const slider = screen.getByRole('slider');
+    const slider = screen.getAllByRole('slider')[0];
     fireEvent.change(slider, { target: { value: '8' } });
     
     expect(mockContext.setAnnotationStrokeWidth).toHaveBeenCalledWith(8);
@@ -439,7 +454,7 @@ describe('ExtraSettings', () => {
     mockContext.watermarkEnabled = true;
     render(<ExtraSettings />);
     
-    const slider = screen.getAllByRole('slider')[2];
+    const slider = screen.getAllByRole('slider')[3];
     fireEvent.change(slider, { target: { value: '75' } });
     
     expect(mockContext.setWatermarkOpacity).toHaveBeenCalledWith(0.75);

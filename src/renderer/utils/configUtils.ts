@@ -54,6 +54,13 @@ export function getCurrentConfig(state: {
   watermarkSize: number;
   watermarkPosition: 'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right';
   watermarkOpacity: number;
+  watermarkFont: string;
+  watermarkBold: boolean;
+  watermarkItalic: boolean;
+  annotationFont: string;
+  annotationFontSize: number;
+  annotationBold: boolean;
+  annotationItalic: boolean;
   position: string;
   annotations: Annotation[];
   meshPoints: Array<{ id: string; color: string; x: number; y: number; radius: number }>;
@@ -91,6 +98,13 @@ export function getCurrentConfig(state: {
     watermarkSize: state.watermarkSize,
     watermarkPosition: state.watermarkPosition,
     watermarkOpacity: state.watermarkOpacity,
+    watermarkFont: state.watermarkFont,
+    watermarkBold: state.watermarkBold,
+    watermarkItalic: state.watermarkItalic,
+    annotationFont: state.annotationFont,
+    annotationFontSize: state.annotationFontSize,
+    annotationBold: state.annotationBold,
+    annotationItalic: state.annotationItalic,
     position: state.position,
     annotations: state.annotations,
     meshPoints: state.meshPoints,
@@ -132,6 +146,13 @@ export function applyConfig(
     setWatermarkSize: (v: number) => void;
     setWatermarkPosition: (v: 'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right') => void;
     setWatermarkOpacity: (v: number) => void;
+    setWatermarkFont: (v: string) => void;
+    setWatermarkBold: (v: boolean) => void;
+    setWatermarkItalic: (v: boolean) => void;
+    setAnnotationFont: (v: string) => void;
+    setAnnotationFontSize: (v: number) => void;
+    setAnnotationBold: (v: boolean) => void;
+    setAnnotationItalic: (v: boolean) => void;
     setPosition: (v: string) => void;
     setAnnotations: (v: Annotation[]) => void;
     setMeshPoints: (v: Array<{ id: string; color: string; x: number; y: number; radius: number }>) => void;
@@ -166,10 +187,17 @@ export function applyConfig(
   setters.setChromeTheme(config.chromeTheme ?? 'dark');
   setters.setBlurDensity(config.blurDensity ?? 40);
   setters.setWatermarkEnabled(config.watermarkEnabled ?? false);
-  setters.setWatermarkText(config.watermarkText ?? 'achu');
+  setters.setWatermarkText(config.watermarkText ?? 'Made using achu.app');
   setters.setWatermarkSize(config.watermarkSize ?? 20);
   setters.setWatermarkPosition(config.watermarkPosition ?? 'middle');
   setters.setWatermarkOpacity(config.watermarkOpacity ?? 0.45);
+  setters.setWatermarkFont(config.watermarkFont ?? 'sans-serif');
+  setters.setWatermarkBold(config.watermarkBold ?? false);
+  setters.setWatermarkItalic(config.watermarkItalic ?? false);
+  setters.setAnnotationFont(config.annotationFont ?? 'sans-serif');
+  setters.setAnnotationFontSize(config.annotationFontSize ?? 24);
+  setters.setAnnotationBold(config.annotationBold ?? true);
+  setters.setAnnotationItalic(config.annotationItalic ?? false);
   setters.setPosition(config.position ?? 'Middle center');
   setters.setAnnotations(config.annotations ?? []);
   setters.setMeshPoints(config.meshPoints ?? DEFAULT_MESH_POINTS);

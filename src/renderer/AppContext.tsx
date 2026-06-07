@@ -65,6 +65,14 @@ interface AppContextType {
   watermarkSize: number; setWatermarkSize: React.Dispatch<React.SetStateAction<number>>;
   watermarkPosition: 'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right'; setWatermarkPosition: React.Dispatch<React.SetStateAction<'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right'>>;
   watermarkOpacity: number; setWatermarkOpacity: React.Dispatch<React.SetStateAction<number>>;
+  watermarkFont: string; setWatermarkFont: React.Dispatch<React.SetStateAction<string>>;
+  watermarkBold: boolean; setWatermarkBold: React.Dispatch<React.SetStateAction<boolean>>;
+  watermarkItalic: boolean; setWatermarkItalic: React.Dispatch<React.SetStateAction<boolean>>;
+  annotationFont: string; setAnnotationFont: React.Dispatch<React.SetStateAction<string>>;
+  annotationFontSize: number; setAnnotationFontSize: React.Dispatch<React.SetStateAction<number>>;
+  annotationBold: boolean; setAnnotationBold: React.Dispatch<React.SetStateAction<boolean>>;
+  annotationItalic: boolean; setAnnotationItalic: React.Dispatch<React.SetStateAction<boolean>>;
+  systemFonts: string[]; setSystemFonts: React.Dispatch<React.SetStateAction<string[]>>;
   position: string; setPosition: React.Dispatch<React.SetStateAction<string>>;
   activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'; setActiveTool: React.Dispatch<React.SetStateAction<'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'>>;
   arrowStyle: 'classic' | 'dashed' | 'tapered' | 'curved'; setArrowStyle: React.Dispatch<React.SetStateAction<'classic' | 'dashed' | 'tapered' | 'curved'>>;
@@ -174,6 +182,27 @@ interface AppContextType {
   triggerAiHealthCheck: () => void;
 }
 
+const SYSTEM_FONT_FALLBACKS = [
+  'Geist',
+  'Geist Mono',
+  'Segoe UI',
+  '-apple-system',
+  'BlinkMacSystemFont',
+  'Arial',
+  'Helvetica',
+  'Times New Roman',
+  'Courier New',
+  'Georgia',
+  'Verdana',
+  'Trebuchet MS',
+  'Impact',
+  'Comic Sans MS',
+  'Consolas',
+  'Monospace',
+  'Sans-Serif',
+  'Serif'
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -225,10 +254,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activePointIdx, setActivePointIdx] = useState<number>(0);
 
   const [watermarkEnabled, setWatermarkEnabled] = useState<boolean>(() => getUserDefault('watermarkEnabled', false));
-  const [watermarkText, setWatermarkText] = useState<string>(() => getUserDefault('watermarkText', 'achu'));
+  const [watermarkText, setWatermarkText] = useState<string>(() => getUserDefault('watermarkText', 'Made using achu.app'));
   const [watermarkSize, setWatermarkSize] = useState<number>(() => getUserDefault('watermarkSize', 20));
   const [watermarkPosition, setWatermarkPosition] = useState<'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right'>(() => getUserDefault('watermarkPosition', 'middle') as any);
   const [watermarkOpacity, setWatermarkOpacity] = useState<number>(() => getUserDefault('watermarkOpacity', 0.45));
+  const [watermarkFont, setWatermarkFont] = useState<string>(() => getUserDefault('watermarkFont', 'sans-serif'));
+  const [watermarkBold, setWatermarkBold] = useState<boolean>(() => getUserDefault('watermarkBold', false));
+  const [watermarkItalic, setWatermarkItalic] = useState<boolean>(() => getUserDefault('watermarkItalic', false));
+  const [annotationFont, setAnnotationFont] = useState<string>(() => getUserDefault('annotationFont', 'sans-serif'));
+  const [annotationFontSize, setAnnotationFontSize] = useState<number>(() => getUserDefault('annotationFontSize', 24));
+  const [annotationBold, setAnnotationBold] = useState<boolean>(() => getUserDefault('annotationBold', true));
+  const [annotationItalic, setAnnotationItalic] = useState<boolean>(() => getUserDefault('annotationItalic', false));
+  const [systemFonts, setSystemFonts] = useState<string[]>(SYSTEM_FONT_FALLBACKS);
   const [position, setPosition] = useState<string>('Middle center');
   const [activeTool, setActiveTool] = useState<'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji'>('pointer');
   const [arrowStyle, setArrowStyle] = useState<'classic' | 'dashed' | 'tapered' | 'curved'>('classic');
@@ -252,6 +289,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [googleModel, setGoogleModelState] = useState<string>(() => getUserDefault('googleModel', 'gemini-2.5-flash'));
   const [claudeModel, setClaudeModelState] = useState<string>(() => getUserDefault('claudeModel', 'claude-3-5-sonnet-latest'));
   
+  // Load system fonts dynamically on startup
+  useEffect(() => {
+    async function loadSystemFonts() {
+      if ('queryLocalFonts' in window) {
+        try {
+          const fonts = await (window as any).queryLocalFonts();
+          const uniqueFamilies = Array.from(new Set(fonts.map((f: any) => f.family))) as string[];
+          uniqueFamilies.sort((a, b) => a.localeCompare(b));
+          if (uniqueFamilies.length > 0) {
+            setSystemFonts(Array.from(new Set([...SYSTEM_FONT_FALLBACKS, ...uniqueFamilies])));
+          }
+        } catch (err) {
+          console.warn('Failed to query local fonts, using fallbacks:', err);
+        }
+      }
+    }
+    loadSystemFonts();
+  }, []);
+
   const [aiCheckTrigger, setAiCheckTrigger] = useState(0);
   const triggerAiHealthCheck = useCallback(() => {
     setAiCheckTrigger(prev => prev + 1);
@@ -367,6 +423,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     backgroundType, backgroundValue, aspectRatio, canvasWidth, canvasHeight,
     paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled, watermarkText, watermarkSize,
     watermarkPosition, watermarkOpacity,
+    watermarkFont, watermarkBold, watermarkItalic,
+    annotationFont, annotationFontSize, annotationBold, annotationItalic,
     position, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread,
     noImage: noImageMode,
     selectedPreset,
@@ -419,10 +477,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setChromeTheme(config.chromeTheme ?? 'dark');
     setBlurDensity(config.blurDensity ?? 40);
     setWatermarkEnabled(config.watermarkEnabled ?? false);
-    setWatermarkText(config.watermarkText ?? 'achu');
+    setWatermarkText(config.watermarkText ?? 'Made using achu.app');
     setWatermarkSize(config.watermarkSize ?? 20);
     setWatermarkPosition(config.watermarkPosition ?? 'middle');
     setWatermarkOpacity(config.watermarkOpacity ?? 0.45);
+    setWatermarkFont(config.watermarkFont ?? 'sans-serif');
+    setWatermarkBold(config.watermarkBold ?? false);
+    setWatermarkItalic(config.watermarkItalic ?? false);
+    setAnnotationFont(config.annotationFont ?? 'sans-serif');
+    setAnnotationFontSize(config.annotationFontSize ?? 24);
+    setAnnotationBold(config.annotationBold ?? true);
+    setAnnotationItalic(config.annotationItalic ?? false);
     setPosition(config.position ?? 'Middle center');
     setAnnotations(config.annotations ?? []);
     setRedactions(config.redactions ?? []);
@@ -911,7 +976,7 @@ Severity rules:
       chromeTheme: 'dark',
       blurDensity: 40,
       watermarkEnabled: false,
-      watermarkText: 'achu',
+      watermarkText: 'Made using achu.app',
       watermarkSize: 20,
       watermarkPosition: 'middle',
       watermarkOpacity: 0.45,
@@ -1222,6 +1287,9 @@ Severity rules:
       meshSpread, setMeshSpread, meshDataUrl, setMeshDataUrl, activePointIdx, setActivePointIdx,
       watermarkEnabled, setWatermarkEnabled, watermarkText, setWatermarkText, watermarkSize, setWatermarkSize,
       watermarkPosition, setWatermarkPosition, watermarkOpacity, setWatermarkOpacity, position, setPosition,
+      watermarkFont, setWatermarkFont, watermarkBold, setWatermarkBold, watermarkItalic, setWatermarkItalic,
+      annotationFont, setAnnotationFont, annotationFontSize, setAnnotationFontSize, annotationBold, setAnnotationBold, annotationItalic, setAnnotationItalic,
+      systemFonts, setSystemFonts,
       activeTool, setActiveTool, arrowStyle, setArrowStyle, annotations, setAnnotations, annotationColor, setAnnotationColor,
       annotationStrokeWidth, setAnnotationStrokeWidth, promptConfig, setPromptConfig, sidebarVisible, setSidebarVisible,
       settingsVisible, setSettingsVisible,

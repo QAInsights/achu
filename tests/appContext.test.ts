@@ -42,7 +42,7 @@ describe('AppContext', () => {
       expect(getUserDefault('rounded', 20)).toBe(30);
       expect(getUserDefault('shadow', 30)).toBe(40);
       expect(getUserDefault('watermarkEnabled', false)).toBe(true);
-      expect(getUserDefault('watermarkText', 'achu')).toBe('Custom');
+      expect(getUserDefault('watermarkText', 'Made using achu.app')).toBe('Custom');
       expect(getUserDefault('scale', 100)).toBe(100);
       expect(getUserDefault('nonexistent', 'default')).toBe('default');
     });
@@ -175,7 +175,7 @@ describe('AppContext', () => {
         chromeTheme: 'dark' as const,
         blurDensity: 40,
         watermarkEnabled: false,
-        watermarkText: 'achu',
+        watermarkText: 'Made using achu.app',
         watermarkSize: 20,
         position: 'Middle center',
         annotations: [],
@@ -234,6 +234,13 @@ describe('AppContext', () => {
         setWatermarkSize: (v: number) => { state.watermarkSize = v; },
         setWatermarkPosition: (v: string) => { state.watermarkPosition = v; },
         setWatermarkOpacity: (v: number) => { state.watermarkOpacity = v; },
+        setWatermarkFont: (v: string) => { state.watermarkFont = v; },
+        setWatermarkBold: (v: boolean) => { state.watermarkBold = v; },
+        setWatermarkItalic: (v: boolean) => { state.watermarkItalic = v; },
+        setAnnotationFont: (v: string) => { state.annotationFont = v; },
+        setAnnotationFontSize: (v: number) => { state.annotationFontSize = v; },
+        setAnnotationBold: (v: boolean) => { state.annotationBold = v; },
+        setAnnotationItalic: (v: boolean) => { state.annotationItalic = v; },
         setPosition: (v: string) => { state.position = v; },
         setAnnotations: (v: any[]) => { state.annotations = v; },
         setMeshPoints: (v: any[]) => { state.meshPoints = v; },

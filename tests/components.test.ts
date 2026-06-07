@@ -247,7 +247,7 @@ describe('Components', () => {
       expect(DEFAULT_SETTINGS.rounded).toBe(20);
       expect(DEFAULT_SETTINGS.shadow).toBe(30);
       expect(DEFAULT_SETTINGS.watermarkEnabled).toBe(false);
-      expect(DEFAULT_SETTINGS.watermarkText).toBe('achu');
+      expect(DEFAULT_SETTINGS.watermarkText).toBe('Made using achu.app');
       expect(DEFAULT_SETTINGS.exportFormat).toBe('png');
       expect(DEFAULT_SETTINGS.jpegQuality).toBe(90);
     });

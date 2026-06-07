@@ -88,7 +88,7 @@ beforeEach(() => {
     setShadow: vi.fn(),
     watermarkEnabled: false,
     setWatermarkEnabled: vi.fn(),
-    watermarkText: 'achu',
+    watermarkText: 'Made using achu.app',
     setWatermarkText: vi.fn(),
     watermarkSize: 20,
     setWatermarkSize: vi.fn(),
@@ -96,6 +96,21 @@ beforeEach(() => {
     setWatermarkPosition: vi.fn(),
     watermarkOpacity: 0.45,
     setWatermarkOpacity: vi.fn(),
+    watermarkFont: 'sans-serif',
+    setWatermarkFont: vi.fn(),
+    watermarkBold: false,
+    setWatermarkBold: vi.fn(),
+    watermarkItalic: false,
+    setWatermarkItalic: vi.fn(),
+    annotationFont: 'sans-serif',
+    setAnnotationFont: vi.fn(),
+    annotationFontSize: 24,
+    setAnnotationFontSize: vi.fn(),
+    annotationBold: true,
+    setAnnotationBold: vi.fn(),
+    annotationItalic: false,
+    setAnnotationItalic: vi.fn(),
+    systemFonts: [],
     handleSliderRelease: vi.fn(),
     exportFormat: 'png',
     setExportFormat: vi.fn(),
@@ -422,7 +437,7 @@ describe('SettingsModal', () => {
     
     render(<SettingsModal />);
     
-    const input = screen.getByDisplayValue('achu');
+    const input = screen.getByDisplayValue('Made using achu.app');
     fireEvent.change(input, { target: { value: 'New Watermark' } });
     
     expect(mockContext.setWatermarkText).toHaveBeenCalledWith('New Watermark');
@@ -497,7 +512,7 @@ describe('SettingsModal', () => {
     expect(mockContext.setRounded).toHaveBeenCalledWith(20);
     expect(mockContext.setShadow).toHaveBeenCalledWith(30);
     expect(mockContext.setWatermarkEnabled).toHaveBeenCalledWith(false);
-    expect(mockContext.setWatermarkText).toHaveBeenCalledWith('achu');
+    expect(mockContext.setWatermarkText).toHaveBeenCalledWith('Made using achu.app');
     expect(mockContext.setWatermarkPosition).toHaveBeenCalledWith('middle');
     expect(mockContext.setWatermarkOpacity).toHaveBeenCalledWith(0.45);
     expect(mockContext.setExportFormat).toHaveBeenCalledWith('png');

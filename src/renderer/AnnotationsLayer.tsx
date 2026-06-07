@@ -30,7 +30,17 @@ export default function AnnotationsLayer({
   onSaveHistory,
   customPrompt,
 }: AnnotationsLayerProps) {
-  const { arrowStyle } = useAppContext();
+  const {
+    arrowStyle,
+    annotationFont,
+    setAnnotationFont,
+    annotationFontSize,
+    setAnnotationFontSize,
+    annotationBold,
+    setAnnotationBold,
+    annotationItalic,
+    setAnnotationItalic,
+  } = useAppContext();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const {
@@ -57,6 +67,14 @@ export default function AnnotationsLayer({
     setAnnotationColor,
     strokeWidth,
     arrowStyle,
+    annotationFont,
+    setAnnotationFont,
+    annotationFontSize,
+    setAnnotationFontSize,
+    annotationBold,
+    setAnnotationBold,
+    annotationItalic,
+    setAnnotationItalic,
     onSaveHistory,
     customPrompt,
     containerRef,

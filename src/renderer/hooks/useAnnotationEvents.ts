@@ -10,6 +10,14 @@ interface UseAnnotationEventsProps {
   setAnnotationColor?: (color: string) => void;
   strokeWidth: number;
   arrowStyle?: 'classic' | 'dashed' | 'tapered' | 'curved';
+  annotationFont?: string;
+  setAnnotationFont?: (font: string) => void;
+  annotationFontSize?: number;
+  setAnnotationFontSize?: (size: number) => void;
+  annotationBold?: boolean;
+  setAnnotationBold?: (bold: boolean) => void;
+  annotationItalic?: boolean;
+  setAnnotationItalic?: (italic: boolean) => void;
   onSaveHistory: (newAnns?: Annotation[]) => void;
   customPrompt: (message: string, defaultValue?: string) => Promise<string | null>;
   containerRef: RefObject<HTMLDivElement | null>;
@@ -35,6 +43,14 @@ export function useAnnotationEvents({
   setAnnotationColor,
   strokeWidth,
   arrowStyle,
+  annotationFont,
+  setAnnotationFont,
+  annotationFontSize,
+  setAnnotationFontSize,
+  annotationBold,
+  setAnnotationBold,
+  annotationItalic,
+  setAnnotationItalic,
   onSaveHistory,
   customPrompt,
   containerRef,
@@ -135,6 +151,59 @@ export function useAnnotationEvents({
       setAnnotationColor(selectedAnn.color);
     }
   }, [selectedId, setAnnotationColor]);
+
+  // Synchronize selected annotation's font properties with active selectors
+  useEffect(() => {
+    if (!selectedId) return;
+    const selectedAnn = annotations.find(a => a.id === selectedId);
+    if (!selectedAnn || selectedAnn.type !== 'text') return;
+
+    let changed = false;
+    const updatedAnn = { ...selectedAnn };
+
+    if (annotationFont && selectedAnn.fontFamily !== annotationFont) {
+      updatedAnn.fontFamily = annotationFont;
+      changed = true;
+    }
+    if (annotationFontSize !== undefined && selectedAnn.fontSize !== annotationFontSize) {
+      updatedAnn.fontSize = annotationFontSize;
+      changed = true;
+    }
+    if (annotationBold !== undefined && selectedAnn.fontBold !== annotationBold) {
+      updatedAnn.fontBold = annotationBold;
+      changed = true;
+    }
+    if (annotationItalic !== undefined && selectedAnn.fontItalic !== annotationItalic) {
+      updatedAnn.fontItalic = annotationItalic;
+      changed = true;
+    }
+
+    if (changed) {
+      const updated = annotations.map(a => (a.id === selectedId ? updatedAnn : a));
+      setAnnotations(updated);
+      onSaveHistory(updated);
+    }
+  }, [annotationFont, annotationFontSize, annotationBold, annotationItalic, selectedId]);
+
+  // Update active selectors state to match selected annotation's font properties
+  useEffect(() => {
+    if (!selectedId) return;
+    const selectedAnn = annotations.find(a => a.id === selectedId);
+    if (!selectedAnn || selectedAnn.type !== 'text') return;
+
+    if (selectedAnn.fontFamily && selectedAnn.fontFamily !== annotationFont && setAnnotationFont) {
+      setAnnotationFont(selectedAnn.fontFamily);
+    }
+    if (selectedAnn.fontSize !== undefined && selectedAnn.fontSize !== annotationFontSize && setAnnotationFontSize) {
+      setAnnotationFontSize(selectedAnn.fontSize);
+    }
+    if (selectedAnn.fontBold !== undefined && selectedAnn.fontBold !== annotationBold && setAnnotationBold) {
+      setAnnotationBold(selectedAnn.fontBold);
+    }
+    if (selectedAnn.fontItalic !== undefined && selectedAnn.fontItalic !== annotationItalic && setAnnotationItalic) {
+      setAnnotationItalic(selectedAnn.fontItalic);
+    }
+  }, [selectedId, setAnnotationFont, setAnnotationFontSize, setAnnotationBold, setAnnotationItalic]);
 
   const handleFreehandDraw = (mouseX: number, mouseY: number, startX: number, startY: number) => {
     const newPoints = [...penPoints, { x: mouseX, y: mouseY }];
@@ -269,6 +338,10 @@ export function useAnnotationEvents({
       rotation: 0,
       points: activeTool === 'pen' ? [{ x: 0, y: 0 }] : undefined,
       arrowStyle: activeTool === 'arrow' ? arrowStyle : undefined,
+      fontFamily: activeTool === 'text' ? (annotationFont || 'sans-serif') : undefined,
+      fontSize: activeTool === 'text' ? (annotationFontSize || 24) : undefined,
+      fontBold: activeTool === 'text' ? (annotationBold ?? true) : undefined,
+      fontItalic: activeTool === 'text' ? (annotationItalic ?? false) : undefined,
     };
     if (activeTool === 'pen') setPenPoints([{ x: mouseX, y: mouseY }]);
     setDrawingAnnotation(newAnn);

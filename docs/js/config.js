@@ -1,7 +1,7 @@
 window.config = {
   branding: {
     name: "achu",
-    tagline: "Turn Raw Screenshots into Beautiful Assets",
+    tagline: "AI-Enhanced Screenshots: From Raw Captures to Stunning Assets & Bug Tickets",
     subtagline: "A lightweight, gorgeous desktop utility for Windows, macOS, and Linux that turns raw captures into polished visual graphics, featuring an integrated <span class=\"gradient-text\">AI Issue Agent</span> and fully local, <span class=\"gradient-text\">offline OCR</span> text extraction.",
     meaning: "achu (அச்சு) means 'print' or 'mold' in Tamil. 🖨️",
     customDomain: "achu.app"

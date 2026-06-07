@@ -37,7 +37,7 @@ beforeEach(() => {
     meshDataUrl: '',
     activePointIdx: 0,
     watermarkEnabled: false,
-    watermarkText: 'achu',
+    watermarkText: 'Made using achu.app',
     watermarkSize: 20,
     watermarkPosition: 'middle',
     watermarkOpacity: 0.4,

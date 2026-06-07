@@ -36,6 +36,11 @@ export default function WorkspaceToolbar() {
     arrowStyle, setArrowStyle,
     annotationColor, setAnnotationColor,
     annotationStrokeWidth, setAnnotationStrokeWidth,
+    annotationFont = 'sans-serif', setAnnotationFont,
+    annotationFontSize = 24, setAnnotationFontSize,
+    annotationBold = true, setAnnotationBold,
+    annotationItalic = false, setAnnotationItalic,
+    systemFonts = [],
     pushHistory, getCurrentConfig, selectFile, colorInputRef,
     appTheme, setAppTheme,
     settingsVisible, setSettingsVisible,
@@ -189,6 +194,89 @@ export default function WorkspaceToolbar() {
                   <path d="M4 20 Q 14 16 19 5" />
                   <polyline points="12 5 19 5 19 12" />
                 </svg>
+              </button>
+            </Tooltip>
+          </div>
+        </>
+      )}
+
+      {activeTool === 'text' && (
+        <>
+          <div className="toolbar-divider" />
+          <div className="toolbar-group">
+            <Tooltip position="right">
+              <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>
+                <span className="toolbar-control-label">Font</span>
+                <select
+                  value={annotationFont}
+                  onChange={(e) => {
+                    setAnnotationFont(e.target.value);
+                    pushHistory({ ...getCurrentConfig(), annotationFont: e.target.value });
+                  }}
+                  style={{
+                    fontSize: '0.75rem',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '4px',
+                    color: 'var(--text-primary)',
+                    padding: '2px 4px',
+                    width: '100px',
+                    outline: 'none',
+                  }}
+                >
+                  {systemFonts.map((f) => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+              </div>
+            </Tooltip>
+            <Tooltip position="right">
+              <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>
+                <span className="toolbar-control-label">Font Size</span>
+                <input
+                  type="range"
+                  min="12"
+                  max="72"
+                  value={annotationFontSize}
+                  onChange={(e) => setAnnotationFontSize(parseInt(e.target.value, 10))}
+                  style={{ width: '60px' }}
+                  title={`Font Size: ${annotationFontSize}px`}
+                />
+                <span className="toolbar-control-value">{annotationFontSize}px</span>
+              </div>
+            </Tooltip>
+            <Tooltip position="right">
+              <button
+                className={`tool-btn ${annotationBold ? 'active' : ''}`}
+                style={{
+                  fontWeight: 'bold',
+                  backgroundColor: annotationBold ? 'var(--accent)' : 'transparent',
+                  color: annotationBold ? 'var(--on-accent)' : 'var(--text-secondary)',
+                }}
+                onClick={() => {
+                  setAnnotationBold(!annotationBold);
+                  pushHistory({ ...getCurrentConfig(), annotationBold: !annotationBold });
+                }}
+                title="Bold"
+              >
+                B
+              </button>
+            </Tooltip>
+            <Tooltip position="right">
+              <button
+                className={`tool-btn ${annotationItalic ? 'active' : ''}`}
+                style={{
+                  fontStyle: 'italic',
+                  backgroundColor: annotationItalic ? 'var(--accent)' : 'transparent',
+                  color: annotationItalic ? 'var(--on-accent)' : 'var(--text-secondary)',
+                }}
+                onClick={() => {
+                  setAnnotationItalic(!annotationItalic);
+                  pushHistory({ ...getCurrentConfig(), annotationItalic: !annotationItalic });
+                }}
+                title="Italic"
+              >
+                I
               </button>
             </Tooltip>
           </div>

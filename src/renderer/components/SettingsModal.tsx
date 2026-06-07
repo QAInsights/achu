@@ -16,6 +16,10 @@ export default function SettingsModal() {
     watermarkText, setWatermarkText,
     watermarkPosition, setWatermarkPosition,
     watermarkOpacity, setWatermarkOpacity,
+    watermarkFont = 'sans-serif', setWatermarkFont,
+    watermarkBold = false, setWatermarkBold,
+    watermarkItalic = false, setWatermarkItalic,
+    systemFonts = [],
     exportFormat, setExportFormat,
     jpegQuality, setJpegQuality,
     pushHistory,
@@ -44,6 +48,9 @@ export default function SettingsModal() {
     setWatermarkText(DEFAULT_SETTINGS.watermarkText);
     setWatermarkPosition(DEFAULT_SETTINGS.watermarkPosition as any);
     setWatermarkOpacity(DEFAULT_SETTINGS.watermarkOpacity);
+    setWatermarkFont(DEFAULT_SETTINGS.watermarkFont);
+    setWatermarkBold(DEFAULT_SETTINGS.watermarkBold);
+    setWatermarkItalic(DEFAULT_SETTINGS.watermarkItalic);
     setExportFormat(DEFAULT_SETTINGS.exportFormat);
     setJpegQuality(DEFAULT_SETTINGS.jpegQuality);
     setSidebarPosition(DEFAULT_SETTINGS.sidebarPosition);
@@ -58,6 +65,9 @@ export default function SettingsModal() {
       watermarkText: DEFAULT_SETTINGS.watermarkText,
       watermarkPosition: DEFAULT_SETTINGS.watermarkPosition as any,
       watermarkOpacity: DEFAULT_SETTINGS.watermarkOpacity,
+      watermarkFont: DEFAULT_SETTINGS.watermarkFont,
+      watermarkBold: DEFAULT_SETTINGS.watermarkBold,
+      watermarkItalic: DEFAULT_SETTINGS.watermarkItalic,
       autoImportCaptured: true,
       captureShortcut: 'PrintScreen',
     });
@@ -287,6 +297,54 @@ export default function SettingsModal() {
                     onChange={(e) => updateSetting('watermarkText', e.target.value, setWatermarkText)}
                     style={{ marginTop: '4px' }}
                   />
+                </div>
+                <div className="control-group">
+                  <span className="control-label">Default Font Family</span>
+                  <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                    <select
+                      value={watermarkFont}
+                      onChange={(e) => updateSetting('watermarkFont', e.target.value, setWatermarkFont)}
+                      style={{ flex: 1 }}
+                    >
+                      {systemFonts.map((f) => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                    <button
+                      className={`btn btn-secondary ${watermarkBold ? 'active' : ''}`}
+                      style={{
+                        padding: '0 8px',
+                        fontWeight: 'bold',
+                        backgroundColor: watermarkBold ? 'var(--accent)' : 'var(--surface-2)',
+                        color: watermarkBold ? 'var(--on-accent)' : 'var(--text-secondary)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        height: '28px',
+                      }}
+                      onClick={() => updateSetting('watermarkBold', !watermarkBold, setWatermarkBold)}
+                      title="Bold"
+                      type="button"
+                    >
+                      B
+                    </button>
+                    <button
+                      className={`btn btn-secondary ${watermarkItalic ? 'active' : ''}`}
+                      style={{
+                        padding: '0 8px',
+                        fontStyle: 'italic',
+                        backgroundColor: watermarkItalic ? 'var(--accent)' : 'var(--surface-2)',
+                        color: watermarkItalic ? 'var(--on-accent)' : 'var(--text-secondary)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        height: '28px',
+                      }}
+                      onClick={() => updateSetting('watermarkItalic', !watermarkItalic, setWatermarkItalic)}
+                      title="Italic"
+                      type="button"
+                    >
+                      I
+                    </button>
+                  </div>
                 </div>
                 <div className="control-group">
                   <span className="control-label">Default Position</span>

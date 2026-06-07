@@ -25,10 +25,16 @@ export interface AppSettings {
     aspectRatio: string;
     canvasWidth: number;
     canvasHeight: number;
-    paddingMode: 'fit' | 'fill';
     chromeStyle: 'mac' | 'windows' | 'none';
     watermarkEnabled: boolean;
     watermarkText: string;
+    watermarkFont?: string;
+    watermarkBold?: boolean;
+    watermarkItalic?: boolean;
+    annotationFont?: string;
+    annotationFontSize?: number;
+    annotationBold?: boolean;
+    annotationItalic?: boolean;
     position: string;
     captureShortcut?: string;
     autoImportCaptured?: boolean;
@@ -78,7 +84,14 @@ export const defaultSettings: AppSettings = {
     paddingMode: 'fit',
     chromeStyle: 'mac',
     watermarkEnabled: false,
-    watermarkText: 'achu',
+    watermarkText: 'Made using achu.app',
+    watermarkFont: 'sans-serif',
+    watermarkBold: false,
+    watermarkItalic: false,
+    annotationFont: 'sans-serif',
+    annotationFontSize: 24,
+    annotationBold: true,
+    annotationItalic: false,
     position: 'Middle center',
     captureShortcut: 'PrintScreen',
     autoImportCaptured: true,

@@ -93,6 +93,23 @@ describe('CanvasWatermark', () => {
     expect(el.style.fontSize).toBe('32px');
   });
 
+  it('applies correct font family, weight, and style', () => {
+    const { container } = render(
+      <CanvasWatermark
+        watermarkEnabled={true}
+        watermarkText="Brand"
+        watermarkFont="Georgia"
+        watermarkBold={true}
+        watermarkItalic={true}
+        padding={38}
+      />
+    );
+    const el = container.firstChild as HTMLElement;
+    expect(el.style.fontFamily).toBe('Georgia');
+    expect(el.style.fontWeight).toBe('bold');
+    expect(el.style.fontStyle).toBe('italic');
+  });
+
   it('positions at bottom-center by default', () => {
     const { container } = render(
       <CanvasWatermark
@@ -285,6 +302,21 @@ describe('drawWatermark canvas opacity parity', () => {
     renderCanvas(canvas, null, { ...config, noImage: true });
     expect(ctx._state.globalAlpha).toBe(0.45);
     expect(ctx._state.fillStyle).toBe('#ffffff');
+  });
+
+  it('applies custom watermarkFont, watermarkBold, and watermarkItalic to canvas font property', () => {
+    const { canvas, ctx } = makeMockCanvas();
+    const config: RenderConfig = {
+      ...baseConfig,
+      watermarkEnabled: true,
+      watermarkText: 'Brand',
+      watermarkSize: 25,
+      watermarkFont: 'Courier New',
+      watermarkBold: true,
+      watermarkItalic: true,
+    };
+    renderCanvas(canvas, null, { ...config, noImage: true });
+    expect(ctx._state.font).toBe('italic bold 25px Courier New');
   });
 
   it('watermark is invisible (fillText skipped) when watermarkEnabled is false', () => {

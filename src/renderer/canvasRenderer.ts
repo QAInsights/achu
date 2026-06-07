@@ -11,6 +11,10 @@ export interface Annotation {
   points?: Array<{ x: number; y: number }>;
   rotation?: number;
   arrowStyle?: 'classic' | 'dashed' | 'tapered' | 'curved';
+  fontFamily?: string;
+  fontSize?: number;
+  fontBold?: boolean;
+  fontItalic?: boolean;
 }
 
 export interface RedactionItem {
@@ -103,6 +107,13 @@ export interface RenderConfig {
   watermarkSize?: number;
   watermarkPosition?: 'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right';
   watermarkOpacity?: number;
+  watermarkFont?: string;
+  watermarkBold?: boolean;
+  watermarkItalic?: boolean;
+  annotationFont?: string;
+  annotationFontSize?: number;
+  annotationBold?: boolean;
+  annotationItalic?: boolean;
   position: string; // "Middle center", "Top center", "Bottom center", "Middle left", "Middle right"
   annotations?: Annotation[];
   meshPoints?: Array<{ id: string; color: string; x: number; y: number; radius: number }>;
@@ -845,7 +856,9 @@ function drawWatermark(
   if (!config.watermarkEnabled || !config.watermarkText) return;
   ctx.save();
   const fontSize = config.watermarkSize || 20;
-  ctx.font = `500 ${fontSize}px sans-serif`;
+  const style = config.watermarkItalic ? 'italic' : 'normal';
+  const weight = config.watermarkBold ? 'bold' : '500';
+  ctx.font = `${style} ${weight} ${fontSize}px ${config.watermarkFont || 'sans-serif'}`;
   
   const opacity = config.watermarkOpacity !== undefined ? config.watermarkOpacity : 0.45;
   ctx.globalAlpha = opacity;
@@ -1078,18 +1091,20 @@ function drawAnnotationsOnCanvas(
     } else if (ann.type === 'arrow') {
       drawArrowOnCanvas(ctx, ann, halfW, halfH, strokeW);
     } else if (ann.type === 'text' && ann.text) {
-      const fontSize = Math.max(12, Math.abs(h) * 0.7);
-      ctx.font = `bold ${fontSize}px sans-serif`;
+      const fontSize = ann.fontSize ? ann.fontSize * sf : Math.max(12, Math.abs(h) * 0.7);
+      const style = ann.fontItalic ? 'italic' : 'normal';
+      const weight = ann.fontBold ? 'bold' : 'normal';
+      ctx.font = `${style} ${weight} ${fontSize}px ${ann.fontFamily || 'sans-serif'}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-
+ 
       ctx.save();
       ctx.strokeStyle = '#0f172a';
       ctx.lineWidth = Math.max(2, fontSize * 0.15);
       ctx.lineJoin = 'round';
       ctx.strokeText(ann.text, 0, 0);
       ctx.restore();
-
+ 
       ctx.fillText(ann.text, 0, 0);
     } else if (ann.type === 'emoji' && ann.text) {
       const fontSize = Math.min(Math.abs(w), Math.abs(h));
