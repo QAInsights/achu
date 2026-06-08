@@ -6,31 +6,6 @@ import { Readable } from 'stream';
 const isDev = !app.isPackaged;
 
 /**
- * Reads the PE header of a Windows executable to determine its target architecture.
- */
-function getExeArch(filePath: string): 'x64' | 'arm64' | 'x86' | 'unknown' {
-  try {
-    const mzBuf = Buffer.alloc(64);
-    const fd = fs.openSync(filePath, 'r');
-    fs.readSync(fd, mzBuf, 0, 64, 0);
-    fs.closeSync(fd);
-    if (mzBuf[0] !== 0x4D || mzBuf[1] !== 0x5A) return 'unknown';
-    const peOffset = mzBuf.readUInt32LE(60);
-    const peBuf = Buffer.alloc(6);
-    const fd2 = fs.openSync(filePath, 'r');
-    fs.readSync(fd2, peBuf, 0, 6, peOffset);
-    fs.closeSync(fd2);
-    const machine = peBuf.readUInt16LE(4);
-    if (machine === 0x8664) return 'x64';
-    if (machine === 0xAA64) return 'arm64';
-    if (machine === 0x014C) return 'x86';
-    return 'unknown';
-  } catch {
-    return 'unknown';
-  }
-}
-
-/**
  * Compares two CalVer or SemVer strings segment by segment.
  * Returns true if latest version is newer than current version.
  */
@@ -192,15 +167,13 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
 
         const tempExists = fs.existsSync(tempPath);
         const tempSize = tempExists ? fs.statSync(tempPath).size : 0;
-        const downloadedArch = tempExists ? getExeArch(tempPath) : 'unknown';
         console.log(`[Updater] execPath        = ${execPath}`);
         console.log(`[Updater] tempPath        = ${tempPath}`);
         console.log(`[Updater] tempFile exists = ${tempExists} (${tempSize} bytes)`);
-        console.log(`[Updater] downloaded arch = ${downloadedArch} (process.arch=${process.arch})`);
         console.log(`[Updater] logPath         = ${logPath}`);
 
-        if (downloadedArch !== 'unknown' && downloadedArch !== process.arch) {
-          throw new Error(`Downloaded exe is ${downloadedArch} but this system is ${process.arch}. Cannot install incompatible update.`);
+        if (!tempExists || tempSize === 0) {
+          throw new Error('Downloaded update file is missing or empty.');
         }
 
         // Write standard Windows updater batch script with retry limit to prevent infinite loop
@@ -222,9 +195,12 @@ echo [%DATE% %TIME%] All retries exhausted, giving up >> "%LOGFILE%"
 goto done
 :success
 echo [%DATE% %TIME%] Move succeeded >> "%LOGFILE%"
-powershell -Command "Unblock-File -LiteralPath '${execPath}'"
-echo [%DATE% %TIME%] Unblocked file, launching >> "%LOGFILE%"
-start "" "${execPath}"
+powershell -Command "Unblock-File -LiteralPath '${execPath.replace(/'/g, "''")}'"
+echo [%DATE% %TIME%] Unblocked file, waiting for security scan >> "%LOGFILE%"
+timeout /t 5 /nobreak >nul
+echo [%DATE% %TIME%] Launching >> "%LOGFILE%"
+powershell -Command "Start-Process -LiteralPath '${execPath.replace(/'/g, "''")}'"
+echo [%DATE% %TIME%] Launch command sent >> "%LOGFILE%"
 :done
 del "%~f0"
 `;
