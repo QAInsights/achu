@@ -1,11 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   drawMeshGradient,
   drawBackground,
   drawRoundedRectPath,
   getCanvasDimensions,
   renderCanvas,
-  RenderConfig,
   Annotation,
   getBgImage,
   preloadBgImage,
@@ -78,35 +77,35 @@ describe('getCanvasDimensions', () => {
   });
 
   it('calculates dimensions with chrome offset', () => {
-    const config = { ...baseConfig, aspectRatio: 'Auto', chromeStyle: 'mac' };
+    const config = { ...baseConfig, aspectRatio: 'Auto', chromeStyle: 'mac' as const };
     const dims = getCanvasDimensions(800, 600, config);
     expect(dims.width).toBeGreaterThan(0);
     expect(dims.height).toBeGreaterThan(0);
   });
 
   it('handles 1:1 fixed ratio with image', () => {
-    const config = { ...baseConfig, aspectRatio: '1:1', paddingMode: 'fit' };
+    const config = { ...baseConfig, aspectRatio: '1:1', paddingMode: 'fit' as const };
     const dims = getCanvasDimensions(800, 600, config);
     expect(dims.width).toBeGreaterThan(0);
     expect(dims.height).toBeGreaterThan(0);
   });
 
   it('handles paddingMode fill', () => {
-    const config = { ...baseConfig, aspectRatio: '1:1', paddingMode: 'fill' };
+    const config = { ...baseConfig, aspectRatio: '1:1', paddingMode: 'fill' as const };
     const dims = getCanvasDimensions(800, 600, config);
     expect(dims.width).toBeGreaterThan(0);
     expect(dims.height).toBeGreaterThan(0);
   });
 
   it('handles fit mode when content is wider than target', () => {
-    const config = { ...baseConfig, aspectRatio: '1:1', paddingMode: 'fit', padding: 0, scale: 200 };
+    const config = { ...baseConfig, aspectRatio: '1:1', paddingMode: 'fit' as const, padding: 0, scale: 200 };
     const dims = getCanvasDimensions(800, 600, config);
     expect(dims.width).toBeGreaterThan(0);
     expect(dims.height).toBeGreaterThan(0);
   });
 
   it('handles chrome none', () => {
-    const config = { ...baseConfig, aspectRatio: 'Auto', chromeStyle: 'none' };
+    const config = { ...baseConfig, aspectRatio: 'Auto', chromeStyle: 'none' as const };
     const dims = getCanvasDimensions(800, 600, config);
     expect(dims.width).toBeGreaterThan(0);
     expect(dims.height).toBeGreaterThan(0);
@@ -861,7 +860,7 @@ describe('renderCanvas', () => {
   });
 
   describe('watermark custom position and opacity', () => {
-    const positions = ['left', 'middle', 'right', 'top left', 'top middle', 'top right'];
+    const positions = ['left', 'middle', 'right', 'top left', 'top middle', 'top right'] as const;
 
     positions.forEach((pos) => {
       it(`renders watermark at position: ${pos}`, () => {
@@ -961,11 +960,11 @@ describe('renderCanvas', () => {
       Object.defineProperty(cachedImg, 'naturalWidth', { value: 100, configurable: true });
       
       // Fire the onload/load event if there are listeners
-      cachedImg.dispatchEvent(new Event('load'));
+      cachedImg!.dispatchEvent(new Event('load'));
 
       // If preloadBgImage ran synchronously (which it might not if onload isn't mocked, but dispatching event triggers it)
-      if (cachedImg.onload) {
-        cachedImg.onload();
+      if (cachedImg!.onload) {
+        cachedImg!.onload(new Event('load'));
       }
 
       expect(preloadCallbackCalled).toBe(true);
@@ -1027,10 +1026,9 @@ describe('drawBackground url() cover-scale regression', () => {
     // sw = 2000*0.4 = 800, sh = 1000*0.4 = 400
     // sx = (400-800)/2 = -200, sy = (400-400)/2 = 0
     const bgUrl = 'regression-wide-image.png';
-    const img = makeLoadedImage(2000, 1000);
+    makeLoadedImage(2000, 1000);
     // Inject directly into bgImageCache via preloadBgImage
-    let done = false;
-    preloadBgImage(bgUrl, () => { done = true; });
+    preloadBgImage(bgUrl, () => {});
     const cached = getBgImage(bgUrl)!;
     Object.defineProperty(cached, 'complete', { value: true, configurable: true });
     Object.defineProperty(cached, 'naturalWidth', { value: 2000, configurable: true });
@@ -1059,8 +1057,7 @@ describe('drawBackground url() cover-scale regression', () => {
     // sw = 100*6 = 600, sh = 500*6 = 3000
     // sx = (600-600)/2 = 0, sy = (300-3000)/2 = -1350
     const bgUrl = 'regression-tall-image.png';
-    let done = false;
-    preloadBgImage(bgUrl, () => { done = true; });
+    preloadBgImage(bgUrl, () => {});
     const cached = getBgImage(bgUrl)!;
     Object.defineProperty(cached, 'complete', { value: true, configurable: true });
     Object.defineProperty(cached, 'naturalWidth', { value: 100, configurable: true });

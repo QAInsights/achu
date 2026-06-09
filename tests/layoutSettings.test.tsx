@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import React from 'react';
 import LayoutSettings from '../src/renderer/components/LayoutSettings';
 import { makeFullMockContext } from './shared';
 

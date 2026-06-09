@@ -177,6 +177,15 @@ describe('AppContext', () => {
         watermarkEnabled: false,
         watermarkText: 'Made using achu.app',
         watermarkSize: 20,
+        watermarkPosition: 'middle' as const,
+        watermarkOpacity: 0.4,
+        watermarkFont: 'sans-serif',
+        watermarkBold: false,
+        watermarkItalic: false,
+        annotationFont: 'sans-serif',
+        annotationFontSize: 24,
+        annotationBold: true,
+        annotationItalic: false,
         position: 'Middle center',
         annotations: [],
         meshPoints: [
@@ -274,10 +283,17 @@ describe('AppContext', () => {
         watermarkEnabled: true,
         watermarkText: 'Test',
         watermarkSize: 35,
-        watermarkPosition: 'right',
+        watermarkPosition: 'right' as const,
         watermarkOpacity: 0.8,
+        watermarkFont: 'sans-serif',
+        watermarkBold: false,
+        watermarkItalic: false,
+        annotationFont: 'sans-serif',
+        annotationFontSize: 24,
+        annotationBold: true,
+        annotationItalic: false,
         position: 'Top left',
-        annotations: [{ id: '1', type: 'rect' }],
+        annotations: [{ id: '1', type: 'rect' }] as any[],
         meshPoints: [{ id: '1', color: '#000000', x: 0.5, y: 0.5, radius: 100 }],
         meshBlur: 80,
         meshGrain: 20,
@@ -304,7 +320,7 @@ describe('AppContext', () => {
       expect(state.meshBlur).toBe(80);
       expect(state.noImageMode).toBe(true);
 
-      const partialConfig = { padding: 60 };
+      const partialConfig = { padding: 60 } as any;
       applyConfig(partialConfig, setters);
 
       expect(state.padding).toBe(60);

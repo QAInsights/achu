@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import React from 'react';
 import InspectorSection from '../src/renderer/components/InspectorSection';
 import PromptModal from '../src/renderer/components/PromptModal';
 import WorkspaceFooter from '../src/renderer/components/WorkspaceFooter';

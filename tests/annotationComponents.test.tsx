@@ -1,13 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import React from 'react';
 import AnnotationShape from '../src/renderer/components/annotations/AnnotationShape';
 import SelectionBox from '../src/renderer/components/annotations/SelectionBox';
 import TextEditor from '../src/renderer/components/annotations/TextEditor';
 
 // Mock arrowUtils
 vi.mock('../src/renderer/arrowUtils', () => ({
-  getCurvedArrowPoints: vi.fn((x0, y0, x1, y1, strokeW) => ({
+  getCurvedArrowPoints: vi.fn((x0, y0, x1, y1, _strokeW) => ({
     x0, y0, x1, y1,
     x_h: x1 - 10,
     y_h: y1 - 10,
@@ -18,7 +17,7 @@ vi.mock('../src/renderer/arrowUtils', () => ({
     arrow2X: x1 - 5,
     arrow2Y: y1 - 15,
   })),
-  getTaperedCurvedArrowPoints: vi.fn((x0, y0, x1, y1, strokeW) => ({
+  getTaperedCurvedArrowPoints: vi.fn((x0, y0, x1, y1, _strokeW) => ({
     leftPoints: [
       { x: x0, y: y0 },
       { x: (x0 + x1) / 2, y: (y0 + y1) / 2 },

@@ -2,23 +2,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
 import { usePresets } from '../src/renderer/hooks/usePresets';
+import { Annotation } from '../src/renderer/canvasRenderer';
 
 describe('usePresets', () => {
-  let mockSetImageSrc: ReturnType<typeof vi.fn>;
-  let mockSetNoImageMode: ReturnType<typeof vi.fn>;
-  let mockSetAnnotations: ReturnType<typeof vi.fn>;
-  let mockSetBackgroundType: ReturnType<typeof vi.fn>;
-  let mockSetBackgroundValue: ReturnType<typeof vi.fn>;
-  let mockGetCurrentConfig: ReturnType<typeof vi.fn>;
-  let mockPushHistory: ReturnType<typeof vi.fn>;
-  let mockSetRedactions: ReturnType<typeof vi.fn>;
-  let mockSetBgGrain: ReturnType<typeof vi.fn>;
-  let mockSetLightRaysStyle: ReturnType<typeof vi.fn>;
-  let mockSetLightRaysOpacity: ReturnType<typeof vi.fn>;
-  let mockSetLightRaysAngle: ReturnType<typeof vi.fn>;
-  let mockSetLightRaysCount: ReturnType<typeof vi.fn>;
-  let mockSetLightRaysSourceX: ReturnType<typeof vi.fn>;
-  let mockSetLightRaysSourceY: ReturnType<typeof vi.fn>;
+  let mockSetImageSrc: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<string | null>>>>;
+  let mockSetNoImageMode: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<boolean>>>>;
+  let mockSetAnnotations: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>>;
+  let mockSetBackgroundType: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<'gradient' | 'color' | 'blur' | 'mesh'>>>>;
+  let mockSetBackgroundValue: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<string>>>>;
+  let mockGetCurrentConfig: ReturnType<typeof vi.fn<() => any>>;
+  let mockPushHistory: ReturnType<typeof vi.fn<(config: any) => void>>;
+  let mockSetRedactions: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<any[]>>>>;
+  let mockSetBgGrain: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<number>>>>;
+  let mockSetLightRaysStyle: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<'none' | 'diagonal' | 'spotlight' | 'aurora'>>>>;
+  let mockSetLightRaysOpacity: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<number>>>>;
+  let mockSetLightRaysAngle: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<number>>>>;
+  let mockSetLightRaysCount: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<number>>>>;
+  let mockSetLightRaysSourceX: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<number>>>>;
+  let mockSetLightRaysSourceY: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<number>>>>;
 
   const defaultConfig = {
     padding: 38,
@@ -37,29 +38,29 @@ describe('usePresets', () => {
   };
 
   beforeEach(() => {
-    mockSetImageSrc = vi.fn();
-    mockSetNoImageMode = vi.fn();
-    mockSetAnnotations = vi.fn();
-    mockSetBackgroundType = vi.fn();
-    mockSetBackgroundValue = vi.fn();
-    mockGetCurrentConfig = vi.fn().mockReturnValue(defaultConfig);
-    mockPushHistory = vi.fn();
-    mockSetRedactions = vi.fn();
-    mockSetBgGrain = vi.fn();
-    mockSetLightRaysStyle = vi.fn();
-    mockSetLightRaysOpacity = vi.fn();
-    mockSetLightRaysAngle = vi.fn();
-    mockSetLightRaysCount = vi.fn();
-    mockSetLightRaysSourceX = vi.fn();
-    mockSetLightRaysSourceY = vi.fn();
+    mockSetImageSrc = vi.fn<React.Dispatch<React.SetStateAction<string | null>>>();
+    mockSetNoImageMode = vi.fn<React.Dispatch<React.SetStateAction<boolean>>>();
+    mockSetAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>();
+    mockSetBackgroundType = vi.fn<React.Dispatch<React.SetStateAction<'gradient' | 'color' | 'blur' | 'mesh'>>>();
+    mockSetBackgroundValue = vi.fn<React.Dispatch<React.SetStateAction<string>>>();
+    mockGetCurrentConfig = vi.fn<() => any>().mockReturnValue(defaultConfig);
+    mockPushHistory = vi.fn<(config: any) => void>();
+    mockSetRedactions = vi.fn<React.Dispatch<React.SetStateAction<any[]>>>();
+    mockSetBgGrain = vi.fn<React.Dispatch<React.SetStateAction<number>>>();
+    mockSetLightRaysStyle = vi.fn<React.Dispatch<React.SetStateAction<'none' | 'diagonal' | 'spotlight' | 'aurora'>>>();
+    mockSetLightRaysOpacity = vi.fn<React.Dispatch<React.SetStateAction<number>>>();
+    mockSetLightRaysAngle = vi.fn<React.Dispatch<React.SetStateAction<number>>>();
+    mockSetLightRaysCount = vi.fn<React.Dispatch<React.SetStateAction<number>>>();
+    mockSetLightRaysSourceX = vi.fn<React.Dispatch<React.SetStateAction<number>>>();
+    mockSetLightRaysSourceY = vi.fn<React.Dispatch<React.SetStateAction<number>>>();
     vi.restoreAllMocks();
   });
 
   const render = (overrides?: {
     backgroundType?: 'gradient' | 'color' | 'blur' | 'mesh';
     backgroundValue?: string;
-    setRedactions?: ReturnType<typeof vi.fn>;
-    handlePasteImage?: ReturnType<typeof vi.fn>;
+    setRedactions?: React.Dispatch<React.SetStateAction<any[]>>;
+    handlePasteImage?: (src: string) => void;
   }) =>
     renderHook(() =>
       usePresets(
@@ -136,7 +137,7 @@ describe('usePresets', () => {
     });
 
     it('does not throw when setRedactions is undefined', () => {
-      const { result } = render({ setRedactions: undefined as unknown as ReturnType<typeof vi.fn> });
+      const { result } = render({ setRedactions: undefined });
       expect(() => {
         act(() => {
           result.current.onImageLoaded('test');

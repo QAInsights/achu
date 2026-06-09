@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import React from 'react';
 import MeshGradientControls from '../src/renderer/components/MeshGradientControls';
 import { makeFullMockContext } from './shared';
 
@@ -215,8 +214,6 @@ describe('MeshGradientControls', () => {
 
     it('changing Blur slider calls setMeshBlur', () => {
       render(<MeshGradientControls />);
-      const sliders = screen.getAllByRole('slider');
-      // Blur slider is at index 0 after color spot sliders (or before depending on render order)
       // Find the blur slider by its containing text
       const blurContainer = screen.getByText('Blur (Blending)').closest('div')?.parentElement;
       const blurSlider = blurContainer?.querySelector('input[type="range"]') as HTMLInputElement;

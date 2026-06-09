@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { snapDragPosition, snapResizeDimensions, snapDrawingDimensions, SnapGuide } from '../src/renderer/utils/snapUtils';
+import { snapDragPosition, snapResizeDimensions, snapDrawingDimensions } from '../src/renderer/utils/snapUtils';
 
 const makeAnn = (id: string, x: number, y: number, w: number, h: number) => ({
   id, type: 'rect' as const, x, y, w, h, color: '#ff0000', strokeWidth: 4,
@@ -11,7 +11,6 @@ describe('snapUtils - Extended', () => {
   describe('snapDragPosition', () => {
     it('returns original position when far from targets', () => {
       // Position 0.37 is far from container targets (0, 0.5, 1)
-      const threshold = 5 / 800; // ~0.00625
       // 0.37 with width 0.1 gives sources [0.37, 0.42, 0.47]
       // Closest candidate is 0.5 at distance 0.03 > threshold, so no snap
       const result = snapDragPosition(0.37, 0.37, 0.1, 0.1, [], dims);

@@ -5,18 +5,18 @@ import { Annotation } from '../src/renderer/canvasRenderer';
 
 describe('useAnnotationEvents', () => {
   let containerRef: any;
-  let setAnnotations: ReturnType<typeof vi.fn>;
-  let onSaveHistory: ReturnType<typeof vi.fn>;
-  let customPrompt: ReturnType<typeof vi.fn>;
+  let setAnnotations: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>>;
+  let onSaveHistory: ReturnType<typeof vi.fn<(newAnns?: Annotation[]) => void>>;
+  let customPrompt: ReturnType<typeof vi.fn<(message: string, defaultValue?: string) => Promise<string | null>>>;
 
   beforeEach(() => {
     containerRef = { current: null };
-    setAnnotations = vi.fn((val: any) => {
+    setAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>().mockImplementation((val: any) => {
       if (typeof val === 'function') return val([]);
       return val;
     });
-    onSaveHistory = vi.fn();
-    customPrompt = vi.fn().mockResolvedValue('😀');
+    onSaveHistory = vi.fn<(newAnns?: Annotation[]) => void>();
+    customPrompt = vi.fn<(message: string, defaultValue?: string) => Promise<string | null>>().mockResolvedValue('😀');
   });
 
   it('initializes with default state', () => {
@@ -227,7 +227,7 @@ describe('useAnnotationEvents', () => {
     }];
 
     let currentAnnotations = annotations;
-    const wrappedSetAnnotations = vi.fn((updater: any) => {
+    const wrappedSetAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>().mockImplementation((updater: any) => {
       if (typeof updater === 'function') {
         currentAnnotations = updater(currentAnnotations);
         return currentAnnotations;
@@ -269,7 +269,7 @@ describe('useAnnotationEvents', () => {
     }];
 
     let currentAnnotations = [...annotations];
-    const wrappedSetAnnotations = vi.fn((updater: any) => {
+    const wrappedSetAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>().mockImplementation((updater: any) => {
       if (typeof updater === 'function') {
         currentAnnotations = updater(currentAnnotations);
         return currentAnnotations;
@@ -412,7 +412,7 @@ describe('useAnnotationEvents', () => {
     }];
 
     let currentAnnotations = [...annotations];
-    const wrappedSetAnnotations = vi.fn((updater: any) => {
+    const wrappedSetAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>().mockImplementation((updater: any) => {
       if (typeof updater === 'function') {
         currentAnnotations = updater(currentAnnotations);
         return currentAnnotations;
@@ -421,7 +421,7 @@ describe('useAnnotationEvents', () => {
       return updater;
     });
 
-    const setAnnotationColor = vi.fn();
+    const setAnnotationColor = vi.fn<(color: string) => void>();
 
     const { result, rerender } = renderHook(
       ({ color }) =>
@@ -461,7 +461,7 @@ describe('useAnnotationEvents', () => {
       color: '#0000ff', strokeWidth: 4,
     }];
 
-    const setAnnotationColor = vi.fn();
+    const setAnnotationColor = vi.fn<(color: string) => void>();
 
     const { result } = renderHook(() =>
       useAnnotationEvents({

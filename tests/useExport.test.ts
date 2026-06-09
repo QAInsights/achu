@@ -10,6 +10,7 @@ vi.mock('../src/renderer/canvasRenderer', () => ({
 }));
 
 import { useExport } from '../src/renderer/hooks/useExport';
+import { RenderConfig } from '../src/renderer/canvasRenderer';
 
 // Simulates a canvas whose toDataURL returns a small base64 payload (~0.7KB actual)
 function makeSmallBase64() {
@@ -22,14 +23,14 @@ function makeLargeBase64() {
 }
 
 describe('useExport', () => {
-  let mockGetCurrentConfig: ReturnType<typeof vi.fn>;
+  let mockGetCurrentConfig: ReturnType<typeof vi.fn<() => RenderConfig>>;
 
   beforeEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
     mockRenderCanvas.mockReset();
 
-    mockGetCurrentConfig = vi.fn().mockReturnValue({
+    mockGetCurrentConfig = vi.fn<() => RenderConfig>().mockReturnValue({
       padding: 38,
       rounded: 20,
       scale: 100,
@@ -40,7 +41,7 @@ describe('useExport', () => {
       canvasHeight: 600,
       selectedPreset: '',
       noImage: false,
-    });
+    } as unknown as RenderConfig);
   });
 
   afterEach(() => {
@@ -358,10 +359,10 @@ describe('useExport', () => {
       const mockLink = document.createElement('a');
       const clickSpy = vi.spyOn(mockLink, 'click');
       const origCreateElement = document.createElement.bind(document);
-      vi.spyOn(document, 'createElement').mockImplementation((tag: string, opts?: ElementCreationOptions) => {
+      vi.spyOn(document, 'createElement').mockImplementation(((tag: string, opts?: ElementCreationOptions) => {
         if (tag === 'a') return mockLink;
         return origCreateElement(tag, opts);
-      });
+      }) as typeof document.createElement);
 
       act(() => {
         result.current.triggerExport();
@@ -380,17 +381,15 @@ describe('useExport', () => {
       const origCreateElement = document.createElement.bind(document);
 
       // Capture the canvas created by useExport so we can spy on toDataURL
-      let capturedCanvas: HTMLCanvasElement | null = null;
-      vi.spyOn(document, 'createElement').mockImplementation((tag: string, opts?: ElementCreationOptions) => {
+      vi.spyOn(document, 'createElement').mockImplementation(((tag: string, opts?: ElementCreationOptions) => {
         if (tag === 'canvas') {
           const c = origCreateElement(tag, opts) as HTMLCanvasElement;
           c.toDataURL = () => makeSmallBase64();
-          capturedCanvas = c;
           return c;
         }
         if (tag === 'a') return mockLink;
         return origCreateElement(tag, opts);
-      });
+      }) as typeof document.createElement);
 
       const { result } = renderHook(() =>
         useExport(null, true, mockGetCurrentConfig)
@@ -418,10 +417,10 @@ describe('useExport', () => {
       const mockLink = document.createElement('a');
       vi.spyOn(mockLink, 'click');
       const origCreateElement = document.createElement.bind(document);
-      vi.spyOn(document, 'createElement').mockImplementation((tag: string, opts?: ElementCreationOptions) => {
+      vi.spyOn(document, 'createElement').mockImplementation(((tag: string, opts?: ElementCreationOptions) => {
         if (tag === 'a') return mockLink;
         return origCreateElement(tag, opts);
-      });
+      }) as typeof document.createElement);
 
       const { result } = renderHook(() =>
         useExport(null, true, mockGetCurrentConfig)
@@ -566,15 +565,15 @@ describe('useExport', () => {
 
       const mockLink = { download: '', href: '', click: vi.fn() };
       const origCE = document.createElement.bind(document);
-      vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      vi.spyOn(document, 'createElement').mockImplementation(((tag: string) => {
         if (tag === 'a') return mockLink as any;
         if (tag === 'canvas') {
           const c = origCE('canvas');
           c.toDataURL = () => 'data:image/webp;base64,fake';
           return c;
         }
-        return origCE(tag);
-      });
+        return origCE(tag as keyof HTMLElementTagNameMap);
+      }) as typeof document.createElement);
 
       const { result } = renderHook(() =>
         useExport(null, true, mockGetCurrentConfig)

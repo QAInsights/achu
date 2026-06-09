@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import React from 'react';
 import HelpModal from '../src/renderer/components/HelpModal';
 import { makeFullMockContext } from './shared';
 
@@ -8,11 +7,15 @@ vi.mock('../src/renderer/AppContext', () => ({
   useAppContext: () => mockContext,
 }));
 
-let mockContext: ReturnType<typeof makeFullMockContext>;
+let mockContext: ReturnType<typeof makeFullMockContext> & {
+  helpVisible: boolean;
+  setHelpVisible: ReturnType<typeof vi.fn>;
+};
 
 beforeEach(() => {
   mockContext = {
     ...makeFullMockContext(),
+    helpVisible: false,
     setHelpVisible: vi.fn(),
   };
   vi.restoreAllMocks();

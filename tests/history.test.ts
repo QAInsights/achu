@@ -56,9 +56,8 @@ describe('useHistory (real hook)', () => {
     const { result } = renderHook(() => useHistory(applyConfig));
 
     act(() => { result.current.pushHistory({ scale: 100 }); });
-    const callsBefore = applyConfig.mock.calls.length;
 
-    // Already at index 0, first undo should go to 0 and apply
+    // Already at index 0, undo should be a no-op
     act(() => { result.current.handleUndo(); });
     expect(result.current.historyIndex).toBe(0);
 

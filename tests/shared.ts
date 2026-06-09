@@ -181,7 +181,7 @@ export function makeMockCtx(): MockCtx {
       return true;
     },
   };
-  return new Proxy({} as MockCtx, handler);
+  return new Proxy({} as any, handler) as MockCtx;
 }
 
 export function makeArrowAnnotation(
@@ -234,7 +234,7 @@ export function makeMockAnnotation(type: string, overrides: Record<string, any> 
 export function makeFullMockContext(overrides: Record<string, any> = {}) {
   const noop = () => {};
   return {
-    imageSrc: null,
+    imageSrc: null as string | null,
     setImageSrc: noop,
     noImageMode: false,
     setNoImageMode: noop,
@@ -367,6 +367,20 @@ export function makeFullMockContext(overrides: Record<string, any> = {}) {
     setSelectedPreset: noop,
     showSafeZone: true,
     setShowSafeZone: noop,
+    redactions: [] as { id: string; type: string; text: string; status: 'visible' | 'redacted'; bbox: { x0: number; y0: number; x1: number; y1: number } }[],
+    isScanningSecrets: false,
+    scanProgress: 0,
+    scanForSecrets: async () => {},
+    toggleRedaction: noop,
+    redactAll: noop,
+    revealAll: noop,
+    hoveredRedactionId: null as string | null,
+    setHoveredRedactionId: noop,
+    redactionStyle: 'solid' as 'blur' | 'solid',
+    setRedactionStyle: noop,
+    sidebarVisible: true,
+    setSidebarVisible: noop,
+    resetStyles: noop,
     appTheme: 'dark',
     setAppTheme: noop,
     isDragging: false,
@@ -375,7 +389,7 @@ export function makeFullMockContext(overrides: Record<string, any> = {}) {
     setNewPresetName: noop,
     customPresets: [],
     setCustomPresets: noop,
-    sidebarPosition: 'left' as const,
+    sidebarPosition: 'left' as 'left' | 'right',
     setSidebarPosition: noop,
     bgGrain: 0,
     setBgGrain: noop,

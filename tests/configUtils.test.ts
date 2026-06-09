@@ -177,6 +177,13 @@ describe('configUtils', () => {
       watermarkSize: 20,
       watermarkPosition: 'middle',
       watermarkOpacity: 0.45,
+      watermarkFont: 'sans-serif',
+      watermarkBold: false,
+      watermarkItalic: false,
+      annotationFont: 'sans-serif',
+      annotationFontSize: 24,
+      annotationBold: true,
+      annotationItalic: false,
       position: 'Middle center',
       annotations: [],
       meshPoints: [
@@ -190,7 +197,7 @@ describe('configUtils', () => {
     };
 
     it('maps all state fields to RenderConfig', () => {
-      const config = getCurrentConfig(minimalState);
+      const config = getCurrentConfig(minimalState as any);
       expect(config.padding).toBe(38);
       expect(config.rounded).toBe(20);
       expect(config.shadow).toBe(30);
@@ -226,13 +233,13 @@ describe('configUtils', () => {
     });
 
     it('maps noImageMode to noImage', () => {
-      const config = getCurrentConfig({ ...minimalState, noImageMode: true });
+      const config = getCurrentConfig({ ...minimalState, noImageMode: true } as any);
       expect(config.noImage).toBe(true);
     });
 
     it('handles alternate background types', () => {
       const state = { ...minimalState, backgroundType: 'color' as const, backgroundValue: '#ff0000' };
-      const config = getCurrentConfig(state);
+      const config = getCurrentConfig(state as any);
       expect(config.backgroundType).toBe('color');
       expect(config.backgroundValue).toBe('#ff0000');
     });
@@ -317,7 +324,7 @@ describe('configUtils', () => {
         watermarkEnabled: true,
         watermarkText: 'Test',
         watermarkSize: 30,
-        watermarkPosition: 'top-left',
+        watermarkPosition: 'top left',
         watermarkOpacity: 0.5,
         watermarkFont: 'Arial',
         watermarkBold: true,
@@ -359,7 +366,7 @@ describe('configUtils', () => {
       expect(setters.setWatermarkEnabled).toHaveBeenCalledWith(true);
       expect(setters.setWatermarkText).toHaveBeenCalledWith('Test');
       expect(setters.setWatermarkSize).toHaveBeenCalledWith(30);
-      expect(setters.setWatermarkPosition).toHaveBeenCalledWith('top-left');
+      expect(setters.setWatermarkPosition).toHaveBeenCalledWith('top left');
       expect(setters.setWatermarkOpacity).toHaveBeenCalledWith(0.5);
       expect(setters.setWatermarkFont).toHaveBeenCalledWith('Arial');
       expect(setters.setWatermarkBold).toHaveBeenCalledWith(true);
@@ -413,7 +420,7 @@ describe('configUtils', () => {
         watermarkEnabled: true,
         watermarkText: 'MyMark',
         watermarkSize: 24,
-        watermarkPosition: 'top-right',
+        watermarkPosition: 'top right',
         watermarkOpacity: 0.6,
         watermarkFont: 'monospace',
         watermarkBold: true,
@@ -432,7 +439,7 @@ describe('configUtils', () => {
         noImageMode: false,
       };
 
-      const config = getCurrentConfig(state);
+      const config = getCurrentConfig(state as any);
       const setters = makeSetters();
       applyConfig(config, setters);
 
@@ -498,12 +505,12 @@ describe('configUtils', () => {
 
     it('does not call optional setters when config values are falsy', () => {
       const setters = makeSetters();
-      const config: RenderConfig = {
+      const config = {
         padding: 50,
         exportFormat: undefined as any,
         jpegQuality: undefined as any,
         sidebarPosition: undefined as any,
-      };
+      } as unknown as RenderConfig;
       applyConfig(config, setters);
 
       expect(setters.setExportFormat).not.toHaveBeenCalled();

@@ -1,5 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { exec } from 'child_process';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { shell, clipboard, globalShortcut } from 'electron';
 
 // Mock electron
@@ -185,8 +184,8 @@ describe('Capture Main Module', () => {
     triggerOSScreenCapture();
     expect(getIsCaptureInitiated()).toBe(true);
 
-    let focusCallback: Function = () => {};
-    mockWindow.on.mockImplementation((event: string, callback: Function) => {
+    let focusCallback: () => void = () => {};
+    mockWindow.on.mockImplementation((event: string, callback: () => void) => {
       if (event === 'focus') {
         focusCallback = callback;
       }

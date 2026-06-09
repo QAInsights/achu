@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { applyMeshPalette, generateRandomPalette, getCurrentConfig, applyConfig, DEFAULT_MESH_POINTS, BACKGROUND_TYPES, PADDING_MODES, CHROME_STYLES, ACTIVE_TOOLS, ARROW_STYLES } from '../src/renderer/utils/configUtils';
+import { applyMeshPalette, generateRandomPalette, getCurrentConfig, applyConfig, DEFAULT_MESH_POINTS, BACKGROUND_TYPES, ACTIVE_TOOLS, ARROW_STYLES } from '../src/renderer/utils/configUtils';
 
 describe('configUtils - Extended', () => {
   describe('applyMeshPalette', () => {
@@ -68,14 +68,17 @@ describe('configUtils - Extended', () => {
       shadowColor: 'rgba(0,0,0,0.4)', shadowEnabled: true,
       inset: 5, insetColor: 'rgba(255,255,255,0.2)',
       border: 3, borderColor: '#fff',
-      scale: 100, backgroundType: 'gradient' as const,
+      scale: 100, backgroundType: 'gradient',
       backgroundValue: 'linear-gradient(...)',
       aspectRatio: 'Auto', canvasWidth: 800, canvasHeight: 600,
-      paddingMode: 'fit' as const,
-      chromeStyle: 'mac' as const, chromeTheme: 'dark' as const,
+      paddingMode: 'fit',
+      chromeStyle: 'mac', chromeTheme: 'dark',
       blurDensity: 40,
       watermarkEnabled: false, watermarkText: 'Made using achu.app', watermarkSize: 20,
       watermarkPosition: 'middle', watermarkOpacity: 0.45,
+      watermarkFont: 'sans-serif', watermarkBold: false, watermarkItalic: false,
+      annotationFont: 'sans-serif', annotationFontSize: 24,
+      annotationBold: true, annotationItalic: false,
       position: 'Middle center', annotations: [],
       meshPoints: DEFAULT_MESH_POINTS,
       meshBlur: 60, meshGrain: 15, meshOpacity: 100, meshSpread: 100,
@@ -83,7 +86,7 @@ describe('configUtils - Extended', () => {
     };
 
     it('maps state to RenderConfig', () => {
-      const config = getCurrentConfig(mockState);
+      const config = getCurrentConfig(mockState as any);
       expect(config.padding).toBe(38);
       expect(config.backgroundType).toBe('gradient');
       expect(config.noImage).toBe(false);
@@ -91,13 +94,13 @@ describe('configUtils - Extended', () => {
     });
 
     it('includes optional export format', () => {
-      const config = getCurrentConfig({ ...mockState, exportFormat: 'jpeg', jpegQuality: 75 });
+      const config = getCurrentConfig({ ...mockState, exportFormat: 'jpeg', jpegQuality: 75 } as any);
       expect(config.exportFormat).toBe('jpeg');
       expect(config.jpegQuality).toBe(75);
     });
 
     it('maps mesh fields correctly', () => {
-      const config = getCurrentConfig(mockState);
+      const config = getCurrentConfig(mockState as any);
       expect(config.meshPoints).toEqual(DEFAULT_MESH_POINTS);
       expect(config.meshBlur).toBe(60);
       expect(config.meshGrain).toBe(15);

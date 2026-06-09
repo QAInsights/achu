@@ -74,7 +74,7 @@ describe('Background Settings', () => {
 
   describe('mesh filter ranges', () => {
     it('has valid ranges', () => {
-      for (const [name, range] of Object.entries(MESH_FILTER_RANGES)) {
+      for (const [_name, range] of Object.entries(MESH_FILTER_RANGES)) {
         expect(range.min).toBeLessThan(range.max);
         expect(range.default).toBeGreaterThanOrEqual(range.min);
         expect(range.default).toBeLessThanOrEqual(range.max);

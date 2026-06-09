@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import React from 'react';
 import * as fs from 'fs';
 import * as path from 'path';
 import CanvasWatermark from '../src/renderer/components/CanvasWatermark';
@@ -287,7 +286,7 @@ describe('CanvasWatermark', () => {
 });
 
 // Regression: canvas renderer drawWatermark must also use opacity as-is (0–1)
-import { drawBackground, renderCanvas, RenderConfig } from '../src/renderer/canvasRenderer';
+import { renderCanvas, RenderConfig } from '../src/renderer/canvasRenderer';
 import { makeMockCanvas, baseConfig } from './shared';
 
 describe('drawWatermark canvas opacity parity', () => {

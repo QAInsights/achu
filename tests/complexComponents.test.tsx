@@ -7,6 +7,7 @@ import HelpModal from '../src/renderer/components/HelpModal';
 import WorkspaceToolbar from '../src/renderer/components/WorkspaceToolbar';
 import CanvasPreview from '../src/renderer/components/CanvasPreview';
 import AnnotationsLayer from '../src/renderer/AnnotationsLayer';
+import { Annotation } from '../src/renderer/canvasRenderer';
 import App from '../src/renderer/App';
 import packageJson from '../package.json';
 
@@ -219,18 +220,18 @@ describe('Sidebar', () => {
   });
 
   it('calls resetStyles when Reset settings click is confirmed', () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => true);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<Sidebar />);
-    
+
     fireEvent.click(screen.getByTitle('Reset Styles'));
-    
+
     expect(confirmSpy).toHaveBeenCalled();
     expect(mockContext.resetStyles).toHaveBeenCalled();
     confirmSpy.mockRestore();
   });
 
   it('does not call resetStyles when Reset settings click is cancelled', () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => false);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<Sidebar />);
     
     fireEvent.click(screen.getByTitle('Reset Styles'));
@@ -649,7 +650,7 @@ describe('WorkspaceToolbar', () => {
   it('highlights active tool', () => {
     mockContext.activeTool = 'rect';
     
-    const { container } = render(<WorkspaceToolbar />);
+    render(<WorkspaceToolbar />);
     
     const rectButton = screen.getByTitle('Rectangle Outline');
     expect(rectButton).toHaveClass('active');
@@ -873,7 +874,7 @@ describe('HelpModal', () => {
   });
 
   it('copies system specifications on Copy click', async () => {
-    const mockWriteText = vi.fn().mockImplementation(() => Promise.resolve());
+    const mockWriteText = vi.fn<(_text: string) => Promise<void>>().mockImplementation(() => Promise.resolve());
     Object.defineProperty(navigator, 'clipboard', {
       value: {
         writeText: mockWriteText,
@@ -1258,14 +1259,15 @@ describe('CanvasPreview', () => {
 
 describe('AnnotationsLayer', () => {
   const defaultProps = {
-    annotations: [],
-    setAnnotations: vi.fn(),
+    annotations: [] as Annotation[],
+    setAnnotations: vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>(),
     activeTool: 'pointer' as const,
     setActiveTool: vi.fn(),
     color: '#ff0000',
     strokeWidth: 4,
-    onSaveHistory: vi.fn(),
-    customPrompt: vi.fn(),
+    onSaveHistory: vi.fn<(newAnns?: Annotation[]) => void>(),
+    customPrompt: vi.fn<(message: string, defaultValue?: string) => Promise<string | null>>(),
+    setAnnotationColor: vi.fn<(color: string) => void>(),
   };
 
   it('renders SVG container', () => {

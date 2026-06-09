@@ -107,7 +107,7 @@ describe('meshUtils', () => {
     ];
 
     it('filters gradients by matching category', () => {
-      const result = filterGradientsByCategory(gradients, 'warm');
+      const result = filterGradientsByCategory(gradients, 'warm') as any[];
       expect(result).toHaveLength(2);
       expect(result[0].name).toBe('Sunset');
       expect(result[1].name).toBe('Rose');
@@ -119,7 +119,7 @@ describe('meshUtils', () => {
     });
 
     it('does not include items with undefined category', () => {
-      const result = filterGradientsByCategory(gradients, 'warm');
+      const result = filterGradientsByCategory(gradients, 'warm') as any[];
       const names = result.map(g => g.name);
       expect(names).not.toContain('Neutral');
     });

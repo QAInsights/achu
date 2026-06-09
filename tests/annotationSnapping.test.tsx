@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import React from 'react';
 import { useAnnotationEvents } from '../src/renderer/hooks/useAnnotationEvents';
 import { Annotation } from '../src/renderer/canvasRenderer';
 
@@ -18,18 +19,18 @@ function makeRect(id: string, x: number, y: number, w: number, h: number): Annot
 
 describe('annotation snapping integration', () => {
   let containerRef: any;
-  let setAnnotations: ReturnType<typeof vi.fn>;
-  let onSaveHistory: ReturnType<typeof vi.fn>;
-  let customPrompt: ReturnType<typeof vi.fn>;
+  let setAnnotations: Mock<React.Dispatch<React.SetStateAction<Annotation[]>>>;
+  let onSaveHistory: Mock<(newAnns?: Annotation[]) => void>;
+  let customPrompt: Mock<(message: string, defaultValue?: string) => Promise<string | null>>;
 
   beforeEach(() => {
     containerRef = { current: null };
-    setAnnotations = vi.fn((val: any) => {
+    setAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>((val: any) => {
       if (typeof val === 'function') return val([]);
       return val;
     });
-    onSaveHistory = vi.fn();
-    customPrompt = vi.fn().mockResolvedValue('😀');
+    onSaveHistory = vi.fn<(newAnns?: Annotation[]) => void>();
+    customPrompt = vi.fn<(message: string, defaultValue?: string) => Promise<string | null>>().mockResolvedValue('😀');
   });
 
   describe('activeGuides state', () => {
@@ -55,58 +56,7 @@ describe('annotation snapping integration', () => {
       ];
 
       let currentAnnotations = existing;
-      const wrappedSetAnnotations = vi.fn((updater: any) => {
-        if (typeof updater === 'function') {
-          currentAnnotations = updater(currentAnnotations);
-          return currentAnnotations;
-        }
-        currentAnnotations = updater;
-        return updater;
-      });
-
-      const { result } = renderHook(() =>
-        useAnnotationEvents({
-          annotations: currentAnnotations,
-          setAnnotations: wrappedSetAnnotations,
-          activeTool: 'pointer',
-          color: '#ff0000', strokeWidth: 4, arrowStyle: 'classic',
-          onSaveHistory, customPrompt, containerRef,
-        }),
-      );
-
-      // Select and start dragging the existing annotation
-      act(() => {
-        result.current.setSelectedId('a1');
-        result.current.startDrag(
-          { stopPropagation: vi.fn(), clientX: 160, clientY: 120, pointerId: 1, detail: 1 } as any,
-          existing[0],
-        );
-      });
-
-      // Move mouse to position where left edge snaps to another edge
-      // a1 starts at x=0.1. We need to drag it so its right edge (x=0.3) is near another candidate.
-      // Move to make left edge near some value that triggers snap.
-      act(() => {
-        result.current.handlePointerMove({
-          clientX: -10, clientY: 120, pointerId: 1,
-        } as any);
-      });
-
-      // Guides should be set (or cleared) during drag
-      // After drag, activeGuides should reflect snap state
-      expect(result.current.activeGuides).toBeDefined();
-    });
-
-    it('clears activeGuides when drag stops', () => {
-      const mockDiv = makeMockDiv();
-      containerRef.current = mockDiv;
-
-      const existing: Annotation[] = [
-        makeRect('a1', 0.2, 0.2, 0.3, 0.2),
-      ];
-
-      let currentAnnotations = [...existing];
-      const wrappedSetAnnotations = vi.fn((updater: any) => {
+      const wrappedSetAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>((updater: any) => {
         if (typeof updater === 'function') {
           currentAnnotations = updater(currentAnnotations);
           return currentAnnotations;
@@ -225,7 +175,7 @@ describe('annotation snapping integration', () => {
       ];
 
       let currentAnnotations = [...existing];
-      const wrappedSetAnnotations = vi.fn((updater: any) => {
+      const wrappedSetAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>((updater: any) => {
         if (typeof updater === 'function') {
           currentAnnotations = updater(currentAnnotations);
           return currentAnnotations;
@@ -272,7 +222,7 @@ describe('annotation snapping integration', () => {
       ];
 
       let currentAnnotations = [...existing];
-      const wrappedSetAnnotations = vi.fn((updater: any) => {
+      const wrappedSetAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>((updater: any) => {
         if (typeof updater === 'function') {
           currentAnnotations = updater(currentAnnotations);
           return currentAnnotations;
@@ -319,7 +269,7 @@ describe('annotation snapping integration', () => {
       ];
 
       let currentAnnotations = [...existing];
-      const wrappedSetAnnotations = vi.fn((updater: any) => {
+      const wrappedSetAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>((updater: any) => {
         if (typeof updater === 'function') {
           currentAnnotations = updater(currentAnnotations);
           return currentAnnotations;

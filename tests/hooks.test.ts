@@ -6,7 +6,7 @@ import { useExport } from '../src/renderer/hooks/useExport';
 import { useConnectionPoll } from '../src/renderer/hooks/useConnectionPoll';
 
 describe('useHistory', () => {
-  let applyConfig: ReturnType<typeof vi.fn>;
+  let applyConfig: any;
 
   beforeEach(() => {
     applyConfig = vi.fn();
@@ -180,13 +180,13 @@ describe('useHistory', () => {
 });
 
 describe('usePresets', () => {
-  let mockSetImageSrc: ReturnType<typeof vi.fn>;
-  let mockSetNoImageMode: ReturnType<typeof vi.fn>;
-  let mockSetAnnotations: ReturnType<typeof vi.fn>;
-  let mockSetBackgroundType: ReturnType<typeof vi.fn>;
-  let mockSetBackgroundValue: ReturnType<typeof vi.fn>;
-  let mockGetCurrentConfig: ReturnType<typeof vi.fn>;
-  let mockPushHistory: ReturnType<typeof vi.fn>;
+  let mockSetImageSrc: any;
+  let mockSetNoImageMode: any;
+  let mockSetAnnotations: any;
+  let mockSetBackgroundType: any;
+  let mockSetBackgroundValue: any;
+  let mockGetCurrentConfig: any;
+  let mockPushHistory: any;
 
   beforeEach(() => {
     mockSetImageSrc = vi.fn();
@@ -474,7 +474,7 @@ describe('usePresets', () => {
 describe('useExport', () => {
   let mockImageSrc: string | null;
   let mockNoImageMode: boolean;
-  let mockGetCurrentConfig: ReturnType<typeof vi.fn>;
+  let mockGetCurrentConfig: any;
 
   beforeEach(() => {
     mockImageSrc = 'data:image/png;base64,test';
