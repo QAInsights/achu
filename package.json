@@ -53,7 +53,11 @@
         "from": "app-bundle",
         "to": "."
       },
-      "package.json"
+      "package.json",
+      "node_modules/sharp/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/sharp/**/*"
     ],
     "win": {
       "icon": "assets/icon.ico",
