@@ -189,12 +189,12 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
     const mainWindow = getMainWindow();
     if (!mainWindow) return false;
 
-    const ext = type === 'jpeg' ? 'jpg' : 'png';
+    const ext = type === 'jpeg' ? 'jpg' : type === 'webp' ? 'webp' : 'png';
     const result = await dialog.showSaveDialog(mainWindow, {
       title: 'Export Beautified Screenshot',
       defaultPath: `achu-export.${ext}`,
       filters: [
-        { name: type === 'jpeg' ? 'JPEG Image' : 'PNG Image', extensions: [ext] }
+        { name: type === 'jpeg' ? 'JPEG Image' : type === 'webp' ? 'WebP Image' : 'PNG Image', extensions: [ext] }
       ]
     });
 

@@ -82,9 +82,15 @@ export default function WorkspaceFooter() {
         >
           JPG
         </button>
+        <button
+          className={`format-toggle-btn ${exportFormat === 'webp' ? 'active' : ''}`}
+          onClick={() => setExportFormat('webp')}
+        >
+          WEBP
+        </button>
       </div>
 
-      {exportFormat === 'jpeg' && (
+      {(exportFormat === 'jpeg' || exportFormat === 'webp') && (
         <div className="quality-control">
           <span className="toolbar-control-label">Quality</span>
           <input

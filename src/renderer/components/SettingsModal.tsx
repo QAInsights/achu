@@ -258,12 +258,20 @@ export default function SettingsModal() {
                     >
                       JPEG
                     </button>
+                    <button
+                      className={`format-toggle-btn ${exportFormat === 'webp' ? 'active' : ''}`}
+                      onClick={() => updateSetting('exportFormat', 'webp', setExportFormat)}
+                      style={{ flex: 1 }}
+                      type="button"
+                    >
+                      WebP
+                    </button>
                   </div>
                 </div>
-                {exportFormat === 'jpeg' && (
+                {(exportFormat === 'jpeg' || exportFormat === 'webp') && (
                   <div className="control-group">
                     <div className="control-label-container">
-                      <span className="control-label">JPEG Quality</span>
+                      <span className="control-label">Quality</span>
                       <span className="control-value">{jpegQuality}%</span>
                     </div>
                     <input

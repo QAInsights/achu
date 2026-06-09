@@ -69,7 +69,7 @@ export function getCurrentConfig(state: {
   meshOpacity: number;
   meshSpread: number;
   noImageMode: boolean;
-  exportFormat?: 'png' | 'jpeg';
+  exportFormat?: 'png' | 'jpeg' | 'webp';
   jpegQuality?: number;
   sidebarPosition?: 'left' | 'right';
 }): RenderConfig {
@@ -161,7 +161,7 @@ export function applyConfig(
     setMeshOpacity: (v: number) => void;
     setMeshSpread: (v: number) => void;
     setNoImageMode: (v: boolean) => void;
-    setExportFormat?: (v: 'png' | 'jpeg') => void;
+    setExportFormat?: (v: 'png' | 'jpeg' | 'webp') => void;
     setJpegQuality?: (v: number) => void;
     setSidebarPosition?: (v: 'left' | 'right') => void;
   }

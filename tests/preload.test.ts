@@ -111,6 +111,17 @@ describe('Preload Script', () => {
     });
   });
 
+  it('saveFile calls ipcRenderer.invoke with webp format', () => {
+    const api = getApi();
+    api.saveFile('data:base64...', 'webp', 85);
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('file:save-dialog', {
+      base64Data: 'data:base64...',
+      type: 'webp',
+      quality: 85,
+      compressionMode: undefined,
+    });
+  });
+
   it('copyImageToClipboard calls ipcRenderer.invoke with image data', () => {
     const api = getApi();
     api.copyImageToClipboard('data:base64...');

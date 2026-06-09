@@ -96,7 +96,7 @@ interface AppContextType {
   showAdvancedInset: boolean; setShowAdvancedInset: React.Dispatch<React.SetStateAction<boolean>>;
   showAdvancedShadow: boolean; setShowAdvancedShadow: React.Dispatch<React.SetStateAction<boolean>>;
   showAdvancedBorder: boolean; setShowAdvancedBorder: React.Dispatch<React.SetStateAction<boolean>>;
-  exportFormat: 'png' | 'jpeg'; setExportFormat: React.Dispatch<React.SetStateAction<'png' | 'jpeg'>>;
+  exportFormat: 'png' | 'jpeg' | 'webp'; setExportFormat: React.Dispatch<React.SetStateAction<'png' | 'jpeg' | 'webp'>>;
   jpegQuality: number; setJpegQuality: React.Dispatch<React.SetStateAction<number>>;
   compressionMode: CompressionMode; setCompressionMode: React.Dispatch<React.SetStateAction<CompressionMode>>;
   autoImportCaptured: boolean; setAutoImportCaptured: (val: boolean) => void;

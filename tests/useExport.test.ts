@@ -27,6 +27,7 @@ describe('useExport', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
+    mockRenderCanvas.mockReset();
 
     mockGetCurrentConfig = vi.fn().mockReturnValue({
       padding: 38,
@@ -90,6 +91,14 @@ describe('useExport', () => {
       expect(result.current.exportFormat).toBe('jpeg');
     });
 
+    it('reads webp export format from localStorage if available', () => {
+      localStorage.setItem('snapframe-user-defaults', JSON.stringify({ exportFormat: 'webp' }));
+      const { result } = renderHook(() =>
+        useExport('test-image', false, mockGetCurrentConfig)
+      );
+      expect(result.current.exportFormat).toBe('webp');
+    });
+
     it('reads jpeg quality from localStorage if available', () => {
       localStorage.setItem('snapframe-user-defaults', JSON.stringify({ jpegQuality: 75 }));
       const { result } = renderHook(() =>
@@ -129,6 +138,14 @@ describe('useExport', () => {
       );
       expect(result.current.compressionMode).toBe('balanced');
     });
+
+    it('ignores invalid export format from localStorage', () => {
+      localStorage.setItem('snapframe-user-defaults', JSON.stringify({ exportFormat: 'gif' }));
+      const { result } = renderHook(() =>
+        useExport('test-image', false, mockGetCurrentConfig)
+      );
+      expect(result.current.exportFormat).toBe('png');
+    });
   });
 
   // -----------------------------------------------------------------------
@@ -143,6 +160,16 @@ describe('useExport', () => {
         result.current.setExportFormat('jpeg');
       });
       expect(result.current.exportFormat).toBe('jpeg');
+    });
+
+    it('can switch to webp', () => {
+      const { result } = renderHook(() =>
+        useExport('test-image', false, mockGetCurrentConfig)
+      );
+      act(() => {
+        result.current.setExportFormat('webp');
+      });
+      expect(result.current.exportFormat).toBe('webp');
     });
   });
 
@@ -433,6 +460,28 @@ describe('useExport', () => {
       expect(call[1]).toBe('jpeg');
     });
 
+    it('calls snapFrameAPI.saveFile with correct args for WebP path', () => {
+      stubCanvas('small');
+      const saveFileSpy = vi.fn();
+      vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.setExportFormat('webp');
+      });
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(saveFileSpy).toHaveBeenCalled();
+      const call = saveFileSpy.mock.calls[0];
+      expect(call[1]).toBe('webp');
+    });
+
     it('passes selected compression mode to snapFrameAPI.saveFile', () => {
       stubCanvas('small');
       const saveFileSpy = vi.fn();
@@ -510,6 +559,40 @@ describe('useExport', () => {
       });
 
       expect(mockAlert).not.toHaveBeenCalled();
+    });
+
+    it('uses .webp extension for browser download when format is webp', () => {
+      vi.stubGlobal('snapFrameAPI', undefined);
+
+      const mockLink = { download: '', href: '', click: vi.fn() };
+      const origCE = document.createElement.bind(document);
+      vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+        if (tag === 'a') return mockLink as any;
+        if (tag === 'canvas') {
+          const c = origCE('canvas');
+          c.toDataURL = () => 'data:image/webp;base64,fake';
+          return c;
+        }
+        return origCE(tag);
+      });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.setExportFormat('webp');
+      });
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(mockLink.download).toBe('snapframe-export.webp');
+      expect(mockLink.href).toBe('data:image/webp;base64,fake');
+      expect(mockLink.click).toHaveBeenCalled();
+
+      (document.createElement as any).mockRestore();
     });
   });
 

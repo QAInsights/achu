@@ -49,4 +49,18 @@ describe('imageCompression', () => {
     expect(metadata.width).toBe(16);
     expect(metadata.height).toBe(16);
   });
+
+  it('exports a valid WebP buffer with requested quality path', async () => {
+    const input = await createTestPngBuffer();
+    const output = await compressImageBuffer(input, {
+      type: 'webp',
+      quality: 82,
+      compressionMode: 'balanced',
+    });
+
+    const metadata = await sharp(output).metadata();
+    expect(metadata.format).toBe('webp');
+    expect(metadata.width).toBe(16);
+    expect(metadata.height).toBe(16);
+  });
 });

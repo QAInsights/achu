@@ -588,6 +588,29 @@ describe('useExport', () => {
     expect(mockSaveFile).toHaveBeenCalledWith(null, 'jpeg', 75, 'balanced');
   });
 
+  it('exports WebP with correct quality', () => {
+    const mockSaveFile = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('snapFrameAPI', {
+      saveFile: mockSaveFile,
+    });
+
+    const { result } = renderHook(() =>
+      useExport(null, true, mockGetCurrentConfig)
+    );
+
+    act(() => {
+      result.current.setExportFormat('webp');
+    });
+    act(() => {
+      result.current.setJpegQuality(80);
+    });
+    act(() => {
+      result.current.triggerExport();
+    });
+
+    expect(mockSaveFile).toHaveBeenCalledWith(null, 'webp', 80, 'balanced');
+  });
+
   it('copies to clipboard with snapFrameAPI', async () => {
     const mockCopyImageToClipboard = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('snapFrameAPI', {

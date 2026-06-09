@@ -401,22 +401,31 @@ describe('SettingsModal', () => {
     expect(mockContext.setExportFormat).toHaveBeenCalledWith('png');
   });
 
-  it('shows JPEG quality slider when JPEG is selected', () => {
+  it('shows quality slider when JPEG is selected', () => {
     mockContext.settingsVisible = true;
     mockContext.exportFormat = 'jpeg';
-    
+
     render(<SettingsModal />);
-    
-    expect(screen.getByText('JPEG Quality')).toBeInTheDocument();
+
+    expect(screen.getByText('Quality')).toBeInTheDocument();
   });
 
-  it('hides JPEG quality slider when PNG is selected', () => {
+  it('shows quality slider when WebP is selected', () => {
+    mockContext.settingsVisible = true;
+    mockContext.exportFormat = 'webp';
+
+    render(<SettingsModal />);
+
+    expect(screen.getByText('Quality')).toBeInTheDocument();
+  });
+
+  it('hides quality slider when PNG is selected', () => {
     mockContext.settingsVisible = true;
     mockContext.exportFormat = 'png';
-    
+
     render(<SettingsModal />);
-    
-    expect(screen.queryByText('JPEG Quality')).not.toBeInTheDocument();
+
+    expect(screen.queryByText('Quality')).not.toBeInTheDocument();
   });
 
   it('toggles watermark enabled', () => {

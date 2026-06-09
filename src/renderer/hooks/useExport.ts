@@ -8,12 +8,12 @@ export function useExport(
   noImageMode: boolean,
   getCurrentConfig: () => RenderConfig
 ) {
-  const [exportFormat, setExportFormat] = useState<'png' | 'jpeg'>(() => {
+  const [exportFormat, setExportFormat] = useState<'png' | 'jpeg' | 'webp'>(() => {
     try {
       const saved = localStorage.getItem('snapframe-user-defaults');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.exportFormat) return parsed.exportFormat;
+        if (parsed.exportFormat === 'png' || parsed.exportFormat === 'jpeg' || parsed.exportFormat === 'webp') return parsed.exportFormat;
       }
     } catch (e) {}
     return 'png';
@@ -146,7 +146,7 @@ export function useExport(
     loadImages(imageSrc, getCurrentConfig().backgroundValue, (img) => {
       const canvas = document.createElement('canvas');
       renderCanvas(canvas, img, getCurrentConfig());
-      const mime = exportFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
+      const mime = exportFormat === 'jpeg' ? 'image/jpeg' : exportFormat === 'webp' ? 'image/webp' : 'image/png';
       const base64Data = canvas.toDataURL(mime, jpegQuality / 100);
       
       if (!checkOgSizeLimit(base64Data)) return;
@@ -162,7 +162,8 @@ export function useExport(
         if (suffix) alert(suffix);
       } else {
         const link = document.createElement('a');
-        link.download = `snapframe-export.${exportFormat === 'jpeg' ? 'jpg' : 'png'}`;
+        const ext = exportFormat === 'jpeg' ? 'jpg' : exportFormat === 'webp' ? 'webp' : 'png';
+        link.download = `snapframe-export.${ext}`;
         link.href = base64Data;
         link.click();
         if (suffix) alert(suffix);

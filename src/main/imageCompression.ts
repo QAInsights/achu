@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 
-export type ExportImageType = 'png' | 'jpeg';
+export type ExportImageType = 'png' | 'jpeg' | 'webp';
 export type CompressionMode = 'original' | 'balanced' | 'small';
 
 export interface ImageCompressionOptions {
@@ -31,6 +31,11 @@ export async function compressImageBuffer(
   if (options.type === 'jpeg') {
     const quality = JPEG_QUALITY_BY_MODE[mode] ?? options.quality ?? 90;
     return pipeline.jpeg({ quality, mozjpeg: true }).toBuffer();
+  }
+
+  if (options.type === 'webp') {
+    const quality = JPEG_QUALITY_BY_MODE[mode] ?? options.quality ?? 90;
+    return pipeline.webp({ quality, effort: 6 }).toBuffer();
   }
 
   return pipeline.png({

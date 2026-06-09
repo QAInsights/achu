@@ -131,7 +131,7 @@ export interface RenderConfig {
   showComponentHighlights?: boolean;
   highlightedComponents?: string[];
   ocrWords?: any[];
-  exportFormat?: 'png' | 'jpeg';
+  exportFormat?: 'png' | 'jpeg' | 'webp';
   jpegQuality?: number;
   sidebarPosition?: 'left' | 'right';
   bgGrain?: number;

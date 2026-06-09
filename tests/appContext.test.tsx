@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { AppProvider, useAppContext } from '../src/renderer/AppContext';
@@ -734,8 +735,7 @@ describe('AppContext', () => {
       );
 
       const zone = screen.getByTestId('drop-zone');
-      const event = new Event('dragover', { bubbles: true, cancelable: true }) as React.DragEvent;
-      Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
+      const event = new Event('dragover', { bubbles: true, cancelable: true });
 
       fireEvent(zone, event);
       // After drag over, isDragging should be true
@@ -751,8 +751,7 @@ describe('AppContext', () => {
 
       // First set dragging to true
       const zone = screen.getByTestId('drop-zone');
-      const dragOverEvent = new Event('dragover', { bubbles: true, cancelable: true }) as React.DragEvent;
-      Object.defineProperty(dragOverEvent, 'preventDefault', { value: vi.fn() });
+      const dragOverEvent = new Event('dragover', { bubbles: true, cancelable: true });
       fireEvent(zone, dragOverEvent);
 
       expect(screen.getByTestId('dragging')).toHaveTextContent('yes');
