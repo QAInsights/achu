@@ -38,6 +38,26 @@ describe('Updater isNewerVersion helper', () => {
     expect(isNewerVersion('1.0', '1.0.1')).toBe(true);
     expect(isNewerVersion('1.0.1', '1.0')).toBe(false);
   });
+
+  it('normalizes full-year (YYYY) vs short-year (YY) CalVer formats', () => {
+    // YYYY.M.D local vs YY.MM.MICRO remote (the actual production scenario)
+    expect(isNewerVersion('2026.5.30', 'v26.06.08')).toBe(true);
+    expect(isNewerVersion('2026.5.30', '26.06.08')).toBe(true);
+    expect(isNewerVersion('2026.5.30', '26.5.30')).toBe(false);
+    expect(isNewerVersion('2026.5.30', '26.5.29')).toBe(false);
+
+    // Both full-year
+    expect(isNewerVersion('2026.5.30', '2026.6.1')).toBe(true);
+    expect(isNewerVersion('2026.6.1', '2026.5.30')).toBe(false);
+
+    // Both short-year
+    expect(isNewerVersion('26.5.30', '26.6.1')).toBe(true);
+    expect(isNewerVersion('26.6.1', '26.5.30')).toBe(false);
+
+    // With v-prefix on either side
+    expect(isNewerVersion('v2026.5.30', 'v26.6.1')).toBe(true);
+    expect(isNewerVersion('2026.5.30', 'v26.6.1')).toBe(true);
+  });
 });
 
 describe('registerUpdaterHandlers', () => {

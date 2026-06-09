@@ -7,13 +7,21 @@ const isDev = !app.isPackaged;
 
 /**
  * Compares two CalVer or SemVer strings segment by segment.
+ * Normalizes full-year (YYYY) and short-year (YY) CalVer formats so they
+ * compare correctly regardless of which convention each side uses.
  * Returns true if latest version is newer than current version.
  */
 export function isNewerVersion(current: string, latest: string): boolean {
   const parse = (v: string) => v.replace(/^v/, '').split('.').map(Number);
-  const cParts = parse(current);
-  const lParts = parse(latest);
-  
+  const normalizeYear = (parts: number[]) => {
+    if (parts.length >= 2 && parts[0] > 99) {
+      return [parts[0] % 100, ...parts.slice(1)];
+    }
+    return parts;
+  };
+  const cParts = normalizeYear(parse(current));
+  const lParts = normalizeYear(parse(latest));
+
   for (let i = 0; i < Math.max(cParts.length, lParts.length); i++) {
     const c = cParts[i] || 0;
     const l = lParts[i] || 0;
@@ -85,10 +93,28 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
             downloadUrl = dmgAsset.browser_download_url;
           }
         } else {
-          // Linux AppImage or deb
-          const linuxAsset = assets.find((asset: any) => asset.name.endsWith('.AppImage') || asset.name.endsWith('.deb'));
+          // Linux AppImage or deb – prefer arch-matching asset
+          const arch = process.arch;
+          const linuxAssets = assets.filter((asset: any) =>
+            asset.name.endsWith('.AppImage') || asset.name.endsWith('.deb')
+          );
+          let linuxAsset;
+          if (arch === 'arm64') {
+            linuxAsset = linuxAssets.find((asset: any) =>
+              asset.name.toLowerCase().includes('arm64')
+            );
+          } else {
+            linuxAsset = linuxAssets.find((asset: any) =>
+              asset.name.toLowerCase().includes('amd64') ||
+              (asset.name.toLowerCase().includes('.appimage') && !asset.name.toLowerCase().includes('arm64'))
+            );
+          }
+          if (!linuxAsset && linuxAssets.length > 0) {
+            linuxAsset = linuxAssets[0];
+          }
           if (linuxAsset) {
             downloadUrl = linuxAsset.browser_download_url;
+            console.log(`[Updater] Selected asset: ${linuxAsset.name} for arch=${process.arch}`);
           }
         }
         
