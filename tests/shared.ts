@@ -282,6 +282,8 @@ export function makeFullMockContext(overrides: Record<string, any> = {}) {
     setExportFormat: noop,
     jpegQuality: 90,
     setJpegQuality: noop,
+    compressionMode: 'balanced',
+    setCompressionMode: noop,
     triggerExport: noop,
     copyBeautifiedImage: noop,
     promptConfig: null,

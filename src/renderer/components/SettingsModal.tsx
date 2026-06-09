@@ -22,6 +22,7 @@ export default function SettingsModal() {
     systemFonts = [],
     exportFormat, setExportFormat,
     jpegQuality, setJpegQuality,
+    compressionMode, setCompressionMode,
     pushHistory,
     getCurrentConfig,
     sidebarPosition, setSidebarPosition,
@@ -53,6 +54,7 @@ export default function SettingsModal() {
     setWatermarkItalic(DEFAULT_SETTINGS.watermarkItalic);
     setExportFormat(DEFAULT_SETTINGS.exportFormat);
     setJpegQuality(DEFAULT_SETTINGS.jpegQuality);
+    setCompressionMode(DEFAULT_SETTINGS.compressionMode);
     setSidebarPosition(DEFAULT_SETTINGS.sidebarPosition);
     setAutoImportCaptured(true);
     setCaptureShortcut('PrintScreen');
@@ -273,6 +275,35 @@ export default function SettingsModal() {
                     />
                   </div>
                 )}
+                <div className="control-group">
+                  <span className="control-label">Default Optimization</span>
+                  <div className="format-toggle" style={{ marginTop: '4px' }}>
+                    <button
+                      className={`format-toggle-btn ${compressionMode === 'original' ? 'active' : ''}`}
+                      onClick={() => updateSetting('compressionMode', 'original', setCompressionMode)}
+                      style={{ flex: 1 }}
+                      type="button"
+                    >
+                      Original
+                    </button>
+                    <button
+                      className={`format-toggle-btn ${compressionMode === 'balanced' ? 'active' : ''}`}
+                      onClick={() => updateSetting('compressionMode', 'balanced', setCompressionMode)}
+                      style={{ flex: 1 }}
+                      type="button"
+                    >
+                      Balanced
+                    </button>
+                    <button
+                      className={`format-toggle-btn ${compressionMode === 'small' ? 'active' : ''}`}
+                      onClick={() => updateSetting('compressionMode', 'small', setCompressionMode)}
+                      style={{ flex: 1 }}
+                      type="button"
+                    >
+                      Small
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Watermark Section */}

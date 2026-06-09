@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { renderCanvas, RenderConfig, preloadBgImage } from '../canvasRenderer';
 
+export type CompressionMode = 'original' | 'balanced' | 'small';
+
 export function useExport(
   imageSrc: string | null,
   noImageMode: boolean,
@@ -25,6 +27,18 @@ export function useExport(
       }
     } catch (e) {}
     return 90;
+  });
+  const [compressionMode, setCompressionMode] = useState<CompressionMode>(() => {
+    try {
+      const saved = localStorage.getItem('snapframe-user-defaults');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.compressionMode === 'original' || parsed.compressionMode === 'balanced' || parsed.compressionMode === 'small') {
+          return parsed.compressionMode;
+        }
+      }
+    } catch (e) {}
+    return 'balanced';
   });
 
   const checkOgSizeLimit = (base64Data: string): boolean => {
@@ -144,7 +158,7 @@ export function useExport(
       const suffix = (isOgPreset && sizeInKb > 300) ? 'Tip: Keep Open Graph images under 300KB for best link preview performance.' : '';
 
       if (window.snapFrameAPI) {
-        window.snapFrameAPI.saveFile(base64Data, exportFormat, jpegQuality);
+        window.snapFrameAPI.saveFile(base64Data, exportFormat, jpegQuality, compressionMode);
         if (suffix) alert(suffix);
       } else {
         const link = document.createElement('a');
@@ -161,6 +175,8 @@ export function useExport(
     setExportFormat,
     jpegQuality,
     setJpegQuality,
+    compressionMode,
+    setCompressionMode,
     copyBeautifiedImage,
     triggerExport
   };

@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { loadSettings, saveSettings } from './settings';
 import { triggerOSScreenCapture, setIgnoreNextClipboardImage, updateCaptureConfigurations } from './capture';
+import { compressImageBuffer, decodeImageDataUrl, CompressionMode } from './imageCompression';
 
 export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
   // Theme Changed
@@ -184,7 +185,7 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
     return `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
   });
 
-  ipcMain.handle('file:save-dialog', async (_event, { base64Data, type }) => {
+  ipcMain.handle('file:save-dialog', async (_event, { base64Data, type, quality, compressionMode }) => {
     const mainWindow = getMainWindow();
     if (!mainWindow) return false;
 
@@ -201,10 +202,14 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
       return false;
     }
 
-    const base64Content = base64Data.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(base64Content, 'base64');
+    const buffer = decodeImageDataUrl(base64Data);
+    const outputBuffer = await compressImageBuffer(buffer, {
+      type,
+      quality,
+      compressionMode: compressionMode as CompressionMode | undefined,
+    });
     
-    fs.writeFileSync(result.filePath, buffer);
+    fs.writeFileSync(result.filePath, outputBuffer);
     return true;
   });
 

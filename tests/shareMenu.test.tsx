@@ -22,6 +22,8 @@ describe('WorkspaceFooter & ShareMenu', () => {
       copyBeautifiedImage: vi.fn().mockResolvedValue(undefined),
       setExportFormat: vi.fn(),
       setJpegQuality: vi.fn(),
+      compressionMode: 'balanced',
+      setCompressionMode: vi.fn(),
     };
     window.snapFrameAPI = {
       openURL: vi.fn(),

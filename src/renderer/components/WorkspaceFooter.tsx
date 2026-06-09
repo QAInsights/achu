@@ -10,6 +10,7 @@ export default function WorkspaceFooter() {
     noImageMode,
     exportFormat, setExportFormat,
     jpegQuality, setJpegQuality,
+    compressionMode, setCompressionMode,
     triggerExport,
     copyBeautifiedImage
   } = useAppContext();
@@ -96,6 +97,33 @@ export default function WorkspaceFooter() {
           <span className="quality-label">{jpegQuality}%</span>
         </div>
       )}
+
+      <div className="compression-control">
+        <span className="toolbar-control-label">Optimize</span>
+        <div className="format-toggle">
+          <button
+            className={`format-toggle-btn ${compressionMode === 'original' ? 'active' : ''}`}
+            onClick={() => setCompressionMode('original')}
+            title="Minimal recompression"
+          >
+            Original
+          </button>
+          <button
+            className={`format-toggle-btn ${compressionMode === 'balanced' ? 'active' : ''}`}
+            onClick={() => setCompressionMode('balanced')}
+            title="Good quality with smaller files"
+          >
+            Balanced
+          </button>
+          <button
+            className={`format-toggle-btn ${compressionMode === 'small' ? 'active' : ''}`}
+            onClick={() => setCompressionMode('small')}
+            title="Prioritize smaller files for sharing"
+          >
+            Small
+          </button>
+        </div>
+      </div>
 
       <div className="toolbar-divider" />
 

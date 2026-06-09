@@ -30,7 +30,7 @@ async function compileAll() {
     },
     bundle: true,
     platform: 'node',
-    external: ['electron'],
+    external: ['electron', 'sharp'],
     outdir: distPath,
     minify: true,
     sourcemap: false,

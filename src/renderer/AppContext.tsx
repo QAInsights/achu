@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { RenderConfig, Annotation, drawMeshGradient, RedactionItem, renderCanvas, preloadBgImage } from './canvasRenderer';
 import { useHistory } from './hooks/useHistory';
-import { useExport } from './hooks/useExport';
+import { CompressionMode, useExport } from './hooks/useExport';
 import { usePresets } from './hooks/usePresets';
 import { useConnectionPoll } from './hooks/useConnectionPoll';
 import { getZoomStyle as getZoomStyleUtil } from './utils/layoutUtils';
@@ -98,6 +98,7 @@ interface AppContextType {
   showAdvancedBorder: boolean; setShowAdvancedBorder: React.Dispatch<React.SetStateAction<boolean>>;
   exportFormat: 'png' | 'jpeg'; setExportFormat: React.Dispatch<React.SetStateAction<'png' | 'jpeg'>>;
   jpegQuality: number; setJpegQuality: React.Dispatch<React.SetStateAction<number>>;
+  compressionMode: CompressionMode; setCompressionMode: React.Dispatch<React.SetStateAction<CompressionMode>>;
   autoImportCaptured: boolean; setAutoImportCaptured: (val: boolean) => void;
   captureShortcut: string; setCaptureShortcut: (val: string) => void;
   zoomLevel: string; setZoomLevel: React.Dispatch<React.SetStateAction<string>>;
@@ -593,6 +594,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const {
     exportFormat, setExportFormat,
     jpegQuality, setJpegQuality,
+    compressionMode, setCompressionMode,
     copyBeautifiedImage, triggerExport
   } = useExport(imageSrc, noImageMode, getCurrentConfig);
 
@@ -1174,6 +1176,10 @@ Severity rules:
   }, [jpegQuality]);
 
   useEffect(() => {
+    updateUserDefault('compressionMode', compressionMode);
+  }, [compressionMode]);
+
+  useEffect(() => {
     updateUserDefault('sidebarPosition', sidebarPosition);
   }, [sidebarPosition]);
 
@@ -1361,7 +1367,7 @@ Severity rules:
       helpVisible, setHelpVisible,
       imageSrc, setImageSrc, isDragging, setIsDragging, customPresets, setCustomPresets, newPresetName, setNewPresetName,
       showAdvancedInset, setShowAdvancedInset, showAdvancedShadow, setShowAdvancedShadow, showAdvancedBorder, setShowAdvancedBorder,
-      exportFormat, setExportFormat, jpegQuality, setJpegQuality, zoomLevel, setZoomLevel, history, setHistory,
+      exportFormat, setExportFormat, jpegQuality, setJpegQuality, compressionMode, setCompressionMode, zoomLevel, setZoomLevel, history, setHistory,
       historyIndex, setHistoryIndex, showHollywoodPalettes, setShowHollywoodPalettes, selectedGradientCategory, setSelectedGradientCategory,
       showHollywoodMeshPalettes, setShowHollywoodMeshPalettes,
       appTheme, setAppTheme,

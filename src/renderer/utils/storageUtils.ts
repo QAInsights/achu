@@ -42,6 +42,7 @@ export const DEFAULT_SETTINGS = {
   annotationItalic: false,
   exportFormat: 'png' as const,
   jpegQuality: 90,
+  compressionMode: 'balanced' as const,
   sidebarPosition: 'left' as const,
   autoImportCaptured: true,
   captureShortcut: 'PrintScreen',

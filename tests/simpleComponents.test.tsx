@@ -28,6 +28,8 @@ beforeEach(() => {
     setExportFormat: vi.fn(),
     jpegQuality: 90,
     setJpegQuality: vi.fn(),
+    compressionMode: 'balanced',
+    setCompressionMode: vi.fn(),
     triggerExport: vi.fn(),
     copyBeautifiedImage: vi.fn(),
     promptConfig: null,

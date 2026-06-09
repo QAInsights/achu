@@ -585,7 +585,7 @@ describe('useExport', () => {
       result.current.triggerExport();
     });
 
-    expect(mockSaveFile).toHaveBeenCalledWith(null, 'jpeg', 75);
+    expect(mockSaveFile).toHaveBeenCalledWith(null, 'jpeg', 75, 'balanced');
   });
 
   it('copies to clipboard with snapFrameAPI', async () => {

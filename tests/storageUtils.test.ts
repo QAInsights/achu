@@ -154,11 +154,12 @@ describe('storageUtils', () => {
       expect(DEFAULT_SETTINGS).toHaveProperty('annotationItalic', false);
       expect(DEFAULT_SETTINGS).toHaveProperty('exportFormat', 'png');
       expect(DEFAULT_SETTINGS).toHaveProperty('jpegQuality', 90);
+      expect(DEFAULT_SETTINGS).toHaveProperty('compressionMode', 'balanced');
       expect(DEFAULT_SETTINGS).toHaveProperty('sidebarPosition', 'left');
     });
 
-    it('has exactly 20 keys', () => {
-      expect(Object.keys(DEFAULT_SETTINGS)).toHaveLength(20);
+    it('has exactly 21 keys', () => {
+      expect(Object.keys(DEFAULT_SETTINGS)).toHaveLength(21);
     });
   });
 });

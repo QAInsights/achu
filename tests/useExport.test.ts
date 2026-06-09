@@ -75,6 +75,13 @@ describe('useExport', () => {
       expect(result.current.jpegQuality).toBe(90);
     });
 
+    it('defaults compression mode to balanced', () => {
+      const { result } = renderHook(() =>
+        useExport('test-image', false, mockGetCurrentConfig)
+      );
+      expect(result.current.compressionMode).toBe('balanced');
+    });
+
     it('reads export format from localStorage if available', () => {
       localStorage.setItem('snapframe-user-defaults', JSON.stringify({ exportFormat: 'jpeg' }));
       const { result } = renderHook(() =>
@@ -91,6 +98,14 @@ describe('useExport', () => {
       expect(result.current.jpegQuality).toBe(75);
     });
 
+    it('reads compression mode from localStorage if available', () => {
+      localStorage.setItem('snapframe-user-defaults', JSON.stringify({ compressionMode: 'small' }));
+      const { result } = renderHook(() =>
+        useExport('test-image', false, mockGetCurrentConfig)
+      );
+      expect(result.current.compressionMode).toBe('small');
+    });
+
     it('handles malformed localStorage gracefully for export format', () => {
       localStorage.setItem('snapframe-user-defaults', 'bad-json');
       const { result } = renderHook(() =>
@@ -105,6 +120,14 @@ describe('useExport', () => {
         useExport('test-image', false, mockGetCurrentConfig)
       );
       expect(result.current.jpegQuality).toBe(90);
+    });
+
+    it('ignores invalid compression mode from localStorage', () => {
+      localStorage.setItem('snapframe-user-defaults', JSON.stringify({ compressionMode: 'tiny' }));
+      const { result } = renderHook(() =>
+        useExport('test-image', false, mockGetCurrentConfig)
+      );
+      expect(result.current.compressionMode).toBe('balanced');
     });
   });
 
@@ -408,6 +431,26 @@ describe('useExport', () => {
       expect(saveFileSpy).toHaveBeenCalled();
       const call = saveFileSpy.mock.calls[0];
       expect(call[1]).toBe('jpeg');
+    });
+
+    it('passes selected compression mode to snapFrameAPI.saveFile', () => {
+      stubCanvas('small');
+      const saveFileSpy = vi.fn();
+      vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig)
+      );
+
+      act(() => {
+        result.current.setCompressionMode('small');
+      });
+
+      act(() => {
+        result.current.triggerExport();
+      });
+
+      expect(saveFileSpy).toHaveBeenCalledWith(expect.any(String), 'png', 90, 'small');
     });
 
     it('calls alert with tip for OG preset > 300KB via snapFrameAPI', () => {

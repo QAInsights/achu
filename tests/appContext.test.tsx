@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { AppProvider, useAppContext } from '../src/renderer/AppContext';
 import { useToolbarShortcuts } from '../src/renderer/hooks/useToolbarShortcuts';
@@ -60,6 +60,7 @@ beforeEach(() => {
   mockUseExport = {
     exportFormat: 'png', setExportFormat: vi.fn(),
     jpegQuality: 90, setJpegQuality: vi.fn(),
+    compressionMode: 'balanced', setCompressionMode: vi.fn(),
     copyBeautifiedImage: vi.fn(), triggerExport: vi.fn(),
   };
 
@@ -502,55 +503,59 @@ describe('AppContext', () => {
 
     it('pastes onto existing canvas when imageSrc is present', async () => {
       const originalImage = global.Image;
-      global.Image = class {
-        onload: (() => void) | null = null;
-        naturalWidth = 1000;
-        naturalHeight = 800;
-        set src(_: string) {
-          setTimeout(() => {
-            if (this.onload) this.onload();
-          }, 0);
+      try {
+        global.Image = class {
+          onload: (() => void) | null = null;
+          naturalWidth = 1000;
+          naturalHeight = 800;
+          set src(_: string) {
+            setTimeout(() => {
+              if (this.onload) this.onload();
+            }, 0);
+          }
+        } as any;
+
+        let context: any;
+        function Consumer() {
+          context = useAppContext();
+          return (
+            <div>
+              <span data-testid="annotations-count">{context.annotations.length}</span>
+            </div>
+          );
         }
-      } as any;
 
-      let context: any;
-      function Consumer() {
-        context = useAppContext();
-        return (
-          <div>
-            <span data-testid="annotations-count">{context.annotations.length}</span>
-          </div>
+        vi.stubGlobal('snapFrameAPI', {
+          readImageFromClipboard: vi.fn().mockResolvedValue('data:image/png;base64,pastedimage'),
+          getSettings: vi.fn().mockResolvedValue({}),
+          saveSettings: vi.fn().mockResolvedValue(undefined),
+          onGlobalHotkeyTriggered: vi.fn(() => vi.fn()),
+        });
+
+        render(
+          <AppProvider>
+            <Consumer />
+          </AppProvider>
         );
+
+        await act(async () => {
+          context.setImageSrc('data:image/png;base64,existing');
+          context.setAnnotations([]);
+        });
+
+        await act(async () => {
+          window.dispatchEvent(new Event('paste'));
+        });
+
+        await waitFor(() => {
+          expect(screen.getByTestId('annotations-count')).toHaveTextContent('1');
+        });
+
+        expect(context.annotations[0].type).toBe('image');
+        expect(context.annotations[0].imageSrc).toBe('data:image/png;base64,pastedimage');
+      } finally {
+        global.Image = originalImage;
       }
-
-      vi.stubGlobal('snapFrameAPI', {
-        readImageFromClipboard: vi.fn().mockResolvedValue('data:image/png;base64,pastedimage'),
-        getSettings: vi.fn().mockResolvedValue({}),
-        saveSettings: vi.fn().mockResolvedValue(undefined),
-        onGlobalHotkeyTriggered: vi.fn(() => vi.fn()),
-      });
-
-      render(
-        <AppProvider>
-          <Consumer />
-        </AppProvider>
-      );
-
-      await act(async () => {
-        context.setImageSrc('data:image/png;base64,existing');
-        context.setAnnotations([]);
-      });
-
-      await act(async () => {
-        window.dispatchEvent(new Event('paste'));
-      });
-      await new Promise(resolve => setTimeout(resolve, 20));
-
-      expect(context.annotations).toHaveLength(1);
-      expect(context.annotations[0].type).toBe('image');
-      expect(context.annotations[0].imageSrc).toBe('data:image/png;base64,pastedimage');
-
-      global.Image = originalImage;
     });
 
     it('creates a new canvas when global hotkey is triggered', async () => {

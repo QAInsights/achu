@@ -18,8 +18,8 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
 
   // File API
   openFile: () => ipcRenderer.invoke('file:open-dialog'),
-  saveFile: (base64Data: string, type: 'png' | 'jpeg', quality?: number) => 
-    ipcRenderer.invoke('file:save-dialog', { base64Data, type, quality }),
+  saveFile: (base64Data: string, type: 'png' | 'jpeg', quality?: number, compressionMode?: 'original' | 'balanced' | 'small') => 
+    ipcRenderer.invoke('file:save-dialog', { base64Data, type, quality, compressionMode }),
 
   // Screen Capture API
   triggerScreenCapture: () => ipcRenderer.send('capture:trigger'),

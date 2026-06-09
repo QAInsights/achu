@@ -116,6 +116,8 @@ beforeEach(() => {
     setExportFormat: vi.fn(),
     jpegQuality: 90,
     setJpegQuality: vi.fn(),
+    compressionMode: 'balanced',
+    setCompressionMode: vi.fn(),
     pushHistory: vi.fn(),
     getCurrentConfig: vi.fn(() => ({})),
     

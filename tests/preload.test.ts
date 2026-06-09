@@ -85,6 +85,7 @@ describe('Preload Script', () => {
       base64Data: 'data:base64...',
       type: 'png',
       quality: 90,
+      compressionMode: undefined,
     });
   });
 
@@ -95,6 +96,18 @@ describe('Preload Script', () => {
       base64Data: 'data:base64...',
       type: 'jpeg',
       quality: 75,
+      compressionMode: undefined,
+    });
+  });
+
+  it('saveFile forwards compression mode to ipcRenderer', () => {
+    const api = getApi();
+    api.saveFile('data:base64...', 'jpeg', 80, 'small');
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('file:save-dialog', {
+      base64Data: 'data:base64...',
+      type: 'jpeg',
+      quality: 80,
+      compressionMode: 'small',
     });
   });
 

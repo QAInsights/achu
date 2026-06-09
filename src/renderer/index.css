@@ -981,6 +981,8 @@ kbd {
 .quality-control { display: flex; align-items: center; gap: var(--space-2); }
 .quality-control input[type="range"] { width: 80px; }
 
+.compression-control { display: flex; align-items: center; gap: var(--space-2); }
+
 .quality-label {
   font-family: var(--font-mono);
   font-size: var(--fs-label);
