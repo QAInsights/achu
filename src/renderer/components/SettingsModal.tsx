@@ -26,6 +26,7 @@ export default function SettingsModal() {
     pushHistory,
     getCurrentConfig,
     sidebarPosition, setSidebarPosition,
+    secondarySidebarPosition, setSecondarySidebarPosition,
     autoImportCaptured, setAutoImportCaptured,
     captureShortcut, setCaptureShortcut,
   } = useAppContext();
@@ -56,6 +57,7 @@ export default function SettingsModal() {
     setJpegQuality(DEFAULT_SETTINGS.jpegQuality);
     setCompressionMode(DEFAULT_SETTINGS.compressionMode);
     setSidebarPosition(DEFAULT_SETTINGS.sidebarPosition);
+    setSecondarySidebarPosition(DEFAULT_SETTINGS.secondarySidebarPosition);
     setAutoImportCaptured(true);
     setCaptureShortcut('PrintScreen');
     pushHistory({
@@ -152,6 +154,28 @@ export default function SettingsModal() {
                     <button
                       className={`format-toggle-btn ${sidebarPosition === 'right' ? 'active' : ''}`}
                       onClick={() => updateSetting('sidebarPosition', 'right', setSidebarPosition)}
+                      style={{ flex: 1 }}
+                      type="button"
+                    >
+                      Right
+                    </button>
+                  </div>
+                </div>
+
+                <div className="control-group">
+                  <span className="control-label">AI & OCR Sidebar Position</span>
+                  <div className="format-toggle" style={{ marginTop: '4px' }}>
+                    <button
+                      className={`format-toggle-btn ${secondarySidebarPosition === 'left' ? 'active' : ''}`}
+                      onClick={() => updateSetting('secondarySidebarPosition', 'left', setSecondarySidebarPosition)}
+                      style={{ flex: 1 }}
+                      type="button"
+                    >
+                      Left
+                    </button>
+                    <button
+                      className={`format-toggle-btn ${secondarySidebarPosition === 'right' ? 'active' : ''}`}
+                      onClick={() => updateSetting('secondarySidebarPosition', 'right', setSecondarySidebarPosition)}
                       style={{ flex: 1 }}
                       type="button"
                     >

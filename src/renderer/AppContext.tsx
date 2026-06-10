@@ -87,6 +87,8 @@ interface AppContextType {
   redactionStyle: 'blur' | 'solid'; setRedactionStyle: React.Dispatch<React.SetStateAction<'blur' | 'solid'>>;
   promptConfig: { message: string; defaultValue: string; resolve: (val: string | null) => void } | null; setPromptConfig: React.Dispatch<React.SetStateAction<{ message: string; defaultValue: string; resolve: (val: string | null) => void } | null>>;
   sidebarVisible: boolean; setSidebarVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  secondarySidebarVisible: boolean; setSecondarySidebarVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  secondarySidebarPosition: 'left' | 'right'; setSecondarySidebarPosition: React.Dispatch<React.SetStateAction<'left' | 'right'>>;
   settingsVisible: boolean; setSettingsVisible: React.Dispatch<React.SetStateAction<boolean>>;
   helpVisible: boolean; setHelpVisible: React.Dispatch<React.SetStateAction<boolean>>;
   imageSrc: string | null; setImageSrc: React.Dispatch<React.SetStateAction<string | null>>;
@@ -393,6 +395,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [promptConfig, setPromptConfig] = useState<{ message: string; defaultValue: string; resolve: (val: string | null) => void } | null>(null);
 
   const [sidebarVisible, setSidebarVisible] = useState<boolean>(true);
+  const [secondarySidebarVisible, setSecondarySidebarVisible] = useState<boolean>(() => getUserDefault('secondarySidebarVisible', true));
+  const [secondarySidebarPosition, setSecondarySidebarPosition] = useState<'left' | 'right'>(() => getUserDefault('secondarySidebarPosition', 'right'));
   const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
   const [helpVisible, setHelpVisible] = useState<boolean>(false);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
@@ -1184,6 +1188,26 @@ Severity rules:
   }, [sidebarPosition]);
 
   useEffect(() => {
+    updateUserDefault('secondarySidebarVisible', secondarySidebarVisible);
+  }, [secondarySidebarVisible]);
+
+  useEffect(() => {
+    updateUserDefault('secondarySidebarPosition', secondarySidebarPosition);
+  }, [secondarySidebarPosition]);
+
+  useEffect(() => {
+    if (sidebarPosition === secondarySidebarPosition) {
+      setSecondarySidebarPosition(sidebarPosition === 'left' ? 'right' : 'left');
+    }
+  }, [sidebarPosition]);
+
+  useEffect(() => {
+    if (secondarySidebarPosition === sidebarPosition) {
+      setSidebarPosition(secondarySidebarPosition === 'left' ? 'right' : 'left');
+    }
+  }, [secondarySidebarPosition]);
+
+  useEffect(() => {
     updateUserDefault('bgGrain', bgGrain);
   }, [bgGrain]);
 
@@ -1363,6 +1387,8 @@ Severity rules:
       previewFont, setPreviewFont,
       activeTool, setActiveTool, arrowStyle, setArrowStyle, annotations, setAnnotations, annotationColor, setAnnotationColor,
       annotationStrokeWidth, setAnnotationStrokeWidth, promptConfig, setPromptConfig, sidebarVisible, setSidebarVisible,
+      secondarySidebarVisible, setSecondarySidebarVisible,
+      secondarySidebarPosition, setSecondarySidebarPosition,
       settingsVisible, setSettingsVisible,
       helpVisible, setHelpVisible,
       imageSrc, setImageSrc, isDragging, setIsDragging, customPresets, setCustomPresets, newPresetName, setNewPresetName,

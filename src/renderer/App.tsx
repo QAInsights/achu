@@ -1,5 +1,6 @@
 import { AppProvider, useAppContext } from './AppContext';
 import Sidebar from './components/Sidebar';
+import SecondarySidebar from './components/SecondarySidebar';
 import WorkspaceToolbar from './components/WorkspaceToolbar';
 import CanvasPreview from './components/CanvasPreview';
 import WorkspaceFooter from './components/WorkspaceFooter';
@@ -9,14 +10,15 @@ import HelpModal from './components/HelpModal';
 import logoUrl from '../../assets/logo.svg';
 
 function AppContent() {
-  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput, sidebarPosition } = useAppContext();
+  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput, sidebarPosition, secondarySidebarVisible, secondarySidebarPosition } = useAppContext();
   const isFrameless = window.snapFrameAPI && (window.snapFrameAPI.platform === 'win32' || window.snapFrameAPI.platform === 'darwin');
   const platformClass = window.snapFrameAPI ? `platform-${window.snapFrameAPI.platform}` : '';
-  const collapsedClass = !sidebarVisible ? 'sidebar-collapsed' : '';
+  const collapsedClass = (!sidebarVisible && !secondarySidebarVisible) ? 'sidebar-collapsed' : '';
   const positionClass = sidebarPosition === 'right' ? 'sidebar-right-aligned' : 'sidebar-left-aligned';
 
   return (
     <div className={`app-container app-load ${platformClass} ${collapsedClass} ${positionClass}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+      {secondarySidebarPosition === 'left' && <SecondarySidebar />}
       {sidebarPosition === 'left' && <Sidebar />}
       <div className="workspace">
         {isFrameless && (
@@ -32,6 +34,7 @@ function AppContent() {
         <WorkspaceFooter />
       </div>
       {sidebarPosition === 'right' && <Sidebar />}
+      {secondarySidebarPosition === 'right' && <SecondarySidebar />}
       <PromptModal />
       <SettingsModal />
       <HelpModal />

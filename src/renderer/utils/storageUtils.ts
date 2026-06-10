@@ -44,6 +44,8 @@ export const DEFAULT_SETTINGS = {
   jpegQuality: 90,
   compressionMode: 'balanced' as const,
   sidebarPosition: 'left' as const,
+  secondarySidebarVisible: true,
+  secondarySidebarPosition: 'right' as const,
   autoImportCaptured: true,
   captureShortcut: 'PrintScreen',
 };

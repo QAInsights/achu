@@ -158,8 +158,8 @@ describe('storageUtils', () => {
       expect(DEFAULT_SETTINGS).toHaveProperty('sidebarPosition', 'left');
     });
 
-    it('has exactly 21 keys', () => {
-      expect(Object.keys(DEFAULT_SETTINGS)).toHaveLength(21);
+    it('has exactly 23 keys', () => {
+      expect(Object.keys(DEFAULT_SETTINGS)).toHaveLength(23);
     });
   });
 });

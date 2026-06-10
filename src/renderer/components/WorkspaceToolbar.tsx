@@ -1,6 +1,8 @@
 import {
   PanelLeftClose,
   PanelLeft,
+  PanelRightClose,
+  PanelRight,
   Image as ImageIcon,
   Undo2,
   Redo2,
@@ -30,6 +32,7 @@ export default function WorkspaceToolbar() {
 
   const {
     sidebarVisible, setSidebarVisible,
+    secondarySidebarVisible, setSecondarySidebarVisible,
     noImageMode, setNoImageMode,
     historyIndex, history,
     handleUndo, handleRedo,
@@ -74,6 +77,16 @@ export default function WorkspaceToolbar() {
             title={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
           >
             {sidebarVisible ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
+          </button>
+        </Tooltip>
+
+        <Tooltip position="right">
+          <button
+            className={`tool-btn ${secondarySidebarVisible ? '' : ''}`}
+            onClick={() => setSecondarySidebarVisible(prev => !prev)}
+            title={secondarySidebarVisible ? 'Hide AI & OCR Panel' : 'Show AI & OCR Panel'}
+          >
+            {secondarySidebarVisible ? <PanelRightClose className="w-4 h-4" /> : <PanelRight className="w-4 h-4" />}
           </button>
         </Tooltip>
 

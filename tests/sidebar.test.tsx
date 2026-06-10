@@ -125,4 +125,14 @@ describe('Sidebar', () => {
       expect(mockContext.resetStyles).toHaveBeenCalled();
     });
   });
+
+  describe('regression: GitHubAgentSettings and PrivacyGuardSettings removed', () => {
+    it('does not render GitHubAgentSettings or PrivacyGuardSettings inside primary Sidebar', () => {
+      const { container } = render(<Sidebar />);
+      const text = container.textContent || '';
+      expect(text).not.toContain('GitHub Issue Agent');
+      expect(text).not.toContain('Privacy Guard');
+      expect(text).not.toContain('OCR Scan');
+    });
+  });
 });
