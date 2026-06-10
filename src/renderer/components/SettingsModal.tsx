@@ -145,7 +145,12 @@ export default function SettingsModal() {
                   <div className="format-toggle" style={{ marginTop: '4px' }}>
                     <button
                       className={`format-toggle-btn ${sidebarPosition === 'left' ? 'active' : ''}`}
-                      onClick={() => updateSetting('sidebarPosition', 'left', setSidebarPosition)}
+                      onClick={() => {
+                        updateSetting('sidebarPosition', 'left', setSidebarPosition);
+                        if (secondarySidebarPosition === 'left') {
+                          updateSetting('secondarySidebarPosition', 'right', setSecondarySidebarPosition);
+                        }
+                      }}
                       style={{ flex: 1 }}
                       type="button"
                     >
@@ -153,7 +158,12 @@ export default function SettingsModal() {
                     </button>
                     <button
                       className={`format-toggle-btn ${sidebarPosition === 'right' ? 'active' : ''}`}
-                      onClick={() => updateSetting('sidebarPosition', 'right', setSidebarPosition)}
+                      onClick={() => {
+                        updateSetting('sidebarPosition', 'right', setSidebarPosition);
+                        if (secondarySidebarPosition === 'right') {
+                          updateSetting('secondarySidebarPosition', 'left', setSecondarySidebarPosition);
+                        }
+                      }}
                       style={{ flex: 1 }}
                       type="button"
                     >
@@ -167,7 +177,12 @@ export default function SettingsModal() {
                   <div className="format-toggle" style={{ marginTop: '4px' }}>
                     <button
                       className={`format-toggle-btn ${secondarySidebarPosition === 'left' ? 'active' : ''}`}
-                      onClick={() => updateSetting('secondarySidebarPosition', 'left', setSecondarySidebarPosition)}
+                      onClick={() => {
+                        updateSetting('secondarySidebarPosition', 'left', setSecondarySidebarPosition);
+                        if (sidebarPosition === 'left') {
+                          updateSetting('sidebarPosition', 'right', setSidebarPosition);
+                        }
+                      }}
                       style={{ flex: 1 }}
                       type="button"
                     >
@@ -175,7 +190,12 @@ export default function SettingsModal() {
                     </button>
                     <button
                       className={`format-toggle-btn ${secondarySidebarPosition === 'right' ? 'active' : ''}`}
-                      onClick={() => updateSetting('secondarySidebarPosition', 'right', setSecondarySidebarPosition)}
+                      onClick={() => {
+                        updateSetting('secondarySidebarPosition', 'right', setSecondarySidebarPosition);
+                        if (sidebarPosition === 'right') {
+                          updateSetting('sidebarPosition', 'left', setSidebarPosition);
+                        }
+                      }}
                       style={{ flex: 1 }}
                       type="button"
                     >

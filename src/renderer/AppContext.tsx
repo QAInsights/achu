@@ -1196,18 +1196,6 @@ Severity rules:
   }, [secondarySidebarPosition]);
 
   useEffect(() => {
-    if (sidebarPosition === secondarySidebarPosition) {
-      setSecondarySidebarPosition(sidebarPosition === 'left' ? 'right' : 'left');
-    }
-  }, [sidebarPosition]);
-
-  useEffect(() => {
-    if (secondarySidebarPosition === sidebarPosition) {
-      setSidebarPosition(secondarySidebarPosition === 'left' ? 'right' : 'left');
-    }
-  }, [secondarySidebarPosition]);
-
-  useEffect(() => {
     updateUserDefault('bgGrain', bgGrain);
   }, [bgGrain]);
 
