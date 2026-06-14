@@ -2,7 +2,7 @@ window.config = {
   branding: {
     name: "achu",
     tagline: "AI-Enhanced Screenshots: From Raw Captures to Stunning Assets & Bug Tickets",
-    subtagline: "A lightweight, gorgeous desktop utility for Windows, macOS, and Linux that turns raw captures into polished visual graphics, featuring an integrated <span class=\"gradient-text\">AI Issue Agent</span> and fully local, <span class=\"gradient-text\">offline OCR</span> text extraction.",
+    subtagline: "A lightweight, gorgeous desktop utility for Windows, macOS, and Linux that turns raw captures into polished visual graphics, with a <span class=\"gradient-text\">local screenshot gallery</span>, an integrated <span class=\"gradient-text\">AI Issue Agent</span>, and fully local, <span class=\"gradient-text\">offline OCR</span> text extraction.",
     meaning: "achu (அச்சு) means 'print' or 'mold' in Tamil. 🖨️",
     customDomain: "achu.app"
   },
@@ -15,7 +15,8 @@ window.config = {
     { name: "dosa.dev", url: "https://dosa.dev" },
     { name: "ai.dosa.dev", url: "https://ai.dosa.dev" },
     { name: "jmeter.ai", url: "https://jmeter.ai" },
-    { name: "plugins.jmeter.ai", url: "https://plugins.jmeter.ai" }
+    { name: "plugins.jmeter.ai", url: "https://plugins.jmeter.ai" },
+    { name: "iamspeed.dev", url: "https://iamspeed.dev" }
   ],
   features: [
     {
@@ -23,6 +24,12 @@ window.config = {
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feature-icon-svg"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"/><path d="M12 2v20"/><path d="M12 12h10"/><path d="M12 12H2"/><path d="m19 12-7-7"/><path d="m19 12-7 7"/><path d="m5 12 7-7"/><path d="m5 12 7 7"/></svg>`,
       title: "Canvas & Framing Aesthetics",
       description: "Frame screenshots with custom padding, background blur, rounded corners, adjustable shadows, scale, and custom aspect ratios. Instantly overlay polished browser chromes (macOS-style or Windows-style window controls)."
+    },
+    {
+      id: "screenshot-gallery",
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feature-icon-svg"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>`,
+      title: "Local Screenshot Gallery",
+      description: "Save beautified captures to a local folder, browse thumbnails, reopen in the editor, copy to clipboard, or soft-delete to .achu-trash for 30 days. Pick any folder in Settings — everything stays on your machine."
     },
     {
       id: "privacy",
@@ -67,6 +74,12 @@ window.config = {
       description: "Extract text from any canvas block using high-performance local Tesseract WebAssembly.",
       image: "assets/ocr.png",
       tag: "OCR Utility"
+    },
+    {
+      title: "Local Screenshot Gallery",
+      description: "Browse saved captures in a thumbnail grid, reopen in the editor, and manage files locally. Deleted items move to .achu-trash and are removed after 30 days.",
+      image: "assets/gallery.png",
+      tag: "Local Library"
     }
   ]
 };

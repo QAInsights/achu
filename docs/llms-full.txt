@@ -1,0 +1,97 @@
+# achu — extended summary for AI systems
+
+> Free, open-source screenshot beautifier for Windows, macOS, and Linux with local gallery, privacy redaction, OCR, and AI-powered GitHub issue drafting.
+
+## Identity
+
+| Field | Value |
+|-------|-------|
+| Name | achu |
+| Meaning | Tamil அச்சு — "print" or "mold" |
+| Website | https://achu.app |
+| Repository | https://github.com/QAInsights/achu |
+| License | MIT |
+| Version | 2026.5.30 |
+| Author | NaveenKumar Namachivayam / QAInsights |
+| Category | Desktop screenshot beautification, annotation, QA tooling |
+
+## One-sentence answers (AEO)
+
+**What is achu?** A local-first desktop app that beautifies screenshots, saves them to a gallery on your disk, redacts secrets, extracts text, and drafts GitHub issues with AI.
+
+**Who is achu for?** Developers, QA engineers, technical writers, and anyone who shares polished screenshots or bug reports.
+
+**Is achu free?** Yes, MIT-licensed and free to download from GitHub Releases.
+
+**Where are gallery screenshots stored?** In a user-chosen folder on disk; default is `~/achu-screenshots` (home directory). No cloud sync.
+
+**How do I save to the gallery?** Beautify a screenshot in the editor, then click the Gallery button in the workspace footer.
+
+**How do I open the gallery?** Click the grid icon in the left toolbar.
+
+**Are deleted gallery files recoverable?** Yes, for up to 30 days in `.achu-trash` inside the gallery folder; then auto-purged.
+
+## Feature details
+
+### Canvas and framing
+- Padding, rounded corners, inset, border, shadow, scale
+- Backgrounds: solid, gradient, blur, mesh gradient with editable control points
+- Browser chrome overlays (macOS and Windows styles)
+- Aspect ratio presets and custom canvas dimensions
+- Watermark support
+- Export: PNG, JPEG, WebP with quality controls
+
+### Local Screenshot Gallery
+- Save beautified exports directly to gallery folder
+- Thumbnail grid with file name, size, and modified date
+- Actions: open in editor (preserves current annotations), copy to clipboard, reveal in file explorer, delete (soft)
+- Settings: browse and set custom gallery folder
+- Trash: `.achu-trash` subfolder, 30-day retention, automatic purge on gallery list
+
+### Smart Privacy Guard
+- Local Tesseract WASM scan for credentials, API keys, emails, IPs, cards, phones
+- Per-item toggle or redact-all
+- Gaussian blur or solid mask redaction styles
+
+### AI Issue Agent
+- Vision LLM analyzes screenshot → structured GitHub issue (title, body, labels, context)
+- Providers: Ollama (offline), Gemini, OpenAI, Claude
+- GitHub PAT stored with OS keychain via Electron safeStorage
+- User reviews before submit
+
+### OCR text grabber
+- Right-click canvas → extract text modal
+- Edit, trim, copy — 100% local WASM
+
+### Annotations
+- Tools: pointer, rectangles, circles, lines, arrows, text, pen, emoji
+- Undo/redo, custom fonts, stroke width, colors
+
+## Privacy model
+
+- Default: all image processing local
+- Gallery files: never uploaded by the app
+- AI Issue Agent: only sends data you approve when using a configured external API
+- GitHub integration: uses your token for issues you submit
+
+## Download and install
+
+https://github.com/QAInsights/achu/releases
+
+Platforms: Windows (portable/build), macOS, Linux
+
+## Related properties
+
+- https://qainsights.com
+- https://dosa.dev
+- https://ai.dosa.dev
+- https://jmeter.ai
+- https://plugins.jmeter.ai
+- https://iamspeed.dev
+
+## Canonical URLs
+
+- Home: https://achu.app/
+- llms.txt: https://achu.app/llms.txt
+- llms-full.txt: https://achu.app/llms-full.txt
+- sitemap: https://achu.app/sitemap.xml

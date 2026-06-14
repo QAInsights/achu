@@ -1,0 +1,65 @@
+# achu
+
+> achu is a free, open-source desktop app for Windows, macOS, and Linux that beautifies screenshots, stores them in a local gallery, redacts secrets on-device, extracts text via OCR, and drafts GitHub bug reports with AI — all without uploading your images unless you choose to.
+
+achu (அச்சு) means "print" or "mold" in Tamil. Official site: https://achu.app
+
+## What achu does
+
+achu turns raw screenshots into polished, share-ready visuals. It runs locally as an Electron desktop application. Your captures stay on your machine unless you explicitly export, copy, or push a GitHub issue.
+
+## Key features
+
+- Canvas beautification: padding, rounded corners, shadows, mesh gradients, browser chrome mockups, aspect-ratio presets
+- Local Screenshot Gallery: save beautified PNG/JPEG/WebP to a folder (default `~/achu-screenshots`), browse thumbnails, reopen in editor, copy to clipboard, soft-delete to `.achu-trash` (auto-purged after 30 days), custom folder in Settings
+- Smart Privacy Guard: on-device OCR scans for API keys, passwords, emails, IPs; one-click blur or solid redaction
+- AI Issue Agent: vision models draft structured GitHub issues; supports Ollama (local), Gemini, OpenAI, Claude
+- OCR text grabber: right-click canvas to extract and copy text locally via Tesseract WASM
+- Rich annotations: shapes, arrows, text, pen, emoji; undo/redo history
+
+## Platforms and pricing
+
+- Platforms: Windows, macOS, Linux
+- Price: Free (MIT License)
+- Download: https://github.com/QAInsights/achu/releases
+
+## Important links
+
+- Website: https://achu.app
+- GitHub: https://github.com/QAInsights/achu
+- Releases / download: https://github.com/QAInsights/achu/releases
+- Publisher: https://qainsights.com
+
+## Product ecosystem
+
+- [QAInsights](https://qainsights.com)
+- [dosa.dev](https://dosa.dev)
+- [ai.dosa.dev](https://ai.dosa.dev)
+- [jmeter.ai](https://jmeter.ai)
+- [plugins.jmeter.ai](https://plugins.jmeter.ai)
+- [iamspeed.dev](https://iamspeed.dev)
+
+## Frequently asked questions
+
+### What is achu?
+achu is a lightweight screenshot beautifier and workflow tool for developers and QA teams. It frames screenshots, annotates them, stores them in a local gallery, redacts sensitive data, and can generate GitHub bug reports from images.
+
+### Does achu upload my screenshots to the cloud?
+No. Beautification, gallery storage, privacy scanning, and OCR run locally. External APIs are only used if you configure the AI Issue Agent with a cloud provider — and only for the issue text you approve.
+
+### What is the achu screenshot gallery?
+A built-in local library. Save from the footer "Gallery" button, open via the toolbar grid icon, browse thumbnails, double-click to reopen in the editor. Files are stored on disk in a folder you choose (default `~/achu-screenshots`).
+
+### What happens when I delete an image from the gallery?
+Deletes are soft-deletes: files move to a `.achu-trash` subfolder inside your gallery directory and are automatically removed after 30 days.
+
+### Which AI providers does achu support?
+Ollama (fully local), Google Gemini, OpenAI, and Anthropic Claude for the Issue Agent vision workflow.
+
+### Is achu open source?
+Yes. MIT License. Source: https://github.com/QAInsights/achu
+
+## Optional
+
+- Extended machine-readable summary: https://achu.app/llms-full.txt
+- Sitemap: https://achu.app/sitemap.xml

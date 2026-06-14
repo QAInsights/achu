@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+
+# LLM / AI context files
+# https://achu.app/llms.txt
+# https://achu.app/llms-full.txt
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://achu.app/sitemap.xml

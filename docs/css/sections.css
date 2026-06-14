@@ -85,10 +85,19 @@
 }
 
 /* === FEATURES GRID === */
+/* 5 cards: 3 equal on row 1, 2 wider equal on row 2 (6-col grid) */
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 24px;
+}
+
+.features-grid .feature-card:nth-child(-n+3) {
+  grid-column: span 2;
+}
+
+.features-grid .feature-card:nth-child(n+4) {
+  grid-column: span 3;
 }
 
 .feature-card {
@@ -145,6 +154,12 @@
   cursor: pointer;
   position: relative;
   gap: 16px;
+}
+
+.gallery-grid .gallery-card:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  max-width: calc(50% - 16px);
+  justify-self: center;
 }
 
 .gallery-image-container {
@@ -251,16 +266,18 @@
 }
 
 .partners-links {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
   gap: 16px;
   width: 100%;
+  max-width: 960px;
+}
+
+.partners-links .partner-card {
+  grid-column: span 2;
 }
 
 .partner-card {
-  flex: 1 1 170px;
-  max-width: 200px;
   padding: 18px 24px;
   display: flex;
   flex-direction: column;
@@ -289,20 +306,6 @@
   text-align: center;
 }
 
-@media (max-width: 992px) {
-  .partner-card {
-    flex: 1 1 200px;
-    max-width: 280px;
-  }
-}
-
-@media (max-width: 576px) {
-  .partner-card {
-    flex: 1 1 100%;
-    max-width: 100%;
-  }
-}
-
 /* === FAQ SECTION === */
 .faq-list {
   max-width: 800px;
@@ -317,21 +320,38 @@
   border-radius: var(--radius-sm);
   overflow: hidden;
   transition: var(--transition-normal);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.faq-item[open] {
+  border-color: var(--border-strong);
 }
 
 .faq-question {
   width: 100%;
   padding: 20px 24px;
-  background: rgba(255, 255, 255, 0.02);
+  background: transparent;
   text-align: left;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-primary);
   transition: var(--transition-fast);
+  cursor: pointer;
+  list-style: none;
 }
+
+.faq-question::-webkit-details-marker {
+  display: none;
+}
+
+.faq-question::marker {
+  content: '';
+}
+
 .faq-question:hover {
   background: rgba(255, 255, 255, 0.04);
 }
@@ -339,28 +359,36 @@
 .faq-icon {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
   color: var(--text-tertiary);
-  transition: transform var(--transition-normal);
-}
-.faq-item.active .faq-icon {
-  transform: rotate(180deg);
-  color: var(--accent);
-}
-.faq-item.active {
-  border-color: var(--border-strong);
+  transition: transform var(--transition-normal), color var(--transition-normal);
 }
 
-.faq-answer-container {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height var(--transition-normal) ease-out;
+.faq-item[open] .faq-icon {
+  transform: rotate(180deg);
+  color: var(--accent);
 }
 
 .faq-answer {
   padding: 0 24px 20px;
   color: var(--text-secondary);
   font-size: 0.95rem;
-  background: rgba(255, 255, 255, 0.02);
+  line-height: 1.6;
+}
+
+.faq-answer code {
+  font-family: var(--font-sans);
+  font-size: 0.9em;
+  color: var(--text-primary);
+  background: var(--accent-soft);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.faq-answer a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* === RESPONSIVE STYLING === */
@@ -390,6 +418,31 @@
   .gallery-grid {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+  .gallery-grid .gallery-card:last-child:nth-child(odd) {
+    max-width: none;
+    justify-self: stretch;
+  }
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .features-grid .feature-card:nth-child(-n+5) {
+    grid-column: auto;
+  }
+  .features-grid .feature-card:nth-child(5) {
+    grid-column: 1 / -1;
+    max-width: calc(50% - 12px);
+    justify-self: center;
+  }
+  .partners-links {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: none;
+  }
+  .partners-links .partner-card {
+    grid-column: auto;
+  }
+  .partners-container {
+    padding: 48px 24px;
   }
   .section-title {
     font-size: 2.2rem;
@@ -424,6 +477,19 @@
   }
   .hero-title {
     font-size: 2.5rem;
+  }
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  .features-grid .feature-card:nth-child(5) {
+    max-width: none;
+    justify-self: stretch;
+  }
+  .partners-links {
+    grid-template-columns: 1fr;
+  }
+  .partners-container {
+    padding: 40px 20px;
   }
   .footer-top {
     flex-direction: column;

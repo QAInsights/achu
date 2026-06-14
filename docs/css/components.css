@@ -79,6 +79,12 @@
   animation-delay: 2.5s;
 }
 
+.widget-gallery {
+  bottom: 10px;
+  right: -25px;
+  animation-delay: 1.25s;
+}
+
 .widget-icon {
   font-size: 1.25rem;
 }

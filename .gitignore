@@ -29,6 +29,9 @@ Thumbs.db
 *.sln
 *.sw?
 *.txt
+!docs/llms.txt
+!docs/llms-full.txt
+!docs/robots.txt
 
 *.md
 !README.md
