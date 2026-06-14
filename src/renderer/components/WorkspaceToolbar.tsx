@@ -3,8 +3,8 @@ import {
   PanelLeft,
   PanelRightClose,
   PanelRight,
-  Image as ImageIcon,
-  Images,
+  ImagePlus,
+  LayoutGrid,
   Undo2,
   Redo2,
   RotateCcw,
@@ -99,7 +99,7 @@ export default function WorkspaceToolbar() {
             onClick={() => galleryVisible ? closeGallery() : openGallery()}
             title={galleryVisible ? 'Back to Workspace' : 'Open Gallery'}
           >
-            <Images className="w-4 h-4" />
+            <LayoutGrid className="w-4 h-4" />
           </button>
         </Tooltip>
 
@@ -111,7 +111,7 @@ export default function WorkspaceToolbar() {
                 onClick={selectFile}
                 title="Upload Screenshot"
               >
-                <ImageIcon className="w-4 h-4" />
+                <ImagePlus className="w-4 h-4" />
               </button>
             </Tooltip>
             <Tooltip position="right">

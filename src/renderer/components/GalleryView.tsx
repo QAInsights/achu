@@ -143,12 +143,20 @@ export default function GalleryView() {
       )}
 
       {galleryFolder && (
-        <div className="gallery-folder-path" title={galleryFolder}>
-          {galleryFolder}
-          <span className="gallery-trash-hint" title="Deleted images are moved to .achu-trash and automatically removed after 30 days.">
-            <Info className="w-3 h-3" />
-            Deleted items are kept for 30 days
-          </span>
+        <div className="gallery-meta-bar">
+          <div className="gallery-meta-item">
+            <FolderOpen className="gallery-meta-icon" aria-hidden="true" />
+            <span className="gallery-meta-label">Folder</span>
+            <span className="gallery-meta-value" title={galleryFolder}>
+              {galleryFolder}
+            </span>
+          </div>
+          <div className="gallery-info-callout">
+            <Info className="gallery-info-callout-icon" aria-hidden="true" />
+            <span>
+              Deleted images move to <code>.achu-trash</code> and are removed after 30 days.
+            </span>
+          </div>
         </div>
       )}
 
