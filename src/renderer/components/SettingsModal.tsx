@@ -1,11 +1,13 @@
 import React from 'react';
 import { useAppContext } from '../AppContext';
-import { X, Sliders, Cpu, Keyboard } from 'lucide-react';
+import { useGalleryContext } from '../contexts/GalleryContext';
+import { X, Sliders, Cpu, Keyboard, FolderOpen } from 'lucide-react';
 import { updateUserDefault, clearUserDefaults, DEFAULT_SETTINGS } from '../utils/storageUtils';
 import AiIntegrationsSection from './AiIntegrationsSection';
 import ShortcutsHelpSection from './ShortcutsHelpSection';
 
 export default function SettingsModal() {
+  const { galleryFolder, changeFolder } = useGalleryContext();
   const {
     settingsVisible,
     setSettingsVisible,
@@ -233,6 +235,37 @@ export default function SettingsModal() {
                     <option value="CommandOrControl+Alt+S">Ctrl + Alt + S</option>
                     <option value="Disabled">Disabled</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Gallery Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>Gallery</h3>
+                <div className="control-group">
+                  <span className="control-label">Screenshot Folder</span>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '4px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={galleryFolder}
+                      readOnly
+                      style={{ flex: 1, fontSize: '0.78rem', cursor: 'default' }}
+                    />
+                    <button
+                      className="btn btn-secondary"
+                      style={{ padding: '0 10px', height: '28px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
+                      onClick={async () => {
+                        if (window.snapFrameAPI) {
+                          const folder = await window.snapFrameAPI.chooseGalleryFolder();
+                          if (folder) {
+                            await changeFolder(folder);
+                          }
+                        }
+                      }}
+                      type="button"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5" /> Browse
+                    </button>
+                  </div>
                 </div>
               </div>
 

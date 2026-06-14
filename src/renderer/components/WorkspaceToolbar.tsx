@@ -4,6 +4,7 @@ import {
   PanelRightClose,
   PanelRight,
   Image as ImageIcon,
+  Images,
   Undo2,
   Redo2,
   RotateCcw,
@@ -22,6 +23,7 @@ import {
   Settings
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
+import { useGalleryContext } from '../contexts/GalleryContext';
 import { toggleTheme } from '../utils/uiUtils';
 import Tooltip from './Tooltip';
 import FontSelector from './FontSelector';
@@ -29,6 +31,7 @@ import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 
 export default function WorkspaceToolbar() {
   useToolbarShortcuts();
+  const { galleryVisible, openGallery, closeGallery } = useGalleryContext();
 
   const {
     sidebarVisible, setSidebarVisible,
@@ -87,6 +90,16 @@ export default function WorkspaceToolbar() {
             title={secondarySidebarVisible ? 'Hide AI & OCR Panel' : 'Show AI & OCR Panel'}
           >
             {secondarySidebarVisible ? <PanelRightClose className="w-4 h-4" /> : <PanelRight className="w-4 h-4" />}
+          </button>
+        </Tooltip>
+
+        <Tooltip position="right">
+          <button
+            className={`tool-btn ${galleryVisible ? 'active' : ''}`}
+            onClick={() => galleryVisible ? closeGallery() : openGallery()}
+            title={galleryVisible ? 'Back to Workspace' : 'Open Gallery'}
+          >
+            <Images className="w-4 h-4" />
           </button>
         </Tooltip>
 

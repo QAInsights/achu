@@ -141,6 +141,34 @@ export function useExport(
     });
   };
 
+  const saveToGallery = (): Promise<{ success: boolean; path?: string; name?: string; error?: { code: string; message: string } }> => {
+    if (!noImageMode && !imageSrc) return Promise.resolve({ success: false });
+    return new Promise((resolve) => {
+      loadImages(imageSrc, getCurrentConfig().backgroundValue, async (img) => {
+        try {
+          const canvas = document.createElement('canvas');
+          renderCanvas(canvas, img, getCurrentConfig());
+          const mime = exportFormat === 'jpeg' ? 'image/jpeg' : exportFormat === 'webp' ? 'image/webp' : 'image/png';
+          const base64Data = canvas.toDataURL(mime, jpegQuality / 100);
+
+          if (window.snapFrameAPI) {
+            const result = await window.snapFrameAPI.saveToGallery(base64Data, exportFormat, jpegQuality, compressionMode);
+            if (result.success && result.data) {
+              resolve({ success: true, path: result.data.path, name: result.data.name });
+            } else {
+              resolve({ success: false, error: result.error });
+            }
+          } else {
+            resolve({ success: false });
+          }
+        } catch (err) {
+          console.error('Failed to save to gallery:', err);
+          resolve({ success: false });
+        }
+      });
+    });
+  };
+
   const triggerExport = () => {
     if (!noImageMode && !imageSrc) return;
     loadImages(imageSrc, getCurrentConfig().backgroundValue, (img) => {
@@ -179,6 +207,7 @@ export function useExport(
     compressionMode,
     setCompressionMode,
     copyBeautifiedImage,
-    triggerExport
+    triggerExport,
+    saveToGallery
   };
 }

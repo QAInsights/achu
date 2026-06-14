@@ -28,6 +28,7 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle('settings:set', (_event, newSettings) => {
     const current = loadSettings();
     const merged = {
+      ...current,
       ...newSettings,
       githubToken: (current as any).githubToken,
       secureKeys: (current as any).secureKeys

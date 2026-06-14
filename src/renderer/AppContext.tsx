@@ -134,6 +134,7 @@ interface AppContextType {
   deleteCustomPreset: (id: string, e: React.MouseEvent) => void;
   copyBeautifiedImage: () => Promise<void>;
   triggerExport: () => void;
+  saveToGallery: () => Promise<{ success: boolean; path?: string; name?: string; error?: { code: string; message: string } }>;
   selectBackgroundPreset: (preset: any) => void;
   handleSliderRelease: () => void;
   getZoomStyle: () => React.CSSProperties;
@@ -434,6 +435,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     annotationFont, annotationFontSize, annotationBold, annotationItalic,
     position, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread,
     noImage: noImageMode,
+    imageSrc,
     selectedPreset,
     showSafeZone,
     redactions,
@@ -510,7 +512,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMeshOpacity(config.meshOpacity ?? 100);
     setMeshSpread(config.meshSpread ?? 100);
     setNoImageMode(config.noImage ?? false);
-    
+    if (config.imageSrc !== undefined) setImageSrc(config.imageSrc ?? null);
+
     // Restore Issue Agent payload
     setIssuePayload(config.issuePayload ?? null);
     setHighlightedComponents(config.issuePayload?.components ?? []);
@@ -599,7 +602,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     exportFormat, setExportFormat,
     jpegQuality, setJpegQuality,
     compressionMode, setCompressionMode,
-    copyBeautifiedImage, triggerExport
+    copyBeautifiedImage, triggerExport, saveToGallery
   } = useExport(imageSrc, noImageMode, getCurrentConfig);
 
   const handleSliderRelease = () => { pushHistory(getCurrentConfig()); };
@@ -1397,7 +1400,7 @@ Severity rules:
       redactionStyle, setRedactionStyle,
       scanForSecrets, toggleRedaction, redactAll, revealAll,
       getCurrentConfig, pushHistory, applyConfig, handleUndo, handleRedo, selectFile, handleHTMLFileInput,
-      pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport,
+      pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport, saveToGallery,
       selectBackgroundPreset, handleSliderRelease, getZoomStyle, applyMeshPalette, generateRandomPalette,
       handleDragOver, handleDragLeave, handleDrop, customPrompt, handlePointerDown, handlePointerMove, handlePointerUp,
       resetStyles,

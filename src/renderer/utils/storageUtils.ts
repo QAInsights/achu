@@ -48,4 +48,5 @@ export const DEFAULT_SETTINGS = {
   secondarySidebarPosition: 'right' as const,
   autoImportCaptured: true,
   captureShortcut: 'PrintScreen',
+  galleryFolder: '',
 };

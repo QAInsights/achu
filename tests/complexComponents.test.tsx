@@ -17,6 +17,31 @@ vi.mock('../src/renderer/AppContext', () => ({
   AppProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+// Mock GalleryContext
+vi.mock('../src/renderer/contexts/GalleryContext', () => ({
+  useGalleryContext: () => ({
+    galleryVisible: false,
+    setGalleryVisible: vi.fn(),
+    galleryFolder: '',
+    setGalleryFolder: vi.fn(),
+    galleryItems: [],
+    galleryLoading: false,
+    galleryError: null,
+    openGallery: vi.fn(),
+    closeGallery: vi.fn(),
+    loadGallery: vi.fn(),
+    loadGalleryFolder: vi.fn(),
+    changeFolder: vi.fn(),
+    deleteItem: vi.fn(),
+    openInEditor: vi.fn(),
+    copyToClipboard: vi.fn(),
+    openInExplorer: vi.fn(),
+    openFolderInExplorer: vi.fn(),
+    clearError: vi.fn(),
+  }),
+  GalleryProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 // Mock child components that have complex dependencies
 vi.mock('../src/renderer/components/LayoutSettings', () => ({
   default: () => <div data-testid="layout-settings">Layout Settings</div>,

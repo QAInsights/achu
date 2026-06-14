@@ -123,6 +123,7 @@ export interface RenderConfig {
   meshOpacity?: number;
   meshSpread?: number;
   noImage?: boolean;
+  imageSrc?: string | null;
   selectedPreset?: string;
   showSafeZone?: boolean;
   redactions?: RedactionItem[];

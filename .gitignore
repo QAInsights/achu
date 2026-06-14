@@ -34,3 +34,5 @@ Thumbs.db
 !README.md
 !PRIVACY.md
 .aider*
+.qwen/settings.json
+.qwen/settings.json.orig

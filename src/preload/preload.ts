@@ -59,5 +59,20 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
     return () => {
       ipcRenderer.removeListener('update:progress', subscription);
     };
-  }
+  },
+
+  // Gallery APIs
+  ensureGalleryDir: () => ipcRenderer.invoke('gallery:ensure-dir'),
+  getGalleryFolder: () => ipcRenderer.invoke('gallery:get-folder'),
+  setGalleryFolder: (folderPath: string) => ipcRenderer.invoke('gallery:set-folder', folderPath),
+  chooseGalleryFolder: () => ipcRenderer.invoke('gallery:choose-folder'),
+  listGallery: () => ipcRenderer.invoke('gallery:list'),
+  saveToGallery: (base64Data: string, type: 'png' | 'jpeg' | 'webp', quality?: number, compressionMode?: 'original' | 'balanced' | 'small') =>
+    ipcRenderer.invoke('gallery:save', { base64Data, type, quality, compressionMode }),
+  deleteGalleryItem: (filePath: string) => ipcRenderer.invoke('gallery:delete', filePath),
+  openInExplorer: (filePath: string) => ipcRenderer.invoke('gallery:open-in-explorer', filePath),
+  openGalleryFolder: () => ipcRenderer.invoke('gallery:open-folder'),
+  readGalleryFile: (filePath: string) => ipcRenderer.invoke('gallery:read-file', filePath),
+  getGalleryThumbnail: (filePath: string, width?: number) => ipcRenderer.invoke('gallery:thumbnail', filePath, width),
+  copyGalleryToClipboard: (filePath: string) => ipcRenderer.invoke('gallery:copy-to-clipboard', filePath),
 });

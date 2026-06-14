@@ -1,7 +1,9 @@
 import { app, BrowserWindow, shell, Tray, Menu, session } from 'electron';
 import * as path from 'path';
-import { loadSettings, saveSettings } from './settings';
+import * as fs from 'fs';
+import { loadSettings, saveSettings, getDefaultGalleryFolder } from './settings';
 import { registerIpcHandlers } from './ipc';
+import { registerGalleryIpcHandlers } from './gallery';
 import { setupFocusCheck, updateCaptureConfigurations, cleanupCaptureModule, triggerOSScreenCapture } from './capture';
 import { registerUpdaterHandlers } from './updater';
 
@@ -146,6 +148,15 @@ function createTray() {
 
 app.whenReady().then(() => {
   const settings = loadSettings();
+
+  // Ensure gallery folder exists on startup
+  const galleryFolder = settings.galleryFolder || getDefaultGalleryFolder();
+  try {
+    fs.mkdirSync(galleryFolder, { recursive: true });
+  } catch (e) {
+    console.error('Failed to create gallery folder:', e);
+  }
+
   createWindow(settings);
 
   // Auto-grant local-fonts permission for querying system fonts
@@ -159,6 +170,7 @@ app.whenReady().then(() => {
 
   // Register all IPC handlers
   registerIpcHandlers(() => mainWindow);
+  registerGalleryIpcHandlers(() => mainWindow);
 
   // Initialize and register global screenshot shortcuts dynamically
   updateCaptureConfigurations(settings, mainWindow);

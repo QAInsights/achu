@@ -156,10 +156,11 @@ describe('storageUtils', () => {
       expect(DEFAULT_SETTINGS).toHaveProperty('jpegQuality', 90);
       expect(DEFAULT_SETTINGS).toHaveProperty('compressionMode', 'balanced');
       expect(DEFAULT_SETTINGS).toHaveProperty('sidebarPosition', 'left');
+      expect(DEFAULT_SETTINGS).toHaveProperty('galleryFolder', '');
     });
 
-    it('has exactly 23 keys', () => {
-      expect(Object.keys(DEFAULT_SETTINGS)).toHaveLength(23);
+    it('has exactly 24 keys', () => {
+      expect(Object.keys(DEFAULT_SETTINGS)).toHaveLength(24);
     });
   });
 });

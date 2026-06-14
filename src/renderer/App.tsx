@@ -1,9 +1,11 @@
 import { AppProvider, useAppContext } from './AppContext';
+import { GalleryProvider, useGalleryContext } from './contexts/GalleryContext';
 import Sidebar from './components/Sidebar';
 import SecondarySidebar from './components/SecondarySidebar';
 import WorkspaceToolbar from './components/WorkspaceToolbar';
 import CanvasPreview from './components/CanvasPreview';
 import WorkspaceFooter from './components/WorkspaceFooter';
+import GalleryView from './components/GalleryView';
 import PromptModal from './components/PromptModal';
 import SettingsModal from './components/SettingsModal';
 import HelpModal from './components/HelpModal';
@@ -11,6 +13,7 @@ import logoUrl from '../../assets/logo.svg';
 
 function AppContent() {
   const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput, sidebarPosition, secondarySidebarVisible, secondarySidebarPosition } = useAppContext();
+  const { galleryVisible } = useGalleryContext();
   const isFrameless = window.snapFrameAPI && (window.snapFrameAPI.platform === 'win32' || window.snapFrameAPI.platform === 'darwin');
   const platformClass = window.snapFrameAPI ? `platform-${window.snapFrameAPI.platform}` : '';
   const collapsedClass = (!sidebarVisible && !secondarySidebarVisible) ? 'sidebar-collapsed' : '';
@@ -30,8 +33,14 @@ function AppContent() {
           </div>
         )}
         <WorkspaceToolbar />
-        <CanvasPreview />
-        <WorkspaceFooter />
+        {galleryVisible ? (
+          <GalleryView />
+        ) : (
+          <>
+            <CanvasPreview />
+            <WorkspaceFooter />
+          </>
+        )}
       </div>
       {sidebarPosition === 'right' && <Sidebar />}
       {secondarySidebarPosition === 'right' && <SecondarySidebar />}
@@ -52,7 +61,9 @@ function AppContent() {
 export default function App() {
   return (
     <AppProvider>
-      <AppContent />
+      <GalleryProvider>
+        <AppContent />
+      </GalleryProvider>
     </AppProvider>
   );
 }

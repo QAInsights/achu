@@ -2,6 +2,14 @@ import { app } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
+export const getDefaultGalleryFolder = () => {
+  try {
+    return path.join(app.getPath('home'), 'achu-screenshots');
+  } catch (e) {
+    return path.join(process.env.HOME || process.env.USERPROFILE || '.', 'achu-screenshots');
+  }
+};
+
 export interface AppSettings {
   windowBounds: {
     width: number;
@@ -49,6 +57,7 @@ export interface AppSettings {
   }>;
   githubToken?: string;
   secureKeys?: Record<string, string>;
+  galleryFolder?: string;
 }
 
 export const getSettingsPath = () => {
@@ -97,6 +106,7 @@ export const defaultSettings: AppSettings = {
     autoImportCaptured: true,
   },
   presets: [],
+  galleryFolder: getDefaultGalleryFolder(),
 };
 
 export function loadSettings(): AppSettings {
@@ -112,6 +122,9 @@ export function loadSettings(): AppSettings {
         if (parsed.lastConfig.autoImportCaptured === undefined) {
           parsed.lastConfig.autoImportCaptured = defaultSettings.lastConfig.autoImportCaptured;
         }
+      }
+      if (!parsed.galleryFolder) {
+        parsed.galleryFolder = getDefaultGalleryFolder();
       }
       return parsed;
     }
