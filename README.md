@@ -38,6 +38,14 @@
 | **🤖 AI Issue Agent Integration** | **🔍 OCR Text Extraction** |
 | ![AI Issue Agent](./assets/issue-agent.png) | ![OCR](./assets/ocr.png) |
 
+<p align="center">
+  <strong>🖼️ Screenshot Gallery</strong>
+</p>
+
+<p align="center">
+  <img src="./assets/gallery.png" alt="Gallery" />
+</p>
+
 ---
 
 ## ✨ Features
@@ -67,6 +75,13 @@
 * **Right-Click OCR:** Right-click anywhere on the canvas screenshot to extract text content instantly.
 * **Grab Text Modal:** Edit, trim, format, and copy the extracted text to your clipboard.
 * **100% Private:** Runs Tesseract OCR in-browser via WebAssembly, performing text extraction locally on your machine.
+
+### 🖼️ Screenshot Gallery
+* **Save to Gallery:** Export beautified screenshots directly to a local gallery folder with your chosen format (PNG, JPEG, or WebP) and compression settings.
+* **Visual Grid Browser:** Browse saved captures with thumbnail previews, file sizes, and timestamps in a polished grid layout.
+* **Quick Actions:** Re-open any image in the editor, copy it to the clipboard, reveal it in your file explorer, or delete it, all from the gallery card overlay.
+* **Configurable Storage:** Choose a custom gallery folder in Settings, or use the default location under your user data directory.
+* **Soft Delete & Auto-Purge:** Deleted images move to a `.achu-trash` folder and are automatically removed after 30 days.
 
 ### 🖊️ Rich Vector Annotations
 * **Drawing Tools:** Annotate screenshots using rectangles (filled/outline), ovals (filled/outline), straight lines, arrows, freehand pen, custom text fields, and emojis.
