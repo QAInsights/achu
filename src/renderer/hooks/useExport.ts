@@ -6,7 +6,9 @@ export type CompressionMode = 'original' | 'balanced' | 'small';
 export function useExport(
   imageSrc: string | null,
   noImageMode: boolean,
-  getCurrentConfig: () => RenderConfig
+  getCurrentConfig: () => RenderConfig,
+  ensureDocumentName: () => string,
+  setDocumentName: (name: string) => void
 ) {
   const [exportFormat, setExportFormat] = useState<'png' | 'jpeg' | 'webp'>(() => {
     try {
@@ -152,8 +154,21 @@ export function useExport(
           const base64Data = canvas.toDataURL(mime, jpegQuality / 100);
 
           if (window.snapFrameAPI) {
-            const result = await window.snapFrameAPI.saveToGallery(base64Data, exportFormat, jpegQuality, compressionMode);
+            const docName = ensureDocumentName();
+            const projectConfig = getCurrentConfig();
+            const result = await window.snapFrameAPI.saveToGallery(
+              base64Data,
+              exportFormat,
+              jpegQuality,
+              compressionMode,
+              docName,
+              projectConfig,
+              imageSrc
+            );
             if (result.success && result.data) {
+              if (result.data.documentName) {
+                setDocumentName(result.data.documentName);
+              }
               resolve({ success: true, path: result.data.path, name: result.data.name });
             } else {
               resolve({ success: false, error: result.error });

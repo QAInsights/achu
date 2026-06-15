@@ -9,6 +9,7 @@ import {
   saveGalleryItem,
   deleteGalleryItem,
   readGalleryFile,
+  readGalleryProject,
   copyGalleryToClipboard,
   openInExplorer,
   openGalleryFolderInExplorer,
@@ -60,7 +61,7 @@ export function registerGalleryIpcHandlers(getMainWindow: () => BrowserWindow | 
     return listGalleryItems(dir);
   });
 
-  ipcMain.handle('gallery:save', async (_event, { base64Data, type, quality, compressionMode }) => {
+  ipcMain.handle('gallery:save', async (_event, { base64Data, type, quality, compressionMode, documentName, projectConfig, sourceImageSrc }) => {
     if (!base64Data || typeof base64Data !== 'string') {
       return { success: false, error: { code: 'INVALID_PAYLOAD', message: 'Missing or invalid base64 data' } };
     }
@@ -71,7 +72,11 @@ export function registerGalleryIpcHandlers(getMainWindow: () => BrowserWindow | 
       return { success: false, error: { code: 'PAYLOAD_TOO_LARGE', message: `Image too large (${sizeMb} MB). Reduce quality or padding.` } };
     }
     const dir = getGalleryFolder();
-    return saveGalleryItem(dir, base64Data, type, quality, compressionMode);
+    return saveGalleryItem(dir, base64Data, type, quality, compressionMode, {
+      documentName,
+      projectConfig,
+      sourceImageSrc,
+    });
   });
 
   ipcMain.handle('gallery:delete', (_event, filePath: string) => {
@@ -92,6 +97,11 @@ export function registerGalleryIpcHandlers(getMainWindow: () => BrowserWindow | 
   ipcMain.handle('gallery:read-file', (_event, filePath: string) => {
     const dir = getGalleryFolder();
     return readGalleryFile(dir, filePath);
+  });
+
+  ipcMain.handle('gallery:read-project', (_event, filePath: string) => {
+    const dir = getGalleryFolder();
+    return readGalleryProject(dir, filePath);
   });
 
   ipcMain.handle('gallery:thumbnail', async (_event, filePath: string, width?: number) => {

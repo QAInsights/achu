@@ -1,4 +1,74 @@
-import type { RenderConfig, Annotation } from '../canvasRenderer';
+import type { RenderConfig, Annotation, RedactionItem } from '../canvasRenderer';
+
+export function createGalleryImportConfig(imageSrc: string | null): RenderConfig {
+  return {
+    padding: 0,
+    rounded: 0,
+    shadow: 0,
+    shadowColor: 'rgba(0, 0, 0, 0.45)',
+    shadowEnabled: false,
+    inset: 0,
+    insetColor: 'rgba(255, 255, 255, 0.25)',
+    border: 0,
+    borderColor: '#ffffff',
+    scale: 100,
+    backgroundType: 'color',
+    backgroundValue: '#ffffff',
+    bgGrain: 0,
+    lightRaysStyle: 'none',
+    lightRaysOpacity: 30,
+    lightRaysAngle: 135,
+    lightRaysCount: 4,
+    lightRaysSourceX: 50,
+    lightRaysSourceY: 0,
+    aspectRatio: 'Auto',
+    canvasWidth: 800,
+    canvasHeight: 600,
+    paddingMode: 'fit',
+    chromeStyle: 'none',
+    chromeTheme: 'dark',
+    blurDensity: 40,
+    watermarkEnabled: false,
+    watermarkText: 'Made using achu.app',
+    watermarkSize: 20,
+    watermarkPosition: 'middle',
+    watermarkOpacity: 0.45,
+    watermarkFont: 'sans-serif',
+    watermarkBold: false,
+    watermarkItalic: false,
+    annotationFont: 'sans-serif',
+    annotationFontSize: 24,
+    annotationBold: true,
+    annotationItalic: false,
+    position: 'Middle center',
+    annotations: [],
+    redactions: [],
+    redactionStyle: 'solid',
+    meshPoints: DEFAULT_MESH_POINTS,
+    meshBlur: 60,
+    meshGrain: 15,
+    meshOpacity: 100,
+    meshSpread: 100,
+    noImage: false,
+    imageSrc,
+    selectedPreset: '',
+    showSafeZone: true,
+    issuePayload: null,
+  };
+}
+
+export function normalizeRestoredGalleryConfig(
+  config: Record<string, unknown>,
+  imageSrc: string | null
+): RenderConfig {
+  return {
+    ...(config as unknown as RenderConfig),
+    imageSrc,
+    annotations: Array.isArray(config.annotations) ? (config.annotations as Annotation[]) : [],
+    redactions: Array.isArray(config.redactions) ? (config.redactions as RedactionItem[]) : [],
+    issuePayload: (config.issuePayload as RenderConfig['issuePayload']) ?? null,
+  };
+}
 
 export const DEFAULT_MESH_POINTS = [
   { id: '1', color: '#ff5f6d', x: 0.2, y: 0.2, radius: 180 },

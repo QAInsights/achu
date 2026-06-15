@@ -2,16 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useGallery } from '../src/renderer/hooks/useGallery';
 
-const mockSetImageSrc = vi.fn();
-const mockPushHistory = vi.fn();
-const mockGetCurrentConfig = vi.fn(() => ({ padding: 38 })) as any;
+const mockOpenGalleryImage = vi.fn().mockResolvedValue({ success: true });
 
 const mockSnapFrameAPI = {
   listGallery: vi.fn().mockResolvedValue({ success: true, data: [] }),
   getGalleryFolder: vi.fn().mockResolvedValue('/home/user/achu-screenshots'),
   setGalleryFolder: vi.fn().mockResolvedValue({ success: true }),
   deleteGalleryItem: vi.fn().mockResolvedValue({ success: true }),
-  readGalleryFile: vi.fn().mockResolvedValue({ success: true, data: 'data:image/png;base64,abc' }),
   copyGalleryToClipboard: vi.fn().mockResolvedValue({ success: true }),
   openInExplorer: vi.fn().mockResolvedValue({ success: true }),
   openGalleryFolder: vi.fn().mockResolvedValue({ success: true }),
@@ -20,13 +17,12 @@ const mockSnapFrameAPI = {
 describe('useGallery', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockOpenGalleryImage.mockResolvedValue({ success: true });
     (window as any).snapFrameAPI = mockSnapFrameAPI;
   });
 
   it('initializes with default state', () => {
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     expect(result.current.galleryVisible).toBe(false);
     expect(result.current.galleryFolder).toBe('');
@@ -36,9 +32,7 @@ describe('useGallery', () => {
   });
 
   it('openGallery sets galleryVisible to true', () => {
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     act(() => {
       result.current.openGallery();
@@ -48,9 +42,7 @@ describe('useGallery', () => {
   });
 
   it('closeGallery sets galleryVisible to false', () => {
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     act(() => {
       result.current.openGallery();
@@ -68,9 +60,7 @@ describe('useGallery', () => {
     ];
     mockSnapFrameAPI.listGallery.mockResolvedValue({ success: true, data: items });
 
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     await act(async () => {
       await result.current.loadGallery();
@@ -86,9 +76,7 @@ describe('useGallery', () => {
       error: { code: 'PERMISSION_DENIED', message: 'Access denied' },
     });
 
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     await act(async () => {
       await result.current.loadGallery();
@@ -104,9 +92,7 @@ describe('useGallery', () => {
     ];
     mockSnapFrameAPI.listGallery.mockResolvedValue({ success: true, data: items });
 
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     await act(async () => {
       await result.current.loadGallery();
@@ -121,12 +107,10 @@ describe('useGallery', () => {
     expect(result.current.galleryItems.length).toBe(0);
   });
 
-  it('openInEditor loads image and closes gallery', async () => {
+  it('openInEditor restores project via openGalleryImage and closes gallery', async () => {
     const item = { name: 'a.png', path: '/a.png', size: 100, modified: 1000, ext: 'png' };
 
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     act(() => {
       result.current.openGallery();
@@ -136,16 +120,33 @@ describe('useGallery', () => {
       await result.current.openInEditor(item);
     });
 
-    expect(mockSnapFrameAPI.readGalleryFile).toHaveBeenCalledWith('/a.png');
-    expect(mockSetImageSrc).toHaveBeenCalledWith('data:image/png;base64,abc');
-    expect(mockPushHistory).toHaveBeenCalled();
+    expect(mockOpenGalleryImage).toHaveBeenCalledWith(item);
     expect(result.current.galleryVisible).toBe(false);
   });
 
+  it('openInEditor sets error when restore fails', async () => {
+    mockOpenGalleryImage.mockResolvedValue({
+      success: false,
+      error: { code: 'NOT_FOUND', message: 'Project missing' },
+    });
+    const item = { name: 'a.png', path: '/a.png', size: 100, modified: 1000, ext: 'png' };
+
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
+
+    act(() => {
+      result.current.openGallery();
+    });
+
+    await act(async () => {
+      await result.current.openInEditor(item);
+    });
+
+    expect(result.current.galleryError?.code).toBe('NOT_FOUND');
+    expect(result.current.galleryVisible).toBe(true);
+  });
+
   it('copyToClipboard returns true on success', async () => {
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     let success = false;
     await act(async () => {
@@ -161,9 +162,7 @@ describe('useGallery', () => {
       error: { code: 'NOT_FOUND', message: 'File not found' },
     });
 
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     let success = true;
     await act(async () => {
@@ -180,9 +179,7 @@ describe('useGallery', () => {
       error: { code: 'DISK_FULL', message: 'Disk full' },
     });
 
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     await act(async () => {
       await result.current.loadGallery();
@@ -198,9 +195,7 @@ describe('useGallery', () => {
   });
 
   it('changeFolder updates galleryFolder on success', async () => {
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     await act(async () => {
       await result.current.changeFolder('/new/path');
@@ -213,9 +208,7 @@ describe('useGallery', () => {
   it('handles missing snapFrameAPI gracefully', () => {
     delete (window as any).snapFrameAPI;
 
-    const { result } = renderHook(() =>
-      useGallery(mockSetImageSrc, mockPushHistory, mockGetCurrentConfig)
-    );
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
 
     expect(result.current.galleryVisible).toBe(false);
   });

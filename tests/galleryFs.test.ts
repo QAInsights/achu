@@ -41,6 +41,15 @@ vi.mock('../src/main/gallery/galleryTrash', () => ({
   purgeTrash: vi.fn().mockReturnValue(0),
 }));
 
+vi.mock('../src/main/gallery/galleryProject', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/main/gallery/galleryProject')>();
+  return {
+    ...actual,
+    moveProjectBundleToTrash: vi.fn(),
+    writeGalleryProject: vi.fn().mockReturnValue({ success: true }),
+  };
+});
+
 vi.mock('../src/main/imageCompression', () => ({
   compressImageBuffer: vi.fn().mockImplementation(async (buf: Buffer) => buf),
   decodeImageDataUrl: vi.fn().mockReturnValue(Buffer.from('decoded-image')),
@@ -57,7 +66,8 @@ vi.mock('sharp', () => {
 
 import { shell, clipboard, dialog } from 'electron';
 import { loadSettings } from '../src/main/settings';
-import { moveToTrash, purgeTrash } from '../src/main/gallery/galleryTrash';
+import { purgeTrash } from '../src/main/gallery/galleryTrash';
+import { moveProjectBundleToTrash, writeGalleryProject } from '../src/main/gallery/galleryProject';
 import { compressImageBuffer, decodeImageDataUrl } from '../src/main/imageCompression';
 
 import {
@@ -265,27 +275,47 @@ describe('galleryFs', () => {
 
   // --- deleteGalleryItem ---
   describe('deleteGalleryItem', () => {
-    it('returns success when moveToTrash succeeds', () => {
-      vi.mocked(moveToTrash).mockReturnValue(undefined);
+    it('returns success when project bundle trash succeeds', () => {
+      vi.mocked(moveProjectBundleToTrash).mockReturnValue(undefined);
       const filePath = GALLERY_DIR + '/image.png';
       const result = deleteGalleryItem(GALLERY_DIR, filePath);
       expect(result.success).toBe(true);
-      expect(moveToTrash).toHaveBeenCalledWith(GALLERY_DIR, filePath);
+      expect(moveProjectBundleToTrash).toHaveBeenCalledWith(GALLERY_DIR, filePath);
     });
 
     it('returns PATH_TRAVERSAL error for path outside gallery', () => {
       const result = deleteGalleryItem(GALLERY_DIR, '/etc/passwd');
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe('PATH_TRAVERSAL');
-      expect(moveToTrash).not.toHaveBeenCalled();
+      expect(moveProjectBundleToTrash).not.toHaveBeenCalled();
     });
 
-    it('returns error when moveToTrash throws', () => {
+    it('returns error when bundle trash throws', () => {
       const err = Object.assign(new Error('No space'), { code: 'ENOSPC' });
-      vi.mocked(moveToTrash).mockImplementation(() => { throw err; });
+      vi.mocked(moveProjectBundleToTrash).mockImplementation(() => { throw err; });
       const result = deleteGalleryItem(GALLERY_DIR, GALLERY_DIR + '/image.png');
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe('DISK_FULL');
+    });
+  });
+
+  describe('saveGalleryItem with project bundle', () => {
+    const base64 = 'data:image/png;base64,' + 'A'.repeat(100);
+
+    it('writes project sidecar when project config is provided', async () => {
+      vi.mocked(mockFs.mkdirSync).mockReturnValue(undefined);
+      vi.mocked(mockFs.statfsSync).mockReturnValue({ bavail: 1000000, bsize: 4096 } as any);
+      vi.mocked(mockFs.writeFileSync).mockReturnValue(undefined);
+
+      const result = await saveGalleryItem(GALLERY_DIR, base64, 'png', undefined, undefined, {
+        documentName: 'achu-2026-06-14-223900-123',
+        projectConfig: { padding: 20 },
+        sourceImageSrc: 'data:image/png;base64,source',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.name).toBe('achu-2026-06-14-223900-123.png');
+      expect(writeGalleryProject).toHaveBeenCalled();
     });
   });
 

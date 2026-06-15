@@ -7,9 +7,8 @@ type GalleryContextType = ReturnType<typeof useGallery>;
 const GalleryContext = createContext<GalleryContextType | undefined>(undefined);
 
 export function GalleryProvider({ children }: { children: React.ReactNode }) {
-  const { setImageSrc, pushHistory, getCurrentConfig } = useAppContext();
-
-  const gallery = useGallery(setImageSrc, pushHistory, getCurrentConfig);
+  const { openGalleryImage } = useAppContext();
+  const gallery = useGallery(openGalleryImage);
 
   return (
     <GalleryContext.Provider value={gallery}>

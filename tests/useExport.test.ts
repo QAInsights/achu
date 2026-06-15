@@ -24,6 +24,8 @@ function makeLargeBase64() {
 
 describe('useExport', () => {
   let mockGetCurrentConfig: ReturnType<typeof vi.fn<() => RenderConfig>>;
+  const mockEnsureDocumentName = vi.fn(() => 'achu-2026-06-14-223900-123');
+  const mockSetDocumentName = vi.fn();
 
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -65,21 +67,21 @@ describe('useExport', () => {
   describe('initial state', () => {
     it('defaults export format to png', () => {
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(result.current.exportFormat).toBe('png');
     });
 
     it('defaults jpeg quality to 90', () => {
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(result.current.jpegQuality).toBe(90);
     });
 
     it('defaults compression mode to balanced', () => {
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(result.current.compressionMode).toBe('balanced');
     });
@@ -87,7 +89,7 @@ describe('useExport', () => {
     it('reads export format from localStorage if available', () => {
       localStorage.setItem('snapframe-user-defaults', JSON.stringify({ exportFormat: 'jpeg' }));
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(result.current.exportFormat).toBe('jpeg');
     });
@@ -95,7 +97,7 @@ describe('useExport', () => {
     it('reads webp export format from localStorage if available', () => {
       localStorage.setItem('snapframe-user-defaults', JSON.stringify({ exportFormat: 'webp' }));
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(result.current.exportFormat).toBe('webp');
     });
@@ -103,7 +105,7 @@ describe('useExport', () => {
     it('reads jpeg quality from localStorage if available', () => {
       localStorage.setItem('snapframe-user-defaults', JSON.stringify({ jpegQuality: 75 }));
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(result.current.jpegQuality).toBe(75);
     });
@@ -111,7 +113,7 @@ describe('useExport', () => {
     it('reads compression mode from localStorage if available', () => {
       localStorage.setItem('snapframe-user-defaults', JSON.stringify({ compressionMode: 'small' }));
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(result.current.compressionMode).toBe('small');
     });
@@ -119,7 +121,7 @@ describe('useExport', () => {
     it('handles malformed localStorage gracefully for export format', () => {
       localStorage.setItem('snapframe-user-defaults', 'bad-json');
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(result.current.exportFormat).toBe('png');
     });
@@ -127,7 +129,7 @@ describe('useExport', () => {
     it('handles malformed localStorage gracefully for jpeg quality', () => {
       localStorage.setItem('snapframe-user-defaults', 'bad-json');
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(result.current.jpegQuality).toBe(90);
     });
@@ -135,7 +137,7 @@ describe('useExport', () => {
     it('ignores invalid compression mode from localStorage', () => {
       localStorage.setItem('snapframe-user-defaults', JSON.stringify({ compressionMode: 'tiny' }));
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(result.current.compressionMode).toBe('balanced');
     });
@@ -143,7 +145,7 @@ describe('useExport', () => {
     it('ignores invalid export format from localStorage', () => {
       localStorage.setItem('snapframe-user-defaults', JSON.stringify({ exportFormat: 'gif' }));
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(result.current.exportFormat).toBe('png');
     });
@@ -155,7 +157,7 @@ describe('useExport', () => {
   describe('setExportFormat', () => {
     it('updates export format state', () => {
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       act(() => {
         result.current.setExportFormat('jpeg');
@@ -165,7 +167,7 @@ describe('useExport', () => {
 
     it('can switch to webp', () => {
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       act(() => {
         result.current.setExportFormat('webp');
@@ -180,7 +182,7 @@ describe('useExport', () => {
   describe('setJpegQuality', () => {
     it('updates jpeg quality state', () => {
       const { result } = renderHook(() =>
-        useExport('test-image', false, mockGetCurrentConfig)
+        useExport('test-image', false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       act(() => {
         result.current.setJpegQuality(50);
@@ -203,7 +205,7 @@ describe('useExport', () => {
       });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -224,7 +226,7 @@ describe('useExport', () => {
       });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -247,7 +249,7 @@ describe('useExport', () => {
       });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -268,7 +270,7 @@ describe('useExport', () => {
       });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -289,7 +291,7 @@ describe('useExport', () => {
       });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -310,7 +312,7 @@ describe('useExport', () => {
       });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -327,7 +329,7 @@ describe('useExport', () => {
   describe('triggerExport', () => {
     it('is a no-op when no image and not in noImageMode', () => {
       const { result } = renderHook(() =>
-        useExport(null, false, mockGetCurrentConfig)
+        useExport(null, false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(() => {
         act(() => {
@@ -339,7 +341,7 @@ describe('useExport', () => {
     it('works in noImageMode without image', () => {
       stubCanvas('small');
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       expect(() => {
         act(() => {
@@ -353,7 +355,7 @@ describe('useExport', () => {
       vi.stubGlobal('snapFrameAPI', undefined);
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       const mockLink = document.createElement('a');
@@ -392,7 +394,7 @@ describe('useExport', () => {
       }) as typeof document.createElement);
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -423,7 +425,7 @@ describe('useExport', () => {
       }) as typeof document.createElement);
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -443,7 +445,7 @@ describe('useExport', () => {
       vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -465,7 +467,7 @@ describe('useExport', () => {
       vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -487,7 +489,7 @@ describe('useExport', () => {
       vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -520,7 +522,7 @@ describe('useExport', () => {
       });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -550,7 +552,7 @@ describe('useExport', () => {
       });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -576,7 +578,7 @@ describe('useExport', () => {
       }) as typeof document.createElement);
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       act(() => {
@@ -601,7 +603,7 @@ describe('useExport', () => {
   describe('copyBeautifiedImage', () => {
     it('is a no-op when no image and not in noImageMode', async () => {
       const { result } = renderHook(() =>
-        useExport(null, false, mockGetCurrentConfig)
+        useExport(null, false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
       await act(async () => {
         await result.current.copyBeautifiedImage();
@@ -621,7 +623,7 @@ describe('useExport', () => {
       });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       await act(async () => {
@@ -648,7 +650,7 @@ describe('useExport', () => {
       });
 
       const { result } = renderHook(() =>
-        useExport(null, true, mockGetCurrentConfig)
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
       await act(async () => {

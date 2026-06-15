@@ -4,7 +4,9 @@ import { shell, clipboard, nativeImage, BrowserWindow, dialog } from 'electron';
 import sharp from 'sharp';
 import { compressImageBuffer, decodeImageDataUrl, CompressionMode, ExportImageType } from '../imageCompression';
 import { loadSettings, getDefaultGalleryFolder } from '../settings';
-import { moveToTrash, purgeTrash } from './galleryTrash';
+import { isGallerySourceFile } from '../../shared/galleryNaming';
+import { moveProjectBundleToTrash, readGalleryProject, resolveGalleryOutputPath, writeGalleryProject } from './galleryProject';
+import { purgeTrash } from './galleryTrash';
 import {
   classifyFsError,
   GalleryError,
@@ -53,6 +55,7 @@ export function listGalleryItems(galleryDir: string): GalleryResult<GalleryItem[
     const items: GalleryItem[] = entries
       .filter((e) => {
         if (!e.isFile()) return false;
+        if (isGallerySourceFile(e.name)) return false;
         return IMAGE_EXTENSIONS.has(path.extname(e.name).toLowerCase());
       })
       .map((e) => {
@@ -82,19 +85,18 @@ export function listGalleryItems(galleryDir: string): GalleryResult<GalleryItem[
   }
 }
 
-function buildTimestampedFilename(galleryDir: string, ext: string): string {
-  const now = new Date();
-  const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}-${String(now.getMilliseconds()).padStart(3, '0')}`;
-  return path.join(galleryDir, `achu-${ts}.${ext}`);
-}
-
 export async function saveGalleryItem(
   galleryDir: string,
   base64Data: string,
   type: ExportImageType,
   quality?: number,
-  compressionMode?: CompressionMode
-): Promise<GalleryResult<{ path: string; name: string }>> {
+  compressionMode?: CompressionMode,
+  options?: {
+    documentName?: string;
+    projectConfig?: Record<string, unknown>;
+    sourceImageSrc?: string | null;
+  }
+): Promise<GalleryResult<{ path: string; name: string; documentName: string }>> {
   try {
     fs.mkdirSync(galleryDir, { recursive: true });
 
@@ -102,9 +104,11 @@ export async function saveGalleryItem(
     const estimatedSize = estimateOutputSize(base64Data);
     checkDiskSpace(galleryDir, estimatedSize);
 
-    const ext = type === 'jpeg' ? 'jpg' : type === 'webp' ? 'webp' : 'png';
-    const outputPath = buildTimestampedFilename(galleryDir, ext);
-    const filename = path.basename(outputPath);
+    const { outputPath, filename, stem } = resolveGalleryOutputPath(
+      galleryDir,
+      type,
+      options?.documentName
+    );
 
     const buffer = decodeImageDataUrl(base64Data);
     const outputBuffer = await compressImageBuffer(buffer, {
@@ -114,7 +118,21 @@ export async function saveGalleryItem(
     });
 
     fs.writeFileSync(outputPath, outputBuffer);
-    return { success: true, data: { path: outputPath, name: filename } };
+
+    if (options?.projectConfig) {
+      const projectResult = writeGalleryProject(
+        galleryDir,
+        stem,
+        filename,
+        options.projectConfig,
+        options.sourceImageSrc
+      );
+      if (!projectResult.success) {
+        return { success: false, error: projectResult.error };
+      }
+    }
+
+    return { success: true, data: { path: outputPath, name: filename, documentName: stem } };
   } catch (err) {
     if (err instanceof GalleryError) {
       return { success: false, error: err.toJSON() };
@@ -123,10 +141,12 @@ export async function saveGalleryItem(
   }
 }
 
+export { readGalleryProject };
+
 export function deleteGalleryItem(galleryDir: string, filePath: string): GalleryResult {
   try {
     validateGalleryPath(galleryDir, filePath);
-    moveToTrash(galleryDir, filePath);
+    moveProjectBundleToTrash(galleryDir, filePath);
     return { success: true };
   } catch (err) {
     if (err instanceof GalleryError) {

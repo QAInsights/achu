@@ -13,6 +13,9 @@ import { generateVibeConfigs } from './utils/vibeUtils';
 import { WordBoundingBox, GitHubIssuePayload, buildMarkdown, safeParseJSON } from './utils/githubAgentUtils';
 import { pushToGitHub } from './utils/githubApiUtils';
 import { fetchAndParseModels, DEFAULT_OPENAI_MODELS, DEFAULT_GEMINI_MODELS, DEFAULT_CLAUDE_MODELS } from './utils/modelsDevUtils';
+import { buildAchuDocumentName, getAchuProjectStem } from '../shared/galleryNaming';
+import { createGalleryImportConfig, normalizeRestoredGalleryConfig } from './utils/configUtils';
+import type { GalleryItem } from './hooks/useGallery';
 
 
 // TypeScript declarations for secure Electron IPC bridge
@@ -92,6 +95,7 @@ interface AppContextType {
   settingsVisible: boolean; setSettingsVisible: React.Dispatch<React.SetStateAction<boolean>>;
   helpVisible: boolean; setHelpVisible: React.Dispatch<React.SetStateAction<boolean>>;
   imageSrc: string | null; setImageSrc: React.Dispatch<React.SetStateAction<string | null>>;
+  documentName: string | null; setDocumentName: React.Dispatch<React.SetStateAction<string | null>>;
   isDragging: boolean; setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
   customPresets: any[]; setCustomPresets: React.Dispatch<React.SetStateAction<any[]>>;
   newPresetName: string; setNewPresetName: React.Dispatch<React.SetStateAction<string>>;
@@ -153,6 +157,7 @@ interface AppContextType {
   revealAll: () => void;
   resetStyles: () => void;
   clearWorkspace: () => void;
+  openGalleryImage: (item: GalleryItem) => Promise<{ success: boolean; error?: { code: string; message: string } }>;
 
   // Issue Agent states & config
   issuePayload: GitHubIssuePayload | null; setIssuePayload: React.Dispatch<React.SetStateAction<GitHubIssuePayload | null>>;
@@ -401,6 +406,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
   const [helpVisible, setHelpVisible] = useState<boolean>(false);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [documentName, setDocumentName] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [showAdvancedInset, setShowAdvancedInset] = useState<boolean>(false);
   const [showAdvancedShadow, setShowAdvancedShadow] = useState<boolean>(false);
@@ -597,13 +603,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     handlePasteImageRef.current = handlePasteImage;
   }, [handlePasteImage]);
 
+  const ensureDocumentName = useCallback(() => {
+    if (documentName) return documentName;
+    const name = buildAchuDocumentName();
+    setDocumentName(name);
+    return name;
+  }, [documentName]);
+
   // 3. Export Hook
   const {
     exportFormat, setExportFormat,
     jpegQuality, setJpegQuality,
     compressionMode, setCompressionMode,
     copyBeautifiedImage, triggerExport, saveToGallery
-  } = useExport(imageSrc, noImageMode, getCurrentConfig);
+  } = useExport(imageSrc, noImageMode, getCurrentConfig, ensureDocumentName, setDocumentName);
 
   const handleSliderRelease = () => { pushHistory(getCurrentConfig()); };
 
@@ -1079,7 +1092,65 @@ Severity rules:
     setVibeVariantIndex(-1);
     resetIssue();
     setCachedOcrResult(null);
+    setDocumentName(buildAchuDocumentName());
   };
+
+  const openGalleryImage = useCallback(async (item: GalleryItem) => {
+    if (!window.snapFrameAPI) {
+      return { success: false, error: { code: 'UNKNOWN', message: 'Gallery API unavailable' } };
+    }
+
+    const resetGallerySideState = () => {
+      setVibePalette(null);
+      setVibeVariantIndex(-1);
+      resetIssue();
+      setCachedOcrResult(null);
+    };
+
+    const commitGalleryConfig = (config: RenderConfig, name: string | null) => {
+      const snapshot = JSON.parse(JSON.stringify(config)) as RenderConfig;
+      applyConfig(snapshot);
+      setDocumentName(name);
+      setHistory([snapshot]);
+      setHistoryIndex(0);
+      resetGallerySideState();
+    };
+
+    try {
+      const projectResult = await window.snapFrameAPI.readGalleryProject(item.path);
+      if (projectResult.success && projectResult.data?.hasProject) {
+        const restoredConfig = normalizeRestoredGalleryConfig(
+          projectResult.data.config ?? {},
+          projectResult.data.imageSrc ?? null
+        );
+        commitGalleryConfig(
+          restoredConfig,
+          projectResult.data.documentName ?? getAchuProjectStem(item.name)
+        );
+        return { success: true };
+      }
+
+      if (!projectResult.success) {
+        return { success: false, error: projectResult.error };
+      }
+
+      const fileResult = await window.snapFrameAPI.readGalleryFile(item.path);
+      if (fileResult.success && fileResult.data) {
+        commitGalleryConfig(
+          createGalleryImportConfig(fileResult.data),
+          getAchuProjectStem(item.name)
+        );
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        error: fileResult.error ?? { code: 'UNKNOWN', message: 'Failed to open image' },
+      };
+    } catch (err) {
+      return { success: false, error: { code: 'UNKNOWN', message: String(err) } };
+    }
+  }, [applyConfig, resetIssue]);
 
   const applyAutoVibe = useCallback(async () => {
     if (!imageSrc) return;
@@ -1382,7 +1453,7 @@ Severity rules:
       secondarySidebarPosition, setSecondarySidebarPosition,
       settingsVisible, setSettingsVisible,
       helpVisible, setHelpVisible,
-      imageSrc, setImageSrc, isDragging, setIsDragging, customPresets, setCustomPresets, newPresetName, setNewPresetName,
+      imageSrc, setImageSrc, documentName, setDocumentName, isDragging, setIsDragging, customPresets, setCustomPresets, newPresetName, setNewPresetName,
       showAdvancedInset, setShowAdvancedInset, showAdvancedShadow, setShowAdvancedShadow, showAdvancedBorder, setShowAdvancedBorder,
       exportFormat, setExportFormat, jpegQuality, setJpegQuality, compressionMode, setCompressionMode, zoomLevel, setZoomLevel, history, setHistory,
       historyIndex, setHistoryIndex, showHollywoodPalettes, setShowHollywoodPalettes, selectedGradientCategory, setSelectedGradientCategory,
@@ -1405,6 +1476,7 @@ Severity rules:
       handleDragOver, handleDragLeave, handleDrop, customPrompt, handlePointerDown, handlePointerMove, handlePointerUp,
       resetStyles,
       clearWorkspace,
+      openGalleryImage,
       applyAutoVibe,
 
       // Issue Agent states & functions

@@ -163,6 +163,17 @@ html, body {
   flex-shrink: 0;
 }
 
+.workspace-titlebar-document {
+  font-size: var(--fs-label);
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .platform-darwin.sidebar-collapsed .workspace-titlebar {
   padding-left: 80px;
 }

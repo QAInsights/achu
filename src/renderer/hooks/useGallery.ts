@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react';
-import { RenderConfig } from '../canvasRenderer';
 
 export interface GalleryItem {
   name: string;
@@ -21,9 +20,7 @@ interface GalleryResult<T = void> {
 }
 
 export function useGallery(
-  setImageSrc: (src: string | null) => void,
-  pushHistory: (config: any) => void,
-  getCurrentConfig: () => RenderConfig
+  openGalleryImage: (item: GalleryItem) => Promise<{ success: boolean; error?: GalleryError }>
 ) {
   const [galleryVisible, setGalleryVisible] = useState<boolean>(false);
   const [galleryFolder, setGalleryFolder] = useState<string>('');
@@ -78,7 +75,6 @@ export function useGallery(
         setGalleryFolder(newFolder);
         setGalleryError(null);
         setGalleryItems([]);
-        // Reload gallery items from the new folder
         const listResult: GalleryResult<GalleryItem[]> = await window.snapFrameAPI.listGallery();
         if (listResult.success && listResult.data) {
           setGalleryItems(listResult.data);
@@ -114,18 +110,16 @@ export function useGallery(
   const openInEditor = useCallback(async (item: GalleryItem) => {
     if (!window.snapFrameAPI) return;
     try {
-      const result: GalleryResult<string> = await window.snapFrameAPI.readGalleryFile(item.path);
-      if (result.success && result.data) {
-        setImageSrc(result.data);
-        pushHistory({ ...getCurrentConfig(), imageSrc: result.data });
-        closeGallery();
-      } else if (result.error) {
-        setGalleryError(result.error);
+      const result = await openGalleryImage(item);
+      if (!result.success) {
+        if (result.error) setGalleryError(result.error);
+        return;
       }
+      closeGallery();
     } catch (err) {
       setGalleryError({ code: 'UNKNOWN', message: String(err) });
     }
-  }, [setImageSrc, pushHistory, getCurrentConfig, closeGallery]);
+  }, [openGalleryImage, closeGallery]);
 
   const copyToClipboard = useCallback(async (filePath: string): Promise<boolean> => {
     if (!window.snapFrameAPI) return false;
@@ -163,7 +157,6 @@ export function useGallery(
     setGalleryError(null);
   }, []);
 
-  // Load gallery folder on mount
   useEffect(() => {
     loadGalleryFolder();
   }, [loadGalleryFolder]);

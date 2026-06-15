@@ -12,7 +12,7 @@ import HelpModal from './components/HelpModal';
 import logoUrl from '../../assets/logo.svg';
 
 function AppContent() {
-  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput, sidebarPosition, secondarySidebarVisible, secondarySidebarPosition } = useAppContext();
+  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput, sidebarPosition, secondarySidebarVisible, secondarySidebarPosition, documentName } = useAppContext();
   const { galleryVisible } = useGalleryContext();
   const isFrameless = window.snapFrameAPI && (window.snapFrameAPI.platform === 'win32' || window.snapFrameAPI.platform === 'darwin');
   const platformClass = window.snapFrameAPI ? `platform-${window.snapFrameAPI.platform}` : '';
@@ -29,6 +29,11 @@ function AppContent() {
             <div className="workspace-titlebar-brand">
               <img src={logoUrl} alt="achu" className="workspace-titlebar-logo" />
               <span>achu</span>
+              {documentName && (
+                <span className="workspace-titlebar-document" title={documentName}>
+                  · {documentName}
+                </span>
+              )}
             </div>
           </div>
         )}

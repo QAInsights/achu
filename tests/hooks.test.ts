@@ -475,6 +475,8 @@ describe('useExport', () => {
   let mockImageSrc: string | null;
   let mockNoImageMode: boolean;
   let mockGetCurrentConfig: any;
+  const mockEnsureDocumentName = vi.fn(() => 'achu-2026-06-14-223900-123');
+  const mockSetDocumentName = vi.fn();
 
   beforeEach(() => {
     mockImageSrc = 'data:image/png;base64,test';
@@ -499,7 +501,7 @@ describe('useExport', () => {
 
   it('initializes with PNG format and quality 90', () => {
     const { result } = renderHook(() =>
-      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig)
+      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
     
     expect(result.current.exportFormat).toBe('png');
@@ -513,7 +515,7 @@ describe('useExport', () => {
     );
     
     const { result } = renderHook(() =>
-      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig)
+      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
     
     expect(result.current.exportFormat).toBe('jpeg');
@@ -524,7 +526,7 @@ describe('useExport', () => {
 
   it('updates export format', () => {
     const { result } = renderHook(() =>
-      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig)
+      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
     
     act(() => {
@@ -536,7 +538,7 @@ describe('useExport', () => {
 
   it('updates jpeg quality', () => {
     const { result } = renderHook(() =>
-      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig)
+      useExport(mockImageSrc, mockNoImageMode, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
     
     act(() => {
@@ -553,7 +555,7 @@ describe('useExport', () => {
     });
 
     const { result } = renderHook(() =>
-      useExport(null, true, mockGetCurrentConfig)
+      useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
 
     act(() => {
@@ -572,7 +574,7 @@ describe('useExport', () => {
     });
 
     const { result } = renderHook(() =>
-      useExport(null, true, mockGetCurrentConfig)
+      useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
 
     act(() => {
@@ -595,7 +597,7 @@ describe('useExport', () => {
     });
 
     const { result } = renderHook(() =>
-      useExport(null, true, mockGetCurrentConfig)
+      useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
 
     act(() => {
@@ -618,7 +620,7 @@ describe('useExport', () => {
     });
 
     const { result } = renderHook(() =>
-      useExport(null, true, mockGetCurrentConfig)
+      useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
 
     await act(async () => {
@@ -634,7 +636,7 @@ describe('useExport', () => {
     HTMLCanvasElement.prototype.toBlob = (cb: BlobCallback) => cb(null);
 
     const { result } = renderHook(() =>
-      useExport(null, true, mockGetCurrentConfig)
+      useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
 
     await act(async () => {
@@ -652,7 +654,7 @@ describe('useExport', () => {
     });
     
     const { result } = renderHook(() =>
-      useExport(null, false, mockGetCurrentConfig)
+      useExport(null, false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
     
     act(() => {
@@ -669,7 +671,7 @@ describe('useExport', () => {
     });
 
     const { result } = renderHook(() =>
-      useExport(null, true, mockGetCurrentConfig)
+      useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
 
     act(() => {
@@ -694,7 +696,7 @@ describe('useExport', () => {
     });
 
     const { result } = renderHook(() =>
-      useExport(null, true, mockGetCurrentConfig)
+      useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
     );
 
     act(() => {

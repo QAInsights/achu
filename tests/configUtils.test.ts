@@ -14,6 +14,8 @@ import {
   GRADIENT_CATEGORIES,
   APP_THEMES,
   EXPORT_FORMATS,
+  createGalleryImportConfig,
+  normalizeRestoredGalleryConfig,
 } from '../src/renderer/utils/configUtils';
 import type { RenderConfig } from '../src/renderer/canvasRenderer';
 
@@ -557,6 +559,36 @@ describe('configUtils', () => {
 
     it('EXPORT_FORMATS has correct values', () => {
       expect(EXPORT_FORMATS).toEqual(['png', 'jpeg']);
+    });
+  });
+
+  describe('gallery import helpers', () => {
+    it('createGalleryImportConfig clears annotations and uses flat display settings', () => {
+      const config = createGalleryImportConfig('data:image/png;base64,abc');
+      expect(config.imageSrc).toBe('data:image/png;base64,abc');
+      expect(config.annotations).toEqual([]);
+      expect(config.redactions).toEqual([]);
+      expect(config.padding).toBe(0);
+      expect(config.chromeStyle).toBe('none');
+    });
+
+    it('normalizeRestoredGalleryConfig defaults missing layer arrays to empty', () => {
+      const restored = normalizeRestoredGalleryConfig(
+        { padding: 12, backgroundType: 'color', backgroundValue: '#000000' },
+        'data:image/png;base64,src'
+      );
+      expect(restored.imageSrc).toBe('data:image/png;base64,src');
+      expect(restored.annotations).toEqual([]);
+      expect(restored.redactions).toEqual([]);
+    });
+
+    it('normalizeRestoredGalleryConfig preserves saved annotations', () => {
+      const annotations = [{ id: 'ann-1', type: 'rect', x: 0.1, y: 0.1, w: 0.2, h: 0.2 }];
+      const restored = normalizeRestoredGalleryConfig(
+        { annotations, padding: 20 },
+        'data:image/png;base64,src'
+      );
+      expect(restored.annotations).toEqual(annotations);
     });
   });
 });
