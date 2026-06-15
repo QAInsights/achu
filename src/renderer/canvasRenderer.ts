@@ -30,6 +30,7 @@ export interface RedactionItem {
 }
 
 import { drawArrowOnCanvas } from './arrowUtils';
+import { getWatermarkCanvasPlacement, getWatermarkInset } from '../shared/watermark';
 
 const bgImageCache = new Map<string, HTMLImageElement>();
 
@@ -866,33 +867,17 @@ function drawWatermark(
   ctx.globalAlpha = opacity;
   ctx.fillStyle = '#ffffff';
   
-  const position = config.watermarkPosition || 'middle';
-  // Safe inset: at least half a font-height from each edge to avoid overflow
-  const inset = Math.round(Math.max(config.padding / 3, fontSize * 0.5));
-  const isTop = position.startsWith('top');
+  const inset = getWatermarkInset(config.padding, fontSize);
+  const placement = getWatermarkCanvasPlacement(
+    width,
+    height,
+    config.watermarkPosition,
+    inset
+  );
 
-  let x = width / 2;
-  let y: number;
-  let align: CanvasTextAlign = 'center';
-
-  // Use textBaseline so text never overflows: 'bottom' anchors at inset from canvas bottom,
-  // 'top' anchors at inset from canvas top.
-  ctx.textBaseline = isTop ? 'top' : 'bottom';
-  y = isTop ? inset : height - inset;
-
-  if (position === 'left' || position === 'top left') {
-    x = inset;
-    align = 'left';
-  } else if (position === 'right' || position === 'top right') {
-    x = width - inset;
-    align = 'right';
-  } else if (position === 'middle' || position === 'top middle') {
-    x = width / 2;
-    align = 'center';
-  }
-
-  ctx.textAlign = align;
-  ctx.fillText(config.watermarkText, x, y);
+  ctx.textAlign = placement.textAlign;
+  ctx.textBaseline = placement.textBaseline;
+  ctx.fillText(config.watermarkText, placement.x, placement.y);
   ctx.restore();
 }
 

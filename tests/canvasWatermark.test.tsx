@@ -3,6 +3,13 @@ import { render, screen } from '@testing-library/react';
 import * as fs from 'fs';
 import * as path from 'path';
 import CanvasWatermark from '../src/renderer/components/CanvasWatermark';
+import {
+  getWatermarkCanvasPlacement,
+  getWatermarkCssPlacement,
+  getWatermarkInset,
+  WATERMARK_POSITIONS,
+  type WatermarkPosition,
+} from '../src/shared/watermark';
 
 describe('CanvasWatermark', () => {
   it('renders nothing when watermarkEnabled is false', () => {
@@ -109,61 +116,45 @@ describe('CanvasWatermark', () => {
     expect(el.style.fontStyle).toBe('italic');
   });
 
-  it('positions at bottom-center by default', () => {
-    const { container } = render(
-      <CanvasWatermark
-        watermarkEnabled={true}
-        watermarkText="Brand"
-        watermarkPosition="middle"
-        padding={60}
-      />
-    );
-    const el = container.firstChild as HTMLElement;
-    expect(el.style.bottom).toBe('20px');
-    expect(el.style.left).toBe('50%');
-  });
+  const positionExpectations: Record<
+    WatermarkPosition,
+    {
+      top?: string;
+      bottom?: string;
+      left?: string;
+      right?: string;
+      transform: string;
+    }
+  > = {
+    left: { bottom: '10px', left: '10px', right: 'auto', top: 'auto', transform: 'none' },
+    middle: { bottom: '10px', left: '50%', right: 'auto', top: 'auto', transform: 'translateX(-50%)' },
+    right: { bottom: '10px', right: '10px', left: 'auto', top: 'auto', transform: 'none' },
+    'top left': { top: '10px', left: '10px', right: 'auto', bottom: 'auto', transform: 'none' },
+    'top middle': { top: '10px', left: '50%', right: 'auto', bottom: 'auto', transform: 'translateX(-50%)' },
+    'top right': { top: '10px', right: '10px', left: 'auto', bottom: 'auto', transform: 'none' },
+  };
 
-  it('positions at top-left correctly', () => {
-    const { container } = render(
-      <CanvasWatermark
-        watermarkEnabled={true}
-        watermarkText="Brand"
-        watermarkPosition="top left"
-        padding={60}
-      />
-    );
-    const el = container.firstChild as HTMLElement;
-    expect(el.style.top).toBe('20px');
-    expect(el.style.left).toBe('20px');
-  });
+  it.each(WATERMARK_POSITIONS)(
+    'positions watermark near card edge for %s',
+    (watermarkPosition) => {
+      const { container } = render(
+        <CanvasWatermark
+          watermarkEnabled={true}
+          watermarkText="Brand"
+          watermarkPosition={watermarkPosition}
+          padding={60}
+        />
+      );
+      const el = container.firstChild as HTMLElement;
+      const expected = positionExpectations[watermarkPosition];
 
-  it('positions at top-right correctly', () => {
-    const { container } = render(
-      <CanvasWatermark
-        watermarkEnabled={true}
-        watermarkText="Brand"
-        watermarkPosition="top right"
-        padding={60}
-      />
-    );
-    const el = container.firstChild as HTMLElement;
-    expect(el.style.top).toBe('20px');
-    expect(el.style.right).toBe('20px');
-  });
-
-  it('positions at bottom-right correctly', () => {
-    const { container } = render(
-      <CanvasWatermark
-        watermarkEnabled={true}
-        watermarkText="Brand"
-        watermarkPosition="right"
-        padding={60}
-      />
-    );
-    const el = container.firstChild as HTMLElement;
-    expect(el.style.bottom).toBe('20px');
-    expect(el.style.right).toBe('20px');
-  });
+      if (expected.top) expect(el.style.top).toBe(expected.top);
+      if (expected.bottom) expect(el.style.bottom).toBe(expected.bottom);
+      if (expected.left) expect(el.style.left).toBe(expected.left);
+      if (expected.right) expect(el.style.right).toBe(expected.right);
+      expect(el.style.transform).toBe(expected.transform);
+    }
+  );
 
   // Regression: with zero/small padding, safe inset must be at least fontSize*0.5
   // to prevent text from being clipped by card border-radius overflow:hidden
@@ -178,12 +169,12 @@ describe('CanvasWatermark', () => {
       />
     );
     const el = container.firstChild as HTMLElement;
-    // safeInset = max(0/3, 20*0.5) = max(0, 10) = 10px
+    // safeInset = max(0*0.15, 20*0.5) = max(0, 10) = 10px
     expect(el.style.left).toBe('10px');
     expect(el.style.bottom).toBe('10px');
   });
 
-  it('uses padding/3 when it exceeds fontSize*0.5', () => {
+  it('uses padding*0.15 when it exceeds fontSize*0.5', () => {
     const { container } = render(
       <CanvasWatermark
         watermarkEnabled={true}
@@ -194,28 +185,60 @@ describe('CanvasWatermark', () => {
       />
     );
     const el = container.firstChild as HTMLElement;
-    // safeInset = max(90/3, 20*0.5) = max(30, 10) = 30px
-    expect(el.style.left).toBe('30px');
-    expect(el.style.top).toBe('30px');
+    // safeInset = max(90*0.15, 20*0.5) = max(13.5, 10) = 14px
+    expect(el.style.left).toBe('14px');
+    expect(el.style.top).toBe('14px');
   });
 
-  it('safeInset matches drawWatermark canvas inset formula for same inputs', () => {
-    // Both CSS and canvas use: Math.round(Math.max(padding/3, fontSize*0.5))
-    // padding=38, fontSize=20 → round(max(12.67, 10)) = 13
-    const { container } = render(
-      <CanvasWatermark
-        watermarkEnabled={true}
-        watermarkText="Brand"
-        watermarkPosition="left"
-        watermarkSize={20}
-        padding={38}
-      />
-    );
-    const el = container.firstChild as HTMLElement;
-    const cssInset = parseFloat(el.style.left);
-    const canvasInset = Math.round(Math.max(38 / 3, 20 * 0.5)); // 13
-    expect(cssInset).toBeCloseTo(canvasInset, 1);
-  });
+  it.each(WATERMARK_POSITIONS)(
+    'preview placement helper matches rendered styles for %s',
+    (watermarkPosition) => {
+      const inset = getWatermarkInset(38, 20);
+      const { container } = render(
+        <CanvasWatermark
+          watermarkEnabled={true}
+          watermarkText="Brand"
+          watermarkPosition={watermarkPosition}
+          watermarkSize={20}
+          padding={38}
+        />
+      );
+      const el = container.firstChild as HTMLElement;
+      const placement = getWatermarkCssPlacement(watermarkPosition, inset);
+
+      expect(el.style.top).toBe(placement.top ?? '');
+      expect(el.style.bottom).toBe(placement.bottom ?? '');
+      expect(el.style.left).toBe(placement.left ?? '');
+      expect(el.style.right).toBe(placement.right ?? '');
+      expect(el.style.transform).toBe(placement.transform);
+    }
+  );
+
+  it.each(WATERMARK_POSITIONS)(
+    'canvas placement uses the same inset on card edges for %s',
+    (watermarkPosition) => {
+      const width = 800;
+      const height = 600;
+      const inset = getWatermarkInset(38, 20);
+      const placement = getWatermarkCanvasPlacement(width, height, watermarkPosition, inset);
+
+      if (watermarkPosition === 'left' || watermarkPosition === 'top left') {
+        expect(placement.x).toBe(inset);
+      } else if (watermarkPosition === 'right' || watermarkPosition === 'top right') {
+        expect(placement.x).toBe(width - inset);
+      } else {
+        expect(placement.x).toBe(width / 2);
+      }
+
+      if (watermarkPosition.startsWith('top')) {
+        expect(placement.y).toBe(inset);
+        expect(placement.textBaseline).toBe('top');
+      } else {
+        expect(placement.y).toBe(height - inset);
+        expect(placement.textBaseline).toBe('bottom');
+      }
+    }
+  );
 
   // Regression: .preview-watermark CSS class sets left:50% transform:translateX(-50%)
   // For right/left positions the inline styles must explicitly reset these to prevent
