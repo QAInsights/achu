@@ -31,6 +31,8 @@ beforeEach(() => {
     setCompressionMode: vi.fn(),
     triggerExport: vi.fn(),
     copyBeautifiedImage: vi.fn(),
+    handleSaveToGallery: vi.fn().mockResolvedValue(undefined),
+    galleryToast: null,
     promptConfig: null,
     setPromptConfig: vi.fn(),
     chromeStyle: 'none',

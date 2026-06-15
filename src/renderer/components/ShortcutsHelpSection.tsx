@@ -1,5 +1,6 @@
 import { Keyboard, Heart, Github } from 'lucide-react';
 import Tooltip from './Tooltip';
+import { getModKeyLabel } from '../utils/shortcutLabels';
 
 export default function ShortcutsHelpSection() {
   return (
@@ -19,8 +20,12 @@ export default function ShortcutsHelpSection() {
             <div><kbd>Ctrl</kbd> <kbd>Z</kbd> / <kbd>Ctrl</kbd> <kbd>Y</kbd></div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Copy beautified snap</span>
-            <div><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>S</kbd></div>
+            <span style={{ color: 'var(--text-secondary)' }}>Save to Gallery</span>
+            <div><kbd>{getModKeyLabel()}</kbd> <kbd>S</kbd></div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Export to file</span>
+            <div><kbd>{getModKeyLabel()}</kbd> <kbd>Shift</kbd> <kbd>S</kbd></div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Delete Annotation</span>

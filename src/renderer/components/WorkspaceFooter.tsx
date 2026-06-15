@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Download, Copy, Share2, MessageSquare, FolderInput } from 'lucide-react';
 
 import { useAppContext } from '../AppContext';
+import { formatModShortcut } from '../utils/shortcutLabels';
 import './ShareMenu.css';
 
 export default function WorkspaceFooter() {
@@ -13,11 +14,11 @@ export default function WorkspaceFooter() {
     compressionMode, setCompressionMode,
     triggerExport,
     copyBeautifiedImage,
-    saveToGallery
+    handleSaveToGallery,
+    galleryToast
   } = useAppContext();
 
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
-  const [galleryToast, setGalleryToast] = useState<string | null>(null);
   const shareContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,23 +66,6 @@ export default function WorkspaceFooter() {
       window.snapFrameAPI.openURL(url);
     } else {
       window.open(url, '_blank');
-    }
-  };
-
-  const handleSaveToGallery = async () => {
-    try {
-      const result = await saveToGallery();
-      if (result.success) {
-        setGalleryToast(`Saved as ${result.name}`);
-        setTimeout(() => setGalleryToast(null), 2500);
-      } else {
-        const msg = result.error?.message || 'Failed to save';
-        setGalleryToast(msg);
-        setTimeout(() => setGalleryToast(null), 4000);
-      }
-    } catch (err) {
-      setGalleryToast(`Failed to save: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      setTimeout(() => setGalleryToast(null), 4000);
     }
   };
 
@@ -156,7 +140,7 @@ export default function WorkspaceFooter() {
         <Download className="w-4 h-4" /> Export
       </button>
 
-      <button className="btn btn-secondary" onClick={handleSaveToGallery} title="Save to Gallery">
+      <button className="btn btn-secondary" onClick={handleSaveToGallery} title={`Save to Gallery (${formatModShortcut('S')})`}>
         <FolderInput className="w-4 h-4" /> Gallery
       </button>
 

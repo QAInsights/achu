@@ -139,6 +139,8 @@ interface AppContextType {
   copyBeautifiedImage: () => Promise<void>;
   triggerExport: () => void;
   saveToGallery: () => Promise<{ success: boolean; path?: string; name?: string; error?: { code: string; message: string } }>;
+  handleSaveToGallery: () => Promise<void>;
+  galleryToast: string | null;
   selectBackgroundPreset: (preset: any) => void;
   handleSliderRelease: () => void;
   getZoomStyle: () => React.CSSProperties;
@@ -617,6 +619,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     compressionMode, setCompressionMode,
     copyBeautifiedImage, triggerExport, saveToGallery
   } = useExport(imageSrc, noImageMode, getCurrentConfig, ensureDocumentName, setDocumentName);
+
+  const [galleryToast, setGalleryToast] = useState<string | null>(null);
+  const galleryToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showGalleryToast = useCallback((message: string, duration = 2500) => {
+    if (galleryToastTimerRef.current) {
+      clearTimeout(galleryToastTimerRef.current);
+    }
+    setGalleryToast(message);
+    galleryToastTimerRef.current = setTimeout(() => {
+      setGalleryToast(null);
+      galleryToastTimerRef.current = null;
+    }, duration);
+  }, []);
+
+  const handleSaveToGallery = useCallback(async () => {
+    try {
+      const result = await saveToGallery();
+      if (result.success) {
+        showGalleryToast(`Saved as ${result.name}`, 2500);
+      } else {
+        const msg = result.error?.message || 'Failed to save';
+        showGalleryToast(msg, 4000);
+      }
+    } catch (err) {
+      showGalleryToast(
+        `Failed to save: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        4000
+      );
+    }
+  }, [saveToGallery, showGalleryToast]);
+
+  useEffect(() => {
+    return () => {
+      if (galleryToastTimerRef.current) {
+        clearTimeout(galleryToastTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleSliderRelease = () => { pushHistory(getCurrentConfig()); };
 
@@ -1368,10 +1409,16 @@ Severity rules:
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') {
         e.preventDefault(); triggerExport();
       }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (imageSrc || noImageMode) {
+          handleSaveToGallery();
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [historyIndex, history, imageSrc, padding, rounded, shadow, shadowColor, shadowEnabled, inset, insetColor, border, borderColor, scale, backgroundType, backgroundValue, aspectRatio, canvasWidth, canvasHeight, paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled, watermarkText, watermarkSize, position, exportFormat, jpegQuality, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread, noImageMode]);
+  }, [historyIndex, history, imageSrc, noImageMode, padding, rounded, shadow, shadowColor, shadowEnabled, inset, insetColor, border, borderColor, scale, backgroundType, backgroundValue, aspectRatio, canvasWidth, canvasHeight, paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled, watermarkText, watermarkSize, position, exportFormat, jpegQuality, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread, handleSaveToGallery]);
 
   // Mesh gradient background rendering
   useEffect(() => {
@@ -1471,7 +1518,7 @@ Severity rules:
       redactionStyle, setRedactionStyle,
       scanForSecrets, toggleRedaction, redactAll, revealAll,
       getCurrentConfig, pushHistory, applyConfig, handleUndo, handleRedo, selectFile, handleHTMLFileInput,
-      pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport, saveToGallery,
+      pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport, saveToGallery, handleSaveToGallery, galleryToast,
       selectBackgroundPreset, handleSliderRelease, getZoomStyle, applyMeshPalette, generateRandomPalette,
       handleDragOver, handleDragLeave, handleDrop, customPrompt, handlePointerDown, handlePointerMove, handlePointerUp,
       resetStyles,

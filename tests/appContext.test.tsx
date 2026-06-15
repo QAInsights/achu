@@ -63,6 +63,7 @@ beforeEach(() => {
     jpegQuality: 90, setJpegQuality: vi.fn(),
     compressionMode: 'balanced', setCompressionMode: vi.fn(),
     copyBeautifiedImage: vi.fn(), triggerExport: vi.fn(),
+    saveToGallery: vi.fn().mockResolvedValue({ success: true, name: 'test.achu.png' }),
   };
 
   vi.stubGlobal('snapFrameAPI', undefined);
@@ -305,6 +306,64 @@ describe('AppContext', () => {
         window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, shiftKey: true, key: 'S', bubbles: true }));
       });
       expect(mockUseExport.triggerExport).toHaveBeenCalled();
+    });
+
+    it('fires save to gallery on Ctrl+S when workspace has content', async () => {
+      let currentCtx: any;
+      function ShortcutConsumer() {
+        currentCtx = useAppContext();
+        return <div>test</div>;
+      }
+      render(
+        <AppProvider>
+          <ShortcutConsumer />
+        </AppProvider>
+      );
+
+      act(() => {
+        currentCtx.setImageSrc('data:image/png;base64,test');
+      });
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 's', bubbles: true }));
+      });
+
+      await waitFor(() => {
+        expect(mockUseExport.saveToGallery).toHaveBeenCalled();
+      });
+    });
+
+    it('fires save to gallery on Cmd+S when workspace has content', async () => {
+      let currentCtx: any;
+      function ShortcutConsumer() {
+        currentCtx = useAppContext();
+        return <div>test</div>;
+      }
+      render(
+        <AppProvider>
+          <ShortcutConsumer />
+        </AppProvider>
+      );
+
+      act(() => {
+        currentCtx.setImageSrc('data:image/png;base64,test');
+      });
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { metaKey: true, key: 's', bubbles: true }));
+      });
+
+      await waitFor(() => {
+        expect(mockUseExport.saveToGallery).toHaveBeenCalled();
+      });
+    });
+
+    it('does not fire save to gallery on Ctrl+S without workspace content', () => {
+      render(<AppProvider><div>test</div></AppProvider>);
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 's', bubbles: true }));
+      });
+      expect(mockUseExport.saveToGallery).not.toHaveBeenCalled();
     });
 
     it('fires clear workspace on Ctrl+N', () => {

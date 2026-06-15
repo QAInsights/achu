@@ -20,6 +20,8 @@ describe('WorkspaceFooter & ShareMenu', () => {
       jpegQuality: 90,
       triggerExport: vi.fn(),
       copyBeautifiedImage: vi.fn().mockResolvedValue(undefined),
+      handleSaveToGallery: vi.fn().mockResolvedValue(undefined),
+      galleryToast: null,
       setExportFormat: vi.fn(),
       setJpegQuality: vi.fn(),
       compressionMode: 'balanced',
