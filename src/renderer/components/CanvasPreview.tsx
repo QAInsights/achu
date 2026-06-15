@@ -79,6 +79,7 @@ export default function CanvasPreview() {
     hoveredRedactionId = null,
     setHoveredRedactionId = () => {},
     redactionStyle = 'solid',
+    documentName,
     bgGrain,
     lightRaysStyle,
     lightRaysOpacity,
@@ -233,6 +234,12 @@ export default function CanvasPreview() {
 
   return (
     <div className="workspace-canvas-container" ref={containerRef}>
+      <div className="canvas-workspace-stack">
+        {documentName && (
+          <div className="canvas-document-name" title={documentName}>
+            {documentName}
+          </div>
+        )}
       {(imageSrc || noImageMode) ? (
         <div 
           className="preview-card-wrapper"
@@ -539,6 +546,7 @@ export default function CanvasPreview() {
       ) : (
         <EmptyState />
       )}
+      </div>
 
       {/* Zoom controls cluster */}
       {(imageSrc || noImageMode) && (

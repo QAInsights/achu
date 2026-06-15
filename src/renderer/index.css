@@ -163,17 +163,6 @@ html, body {
   flex-shrink: 0;
 }
 
-.workspace-titlebar-document {
-  font-size: var(--fs-label);
-  font-weight: 500;
-  color: var(--text-tertiary);
-  font-family: var(--font-mono);
-  max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .platform-darwin.sidebar-collapsed .workspace-titlebar {
   padding-left: 80px;
 }
@@ -717,6 +706,32 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   background:
     radial-gradient(ellipse 70% 50% at 50% 50%, color-mix(in oklch, var(--surface-1) 40%, transparent) 0%, transparent 70%),
     var(--surface-0);
+}
+
+.canvas-workspace-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.canvas-document-name {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.01em;
+  max-width: min(100%, 480px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  flex-shrink: 0;
+  user-select: text;
+  padding: 0 var(--space-2);
 }
 
 /* Preview */
