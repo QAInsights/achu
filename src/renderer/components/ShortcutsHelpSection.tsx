@@ -32,6 +32,12 @@ export default function ShortcutsHelpSection() {
             <div><kbd>Delete</kbd> or <kbd>Backspace</kbd></div>
           </div>
           <div style={{ borderTop: '1px solid var(--border)', margin: '6px 0', paddingTop: '6px' }} />
+          <div style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Gallery &amp; Export</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Platform Burst Pack</span>
+            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>Footer → Burst</span>
+          </div>
+          <div style={{ borderTop: '1px solid var(--border)', margin: '6px 0', paddingTop: '6px' }} />
           <div style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Toolbar Shortcuts</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Select / Move</span>

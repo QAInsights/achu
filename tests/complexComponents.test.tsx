@@ -571,6 +571,7 @@ describe('SettingsModal', () => {
     expect(screen.getByText('Undo / Redo')).toBeInTheDocument();
     expect(screen.getByText('Save to Gallery')).toBeInTheDocument();
     expect(screen.getByText('Export to file')).toBeInTheDocument();
+    expect(screen.getByText('Platform Burst Pack')).toBeInTheDocument();
     expect(screen.getByText('Delete Annotation')).toBeInTheDocument();
   });
 

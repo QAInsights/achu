@@ -1,5 +1,7 @@
 import { AppProvider, useAppContext } from './AppContext';
 import { GalleryProvider, useGalleryContext } from './contexts/GalleryContext';
+import { BurstPackProvider } from './contexts/BurstPackContext';
+import BurstPackModal from './components/burst/BurstPackModal';
 import Sidebar from './components/Sidebar';
 import SecondarySidebar from './components/SecondarySidebar';
 import WorkspaceToolbar from './components/WorkspaceToolbar';
@@ -47,6 +49,7 @@ function AppContent() {
       <PromptModal />
       <SettingsModal />
       <HelpModal />
+      <BurstPackModal />
       <input
         type="file"
         ref={fileInputRef as any}
@@ -62,7 +65,9 @@ export default function App() {
   return (
     <AppProvider>
       <GalleryProvider>
-        <AppContent />
+        <BurstPackProvider>
+          <AppContent />
+        </BurstPackProvider>
       </GalleryProvider>
     </AppProvider>
   );

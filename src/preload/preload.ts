@@ -84,4 +84,5 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
   readGalleryProject: (filePath: string) => ipcRenderer.invoke('gallery:read-project', filePath),
   getGalleryThumbnail: (filePath: string, width?: number) => ipcRenderer.invoke('gallery:thumbnail', filePath, width),
   copyGalleryToClipboard: (filePath: string) => ipcRenderer.invoke('gallery:copy-to-clipboard', filePath),
+  saveBurstPack: (payload: any) => ipcRenderer.invoke('burst:save', payload),
 });

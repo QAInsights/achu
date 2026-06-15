@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { Download, Copy, Share2, MessageSquare, FolderInput } from 'lucide-react';
+import { Download, Copy, Share2, MessageSquare, FolderInput, Layers } from 'lucide-react';
 
 import { useAppContext } from '../AppContext';
+import { useBurstPackContext } from '../contexts/BurstPackContext';
 import { formatModShortcut } from '../utils/shortcutLabels';
 import './ShareMenu.css';
 
@@ -17,6 +18,7 @@ export default function WorkspaceFooter() {
     handleSaveToGallery,
     galleryToast
   } = useAppContext();
+  const { openModal: openBurstModal, toast: burstToast } = useBurstPackContext();
 
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const shareContainerRef = useRef<HTMLDivElement>(null);
@@ -144,6 +146,10 @@ export default function WorkspaceFooter() {
         <FolderInput className="w-4 h-4" /> Gallery
       </button>
 
+      <button className="btn btn-secondary" onClick={openBurstModal} title="Export platform burst pack to gallery">
+        <Layers className="w-4 h-4" /> Burst
+      </button>
+
       <button className="btn btn-secondary" onClick={copyBeautifiedImage}>
         <Copy className="w-4 h-4" /> Copy
       </button>
@@ -182,8 +188,8 @@ export default function WorkspaceFooter() {
           </div>
         )}
       </div>
-      {galleryToast && (
-        <div className="gallery-toast">{galleryToast}</div>
+      {(galleryToast || burstToast) && (
+        <div className="gallery-toast">{galleryToast || burstToast}</div>
       )}
     </div>
   );

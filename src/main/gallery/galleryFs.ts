@@ -6,6 +6,8 @@ import { compressImageBuffer, decodeImageDataUrl, CompressionMode, ExportImageTy
 import { loadSettings, getDefaultGalleryFolder } from '../settings';
 import { isGallerySourceFile } from '../../shared/galleryNaming';
 import { moveProjectBundleToTrash, readGalleryProject, resolveGalleryOutputPath, writeGalleryProject } from './galleryProject';
+import { listBurstBundleItems } from '../burst/burstGalleryList';
+import { deleteBurstBundle } from '../burst/burstGalleryRead';
 import { purgeTrash } from './galleryTrash';
 import {
   classifyFsError,
@@ -22,6 +24,9 @@ export interface GalleryItem {
   size: number;
   modified: number;
   ext: string;
+  isBurstBundle?: boolean;
+  burstVariantCount?: number;
+  bundlePath?: string;
 }
 
 export interface GalleryResult<T = void> {
@@ -73,13 +78,15 @@ export function listGalleryItems(galleryDir: string): GalleryResult<GalleryItem[
           return null;
         }
       })
-      .filter((item): item is GalleryItem => item !== null)
-      .sort((a, b) => b.modified - a.modified);
+      .filter((item): item is GalleryItem => item !== null);
+
+    const burstItems = listBurstBundleItems(galleryDir);
+    const merged = [...burstItems, ...items].sort((a, b) => b.modified - a.modified);
 
     // Side-effect: purge old trash on every list
     try { purgeTrash(galleryDir); } catch { /* non-fatal */ }
 
-    return { success: true, data: items };
+    return { success: true, data: merged };
   } catch (err) {
     return { success: false, error: classifyFsError(err).toJSON() };
   }
@@ -146,6 +153,9 @@ export { readGalleryProject };
 export function deleteGalleryItem(galleryDir: string, filePath: string): GalleryResult {
   try {
     validateGalleryPath(galleryDir, filePath);
+    if (deleteBurstBundle(galleryDir, filePath)) {
+      return { success: true };
+    }
     moveProjectBundleToTrash(galleryDir, filePath);
     return { success: true };
   } catch (err) {

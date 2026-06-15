@@ -10,6 +10,13 @@ vi.mock('../src/renderer/AppContext', () => ({
   useAppContext: () => mockContext,
 }));
 
+vi.mock('../src/renderer/contexts/BurstPackContext', () => ({
+  useBurstPackContext: () => ({
+    openModal: vi.fn(),
+    toast: null,
+  }),
+}));
+
 let mockContext: any = {};
 
 beforeEach(() => {

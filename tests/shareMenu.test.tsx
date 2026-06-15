@@ -9,6 +9,13 @@ vi.mock('../src/renderer/AppContext', () => ({
   AppProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+vi.mock('../src/renderer/contexts/BurstPackContext', () => ({
+  useBurstPackContext: () => ({
+    openModal: vi.fn(),
+    toast: null,
+  }),
+}));
+
 let mockContext: any = {};
 
 describe('WorkspaceFooter & ShareMenu', () => {

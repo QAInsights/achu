@@ -19,6 +19,9 @@ interface GalleryItemData {
   size: number;
   modified: number;
   ext: string;
+  isBurstBundle?: boolean;
+  burstVariantCount?: number;
+  bundlePath?: string;
 }
 
 function formatFileSize(bytes: number): string {
@@ -181,6 +184,9 @@ export default function GalleryView() {
                 onDoubleClick={() => handleOpenInEditor(item)}
               >
                 <div className="gallery-card-image">
+                  {item.isBurstBundle && item.burstVariantCount && (
+                    <span className="gallery-burst-badge">{item.burstVariantCount} variants</span>
+                  )}
                   {thumbnails[item.path] ? (
                     <img src={thumbnails[item.path]} alt={item.name} />
                   ) : (

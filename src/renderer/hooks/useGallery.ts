@@ -6,6 +6,9 @@ export interface GalleryItem {
   size: number;
   modified: number;
   ext: string;
+  isBurstBundle?: boolean;
+  burstVariantCount?: number;
+  bundlePath?: string;
 }
 
 export interface GalleryError {

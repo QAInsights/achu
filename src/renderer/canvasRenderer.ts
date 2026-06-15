@@ -145,6 +145,7 @@ export interface RenderConfig {
   lightRaysSourceY?: number;
   autoImportCaptured?: boolean;
   captureShortcut?: string;
+  forceCanvasSize?: { width: number; height: number };
 }
 
 interface ColorStop {
@@ -773,6 +774,13 @@ export function getCanvasDimensions(
   imgHeight: number,
   config: RenderConfig
 ): { width: number; height: number } {
+  if (config.forceCanvasSize) {
+    return {
+      width: config.forceCanvasSize.width,
+      height: config.forceCanvasSize.height,
+    };
+  }
+
   // If noImage is true, default to a standard size or target ratio
   if (config.noImage) {
     const baseWidth = 1200;

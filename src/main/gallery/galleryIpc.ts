@@ -2,6 +2,7 @@ import { ipcMain, BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { loadSettings, saveSettings } from '../settings';
+import { tryReadBurstGalleryProject } from '../burst/burstGalleryRead';
 import {
   getGalleryFolder,
   ensureGalleryDir,
@@ -101,6 +102,8 @@ export function registerGalleryIpcHandlers(getMainWindow: () => BrowserWindow | 
 
   ipcMain.handle('gallery:read-project', (_event, filePath: string) => {
     const dir = getGalleryFolder();
+    const burstResult = tryReadBurstGalleryProject(dir, filePath);
+    if (burstResult) return burstResult;
     return readGalleryProject(dir, filePath);
   });
 

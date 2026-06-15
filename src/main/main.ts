@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { loadSettings, saveSettings, getDefaultGalleryFolder } from './settings';
 import { registerIpcHandlers } from './ipc';
 import { registerGalleryIpcHandlers } from './gallery';
+import { registerBurstIpcHandlers } from './burst';
 import { setupFocusCheck, updateCaptureConfigurations, cleanupCaptureModule, triggerOSScreenCapture } from './capture';
 import { registerUpdaterHandlers } from './updater';
 
@@ -171,6 +172,7 @@ app.whenReady().then(() => {
   // Register all IPC handlers
   registerIpcHandlers(() => mainWindow);
   registerGalleryIpcHandlers(() => mainWindow);
+  registerBurstIpcHandlers();
 
   // Initialize and register global screenshot shortcuts dynamically
   updateCaptureConfigurations(settings, mainWindow);
