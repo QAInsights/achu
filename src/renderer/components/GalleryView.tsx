@@ -9,8 +9,7 @@ import {
   RefreshCw,
   ArrowLeft,
   Loader2,
-  AlertTriangle,
-  Info
+  AlertTriangle
 } from 'lucide-react';
 import './GalleryView.css';
 
@@ -149,12 +148,6 @@ export default function GalleryView() {
             <span className="gallery-meta-label">Folder</span>
             <span className="gallery-meta-value" title={galleryFolder}>
               {galleryFolder}
-            </span>
-          </div>
-          <div className="gallery-info-callout">
-            <Info className="gallery-info-callout-icon" aria-hidden="true" />
-            <span>
-              Deleted images move to <code>.achu-trash</code> and are removed after 30 days.
             </span>
           </div>
         </div>

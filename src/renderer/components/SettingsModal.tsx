@@ -266,6 +266,9 @@ export default function SettingsModal() {
                       <FolderOpen className="w-3.5 h-3.5" /> Browse
                     </button>
                   </div>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px', display: 'block', lineHeight: 1.45 }}>
+                    Deleted images move to <code style={{ fontFamily: 'var(--font-mono)', fontSize: '0.92em' }}>.achu-trash</code> and are removed after 30 days.
+                  </span>
                 </div>
               </div>
 
