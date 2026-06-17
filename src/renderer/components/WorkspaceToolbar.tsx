@@ -20,7 +20,8 @@ import {
   HelpCircle,
   Sun,
   Moon,
-  Settings
+  Settings,
+  Code
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import { useGalleryContext } from '../contexts/GalleryContext';
@@ -36,7 +37,7 @@ export default function WorkspaceToolbar() {
   const {
     sidebarVisible, setSidebarVisible,
     secondarySidebarVisible, setSecondarySidebarVisible,
-    noImageMode, setNoImageMode,
+    noImageMode, setNoImageMode, setBackgroundType,
     historyIndex, history,
     handleUndo, handleRedo,
     activeTool, setActiveTool,
@@ -53,7 +54,8 @@ export default function WorkspaceToolbar() {
     settingsVisible, setSettingsVisible,
     helpVisible, setHelpVisible,
     setImageSrc,
-    clearWorkspace
+    clearWorkspace,
+    codeStudioActive, setCodeStudioActive,
   } = useAppContext();
 
   const tools: Array<{ id: typeof activeTool; icon: React.ReactNode; title: string; tooltip: string }> = [
@@ -340,6 +342,32 @@ export default function WorkspaceToolbar() {
           <span className="toolbar-control-value">{annotationStrokeWidth}px</span>
         </div>
       </Tooltip>
+
+      <div className="toolbar-divider" />
+
+      {/* Code Studio toggle + controls */}
+      <div className="toolbar-group">
+        <Tooltip position="right">
+          <button
+            className={`tool-btn ${codeStudioActive ? 'active' : ''}`}
+            onClick={() => {
+              if (!codeStudioActive) {
+                setCodeStudioActive(true);
+                setNoImageMode(true);
+                setBackgroundType('gradient');
+                setImageSrc(null);
+              } else {
+                setCodeStudioActive(false);
+              }
+            }}
+            title={codeStudioActive ? 'Exit Code Studio' : 'Code Studio'}
+          >
+            <Code className="w-4 h-4" />
+          </button>
+        </Tooltip>
+      </div>
+
+
 
       <div className="toolbar-divider" />
 

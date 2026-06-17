@@ -120,6 +120,15 @@ interface AppContextType {
   vibeUpdateDrawColor: boolean; setVibeUpdateDrawColor: React.Dispatch<React.SetStateAction<boolean>>;
   applyAutoVibe: () => Promise<void>;
 
+  // Code Studio
+  codeStudioActive: boolean; setCodeStudioActive: React.Dispatch<React.SetStateAction<boolean>>;
+  codeStudioCode: string; setCodeStudioCode: React.Dispatch<React.SetStateAction<string>>;
+  codeStudioLanguage: string; setCodeStudioLanguage: React.Dispatch<React.SetStateAction<string>>;
+  codeStudioTheme: string; setCodeStudioTheme: React.Dispatch<React.SetStateAction<string>>;
+  codeStudioFontSize: number; setCodeStudioFontSize: React.Dispatch<React.SetStateAction<number>>;
+  codeStudioLineNumbers: boolean; setCodeStudioLineNumbers: React.Dispatch<React.SetStateAction<boolean>>;
+  codeStudioShowLanguage: boolean; setCodeStudioShowLanguage: React.Dispatch<React.SetStateAction<boolean>>;
+
 
   // Refs
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -433,6 +442,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [vibeVariantIndex, setVibeVariantIndex] = useState<number>(-1);
   const [vibeUpdateDrawColor, setVibeUpdateDrawColor] = useState<boolean>(true);
 
+  // Code Studio state
+  const [codeStudioActive, setCodeStudioActive] = useState<boolean>(false);
+  const [codeStudioCode, setCodeStudioCode] = useState<string>(() =>
+    `// Paste or type your code here...\nfunction helloWorld() {\n  console.log("Hello, achu!");\n}`
+  );
+  const [codeStudioLanguage, setCodeStudioLanguage] = useState<string>('javascript');
+  const [codeStudioTheme, setCodeStudioTheme] = useState<string>('Dracula');
+  const [codeStudioFontSize, setCodeStudioFontSize] = useState<number>(14);
+  const [codeStudioLineNumbers, setCodeStudioLineNumbers] = useState<boolean>(true);
+  const [codeStudioShowLanguage, setCodeStudioShowLanguage] = useState<boolean>(true);
+
   const getCurrentConfig = (): RenderConfig => ({
     padding, rounded, shadow, shadowColor, shadowEnabled,
     inset, insetColor, border, borderColor, scale,
@@ -461,6 +481,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     lightRaysSourceY,
     autoImportCaptured,
     captureShortcut,
+    codeStudioActive,
+    codeStudioCode,
+    codeStudioLanguage,
+    codeStudioTheme,
+    codeStudioFontSize,
+    codeStudioLineNumbers,
+    codeStudioShowLanguage,
   });
 
   const applyConfig = (config: RenderConfig) => {
@@ -531,6 +558,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (config.sidebarPosition) setSidebarPosition(config.sidebarPosition);
     if (config.autoImportCaptured !== undefined) setAutoImportCapturedState(config.autoImportCaptured);
     if (config.captureShortcut) setCaptureShortcutState(config.captureShortcut);
+
+    // Code Studio configuration
+    if (config.codeStudioActive !== undefined) setCodeStudioActive(config.codeStudioActive);
+    if (config.codeStudioCode !== undefined) setCodeStudioCode(config.codeStudioCode);
+    if (config.codeStudioLanguage !== undefined) setCodeStudioLanguage(config.codeStudioLanguage);
+    if (config.codeStudioTheme !== undefined) setCodeStudioTheme(config.codeStudioTheme);
+    if (config.codeStudioFontSize !== undefined) setCodeStudioFontSize(config.codeStudioFontSize);
+    if (config.codeStudioLineNumbers !== undefined) setCodeStudioLineNumbers(config.codeStudioLineNumbers);
+    if (config.codeStudioShowLanguage !== undefined) setCodeStudioShowLanguage(config.codeStudioShowLanguage);
   };
 
   // 1. History Hook
@@ -1134,6 +1170,10 @@ Severity rules:
     resetIssue();
     setCachedOcrResult(null);
     setDocumentName(buildAchuDocumentName());
+    setCodeStudioActive(false);
+    setCodeStudioCode(`// Paste or type your code here...\nfunction helloWorld() {\n  console.log("Hello, achu!");\n}`);
+    setCodeStudioLanguage('javascript');
+    setCodeStudioShowLanguage(true);
   };
 
   const openGalleryImage = useCallback(async (item: GalleryItem) => {
@@ -1548,7 +1588,16 @@ Severity rules:
       localFallbackAvailable, setLocalFallbackAvailable,
       userInstruction, setUserInstruction,
       generateIssue, generateIssueOffline, pushIssueToGitHub, resetIssue, exportBeautifiedScreenshot,
-      triggerAiHealthCheck
+      triggerAiHealthCheck,
+
+      // Code Studio
+      codeStudioActive, setCodeStudioActive,
+      codeStudioCode, setCodeStudioCode,
+      codeStudioLanguage, setCodeStudioLanguage,
+      codeStudioTheme, setCodeStudioTheme,
+      codeStudioFontSize, setCodeStudioFontSize,
+      codeStudioLineNumbers, setCodeStudioLineNumbers,
+      codeStudioShowLanguage, setCodeStudioShowLanguage
     }}>
       {children}
     </AppContext.Provider>

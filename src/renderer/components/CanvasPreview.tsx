@@ -2,16 +2,18 @@ import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../AppContext';
 import AnnotationsLayer from '../AnnotationsLayer';
 import { zoomIn, zoomOut } from '../utils/layoutUtils';
-import Tooltip from './Tooltip';
 import { platformPresets } from '../presetsData';
 import ContextMenu from './ContextMenu';
 import GrabTextModal from './GrabTextModal';
+import CodePreview from '../views/codeStudio/CodePreview';
 
 // Modular Subcomponents
 import ChromeMockup from './ChromeMockup';
 import ZoomControls from './ZoomControls';
 import CanvasWatermark from './CanvasWatermark';
 import EmptyState from './EmptyState';
+import PrivacyGuardOverlays from './PrivacyGuardOverlays';
+import MeshGradientHandles from './MeshGradientHandles';
 
 // Background Utility functions
 import {
@@ -38,9 +40,6 @@ export default function CanvasPreview() {
     backgroundType,
     backgroundValue,
     aspectRatio,
-    canvasWidth,
-    canvasHeight,
-    paddingMode,
     chromeStyle,
     chromeTheme,
     blurDensity,
@@ -87,6 +86,12 @@ export default function CanvasPreview() {
     lightRaysCount,
     lightRaysSourceX,
     lightRaysSourceY,
+    codeStudioActive,
+    codeStudioCode, setCodeStudioCode,
+    codeStudioLanguage, setCodeStudioLanguage,
+    codeStudioTheme,
+    codeStudioFontSize,
+    codeStudioLineNumbers,
   } = useAppContext();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -112,42 +117,24 @@ export default function CanvasPreview() {
     return () => observer.disconnect();
   }, []);
 
-  const imgW = (imageSrc && !noImageMode) ? (imgDims?.width || 800) : 800;
-  const imgH = (imageSrc && !noImageMode) ? (imgDims?.height || 600) : 600;
+  let imgW = 800;
+  let imgH = 600;
 
-  const config = {
-    padding,
-    rounded,
-    shadow,
-    shadowColor,
-    shadowEnabled,
-    inset,
-    insetColor,
-    border,
-    borderColor,
-    scale,
-    backgroundType,
-    backgroundValue,
-    aspectRatio,
-    canvasWidth,
-    canvasHeight,
-    paddingMode,
-    chromeStyle,
-    chromeTheme,
-    blurDensity,
-    watermarkEnabled,
-    watermarkText,
-    watermarkSize,
-    watermarkPosition,
-    watermarkOpacity,
-    watermarkFont,
-    watermarkBold,
-    watermarkItalic,
-    position,
-    annotations,
-    meshPoints,
-    noImage: noImageMode,
-  };
+  if (imageSrc && !noImageMode) {
+    imgW = imgDims?.width || 800;
+    imgH = imgDims?.height || 600;
+  } else if (noImageMode && codeStudioActive) {
+    const lines = codeStudioCode.split('\n');
+    const longestLine = lines.reduce((max, line) => line.length > max ? line.length : max, 0);
+    const charWidth = codeStudioFontSize * 0.6;
+    const lineHeight = codeStudioFontSize * 1.6;
+    const gutterChars = codeStudioLineNumbers ? (lines.length >= 100 ? 7 : lines.length >= 10 ? 6 : 5) : 0;
+    
+    imgW = Math.max(450, Math.round((longestLine + gutterChars) * charWidth + 64));
+    imgH = Math.round(lines.length * lineHeight + 40);
+  }
+
+  const config = getCurrentConfig();
 
   const dims = getCanvasDimensions(imgW, imgH, config);
 
@@ -337,47 +324,18 @@ export default function CanvasPreview() {
 
             {/* Draggable Point Handles for Mesh Gradient */}
             {backgroundType === 'mesh' && (
-              <div
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 10 }}
-              >
-                {meshPoints.map((pt, idx) => (
-                  <Tooltip key={pt.id} position="top">
-                    <div
-                      onPointerDown={activeTool === 'pointer' ? (e) => handlePointerDown(e, idx) : undefined}
-                      onPointerMove={activeTool === 'pointer' ? handlePointerMove : undefined}
-                      onPointerUp={activeTool === 'pointer' ? handlePointerUp : undefined}
-                      style={{
-                        position: 'absolute',
-                        left: `${pt.x * 100}%`,
-                        top: `${pt.y * 100}%`,
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        backgroundColor: pt.color,
-                        border: idx === activePointIdx ? '3px solid #ffffff' : '2px solid rgba(255,255,255,0.8)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                        transform: 'translate(-50%, -50%)',
-                        cursor: activeTool === 'pointer' ? 'move' : 'default',
-                        pointerEvents: activeTool === 'pointer' ? 'auto' : 'none',
-                        zIndex: idx === activePointIdx ? 12 : 11,
-                      }}
-                      title={`Point ${idx + 1}`}
-                    >
-                      <div style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        backgroundColor: '#ffffff',
-                        margin: '6px auto 0 auto',
-                      }} />
-                    </div>
-                  </Tooltip>
-                ))}
-              </div>
+              <MeshGradientHandles
+                meshPoints={meshPoints}
+                activePointIdx={activePointIdx}
+                activeTool={activeTool}
+                handlePointerDown={handlePointerDown}
+                handlePointerMove={handlePointerMove}
+                handlePointerUp={handlePointerUp}
+              />
             )}
 
             {/* Main Screenshot card box */}
-            {!noImageMode && imageSrc ? (
+            {((!noImageMode && imageSrc) || (noImageMode && codeStudioActive)) ? (
               <div
                 className={`preview-container-box ${chromeStyle !== 'none' ? `mockup-${chromeTheme}` : ''}`}
                 style={{
@@ -395,120 +353,67 @@ export default function CanvasPreview() {
                 {/* Title Bar Mockup */}
                 <ChromeMockup chromeStyle={chromeStyle} chromeTheme={chromeTheme || 'dark'} scale={scale / 100} />
 
-                {/* Image render element with Annotations layer */}
-                <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>
-                  <img
-                    src={imageSrc}
-                    alt="Screenshot"
-                    className="preview-screenshot-img"
-                    onLoad={(e) => {
-                      setImgDims({
-                        width: e.currentTarget.naturalWidth,
-                        height: e.currentTarget.naturalHeight
-                      });
-                    }}
-                    style={{
-                      width: aspectRatio === 'Auto' ? 'auto' : '100%',
-                      maxWidth: '100%',
-                      maxHeight: aspectRatio === 'Auto' ? '100%' : undefined,
-                      height: 'auto',
-                      display: 'block',
-                    }}
+                {/* Content rendering: Code editor or Screenshot image */}
+                {codeStudioActive ? (
+                  <CodePreview
+                    code={codeStudioCode}
+                    onChangeCode={setCodeStudioCode}
+                    language={codeStudioLanguage}
+                    onChangeLanguage={setCodeStudioLanguage}
+                    themeName={codeStudioTheme}
+                    fontSize={codeStudioFontSize}
+                    showLineNumbers={codeStudioLineNumbers}
                   />
-                  {/* SVG Blur Overlay for Privacy Guard when style is blur */}
-                  {redactions && redactionStyle === 'blur' && redactions.some(r => r.status === 'redacted') && (
-                    <svg
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        width: '100%',
-                        height: '100%',
-                        pointerEvents: 'none',
-                        zIndex: 15,
+                ) : (
+                  <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>
+                    <img
+                      src={imageSrc || undefined}
+                      alt="Screenshot"
+                      className="preview-screenshot-img"
+                      onLoad={(e) => {
+                        setImgDims({
+                          width: e.currentTarget.naturalWidth,
+                          height: e.currentTarget.naturalHeight
+                        });
                       }}
-                      viewBox="0 0 1000 1000"
-                      preserveAspectRatio="none"
-                    >
-                      <defs>
-                        <filter id="privacy-guard-blur">
-                          <feGaussianBlur stdDeviation="15" />
-                        </filter>
-                        <clipPath id="privacy-guard-clip">
-                          {redactions
-                            .filter((item) => item.status === 'redacted')
-                            .map((item) => (
-                              <rect
-                                key={item.id}
-                                x={item.x * 1000}
-                                y={item.y * 1000}
-                                width={item.w * 1000}
-                                height={item.h * 1000}
-                              />
-                            ))}
-                        </clipPath>
-                      </defs>
-                      <image
-                        href={imageSrc}
-                        width="1000"
-                        height="1000"
-                        preserveAspectRatio="none"
-                        clipPath="url(#privacy-guard-clip)"
-                        filter="url(#privacy-guard-blur)"
-                      />
-                    </svg>
-                  )}
+                      style={{
+                        width: aspectRatio === 'Auto' ? 'auto' : '100%',
+                        maxWidth: '100%',
+                        maxHeight: aspectRatio === 'Auto' ? '100%' : undefined,
+                        height: 'auto',
+                        display: 'block',
+                      }}
+                    />
+                    {/* Privacy Guard Overlays */}
+                    <PrivacyGuardOverlays
+                      redactions={redactions}
+                      redactionStyle={redactionStyle}
+                      imageSrc={imageSrc}
+                      hoveredRedactionId={hoveredRedactionId}
+                      setHoveredRedactionId={setHoveredRedactionId}
+                      toggleRedaction={toggleRedaction}
+                    />
 
-                  {/* SVG Solid Block Overlay for Privacy Guard */}
-                  {redactions && redactionStyle === 'solid' && redactions.some(r => r.status === 'redacted') && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 15 }}>
-                      {redactions
-                        .filter((item) => item.status === 'redacted')
-                        .map((item) => (
-                          <div
-                            key={item.id}
-                            style={{
-                              position: 'absolute',
-                              left: `${item.x * 100}%`,
-                              top: `${item.y * 100}%`,
-                              width: `${item.w * 100}%`,
-                              height: `${item.h * 100}%`,
-                              backgroundColor: '#000000',
-                              border: hoveredRedactionId === item.id ? '2px dashed #3b82f6' : 'none',
-                              cursor: 'pointer',
-                              pointerEvents: 'auto',
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleRedaction(item.id);
-                            }}
-                            onMouseEnter={() => setHoveredRedactionId(item.id)}
-                            onMouseLeave={() => setHoveredRedactionId(null)}
-                          />
-                        ))}
-                    </div>
-                  )}
-
-                  {/* Annotations drawing layer */}
-                  <AnnotationsLayer
-                    annotations={annotations}
-                    setAnnotations={setAnnotations}
-                    activeTool={activeTool}
-                    setActiveTool={setActiveTool}
-                    color={annotationColor}
-                    setAnnotationColor={setAnnotationColor}
-                    strokeWidth={annotationStrokeWidth}
-                    onSaveHistory={(newAnns) => {
-                      const cfg = getCurrentConfig();
-                      if (newAnns) cfg.annotations = newAnns;
-                      pushHistory(cfg);
-                    }}
-                    customPrompt={customPrompt}
-                  />
-                </div>
+                    {/* Annotations drawing layer */}
+                    <AnnotationsLayer
+                      annotations={annotations}
+                      setAnnotations={setAnnotations}
+                      activeTool={activeTool}
+                      setActiveTool={setActiveTool}
+                      color={annotationColor}
+                      setAnnotationColor={setAnnotationColor}
+                      strokeWidth={annotationStrokeWidth}
+                      onSaveHistory={(newAnns) => {
+                        const cfg = getCurrentConfig();
+                        if (newAnns) cfg.annotations = newAnns;
+                        pushHistory(cfg);
+                      }}
+                      customPrompt={customPrompt}
+                    />
+                  </div>
+                )}
               </div>
             ) : (
-              /* No-image mode: render annotations layer directly on the background */
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
                 <AnnotationsLayer
                   annotations={annotations}

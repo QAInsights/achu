@@ -31,6 +31,8 @@ export interface RedactionItem {
 
 import { drawArrowOnCanvas } from './arrowUtils';
 import { getWatermarkCanvasPlacement, getWatermarkInset } from '../shared/watermark';
+import { tokenizeLine } from './utils/codeTokenizer';
+import { getThemeByName } from './utils/codeThemes';
 
 const bgImageCache = new Map<string, HTMLImageElement>();
 
@@ -146,6 +148,13 @@ export interface RenderConfig {
   autoImportCaptured?: boolean;
   captureShortcut?: string;
   forceCanvasSize?: { width: number; height: number };
+  codeStudioActive?: boolean;
+  codeStudioCode?: string;
+  codeStudioLanguage?: string;
+  codeStudioTheme?: string;
+  codeStudioFontSize?: number;
+  codeStudioLineNumbers?: boolean;
+  codeStudioShowLanguage?: boolean;
 }
 
 interface ColorStop {
@@ -783,6 +792,69 @@ export function getCanvasDimensions(
 
   // If noImage is true, default to a standard size or target ratio
   if (config.noImage) {
+    if (config.codeStudioActive && config.codeStudioCode) {
+      const fontSize = config.codeStudioFontSize || 14;
+      const showLineNumbers = config.codeStudioLineNumbers ?? true;
+      const lines = config.codeStudioCode.split('\n');
+      const longestLine = lines.reduce((max, line) => line.length > max ? line.length : max, 0);
+      const charWidth = fontSize * 0.6;
+      const lineHeight = fontSize * 1.6;
+      const gutterChars = showLineNumbers ? (lines.length >= 100 ? 7 : lines.length >= 10 ? 6 : 5) : 0;
+      
+      const codeW = Math.max(450, Math.round((longestLine + gutterChars) * charWidth + 64));
+      const codeH = Math.round(lines.length * lineHeight + 40); // height without chrome title bar
+      
+      if (config.aspectRatio === 'Auto') {
+        const scale = config.scale / 100;
+        const paddingX = config.padding * 2;
+        const paddingY = config.padding * 2;
+        const chromeOffset = config.chromeStyle !== 'none' ? 32 : 0;
+        return {
+          width: Math.round(codeW * scale + paddingX),
+          height: Math.round((codeH + chromeOffset) * scale + paddingY),
+        };
+      }
+      
+      let targetRatio = 16 / 9;
+      if (config.aspectRatio === '1:1') targetRatio = 1;
+      else if (config.aspectRatio === '4:3') targetRatio = 4 / 3;
+      else if (config.aspectRatio === '16:9') targetRatio = 16 / 9;
+      else if (config.aspectRatio === '3:2') targetRatio = 3 / 2;
+      else if (config.aspectRatio === 'Custom') {
+        targetRatio = config.canvasWidth / config.canvasHeight;
+      }
+      
+      const paddingX = config.padding * 2;
+      const paddingY = config.padding * 2;
+      const chromeOffset = config.chromeStyle !== 'none' ? 32 : 0;
+      
+      const contentWidth = codeW * (config.scale / 100);
+      const contentHeight = (codeH + chromeOffset) * (config.scale / 100);
+      
+      if (config.paddingMode === 'fit') {
+        const currentRatio = (contentWidth + paddingX) / (contentHeight + paddingY);
+        if (currentRatio > targetRatio) {
+          const canvasWidth = contentWidth + paddingX;
+          return {
+            width: Math.round(canvasWidth),
+            height: Math.round(canvasWidth / targetRatio),
+          };
+        } else {
+          const canvasHeight = contentHeight + paddingY;
+          return {
+            width: Math.round(canvasHeight * targetRatio),
+            height: Math.round(canvasHeight),
+          };
+        }
+      } else {
+        const baseWidth = Math.max(800, codeW);
+        return {
+          width: Math.round(baseWidth),
+          height: Math.round(baseWidth / targetRatio),
+        };
+      }
+    }
+
     const baseWidth = 1200;
     let targetRatio = 16 / 9;
     if (config.aspectRatio === '1:1') targetRatio = 1;
@@ -889,6 +961,108 @@ function drawWatermark(
   ctx.restore();
 }
 
+// Draw Code Studio on Canvas
+function drawCodeStudioOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  config: RenderConfig
+) {
+  const theme = getThemeByName(config.codeStudioTheme || 'Dracula');
+  const code = config.codeStudioCode || '';
+  const language = config.codeStudioLanguage || 'plain';
+  const fontSize = (config.codeStudioFontSize || 14) * (config.scale / 100);
+  const showLineNumbers = config.codeStudioLineNumbers ?? true;
+
+  // Background for code content area
+  ctx.fillStyle = theme.background;
+  ctx.fillRect(x, y, w, h);
+
+  const lines = code.split('\n');
+  const lineHeight = fontSize * 1.6;
+  const paddingVal = 16 * (config.scale / 100);
+  const charWidth = fontSize * 0.6;
+  
+  // Calculate gutter width
+  const gutterChars = showLineNumbers ? (lines.length >= 100 ? 5 : lines.length >= 10 ? 4 : 3) : 0;
+  const gutterWidth = showLineNumbers ? (gutterChars * charWidth + paddingVal) : 0;
+
+  // Draw Gutter divider
+  if (showLineNumbers) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(128, 128, 128, 0.15)';
+    ctx.lineWidth = 1 * (config.scale / 100);
+    ctx.beginPath();
+    ctx.moveTo(x + gutterWidth, y);
+    ctx.lineTo(x + gutterWidth, y + h);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Draw lines
+  ctx.save();
+  ctx.textBaseline = 'top';
+  
+  lines.forEach((lineText, i) => {
+    const lineY = y + paddingVal + i * lineHeight;
+    
+    // Draw line number
+    if (showLineNumbers) {
+      ctx.fillStyle = theme.lineNumber;
+      ctx.font = `${fontSize}px Consolas, Monaco, "Courier New", monospace`;
+      ctx.textAlign = 'right';
+      ctx.fillText(String(i + 1), x + gutterWidth - 8 * (config.scale / 100), lineY);
+    }
+
+    // Tokenize and draw code tokens
+    const tokens = tokenizeLine(lineText, language);
+    let tokenX = x + gutterWidth + paddingVal;
+    ctx.textAlign = 'left';
+    ctx.font = `${fontSize}px Consolas, Monaco, "Courier New", monospace`;
+
+    tokens.forEach((token) => {
+      ctx.fillStyle = theme.tokens[token.type] || theme.foreground;
+      ctx.fillText(token.value, tokenX, lineY);
+      tokenX += token.value.length * charWidth; // approximate character step
+    });
+  });
+
+  // Draw language badge if enabled
+  const showLanguage = config.codeStudioShowLanguage ?? true;
+  if (showLanguage && language && language !== 'plain') {
+    ctx.save();
+    const badgeText = language.toUpperCase();
+    const badgeFontSize = Math.max(8, Math.round(10 * (config.scale / 100)));
+    ctx.font = `600 ${badgeFontSize}px sans-serif`;
+    
+    const textWidth = ctx.measureText(badgeText).width;
+    const badgeH = badgeFontSize + 4 * (config.scale / 100);
+    const badgeW = textWidth + 16 * (config.scale / 100);
+    
+    const badgeX = x + w - badgeW - 12 * (config.scale / 100);
+    const badgeY = y + 8 * (config.scale / 100);
+    
+    // Draw background
+    ctx.fillStyle = 'rgba(128, 128, 128, 0.15)';
+    const br = 4 * (config.scale / 100);
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(badgeX, badgeY, badgeW, badgeH, br) : ctx.rect(badgeX, badgeY, badgeW, badgeH);
+    ctx.fill();
+    
+    // Draw text
+    ctx.fillStyle = theme.foreground;
+    ctx.globalAlpha = 0.7;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badgeText, badgeX + badgeW / 2, badgeY + badgeH / 2);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
 // Primary Render function
 export function renderCanvas(
   canvas: HTMLCanvasElement,
@@ -898,8 +1072,24 @@ export function renderCanvas(
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  const imgW = (imageEl && !config.noImage) ? (imageEl.naturalWidth || imageEl.width) : 800;
-  const imgH = (imageEl && !config.noImage) ? (imageEl.naturalHeight || imageEl.height) : 600;
+  let imgW = 800;
+  let imgH = 600;
+
+  if (imageEl && !config.noImage) {
+    imgW = imageEl.naturalWidth || imageEl.width;
+    imgH = imageEl.naturalHeight || imageEl.height;
+  } else if (config.noImage && config.codeStudioActive && config.codeStudioCode) {
+    const fontSize = config.codeStudioFontSize || 14;
+    const showLineNumbers = config.codeStudioLineNumbers ?? true;
+    const lines = config.codeStudioCode.split('\n');
+    const longestLine = lines.reduce((max, line) => line.length > max ? line.length : max, 0);
+    const charWidth = fontSize * 0.6;
+    const lineHeight = fontSize * 1.6;
+    const gutterChars = showLineNumbers ? (lines.length >= 100 ? 7 : lines.length >= 10 ? 6 : 5) : 0;
+    
+    imgW = Math.max(450, Math.round((longestLine + gutterChars) * charWidth + 64));
+    imgH = Math.round(lines.length * lineHeight + 40);
+  }
 
   // 1. Get correct dimensions
   const dims = getCanvasDimensions(imgW, imgH, config);
@@ -912,8 +1102,8 @@ export function renderCanvas(
   // 3. Draw Background
   drawBackground(ctx, dims.width, dims.height, config, imageEl);
 
-  // If noImage is true, draw annotations directly on the background
-  if (config.noImage) {
+  // If noImage is true and not code studio, draw annotations directly on the background and return
+  if (config.noImage && !config.codeStudioActive) {
     if (config.annotations && config.annotations.length > 0) {
       drawAnnotationsOnCanvas(ctx, dims.width, dims.height, config.annotations);
     }
@@ -984,7 +1174,16 @@ export function renderCanvas(
     );
   }
 
-  if (imageEl) {
+  if (config.codeStudioActive && config.codeStudioCode) {
+    drawCodeStudioOnCanvas(
+      ctx,
+      contentX,
+      contentY + scaledChromeHeight,
+      contentW,
+      imgH * scale,
+      config
+    );
+  } else if (imageEl) {
     ctx.drawImage(
       imageEl,
       contentX,

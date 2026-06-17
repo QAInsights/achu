@@ -5,6 +5,7 @@ import logoUrl from '../../../assets/logo.svg';
 import LayoutSettings from './LayoutSettings';
 import BackgroundSettings from './BackgroundSettings';
 import ExtraSettings from './ExtraSettings';
+import CodeStudioSettings from './CodeStudioSettings';
 import Tooltip from './Tooltip';
 
 const MIN_WIDTH = 425;
@@ -22,7 +23,8 @@ export default function Sidebar() {
     deleteCustomPreset,
     selectBackgroundPreset,
     resetStyles,
-    sidebarPosition
+    sidebarPosition,
+    codeStudioActive
   } = useAppContext();
 
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
@@ -148,6 +150,7 @@ export default function Sidebar() {
         </div>
 
         {/* Modular Sidebar Control Groups */}
+        {codeStudioActive && <CodeStudioSettings />}
         <LayoutSettings />
         <BackgroundSettings />
         <ExtraSettings />

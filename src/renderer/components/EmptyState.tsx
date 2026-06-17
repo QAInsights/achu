@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Image as ImageIcon, Sparkles, Code } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 
 export default function EmptyState() {
@@ -8,7 +8,8 @@ export default function EmptyState() {
     setBackgroundType,
     setImageSrc,
     pushHistory,
-    getCurrentConfig
+    getCurrentConfig,
+    setCodeStudioActive,
   } = useAppContext();
 
   return (
@@ -21,22 +22,41 @@ export default function EmptyState() {
 
       <div className="empty-state-actions">
         <div className="empty-state-divider">— OR —</div>
-        <button
-          className="btn btn-primary"
-          onClick={(e) => {
-            e.stopPropagation();
-            setNoImageMode(true);
-            setBackgroundType('gradient');
-            setImageSrc(null);              
-            pushHistory({
-              ...getCurrentConfig(),
-              noImage: true,
-              backgroundType: 'gradient',
-            });
-          }}
-        >
-          <Sparkles className="w-4 h-4" /> Create Blank Gradient
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button
+            className="btn btn-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              setNoImageMode(true);
+              setBackgroundType('gradient');
+              setImageSrc(null);              
+              pushHistory({
+                ...getCurrentConfig(),
+                noImage: true,
+                backgroundType: 'gradient',
+              });
+            }}
+          >
+            <Sparkles className="w-4 h-4" /> Create Blank Gradient
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCodeStudioActive(true);
+              setNoImageMode(true);
+              setBackgroundType('gradient');
+              setImageSrc(null);
+              pushHistory({
+                ...getCurrentConfig(),
+                noImage: true,
+                backgroundType: 'gradient',
+              });
+            }}
+          >
+            <Code className="w-4 h-4" /> Beautify Code
+          </button>
+        </div>
       </div>
 
       <div className="empty-state-hotkeys">
