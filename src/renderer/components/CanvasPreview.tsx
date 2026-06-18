@@ -129,7 +129,7 @@ export default function CanvasPreview() {
     const charWidth = codeStudioFontSize * 0.6;
     const lineHeight = codeStudioFontSize * 1.6;
     const gutterChars = codeStudioLineNumbers ? (lines.length >= 100 ? 7 : lines.length >= 10 ? 6 : 5) : 0;
-    
+
     imgW = Math.max(450, Math.round((longestLine + gutterChars) * charWidth + 64));
     imgH = Math.round(lines.length * lineHeight + 40);
   }
@@ -228,20 +228,18 @@ export default function CanvasPreview() {
           </div>
         )}
       {(imageSrc || noImageMode) ? (
-        <div 
+        <div
           className="preview-card-wrapper"
           style={{
-            width: `${dims.width * scaleFactor}px`,
-            height: `${dims.height * scaleFactor}px`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'visible',
           }}
         >
-          
+
           {/* Output Preview Container Card */}
-          <div 
+          <div
             className="preview-background-card"
             onContextMenu={handleContextMenu}
             style={{
