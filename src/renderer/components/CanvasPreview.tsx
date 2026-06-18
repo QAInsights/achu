@@ -92,6 +92,8 @@ export default function CanvasPreview() {
     codeStudioTheme,
     codeStudioFontSize,
     codeStudioLineNumbers,
+    codeStudioBreakpoints, setCodeStudioBreakpoints,
+    codeStudioShowBreakpoints,
   } = useAppContext();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -156,6 +158,14 @@ export default function CanvasPreview() {
 
   const handleZoomIn = () => setZoomLevel(zoomIn(zoomLevel));
   const handleZoomOut = () => setZoomLevel(zoomOut(zoomLevel));
+
+  const handleToggleBreakpoint = (line: number) => {
+    const next = codeStudioBreakpoints.includes(line)
+      ? codeStudioBreakpoints.filter(n => n !== line)
+      : [...codeStudioBreakpoints, line].sort((a, b) => a - b);
+    setCodeStudioBreakpoints(next);
+    pushHistory({ ...getCurrentConfig(), codeStudioBreakpoints: next });
+  };
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [grabTextVisible, setGrabTextVisible] = useState<boolean>(false);
@@ -361,6 +371,9 @@ export default function CanvasPreview() {
                     themeName={codeStudioTheme}
                     fontSize={codeStudioFontSize}
                     showLineNumbers={codeStudioLineNumbers}
+                    breakpoints={codeStudioBreakpoints}
+                    onToggleBreakpoint={handleToggleBreakpoint}
+                    showBreakpoints={codeStudioShowBreakpoints}
                   />
                 ) : (
                   <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>

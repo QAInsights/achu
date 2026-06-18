@@ -155,6 +155,8 @@ export interface RenderConfig {
   codeStudioFontSize?: number;
   codeStudioLineNumbers?: boolean;
   codeStudioShowLanguage?: boolean;
+  codeStudioBreakpoints?: number[];
+  codeStudioShowBreakpoints?: boolean;
 }
 
 interface ColorStop {
@@ -976,6 +978,9 @@ function drawCodeStudioOnCanvas(
   const language = config.codeStudioLanguage || 'plain';
   const fontSize = (config.codeStudioFontSize || 14) * (config.scale / 100);
   const showLineNumbers = config.codeStudioLineNumbers ?? true;
+  const showBreakpoints = config.codeStudioShowBreakpoints ?? true;
+  const breakpoints = config.codeStudioBreakpoints ?? [];
+  const breakpointSet = new Set(breakpoints);
 
   // Background for code content area
   ctx.fillStyle = theme.background;
@@ -984,11 +989,11 @@ function drawCodeStudioOnCanvas(
   const lines = code.split('\n');
   const lineHeight = fontSize * 1.6;
   const paddingVal = 16 * (config.scale / 100);
-  const charWidth = fontSize * 0.6;
-  
-  // Calculate gutter width
-  const gutterChars = showLineNumbers ? (lines.length >= 100 ? 5 : lines.length >= 10 ? 4 : 3) : 0;
-  const gutterWidth = showLineNumbers ? (gutterChars * charWidth + paddingVal) : 0;
+  const breakpointColumnWidth = showBreakpoints ? Math.max(12 * (config.scale / 100), fontSize * 0.9) : 0;
+
+  // Calculate gutter width to match CodePreview.tsx exactly
+  const baseGutterWidth = (lines.length >= 100 ? 56 : lines.length >= 10 ? 48 : 40) * (config.scale / 100);
+  const gutterWidth = showLineNumbers ? (baseGutterWidth + breakpointColumnWidth) : 0;
 
   // Draw Gutter divider
   if (showLineNumbers) {
@@ -1005,29 +1010,49 @@ function drawCodeStudioOnCanvas(
   // Draw lines
   ctx.save();
   ctx.textBaseline = 'top';
+  ctx.font = `${fontSize}px Consolas, Monaco, "Courier New", monospace`;
   
   lines.forEach((lineText, i) => {
     const lineY = y + paddingVal + i * lineHeight;
-    
+    const lineNoStr = String(i + 1);
+
+    // Draw breakpoint dot (red circle, right-aligned next to the line number)
+    if (showLineNumbers && showBreakpoints && breakpointSet.has(i + 1)) {
+      const dotRadius = fontSize * 0.35;
+      const gap = 6 * (config.scale / 100);
+      const lineNumberRightX = x + gutterWidth - 12 * (config.scale / 100);
+      const lineNoWidth = ctx.measureText(lineNoStr).width;
+      const dotCenterX = lineNumberRightX - lineNoWidth - gap - dotRadius;
+      const dotCenterY = lineY + fontSize / 2;
+      ctx.save();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(dotCenterX, dotCenterY, dotRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
     // Draw line number
     if (showLineNumbers) {
+      ctx.save();
       ctx.fillStyle = theme.lineNumber;
-      ctx.font = `${fontSize}px Consolas, Monaco, "Courier New", monospace`;
       ctx.textAlign = 'right';
-      ctx.fillText(String(i + 1), x + gutterWidth - 8 * (config.scale / 100), lineY);
+      ctx.fillText(lineNoStr, x + gutterWidth - 12 * (config.scale / 100), lineY);
+      ctx.restore();
     }
 
     // Tokenize and draw code tokens
     const tokens = tokenizeLine(lineText, language);
     let tokenX = x + gutterWidth + paddingVal;
+    ctx.save();
     ctx.textAlign = 'left';
-    ctx.font = `${fontSize}px Consolas, Monaco, "Courier New", monospace`;
 
     tokens.forEach((token) => {
       ctx.fillStyle = theme.tokens[token.type] || theme.foreground;
       ctx.fillText(token.value, tokenX, lineY);
-      tokenX += token.value.length * charWidth; // approximate character step
+      tokenX += ctx.measureText(token.value).width;
     });
+    ctx.restore();
   });
 
   // Draw language badge if enabled

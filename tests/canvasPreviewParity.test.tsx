@@ -131,9 +131,10 @@ describe('CanvasPreview Parity & Layout Tests', () => {
 
     // dims: width = 500 + 80 = 580; height = 300 + 80 = 380
     // scale factor is 1.5
-    // wrapper should be dims * scaleFactor = 580 * 1.5 = 870px width, 380 * 1.5 = 570px height
-    expect(wrapper).toHaveStyle({ width: '870px' });
-    expect(wrapper).toHaveStyle({ height: '570px' });
+    // wrapper no longer sets width/height (avoids double-scale with the card transform)
+    expect(wrapper).not.toHaveStyle({ width: '870px' });
+    expect(card).toHaveStyle({ width: '580px' });
+    expect(card).toHaveStyle({ height: '380px' });
     expect(card).toHaveStyle({ transform: 'scale(1.5)' });
   });
 

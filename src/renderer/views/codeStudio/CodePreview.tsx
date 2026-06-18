@@ -19,6 +19,9 @@ interface CodePreviewProps {
   themeName: string;
   fontSize: number;
   showLineNumbers: boolean;
+  breakpoints: number[];
+  onToggleBreakpoint: (line: number) => void;
+  showBreakpoints: boolean;
 }
 
 function renderTokens(tokens: Token[], theme: CodeTheme): React.ReactNode[] {
@@ -43,6 +46,9 @@ export default function CodePreview({
   themeName,
   fontSize,
   showLineNumbers,
+  breakpoints,
+  onToggleBreakpoint,
+  showBreakpoints,
 }: CodePreviewProps) {
   const { aspectRatio, codeStudioShowLanguage } = useAppContext();
   const theme = useMemo(() => getThemeByName(themeName), [themeName]);
@@ -82,7 +88,14 @@ export default function CodePreview({
     }
   };
 
-  const gutterWidth = lines.length >= 100 ? 56 : lines.length >= 10 ? 48 : 40;
+  const breakpointSet = useMemo(() => new Set(breakpoints), [breakpoints]);
+  const breakpointColumnPx = showBreakpoints ? Math.max(12, fontSize * 0.9) : 0;
+  const gutterWidth = (lines.length >= 100 ? 56 : lines.length >= 10 ? 48 : 40) + breakpointColumnPx;
+
+  const handleBreakpointClick = (line: number) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleBreakpoint(line);
+  };
 
   return (
     <div
@@ -112,9 +125,21 @@ export default function CodePreview({
             backgroundColor: theme.background,
           }}
         >
-          {lines.map((_, i) => (
-            <span key={i}>{i + 1}</span>
-          ))}
+          {lines.map((_, i) => {
+            const lineNo = i + 1;
+            const isMarked = showBreakpoints && breakpointSet.has(lineNo);
+            return (
+              <span
+                key={i}
+                className="breakpoint-row"
+                onClick={handleBreakpointClick(lineNo)}
+                title={isMarked ? `Breakpoint at line ${lineNo} (click to remove)` : `Click to add breakpoint at line ${lineNo}`}
+              >
+                {isMarked && <span className="breakpoint-marker" aria-hidden="true" />}
+                <span className="line-number">{lineNo}</span>
+              </span>
+            );
+          })}
         </div>
       )}
 

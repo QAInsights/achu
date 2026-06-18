@@ -128,6 +128,8 @@ interface AppContextType {
   codeStudioFontSize: number; setCodeStudioFontSize: React.Dispatch<React.SetStateAction<number>>;
   codeStudioLineNumbers: boolean; setCodeStudioLineNumbers: React.Dispatch<React.SetStateAction<boolean>>;
   codeStudioShowLanguage: boolean; setCodeStudioShowLanguage: React.Dispatch<React.SetStateAction<boolean>>;
+  codeStudioBreakpoints: number[]; setCodeStudioBreakpoints: React.Dispatch<React.SetStateAction<number[]>>;
+  codeStudioShowBreakpoints: boolean; setCodeStudioShowBreakpoints: React.Dispatch<React.SetStateAction<boolean>>;
 
 
   // Refs
@@ -452,6 +454,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [codeStudioFontSize, setCodeStudioFontSize] = useState<number>(14);
   const [codeStudioLineNumbers, setCodeStudioLineNumbers] = useState<boolean>(true);
   const [codeStudioShowLanguage, setCodeStudioShowLanguage] = useState<boolean>(true);
+  const [codeStudioBreakpoints, setCodeStudioBreakpoints] = useState<number[]>([]);
+  const [codeStudioShowBreakpoints, setCodeStudioShowBreakpoints] = useState<boolean>(true);
 
   const getCurrentConfig = (): RenderConfig => ({
     padding, rounded, shadow, shadowColor, shadowEnabled,
@@ -488,6 +492,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     codeStudioFontSize,
     codeStudioLineNumbers,
     codeStudioShowLanguage,
+    codeStudioBreakpoints,
+    codeStudioShowBreakpoints,
   });
 
   const applyConfig = (config: RenderConfig) => {
@@ -567,6 +573,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (config.codeStudioFontSize !== undefined) setCodeStudioFontSize(config.codeStudioFontSize);
     if (config.codeStudioLineNumbers !== undefined) setCodeStudioLineNumbers(config.codeStudioLineNumbers);
     if (config.codeStudioShowLanguage !== undefined) setCodeStudioShowLanguage(config.codeStudioShowLanguage);
+    if (config.codeStudioBreakpoints !== undefined) setCodeStudioBreakpoints(config.codeStudioBreakpoints);
+    if (config.codeStudioShowBreakpoints !== undefined) setCodeStudioShowBreakpoints(config.codeStudioShowBreakpoints);
   };
 
   // 1. History Hook
@@ -1597,7 +1605,9 @@ Severity rules:
       codeStudioTheme, setCodeStudioTheme,
       codeStudioFontSize, setCodeStudioFontSize,
       codeStudioLineNumbers, setCodeStudioLineNumbers,
-      codeStudioShowLanguage, setCodeStudioShowLanguage
+      codeStudioShowLanguage, setCodeStudioShowLanguage,
+      codeStudioBreakpoints, setCodeStudioBreakpoints,
+      codeStudioShowBreakpoints, setCodeStudioShowBreakpoints
     }}>
       {children}
     </AppContext.Provider>
