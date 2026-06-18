@@ -39,3 +39,4 @@ Thumbs.db
 .aider*
 .qwen/settings.json
 .qwen/settings.json.orig
+.commandcode/**/taste.md

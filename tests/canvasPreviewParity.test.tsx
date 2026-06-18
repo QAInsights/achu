@@ -52,7 +52,7 @@ beforeEach(() => {
     handlePointerDown: vi.fn(),
     handlePointerMove: vi.fn(),
     handlePointerUp: vi.fn(),
-    getCurrentConfig: vi.fn(() => ({})),
+    getCurrentConfig: vi.fn(() => mockContext),
     pushHistory: vi.fn(),
   };
 });

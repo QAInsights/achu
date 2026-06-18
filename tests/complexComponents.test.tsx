@@ -149,7 +149,7 @@ beforeEach(() => {
     compressionMode: 'balanced',
     setCompressionMode: vi.fn(),
     pushHistory: vi.fn(),
-    getCurrentConfig: vi.fn(() => ({})),
+    getCurrentConfig: vi.fn(() => mockContext),
     
     // Toolbar
     setSidebarVisible: vi.fn(),

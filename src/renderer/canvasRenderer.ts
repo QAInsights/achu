@@ -793,7 +793,8 @@ export function getCanvasDimensions(
   // If noImage is true, default to a standard size or target ratio
   if (config.noImage) {
     if (config.codeStudioActive && config.codeStudioCode) {
-      const fontSize = config.codeStudioFontSize || 14;
+      const isAuto = config.aspectRatio === 'Auto';
+      const fontSize = isAuto ? (config.codeStudioFontSize || 14) : 14;
       const showLineNumbers = config.codeStudioLineNumbers ?? true;
       const lines = config.codeStudioCode.split('\n');
       const longestLine = lines.reduce((max, line) => line.length > max ? line.length : max, 0);
