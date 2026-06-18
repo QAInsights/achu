@@ -131,6 +131,9 @@ interface AppContextType {
   codeStudioShowLanguage: boolean; setCodeStudioShowLanguage: React.Dispatch<React.SetStateAction<boolean>>;
   codeStudioBreakpoints: number[]; setCodeStudioBreakpoints: React.Dispatch<React.SetStateAction<number[]>>;
   codeStudioShowBreakpoints: boolean; setCodeStudioShowBreakpoints: React.Dispatch<React.SetStateAction<boolean>>;
+  toggleCodeStudio: (active: boolean, codeText?: string, codeLang?: string) => void;
+  screenshotBgConfig: any; setScreenshotBgConfig: React.Dispatch<React.SetStateAction<any>>;
+  codeStudioBgConfig: any; setCodeStudioBgConfig: React.Dispatch<React.SetStateAction<any>>;
 
 
   // Refs
@@ -459,6 +462,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [codeStudioBreakpoints, setCodeStudioBreakpoints] = useState<number[]>([]);
   const [codeStudioShowBreakpoints, setCodeStudioShowBreakpoints] = useState<boolean>(true);
 
+  // Background presets preservation states for mode toggles
+  const [screenshotBgConfig, setScreenshotBgConfig] = useState<any>(null);
+  const [codeStudioBgConfig, setCodeStudioBgConfig] = useState<any>(null);
+
   const getCurrentConfig = (): RenderConfig => ({
     padding, rounded, shadow, shadowColor, shadowEnabled,
     inset, insetColor, border, borderColor, scale,
@@ -496,6 +503,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     codeStudioShowLanguage,
     codeStudioBreakpoints,
     codeStudioShowBreakpoints,
+    screenshotBgConfig,
+    codeStudioBgConfig,
   });
 
   const applyConfig = (config: RenderConfig) => {
@@ -577,6 +586,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (config.codeStudioShowLanguage !== undefined) setCodeStudioShowLanguage(config.codeStudioShowLanguage);
     if (config.codeStudioBreakpoints !== undefined) setCodeStudioBreakpoints(config.codeStudioBreakpoints);
     if (config.codeStudioShowBreakpoints !== undefined) setCodeStudioShowBreakpoints(config.codeStudioShowBreakpoints);
+    if (config.screenshotBgConfig !== undefined) setScreenshotBgConfig(config.screenshotBgConfig);
+    if (config.codeStudioBgConfig !== undefined) setCodeStudioBgConfig(config.codeStudioBgConfig);
   };
 
   // 1. History Hook
@@ -1169,6 +1180,185 @@ Severity rules:
     });
   };
 
+  const toggleCodeStudio = useCallback((active: boolean, codeText?: string, codeLang?: string) => {
+    setCodeStudioActive(active);
+
+    if (active) {
+      // Transitioning from Screenshot Beautifier to Code Studio
+      // 1. Save current background settings for screenshot if not already in Code Studio
+      let currentBg = screenshotBgConfig;
+      if (!codeStudioActive) {
+        currentBg = {
+          backgroundType,
+          backgroundValue,
+          bgGrain,
+          lightRaysStyle,
+          lightRaysOpacity,
+          lightRaysAngle,
+          lightRaysCount,
+          lightRaysSourceX,
+          lightRaysSourceY,
+          meshPoints,
+          meshBlur,
+          meshGrain,
+          meshOpacity,
+          meshSpread,
+          selectedPreset,
+        };
+        setScreenshotBgConfig(currentBg);
+      }
+
+      // 2. Restore Code Studio background settings or set defaults
+      const codeStudioBg = codeStudioBgConfig || {
+        backgroundType: 'gradient',
+        backgroundValue: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+        bgGrain: 0,
+        lightRaysStyle: 'none',
+        lightRaysOpacity: 30,
+        lightRaysAngle: 135,
+        lightRaysCount: 4,
+        lightRaysSourceX: 50,
+        lightRaysSourceY: 0,
+        meshPoints: [
+          { id: '1', color: '#ff5f6d', x: 0.2, y: 0.2, radius: 180 },
+          { id: '2', color: '#ffc371', x: 0.8, y: 0.2, radius: 220 },
+          { id: '3', color: '#00c6ff', x: 0.2, y: 0.8, radius: 200 },
+          { id: '4', color: '#7209b7', x: 0.8, y: 0.8, radius: 240 },
+        ],
+        meshBlur: 60,
+        meshGrain: 15,
+        meshOpacity: 100,
+        meshSpread: 100,
+        selectedPreset: '',
+      };
+
+      setBackgroundType(codeStudioBg.backgroundType);
+      setBackgroundValue(codeStudioBg.backgroundValue);
+      setBgGrain(codeStudioBg.bgGrain);
+      setLightRaysStyle(codeStudioBg.lightRaysStyle);
+      setLightRaysOpacity(codeStudioBg.lightRaysOpacity);
+      setLightRaysAngle(codeStudioBg.lightRaysAngle);
+      setLightRaysCount(codeStudioBg.lightRaysCount);
+      setLightRaysSourceX(codeStudioBg.lightRaysSourceX);
+      setLightRaysSourceY(codeStudioBg.lightRaysSourceY);
+      setMeshPoints(codeStudioBg.meshPoints);
+      setMeshBlur(codeStudioBg.meshBlur);
+      setMeshGrain(codeStudioBg.meshGrain);
+      setMeshOpacity(codeStudioBg.meshOpacity);
+      setMeshSpread(codeStudioBg.meshSpread);
+      setSelectedPreset(codeStudioBg.selectedPreset);
+
+      setNoImageMode(true);
+      if (codeText !== undefined) setCodeStudioCode(codeText);
+      if (codeLang !== undefined) setCodeStudioLanguage(codeLang);
+
+      // Push history with the new combined state
+      pushHistory({
+        ...getCurrentConfig(),
+        codeStudioActive: true,
+        noImage: true,
+        backgroundType: codeStudioBg.backgroundType,
+        backgroundValue: codeStudioBg.backgroundValue,
+        bgGrain: codeStudioBg.bgGrain,
+        lightRaysStyle: codeStudioBg.lightRaysStyle,
+        lightRaysOpacity: codeStudioBg.lightRaysOpacity,
+        lightRaysAngle: codeStudioBg.lightRaysAngle,
+        lightRaysCount: codeStudioBg.lightRaysCount,
+        lightRaysSourceX: codeStudioBg.lightRaysSourceX,
+        lightRaysSourceY: codeStudioBg.lightRaysSourceY,
+        meshPoints: codeStudioBg.meshPoints,
+        meshBlur: codeStudioBg.meshBlur,
+        meshGrain: codeStudioBg.meshGrain,
+        meshOpacity: codeStudioBg.meshOpacity,
+        meshSpread: codeStudioBg.meshSpread,
+        selectedPreset: codeStudioBg.selectedPreset,
+        screenshotBgConfig: currentBg,
+        codeStudioBgConfig: codeStudioBg,
+        ...(codeText !== undefined ? { codeStudioCode: codeText } : {}),
+        ...(codeLang !== undefined ? { codeStudioLanguage: codeLang } : {}),
+      });
+
+    } else {
+      // Transitioning from Code Studio to Screenshot Beautifier
+      // 1. Save current background settings for Code Studio if not already in Screenshot mode
+      let currentBg = codeStudioBgConfig;
+      if (codeStudioActive) {
+        currentBg = {
+          backgroundType,
+          backgroundValue,
+          bgGrain,
+          lightRaysStyle,
+          lightRaysOpacity,
+          lightRaysAngle,
+          lightRaysCount,
+          lightRaysSourceX,
+          lightRaysSourceY,
+          meshPoints,
+          meshBlur,
+          meshGrain,
+          meshOpacity,
+          meshSpread,
+          selectedPreset,
+        };
+        setCodeStudioBgConfig(currentBg);
+      }
+
+      // 2. Restore Screenshot background settings
+      const screenshotBg = screenshotBgConfig;
+      if (screenshotBg) {
+        setBackgroundType(screenshotBg.backgroundType);
+        setBackgroundValue(screenshotBg.backgroundValue);
+        setBgGrain(screenshotBg.bgGrain);
+        setLightRaysStyle(screenshotBg.lightRaysStyle);
+        setLightRaysOpacity(screenshotBg.lightRaysOpacity);
+        setLightRaysAngle(screenshotBg.lightRaysAngle);
+        setLightRaysCount(screenshotBg.lightRaysCount);
+        setLightRaysSourceX(screenshotBg.lightRaysSourceX);
+        setLightRaysSourceY(screenshotBg.lightRaysSourceY);
+        setMeshPoints(screenshotBg.meshPoints);
+        setMeshBlur(screenshotBg.meshBlur);
+        setMeshGrain(screenshotBg.meshGrain);
+        setMeshOpacity(screenshotBg.meshOpacity);
+        setMeshSpread(screenshotBg.meshSpread);
+        setSelectedPreset(screenshotBg.selectedPreset);
+      }
+
+      const hasImage = !!imageSrc;
+      setNoImageMode(!hasImage);
+
+      // Push history with the restored state
+      pushHistory({
+        ...getCurrentConfig(),
+        codeStudioActive: false,
+        noImage: !hasImage,
+        codeStudioBgConfig: currentBg,
+        screenshotBgConfig: screenshotBg,
+        ...(screenshotBg ? {
+          backgroundType: screenshotBg.backgroundType,
+          backgroundValue: screenshotBg.backgroundValue,
+          bgGrain: screenshotBg.bgGrain,
+          lightRaysStyle: screenshotBg.lightRaysStyle,
+          lightRaysOpacity: screenshotBg.lightRaysOpacity,
+          lightRaysAngle: screenshotBg.lightRaysAngle,
+          lightRaysCount: screenshotBg.lightRaysCount,
+          lightRaysSourceX: screenshotBg.lightRaysSourceX,
+          lightRaysSourceY: screenshotBg.lightRaysSourceY,
+          meshPoints: screenshotBg.meshPoints,
+          meshBlur: screenshotBg.meshBlur,
+          meshGrain: screenshotBg.meshGrain,
+          meshOpacity: screenshotBg.meshOpacity,
+          meshSpread: screenshotBg.meshSpread,
+          selectedPreset: screenshotBg.selectedPreset,
+        } : {}),
+      });
+    }
+  }, [
+    backgroundType, backgroundValue, bgGrain, lightRaysStyle, lightRaysOpacity, lightRaysAngle,
+    lightRaysCount, lightRaysSourceX, lightRaysSourceY, meshPoints, meshBlur, meshGrain,
+    meshOpacity, meshSpread, selectedPreset, imageSrc, getCurrentConfig, pushHistory,
+    setCodeStudioCode, setCodeStudioLanguage, codeStudioActive, screenshotBgConfig, codeStudioBgConfig
+  ]);
+
   const clearWorkspace = () => {
     setImageSrc(null);
     setHistory([]);
@@ -1286,11 +1476,13 @@ Severity rules:
       setCachedOcrResult(null);
 
       // Disable Code Studio mode when a new image is loaded
-      setCodeStudioActive(false);
+      if (codeStudioActive) {
+        toggleCodeStudio(false);
+      }
       
       prevImageSrc.current = imageSrc;
     }
-  }, [imageSrc]);
+  }, [imageSrc, codeStudioActive, toggleCodeStudio]);
 
   const onImageLoadedRef = useRef(onImageLoaded);
   useEffect(() => { onImageLoadedRef.current = onImageLoaded; }, [onImageLoaded]);
@@ -1427,13 +1619,7 @@ Severity rules:
   // Clipboard paste hook (handles image paste & auto-detects Java/Python code pastes)
   useClipboardPaste(
     codeStudioActive,
-    setCodeStudioActive,
-    setNoImageMode,
-    setBackgroundType,
-    setCodeStudioCode,
-    setCodeStudioLanguage,
-    getCurrentConfig,
-    pushHistory,
+    toggleCodeStudio,
     (src) => handlePasteImageRef.current(src),
     showGalleryToast
   );
@@ -1601,7 +1787,10 @@ Severity rules:
       codeStudioLineNumbers, setCodeStudioLineNumbers,
       codeStudioShowLanguage, setCodeStudioShowLanguage,
       codeStudioBreakpoints, setCodeStudioBreakpoints,
-      codeStudioShowBreakpoints, setCodeStudioShowBreakpoints
+      codeStudioShowBreakpoints, setCodeStudioShowBreakpoints,
+      toggleCodeStudio,
+      screenshotBgConfig, setScreenshotBgConfig,
+      codeStudioBgConfig, setCodeStudioBgConfig
     }}>
       {children}
     </AppContext.Provider>

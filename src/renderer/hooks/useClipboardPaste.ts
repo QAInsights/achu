@@ -3,13 +3,7 @@ import { detectLanguage } from '../utils/codeTokenizer';
 
 export function useClipboardPaste(
   codeStudioActive: boolean,
-  setCodeStudioActive: (val: boolean) => void,
-  setNoImageMode: (val: boolean) => void,
-  setBackgroundType: (val: 'gradient' | 'color' | 'blur' | 'mesh') => void,
-  setCodeStudioCode: (val: string) => void,
-  setCodeStudioLanguage: (val: string) => void,
-  getCurrentConfig: () => any,
-  pushHistory: (cfg: any) => void,
+  toggleCodeStudio: (active: boolean, codeText?: string, codeLang?: string) => void,
   handlePasteImage: (dataUrl: string) => void,
   showToast: (message: string, duration?: number) => void
 ) {
@@ -64,20 +58,8 @@ export function useClipboardPaste(
         if (text) {
           const detectedLang = detectLanguage(text);
           if (detectedLang === 'java' || detectedLang === 'python') {
-            setCodeStudioActive(true);
-            setNoImageMode(true);
-            setBackgroundType('gradient');
-            setCodeStudioCode(text);
-            setCodeStudioLanguage(detectedLang);
+            toggleCodeStudio(true, text, detectedLang);
             showToast(`Switched to Code Studio (${detectedLang}).`);
-            pushHistory({
-              ...getCurrentConfig(),
-              codeStudioActive: true,
-              noImage: true,
-              backgroundType: 'gradient',
-              codeStudioCode: text,
-              codeStudioLanguage: detectedLang,
-            });
           }
         }
       }
@@ -87,13 +69,7 @@ export function useClipboardPaste(
     return () => window.removeEventListener('paste', handlePaste);
   }, [
     codeStudioActive,
-    setCodeStudioActive,
-    setNoImageMode,
-    setBackgroundType,
-    setCodeStudioCode,
-    setCodeStudioLanguage,
-    getCurrentConfig,
-    pushHistory,
+    toggleCodeStudio,
     handlePasteImage,
     showToast,
   ]);

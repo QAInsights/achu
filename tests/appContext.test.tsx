@@ -1150,6 +1150,53 @@ describe('AppContext', () => {
       // Verify Code Studio gets turned off
       expect(context.codeStudioActive).toBe(false);
     });
+
+    it('preserves mode-specific backgrounds when toggling via toggleCodeStudio', async () => {
+      let context: any;
+      function Consumer() {
+        context = useAppContext();
+        return <div>test</div>;
+      }
+
+      render(
+        <AppProvider>
+          <Consumer />
+        </AppProvider>
+      );
+
+      // 1. Start in Screenshot mode (default) and select Neon Glow
+      await act(async () => {
+        context.setBackgroundType('gradient');
+        context.setBackgroundValue('linear-gradient(135deg, #ec008c 0%, #fc6767 100%)'); // Neon Glow
+      });
+
+      expect(context.backgroundValue).toBe('linear-gradient(135deg, #ec008c 0%, #fc6767 100%)');
+
+      // 2. Toggle Code Studio ON
+      await act(async () => {
+        context.toggleCodeStudio(true);
+      });
+
+      // Verify Code Studio is active and background changed to default (Electric Lavender)
+      expect(context.codeStudioActive).toBe(true);
+      expect(context.backgroundValue).toBe('linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)');
+
+      // 3. In Code Studio, change background to Mesh Aurora
+      await act(async () => {
+        context.setBackgroundValue('radial-gradient(circle at 20% 20%, #ff8a00 0%, transparent 50%), radial-gradient(circle at 80% 80%, #da00ff 0%, transparent 50%), linear-gradient(135deg, #00b4db 0%, #0083b0 100%)'); // Mesh Aurora
+      });
+
+      expect(context.backgroundValue).toContain('#ff8a00');
+
+      // 4. Toggle Code Studio OFF (switch back to screenshot mode)
+      await act(async () => {
+        context.toggleCodeStudio(false);
+      });
+
+      // Verify Code Studio is inactive, and the screenshot background is restored to Neon Glow
+      expect(context.codeStudioActive).toBe(false);
+      expect(context.backgroundValue).toBe('linear-gradient(135deg, #ec008c 0%, #fc6767 100%)'); // Restored Neon Glow!
+    });
   });
 });
 

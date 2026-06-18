@@ -37,7 +37,7 @@ export default function WorkspaceToolbar() {
   const {
     sidebarVisible, setSidebarVisible,
     secondarySidebarVisible, setSecondarySidebarVisible,
-    noImageMode, setNoImageMode, setBackgroundType,
+    noImageMode, setNoImageMode,
     historyIndex, history,
     handleUndo, handleRedo,
     activeTool, setActiveTool,
@@ -55,8 +55,9 @@ export default function WorkspaceToolbar() {
     helpVisible, setHelpVisible,
     setImageSrc,
     clearWorkspace,
-    codeStudioActive, setCodeStudioActive,
+    codeStudioActive,
     imageSrc, showToast,
+    toggleCodeStudio,
   } = useAppContext();
 
   const tools: Array<{ id: typeof activeTool; icon: React.ReactNode; title: string; tooltip: string }> = [
@@ -353,34 +354,19 @@ export default function WorkspaceToolbar() {
             className={`tool-btn ${codeStudioActive ? 'active' : ''}`}
             onClick={() => {
               if (!codeStudioActive) {
-                setCodeStudioActive(true);
-                setNoImageMode(true);
-                setBackgroundType('gradient');
+                toggleCodeStudio(true);
                 if (imageSrc) {
                   showToast('Code Studio active. Screenshot preserved.');
                 } else {
                   showToast('Code Studio active.');
                 }
-                pushHistory({
-                  ...getCurrentConfig(),
-                  codeStudioActive: true,
-                  noImage: true,
-                  backgroundType: 'gradient'
-                });
               } else {
-                setCodeStudioActive(false);
-                const hasImage = !!imageSrc;
-                setNoImageMode(!hasImage);
-                if (hasImage) {
+                toggleCodeStudio(false);
+                if (imageSrc) {
                   showToast('Restored screenshot and annotations.');
                 } else {
                   showToast('Screenshot Beautifier active.');
                 }
-                pushHistory({
-                  ...getCurrentConfig(),
-                  codeStudioActive: false,
-                  noImage: !hasImage
-                });
               }
             }}
             title={codeStudioActive ? 'Exit Code Studio' : 'Code Studio'}

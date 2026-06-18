@@ -157,6 +157,8 @@ export interface RenderConfig {
   codeStudioShowLanguage?: boolean;
   codeStudioBreakpoints?: number[];
   codeStudioShowBreakpoints?: boolean;
+  screenshotBgConfig?: any;
+  codeStudioBgConfig?: any;
 }
 
 interface ColorStop {
