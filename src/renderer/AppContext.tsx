@@ -4,6 +4,7 @@ import { useHistory } from './hooks/useHistory';
 import { CompressionMode, useExport } from './hooks/useExport';
 import { usePresets } from './hooks/usePresets';
 import { useConnectionPoll } from './hooks/useConnectionPoll';
+import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { getZoomStyle as getZoomStyleUtil } from './utils/layoutUtils';
 import { getUserDefault, updateUserDefault } from './utils/storageUtils';
 import { createWorker } from 'tesseract.js';
@@ -152,6 +153,7 @@ interface AppContextType {
   saveToGallery: () => Promise<{ success: boolean; path?: string; name?: string; error?: { code: string; message: string } }>;
   handleSaveToGallery: () => Promise<void>;
   galleryToast: string | null;
+  showToast: (message: string, duration?: number) => void;
   selectBackgroundPreset: (preset: any) => void;
   handleSliderRelease: () => void;
   getZoomStyle: () => React.CSSProperties;
@@ -1282,6 +1284,9 @@ Severity rules:
       // Clear issue agent state on new image load
       resetIssue();
       setCachedOcrResult(null);
+
+      // Disable Code Studio mode when a new image is loaded
+      setCodeStudioActive(false);
       
       prevImageSrc.current = imageSrc;
     }
@@ -1419,31 +1424,19 @@ Severity rules:
     return;
   }, []);
 
-  useEffect(() => {
-    const handlePaste = async (e: ClipboardEvent) => {
-      if (window.snapFrameAPI) {
-        const dataUrl = await window.snapFrameAPI.readImageFromClipboard();
-        if (dataUrl) { handlePasteImageRef.current(dataUrl); return; }
-      }
-      const items = e.clipboardData?.items;
-      if (items) {
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].type.indexOf('image') !== -1) {
-            const blob = items[i].getAsFile();
-            if (blob) {
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                if (event.target?.result) handlePasteImageRef.current(event.target.result as string);
-              };
-              reader.readAsDataURL(blob); break;
-            }
-          }
-        }
-      }
-    };
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
-  }, []);
+  // Clipboard paste hook (handles image paste & auto-detects Java/Python code pastes)
+  useClipboardPaste(
+    codeStudioActive,
+    setCodeStudioActive,
+    setNoImageMode,
+    setBackgroundType,
+    setCodeStudioCode,
+    setCodeStudioLanguage,
+    getCurrentConfig,
+    pushHistory,
+    (src) => handlePasteImageRef.current(src),
+    showGalleryToast
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1567,6 +1560,7 @@ Severity rules:
       scanForSecrets, toggleRedaction, redactAll, revealAll,
       getCurrentConfig, pushHistory, applyConfig, handleUndo, handleRedo, selectFile, handleHTMLFileInput,
       pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport, saveToGallery, handleSaveToGallery, galleryToast,
+      showToast: showGalleryToast,
       selectBackgroundPreset, handleSliderRelease, getZoomStyle, applyMeshPalette, generateRandomPalette,
       handleDragOver, handleDragLeave, handleDrop, customPrompt, handlePointerDown, handlePointerMove, handlePointerUp,
       resetStyles,

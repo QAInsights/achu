@@ -25,7 +25,7 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
   triggerScreenCapture: () => ipcRenderer.send('capture:trigger'),
 
   // Clipboard API
-  copyImageToClipboard: (base64Data: string) => ipcRenderer.invoke('clipboard:copy-image', base64Data),
+  copyImageToClipboard: (base64Data: string, text?: string) => ipcRenderer.invoke('clipboard:copy-image', base64Data, text),
   readImageFromClipboard: () => ipcRenderer.invoke('clipboard:read-image'),
   copyTextToClipboard: (text: string) => ipcRenderer.invoke('clipboard:copy-text', text),
   openURL: (url: string) => ipcRenderer.send('url:open', url),

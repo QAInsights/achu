@@ -127,12 +127,19 @@ export function useExport(
             return;
           }
 
+          const config = getCurrentConfig();
+          const codeText = (config.codeStudioActive && config.codeStudioCode) ? config.codeStudioCode : undefined;
+
           if (window.snapFrameAPI) {
-            await window.snapFrameAPI.copyImageToClipboard(base64Data);
+            await window.snapFrameAPI.copyImageToClipboard(base64Data, codeText);
           } else {
             const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
             if (blob) {
-              await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+              const clipboardItems: Record<string, Blob> = { 'image/png': blob };
+              if (codeText) {
+                clipboardItems['text/plain'] = new Blob([codeText], { type: 'text/plain' });
+              }
+              await navigator.clipboard.write([new ClipboardItem(clipboardItems)]);
             }
           }
           resolve();

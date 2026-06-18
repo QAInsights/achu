@@ -56,6 +56,7 @@ export default function WorkspaceToolbar() {
     setImageSrc,
     clearWorkspace,
     codeStudioActive, setCodeStudioActive,
+    imageSrc, showToast,
   } = useAppContext();
 
   const tools: Array<{ id: typeof activeTool; icon: React.ReactNode; title: string; tooltip: string }> = [
@@ -355,9 +356,31 @@ export default function WorkspaceToolbar() {
                 setCodeStudioActive(true);
                 setNoImageMode(true);
                 setBackgroundType('gradient');
-                setImageSrc(null);
+                if (imageSrc) {
+                  showToast('Code Studio active. Screenshot preserved.');
+                } else {
+                  showToast('Code Studio active.');
+                }
+                pushHistory({
+                  ...getCurrentConfig(),
+                  codeStudioActive: true,
+                  noImage: true,
+                  backgroundType: 'gradient'
+                });
               } else {
                 setCodeStudioActive(false);
+                const hasImage = !!imageSrc;
+                setNoImageMode(!hasImage);
+                if (hasImage) {
+                  showToast('Restored screenshot and annotations.');
+                } else {
+                  showToast('Screenshot Beautifier active.');
+                }
+                pushHistory({
+                  ...getCurrentConfig(),
+                  codeStudioActive: false,
+                  noImage: !hasImage
+                });
               }
             }}
             title={codeStudioActive ? 'Exit Code Studio' : 'Code Studio'}

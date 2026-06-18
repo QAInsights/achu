@@ -215,13 +215,20 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
   });
 
   // Clipboard APIs
-  ipcMain.handle('clipboard:copy-image', async (_event, base64Data) => {
+  ipcMain.handle('clipboard:copy-image', async (_event, base64Data, text?: string) => {
     try {
       const base64Content = base64Data.replace(/^data:image\/\w+;base64,/, '');
       const buffer = Buffer.from(base64Content, 'base64');
       
       const nativeImage = require('electron').nativeImage.createFromBuffer(buffer);
-      clipboard.writeImage(nativeImage);
+      if (text) {
+        clipboard.write({
+          image: nativeImage,
+          text: text
+        });
+      } else {
+        clipboard.writeImage(nativeImage);
+      }
 
       // Read back immediately to get the exact OS-converted bitmap bytes
       const readBackImage = clipboard.readImage();

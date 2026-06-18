@@ -984,5 +984,172 @@ describe('AppContext', () => {
       alertSpy.mockRestore();
     });
   });
+
+  describe('Code Studio and Paste detection', () => {
+    it('detects Java code in pasted text and switches to Code Studio', async () => {
+      let context: any;
+      function Consumer() {
+        context = useAppContext();
+        return (
+          <div>
+            <span data-testid="code-active">{context.codeStudioActive ? 'yes' : 'no'}</span>
+            <span data-testid="code-lang">{context.codeStudioLanguage}</span>
+            <span data-testid="code-text">{context.codeStudioCode}</span>
+          </div>
+        );
+      }
+
+      render(
+        <AppProvider>
+          <Consumer />
+        </AppProvider>
+      );
+
+      // Verify initially Code Studio is inactive
+      expect(screen.getByTestId('code-active')).toHaveTextContent('no');
+
+      // Dispatch paste event with Java code
+      const pasteEvent = new Event('paste', {
+        bubbles: true,
+        cancelable: true,
+      });
+      const mockClipboardData = {
+        getData: (type: string) => {
+          if (type === 'text/plain') return 'public class Main { public static void main(String[] args) {} }';
+          return '';
+        },
+        items: [],
+      };
+      Object.defineProperty(pasteEvent, 'clipboardData', {
+        value: mockClipboardData,
+      });
+
+      await act(async () => {
+        window.dispatchEvent(pasteEvent);
+      });
+
+      expect(screen.getByTestId('code-active')).toHaveTextContent('yes');
+      expect(screen.getByTestId('code-lang')).toHaveTextContent('java');
+      expect(screen.getByTestId('code-text')).toHaveTextContent('public class Main { public static void main(String[] args) {} }');
+    });
+
+    it('detects Python code in pasted text and switches to Code Studio', async () => {
+      let context: any;
+      function Consumer() {
+        context = useAppContext();
+        return (
+          <div>
+            <span data-testid="code-active">{context.codeStudioActive ? 'yes' : 'no'}</span>
+            <span data-testid="code-lang">{context.codeStudioLanguage}</span>
+          </div>
+        );
+      }
+
+      render(
+        <AppProvider>
+          <Consumer />
+        </AppProvider>
+      );
+
+      // Dispatch paste event with Python code
+      const pasteEvent = new Event('paste', {
+        bubbles: true,
+        cancelable: true,
+      });
+      const mockClipboardData = {
+        getData: (type: string) => {
+          if (type === 'text/plain') return 'def calculate_sum(a, b):\n    return a + b\n\nprint(calculate_sum(5, 10))';
+          return '';
+        },
+        items: [],
+      };
+      Object.defineProperty(pasteEvent, 'clipboardData', {
+        value: mockClipboardData,
+      });
+
+      await act(async () => {
+        window.dispatchEvent(pasteEvent);
+      });
+
+      expect(screen.getByTestId('code-active')).toHaveTextContent('yes');
+      expect(screen.getByTestId('code-lang')).toHaveTextContent('python');
+    });
+  });
+
+  describe('Code Studio toggling and state preservation', () => {
+    it('preserves imageSrc when entering and exiting Code Studio', async () => {
+      let context: any;
+      function Consumer() {
+        context = useAppContext();
+        return <div>test</div>;
+      }
+
+      render(
+        <AppProvider>
+          <Consumer />
+        </AppProvider>
+      );
+
+      // Load an image screenshot
+      await act(async () => {
+        context.setImageSrc('data:image/png;base64,mockImage');
+        context.setNoImageMode(false);
+      });
+
+      expect(context.imageSrc).toBe('data:image/png;base64,mockImage');
+      expect(context.noImageMode).toBe(false);
+
+      // Toggle Code Studio ON
+      await act(async () => {
+        context.setCodeStudioActive(true);
+        context.setNoImageMode(true);
+      });
+
+      // Verify that codeStudioActive is true, noImageMode is true, but imageSrc is preserved
+      expect(context.codeStudioActive).toBe(true);
+      expect(context.noImageMode).toBe(true);
+      expect(context.imageSrc).toBe('data:image/png;base64,mockImage');
+
+      // Toggle Code Studio OFF
+      await act(async () => {
+        context.setCodeStudioActive(false);
+        const hasImage = !!context.imageSrc;
+        context.setNoImageMode(!hasImage);
+      });
+
+      // Verify imageSrc is still there and noImageMode becomes false again
+      expect(context.codeStudioActive).toBe(false);
+      expect(context.noImageMode).toBe(false);
+      expect(context.imageSrc).toBe('data:image/png;base64,mockImage');
+    });
+
+    it('disables Code Studio mode when a new image is loaded', async () => {
+      let context: any;
+      function Consumer() {
+        context = useAppContext();
+        return <div>test</div>;
+      }
+
+      render(
+        <AppProvider>
+          <Consumer />
+        </AppProvider>
+      );
+
+      // Start in Code Studio mode
+      await act(async () => {
+        context.setCodeStudioActive(true);
+      });
+      expect(context.codeStudioActive).toBe(true);
+
+      // Load a new image screenshot
+      await act(async () => {
+        context.setImageSrc('data:image/png;base64,newImage');
+      });
+
+      // Verify Code Studio gets turned off
+      expect(context.codeStudioActive).toBe(false);
+    });
+  });
 });
 
