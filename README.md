@@ -37,14 +37,8 @@
 | ![Presets](./assets/presets.png) | ![Privacy](./assets/privacy.png) |
 | **🤖 AI Issue Agent Integration** | **🔍 OCR Text Extraction** |
 | ![AI Issue Agent](./assets/issue-agent.png) | ![OCR](./assets/ocr.png) |
-
-<p align="center">
-  <strong>🖼️ Screenshot Gallery</strong>
-</p>
-
-<p align="center">
-  <img src="./assets/gallery.png" alt="Gallery" />
-</p>
+| **🖥️ Code Studio** | **🖼️ Screenshot Gallery** |
+| ![Code Studio](./assets/code-studio.png) | ![Gallery](./assets/gallery.png) |
 
 ---
 
@@ -82,6 +76,13 @@
 * **Quick Actions:** Re-open any image in the editor, copy it to the clipboard, reveal it in your file explorer, or delete it, all from the gallery card overlay.
 * **Configurable Storage:** Choose a custom gallery folder in Settings, or use the default location under your user data directory.
 * **Soft Delete & Auto-Purge:** Deleted images move to a `.achu-trash` folder and are automatically removed after 30 days.
+
+### 🖥️ Code Studio
+* **Paste & Beautify:** Paste JavaScript, Python, Java, or any code and instantly convert it into beautiful, shareable screenshots.
+* **Line Numbers:** Toggle line numbers on or off to match your preferred style.
+* **Color Themes:** Switch between multiple syntax-highlighting color themes to suit your brand or mood.
+* **Language Pill:** Display a language badge on the screenshot so viewers immediately know which language they're looking at.
+* **Debug Points:** Add or remove debug point markers to highlight specific lines for tutorials, bug reports, or reviews.
 
 ### 🖊️ Rich Vector Annotations
 * **Drawing Tools:** Annotate screenshots using rectangles (filled/outline), ovals (filled/outline), straight lines, arrows, freehand pen, custom text fields, and emojis.
