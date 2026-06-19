@@ -85,8 +85,8 @@ export default function SettingsModal() {
         className="modal-card"
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: '500px',
-          maxHeight: '85vh',
+          width: '640px',
+          height: 'min(680px, 85vh)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -106,36 +106,38 @@ export default function SettingsModal() {
           </button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="settings-tabs" style={{ flexShrink: 0 }}>
-          <button
-            className={`settings-tab-btn ${activeTab === 'general' ? 'active' : ''}`}
-            onClick={() => setActiveTab('general')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            type="button"
-          >
-            <Sliders className="w-3.5 h-3.5" /> General
-          </button>
-          <button
-            className={`settings-tab-btn ${activeTab === 'ai' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ai')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            type="button"
-          >
-            <Cpu className="w-3.5 h-3.5" /> AI Integrations
-          </button>
-          <button
-            className={`settings-tab-btn ${activeTab === 'shortcuts' ? 'active' : ''}`}
-            onClick={() => setActiveTab('shortcuts')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            type="button"
-          >
-            <Keyboard className="w-3.5 h-3.5" /> Shortcuts & Support
-          </button>
-        </div>
+        {/* Two-column body: vertical tabs + scrollable content */}
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', gap: '16px', marginBottom: '8px' }}>
+          {/* Tab Navigation */}
+          <div className="settings-tabs" style={{ flexShrink: 0, width: '180px', overflowY: 'auto' }}>
+            <button
+              className={`settings-tab-btn ${activeTab === 'general' ? 'active' : ''}`}
+              onClick={() => setActiveTab('general')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              type="button"
+            >
+              <Sliders className="w-3.5 h-3.5" /> General
+            </button>
+            <button
+              className={`settings-tab-btn ${activeTab === 'ai' ? 'active' : ''}`}
+              onClick={() => setActiveTab('ai')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              type="button"
+            >
+              <Cpu className="w-3.5 h-3.5" /> AI Integrations
+            </button>
+            <button
+              className={`settings-tab-btn ${activeTab === 'shortcuts' ? 'active' : ''}`}
+              onClick={() => setActiveTab('shortcuts')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              type="button"
+            >
+              <Keyboard className="w-3.5 h-3.5" /> Shortcuts & Support
+            </button>
+          </div>
 
-        {/* Scrollable Content */}
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '4px', paddingBottom: '8px' }}>
+          {/* Scrollable Content */}
+          <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', scrollbarGutter: 'stable', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '8px', paddingBottom: '8px' }}>
           
           {activeTab === 'general' && (
             <>
@@ -502,17 +504,18 @@ export default function SettingsModal() {
 
           {activeTab === 'shortcuts' && <ShortcutsHelpSection />}
         </div>
+      </div>
 
-        {/* Footer Actions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px', paddingTop: '12px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-          <button className="btn btn-ghost" onClick={handleReset} style={{ fontSize: '0.8rem', padding: '0 8px' }} type="button">
-            Reset Defaults
-          </button>
-          <button className="btn btn-primary" onClick={() => setSettingsVisible(false)} style={{ padding: '0 16px' }} type="button">
-            Done
-          </button>
-        </div>
+      {/* Footer Actions */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+        <button className="btn btn-ghost" onClick={handleReset} style={{ fontSize: '0.8rem', padding: '0 8px' }} type="button">
+          Reset Defaults
+        </button>
+        <button className="btn btn-primary" onClick={() => setSettingsVisible(false)} style={{ padding: '0 16px' }} type="button">
+          Done
+        </button>
       </div>
     </div>
+  </div>
   );
 }
