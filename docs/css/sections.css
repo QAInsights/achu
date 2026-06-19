@@ -85,19 +85,15 @@
 }
 
 /* === FEATURES GRID === */
-/* 5 cards: 3 equal on row 1, 2 wider equal on row 2 (6-col grid) */
+/* 6 cards: 3 equal per row (6-col grid) */
 .features-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 24px;
 }
 
-.features-grid .feature-card:nth-child(-n+3) {
+.features-grid .feature-card {
   grid-column: span 2;
-}
-
-.features-grid .feature-card:nth-child(n+4) {
-  grid-column: span 3;
 }
 
 .feature-card {
@@ -426,10 +422,10 @@
   .features-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .features-grid .feature-card:nth-child(-n+5) {
+  .features-grid .feature-card {
     grid-column: auto;
   }
-  .features-grid .feature-card:nth-child(5) {
+  .features-grid .feature-card:last-child:nth-child(odd) {
     grid-column: 1 / -1;
     max-width: calc(50% - 12px);
     justify-self: center;
@@ -481,7 +477,7 @@
   .features-grid {
     grid-template-columns: 1fr;
   }
-  .features-grid .feature-card:nth-child(5) {
+  .features-grid .feature-card:last-child:nth-child(odd) {
     max-width: none;
     justify-self: stretch;
   }

@@ -85,6 +85,12 @@
   animation-delay: 1.25s;
 }
 
+.widget-code-studio {
+  top: 15px;
+  left: -25px;
+  animation-delay: 3.75s;
+}
+
 .widget-icon {
   font-size: 1.25rem;
 }

@@ -2,7 +2,7 @@ window.config = {
   branding: {
     name: "achu",
     tagline: "AI-Enhanced Screenshots: From Raw Captures to Stunning Assets & Bug Tickets",
-    subtagline: "A lightweight, gorgeous desktop utility for Windows, macOS, and Linux that turns raw captures into polished visual graphics, with a <span class=\"gradient-text\">local screenshot gallery</span>, an integrated <span class=\"gradient-text\">AI Issue Agent</span>, and fully local, <span class=\"gradient-text\">offline OCR</span> text extraction.",
+    subtagline: "A lightweight, gorgeous desktop utility for Windows, macOS, and Linux that turns raw captures into polished visual graphics, with a <span class=\"gradient-text\">local screenshot gallery</span>, an integrated <span class=\"gradient-text\">AI Issue Agent</span>, a <span class=\"gradient-text\">Code Studio</span> for beautiful code screenshots, and fully local, <span class=\"gradient-text\">offline OCR</span> text extraction.",
     meaning: "achu (அச்சு) means 'print' or 'mold' in Tamil. 🖨️",
     customDomain: "achu.app"
   },
@@ -48,6 +48,12 @@ window.config = {
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feature-icon-svg"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6"/><path d="M11 8v6"/></svg>`,
       title: "OCR Canvas Text Grabber",
       description: "Right-click anywhere on your canvas screenshot to extract text content instantly. Edit, trim, format, and copy the text via a clean local modal. Runs 100% locally and privately."
+    },
+    {
+      id: "code-studio",
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feature-icon-svg"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+      title: "Code Studio",
+      description: "Paste JavaScript, Python, Java, or any code and convert it into beautiful screenshots. Toggle line numbers, pick color themes, show a language pill, and add or remove debug points for perfect shareable code cards."
     }
   ],
   gallery: [
@@ -80,6 +86,12 @@ window.config = {
       description: "Browse saved captures in a thumbnail grid, reopen in the editor, and manage files locally. Deleted items move to .achu-trash and are removed after 30 days.",
       image: "assets/gallery.png",
       tag: "Local Library"
+    },
+    {
+      title: "Code Studio",
+      description: "Transform raw code into polished screenshot cards with syntax highlighting, line numbers, color themes, language pills, and debug point markers.",
+      image: "assets/code-studio.png",
+      tag: "Code Studio"
     }
   ]
 };
