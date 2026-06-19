@@ -87,6 +87,7 @@ export function writeGalleryProject(
     removeStaleExports(galleryDir, stem, exportFilename);
     return { success: true };
   } catch (err) {
+    console.error('[writeGalleryProject] Error writing gallery project:', err);
     if (err instanceof GalleryError) {
       return { success: false, error: err.toJSON() };
     }

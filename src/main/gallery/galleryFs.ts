@@ -141,6 +141,7 @@ export async function saveGalleryItem(
 
     return { success: true, data: { path: outputPath, name: filename, documentName: stem } };
   } catch (err) {
+    console.error('[saveGalleryItem] Error saving gallery item:', err);
     if (err instanceof GalleryError) {
       return { success: false, error: err.toJSON() };
     }

@@ -127,7 +127,8 @@ describe('Preload Script', () => {
     api.copyImageToClipboard('data:base64...');
     expect(mockIpcRenderer.invoke).toHaveBeenCalledWith(
       'clipboard:copy-image',
-      'data:base64...'
+      'data:base64...',
+      undefined
     );
   });
 

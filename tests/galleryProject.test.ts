@@ -57,6 +57,24 @@ describe('galleryProject', () => {
     expect(sidecarPayload.sourceFile).toBe(`${STEM}-source.png`);
   });
 
+  it('writes sidecar without source file when sourceImageSrc is null', () => {
+    mockFs.existsSync.mockReturnValue(false);
+    const result = writeGalleryProject(
+      GALLERY_DIR,
+      STEM,
+      `${STEM}.png`,
+      { padding: 20, annotations: [], imageSrc: null },
+      null
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockFs.writeFileSync).toHaveBeenCalledTimes(1);
+    const sidecarPayload = JSON.parse(String(mockFs.writeFileSync.mock.calls[0][1]));
+    expect(sidecarPayload.documentName).toBe(STEM);
+    expect(sidecarPayload.config.imageSrc).toBeUndefined();
+    expect(sidecarPayload.sourceFile).toBeUndefined();
+  });
+
   it('reads project and rehydrates source image', () => {
     const sidecar = {
       version: 1,

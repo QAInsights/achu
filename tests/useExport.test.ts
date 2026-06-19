@@ -661,4 +661,75 @@ describe('useExport', () => {
       expect(writeSpy).not.toHaveBeenCalled();
     });
   });
+
+  // -----------------------------------------------------------------------
+  // saveToGallery
+  // -----------------------------------------------------------------------
+  describe('saveToGallery', () => {
+    it('returns success false in Screenshot mode if imageSrc is null', async () => {
+      const { result } = renderHook(() =>
+        useExport(null, false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
+      );
+
+      const res = await act(async () => {
+        return await result.current.saveToGallery();
+      });
+
+      expect(res.success).toBe(false);
+    });
+
+    it('saves successfully in Code Studio mode when imageSrc is null', async () => {
+      stubCanvas('small');
+      const saveToGallerySpy = vi.fn().mockResolvedValue({
+        success: true,
+        data: { path: '/path/to/gallery/test.png', name: 'test.png', documentName: 'test' }
+      });
+      vi.stubGlobal('snapFrameAPI', { saveToGallery: saveToGallerySpy });
+
+      mockGetCurrentConfig.mockReturnValue({
+        ...mockGetCurrentConfig(),
+        codeStudioActive: true,
+        noImage: true,
+      });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
+      );
+
+      const res = await act(async () => {
+        return await result.current.saveToGallery();
+      });
+
+      expect(saveToGallerySpy).toHaveBeenCalled();
+      expect(res.success).toBe(true);
+      expect(res.name).toBe('test.png');
+    });
+
+    it('saves successfully in Code Studio mode when imageSrc is not null (preserved)', async () => {
+      stubCanvas('small');
+      const saveToGallerySpy = vi.fn().mockResolvedValue({
+        success: true,
+        data: { path: '/path/to/gallery/test.png', name: 'test.png', documentName: 'test' }
+      });
+      vi.stubGlobal('snapFrameAPI', { saveToGallery: saveToGallerySpy });
+
+      mockGetCurrentConfig.mockReturnValue({
+        ...mockGetCurrentConfig(),
+        codeStudioActive: true,
+        noImage: true,
+      });
+
+      const { result } = renderHook(() =>
+        useExport('data:image/png;base64,mockImage', true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
+      );
+
+      const res = await act(async () => {
+        return await result.current.saveToGallery();
+      });
+
+      expect(saveToGallerySpy).toHaveBeenCalled();
+      expect(res.success).toBe(true);
+      expect(res.name).toBe('test.png');
+    });
+  });
 });

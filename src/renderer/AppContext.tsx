@@ -1304,24 +1304,49 @@ Severity rules:
       }
 
       // 2. Restore Screenshot background settings
-      const screenshotBg = screenshotBgConfig;
-      if (screenshotBg) {
-        setBackgroundType(screenshotBg.backgroundType);
-        setBackgroundValue(screenshotBg.backgroundValue);
-        setBgGrain(screenshotBg.bgGrain);
-        setLightRaysStyle(screenshotBg.lightRaysStyle);
-        setLightRaysOpacity(screenshotBg.lightRaysOpacity);
-        setLightRaysAngle(screenshotBg.lightRaysAngle);
-        setLightRaysCount(screenshotBg.lightRaysCount);
-        setLightRaysSourceX(screenshotBg.lightRaysSourceX);
-        setLightRaysSourceY(screenshotBg.lightRaysSourceY);
-        setMeshPoints(screenshotBg.meshPoints);
-        setMeshBlur(screenshotBg.meshBlur);
-        setMeshGrain(screenshotBg.meshGrain);
-        setMeshOpacity(screenshotBg.meshOpacity);
-        setMeshSpread(screenshotBg.meshSpread);
-        setSelectedPreset(screenshotBg.selectedPreset);
-      }
+      const screenshotBg = screenshotBgConfig || {
+        backgroundType: 'gradient',
+        backgroundValue: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        bgGrain: 0,
+        lightRaysStyle: 'none',
+        lightRaysOpacity: 30,
+        lightRaysAngle: 135,
+        lightRaysCount: 4,
+        lightRaysSourceX: 50,
+        lightRaysSourceY: 0,
+        meshPoints: [
+          { id: '1', color: '#ff5f6d', x: 0.2, y: 0.2, radius: 180 },
+          { id: '2', color: '#ffc371', x: 0.8, y: 0.2, radius: 220 },
+          { id: '3', color: '#00c6ff', x: 0.2, y: 0.8, radius: 200 },
+          { id: '4', color: '#7209b7', x: 0.8, y: 0.8, radius: 240 },
+        ],
+        meshBlur: 60,
+        meshGrain: 15,
+        meshOpacity: 100,
+        meshSpread: 100,
+        selectedPreset: '',
+      };
+
+      setBackgroundType(screenshotBg.backgroundType);
+      setBackgroundValue(screenshotBg.backgroundValue);
+      setBgGrain(screenshotBg.bgGrain ?? 0);
+      setLightRaysStyle(screenshotBg.lightRaysStyle ?? 'none');
+      setLightRaysOpacity(screenshotBg.lightRaysOpacity ?? 30);
+      setLightRaysAngle(screenshotBg.lightRaysAngle ?? 135);
+      setLightRaysCount(screenshotBg.lightRaysCount ?? 4);
+      setLightRaysSourceX(screenshotBg.lightRaysSourceX ?? 50);
+      setLightRaysSourceY(screenshotBg.lightRaysSourceY ?? 0);
+      setMeshPoints(screenshotBg.meshPoints ?? [
+        { id: '1', color: '#ff5f6d', x: 0.2, y: 0.2, radius: 180 },
+        { id: '2', color: '#ffc371', x: 0.8, y: 0.2, radius: 220 },
+        { id: '3', color: '#00c6ff', x: 0.2, y: 0.8, radius: 200 },
+        { id: '4', color: '#7209b7', x: 0.8, y: 0.8, radius: 240 },
+      ]);
+      setMeshBlur(screenshotBg.meshBlur ?? 60);
+      setMeshGrain(screenshotBg.meshGrain ?? 15);
+      setMeshOpacity(screenshotBg.meshOpacity ?? 100);
+      setMeshSpread(screenshotBg.meshSpread ?? 100);
+      setSelectedPreset(screenshotBg.selectedPreset ?? '');
 
       const hasImage = !!imageSrc;
       setNoImageMode(!hasImage);
@@ -1333,23 +1358,26 @@ Severity rules:
         noImage: !hasImage,
         codeStudioBgConfig: currentBg,
         screenshotBgConfig: screenshotBg,
-        ...(screenshotBg ? {
-          backgroundType: screenshotBg.backgroundType,
-          backgroundValue: screenshotBg.backgroundValue,
-          bgGrain: screenshotBg.bgGrain,
-          lightRaysStyle: screenshotBg.lightRaysStyle,
-          lightRaysOpacity: screenshotBg.lightRaysOpacity,
-          lightRaysAngle: screenshotBg.lightRaysAngle,
-          lightRaysCount: screenshotBg.lightRaysCount,
-          lightRaysSourceX: screenshotBg.lightRaysSourceX,
-          lightRaysSourceY: screenshotBg.lightRaysSourceY,
-          meshPoints: screenshotBg.meshPoints,
-          meshBlur: screenshotBg.meshBlur,
-          meshGrain: screenshotBg.meshGrain,
-          meshOpacity: screenshotBg.meshOpacity,
-          meshSpread: screenshotBg.meshSpread,
-          selectedPreset: screenshotBg.selectedPreset,
-        } : {}),
+        backgroundType: screenshotBg.backgroundType,
+        backgroundValue: screenshotBg.backgroundValue,
+        bgGrain: screenshotBg.bgGrain ?? 0,
+        lightRaysStyle: screenshotBg.lightRaysStyle ?? 'none',
+        lightRaysOpacity: screenshotBg.lightRaysOpacity ?? 30,
+        lightRaysAngle: screenshotBg.lightRaysAngle ?? 135,
+        lightRaysCount: screenshotBg.lightRaysCount ?? 4,
+        lightRaysSourceX: screenshotBg.lightRaysSourceX ?? 50,
+        lightRaysSourceY: screenshotBg.lightRaysSourceY ?? 0,
+        meshPoints: screenshotBg.meshPoints ?? [
+          { id: '1', color: '#ff5f6d', x: 0.2, y: 0.2, radius: 180 },
+          { id: '2', color: '#ffc371', x: 0.8, y: 0.2, radius: 220 },
+          { id: '3', color: '#00c6ff', x: 0.2, y: 0.8, radius: 200 },
+          { id: '4', color: '#7209b7', x: 0.8, y: 0.8, radius: 240 },
+        ],
+        meshBlur: screenshotBg.meshBlur ?? 60,
+        meshGrain: screenshotBg.meshGrain ?? 15,
+        meshOpacity: screenshotBg.meshOpacity ?? 100,
+        meshSpread: screenshotBg.meshSpread ?? 100,
+        selectedPreset: screenshotBg.selectedPreset ?? '',
       });
     }
   }, [
@@ -1627,21 +1655,30 @@ Severity rules:
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
+
+      const isSave = (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's';
+      const isExport = (e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 's';
+
+      if (isSave) {
+        e.preventDefault();
+        if (imageSrc || noImageMode) {
+          handleSaveToGallery();
+        }
+        return;
+      }
+
+      if (isExport) {
+        e.preventDefault();
+        triggerExport();
+        return;
+      }
+
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); handleUndo(); }
       if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); handleRedo(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') { e.preventDefault(); clearWorkspace(); }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') {
-        e.preventDefault(); triggerExport();
-      }
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        if (imageSrc || noImageMode) {
-          handleSaveToGallery();
-        }
-      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
