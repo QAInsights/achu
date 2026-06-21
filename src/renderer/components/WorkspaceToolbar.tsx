@@ -308,20 +308,22 @@ export default function WorkspaceToolbar() {
         </Tooltip>
       </div>
 
-      <Tooltip position="right">
-        <div className="toolbar-control">
-          <span className="toolbar-control-label">Size</span>
-          <input
-            type="range"
-            min="2"
-            max="16"
-            value={annotationStrokeWidth}
-            onChange={(e) => setAnnotationStrokeWidth(parseInt(e.target.value, 10))}
-            title={`Stroke Width: ${annotationStrokeWidth}px`}
-          />
-          <span className="toolbar-control-value">{annotationStrokeWidth}px</span>
-        </div>
-      </Tooltip>
+      {['rect', 'filled-rect', 'circle', 'filled-circle', 'line', 'arrow', 'pen'].includes(activeTool) && (
+        <Tooltip position="right">
+          <div className="toolbar-control">
+            <span className="toolbar-control-label">Size</span>
+            <input
+              type="range"
+              min="2"
+              max="16"
+              value={annotationStrokeWidth}
+              onChange={(e) => setAnnotationStrokeWidth(parseInt(e.target.value, 10))}
+              title={`Stroke Width: ${annotationStrokeWidth}px`}
+            />
+            <span className="toolbar-control-value">{annotationStrokeWidth}px</span>
+          </div>
+        </Tooltip>
+      )}
 
       <div className="toolbar-divider" />
 
