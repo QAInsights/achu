@@ -604,14 +604,14 @@ describe('WorkspaceToolbar', () => {
   it('renders sidebar toggle button', () => {
     render(<WorkspaceToolbar />);
 
-    const toggleButton = screen.getByTitle('Hide Settings Panel');
+    const toggleButton = screen.getByTitle('Hide Sidebar');
     expect(toggleButton).toBeInTheDocument();
   });
 
   it('toggles sidebar on button click', () => {
     render(<WorkspaceToolbar />);
 
-    const toggleButton = screen.getByTitle('Hide Settings Panel');
+    const toggleButton = screen.getByTitle('Hide Sidebar');
     fireEvent.click(toggleButton);
 
     expect(mockContext.setSidebarVisible).toHaveBeenCalled();

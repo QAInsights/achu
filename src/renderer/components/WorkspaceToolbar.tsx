@@ -1,6 +1,6 @@
 import {
   Sidebar,
-  SidebarOpen,
+  Bot,
   ImagePlus,
   LayoutGrid,
   Undo2,
@@ -77,21 +77,21 @@ export default function WorkspaceToolbar() {
       <div className="toolbar-group">
         <Tooltip position="right">
           <button
-            className={`tool-btn ${sidebarVisible ? '' : ''}`}
+            className={`tool-btn ${sidebarVisible ? 'active' : ''}`}
             onClick={() => setSidebarVisible(prev => !prev)}
-            title={sidebarVisible ? 'Hide Settings Panel' : 'Show Settings Panel'}
+            title={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
           >
-            {sidebarVisible ? <Sidebar className="w-4 h-4" /> : <SidebarOpen className="w-4 h-4" />}
+            <Sidebar className="w-4 h-4" />
           </button>
         </Tooltip>
 
         <Tooltip position="right">
           <button
-            className={`tool-btn ${secondarySidebarVisible ? '' : ''}`}
+            className={`tool-btn ${secondarySidebarVisible ? 'active' : ''}`}
             onClick={() => setSecondarySidebarVisible(prev => !prev)}
             title={secondarySidebarVisible ? 'Hide AI & OCR Panel' : 'Show AI & OCR Panel'}
           >
-            {secondarySidebarVisible ? <Sidebar className="w-4 h-4" /> : <SidebarOpen className="w-4 h-4" />}
+            <Bot className="w-4 h-4" />
           </button>
         </Tooltip>
 
