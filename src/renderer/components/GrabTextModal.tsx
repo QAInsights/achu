@@ -181,6 +181,9 @@ export default function GrabTextModal({ onClose }: GrabTextModalProps) {
         {!loading && error && (
           <div className="grab-text-error">
             <span>{error}</span>
+            <button className="btn btn-secondary btn-sm" onClick={() => window.location.reload()} title="Retry OCR extraction">
+              <RefreshCw className="w-3.5 h-3.5" /> Try Again
+            </button>
           </div>
         )}
 
@@ -191,7 +194,7 @@ export default function GrabTextModal({ onClose }: GrabTextModalProps) {
               className="grab-text-textarea"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="No text was detected in the screenshot."
+              placeholder="Extracted text will appear here..."
             />
 
             <label className="grab-text-checkbox-container">

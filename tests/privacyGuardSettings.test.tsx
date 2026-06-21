@@ -63,7 +63,7 @@ describe('PrivacyGuardSettings', () => {
 
     it('shows scanning info text', () => {
       render(<PrivacyGuardSettings />);
-      expect(screen.getByText(/Uses local Tesseract WASM/)).toBeInTheDocument();
+      expect(screen.getByText(/Text detection runs locally on your device/)).toBeInTheDocument();
     });
 
     it('scan button triggers scanForSecrets', () => {

@@ -362,6 +362,7 @@ html, body {
 }
 
 .inspector-section-body {
+  padding-top: var(--space-1);
   padding-bottom: var(--space-4);
   display: flex;
   flex-direction: column;

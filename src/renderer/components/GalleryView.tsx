@@ -113,6 +113,13 @@ export default function GalleryView() {
     setDeleting(null);
   };
 
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const handleRefresh = async () => {
+    await loadGallery();
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+  };
+
   return (
     <div className="gallery-view">
       <div className="gallery-header">
@@ -132,7 +139,7 @@ export default function GalleryView() {
           )}
         </div>
         <div className="gallery-header-actions">
-          <button className="btn btn-secondary" onClick={loadGallery} title="Refresh">
+          <button className="btn btn-secondary" onClick={handleRefresh} title="Refresh">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
           <button className="btn btn-secondary" onClick={openFolderInExplorer} title="Open Folder">
@@ -164,7 +171,7 @@ export default function GalleryView() {
         </div>
       )}
 
-      <div className="gallery-content">
+      <div className="gallery-content" ref={contentRef}>
         {galleryLoading ? (
           <div className="gallery-grid">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -182,6 +189,9 @@ export default function GalleryView() {
             <p className="gallery-empty-hint">
               Use "Save to Gallery" to store your beautified screenshots here.
             </p>
+            <button className="btn btn-secondary" onClick={closeGallery} style={{ marginTop: 'var(--space-3)' }}>
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to Workspace
+            </button>
           </div>
         ) : (
           <div className="gallery-grid">
@@ -189,6 +199,12 @@ export default function GalleryView() {
               <div
                 key={item.path}
                 className="gallery-card"
+                tabIndex={0}
+                role="article"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleOpenInEditor(item);
+                  if (e.key === 'Delete') handleDelete(item);
+                }}
                 onClick={() => handleOpenInEditor(item)}
               >
                 <div className="gallery-card-image">

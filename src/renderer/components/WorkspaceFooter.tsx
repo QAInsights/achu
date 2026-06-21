@@ -171,14 +171,14 @@ export default function WorkspaceFooter() {
               </svg>
               <span className="share-menu-item-content">
                 <span className="share-menu-item-label">Copy &amp; post on X</span>
-                <span className="share-menu-item-hint">paste image after (Ctrl+V)</span>
+                <span className="share-menu-item-hint">paste image after ({formatModShortcut('V')})</span>
               </span>
             </button>
             <button className="share-menu-item" onClick={handleShareWhatsApp}>
               <MessageSquare width="16" height="16" />
               <span className="share-menu-item-content">
                 <span className="share-menu-item-label">Copy &amp; send on WhatsApp</span>
-                <span className="share-menu-item-hint">paste image after (Ctrl+V)</span>
+                <span className="share-menu-item-hint">paste image after ({formatModShortcut('V')})</span>
               </span>
             </button>
             <button className="share-menu-item" onClick={handleShareLinkedIn}>
@@ -187,7 +187,7 @@ export default function WorkspaceFooter() {
               </svg>
               <span className="share-menu-item-content">
                 <span className="share-menu-item-label">Copy &amp; share on LinkedIn</span>
-                <span className="share-menu-item-hint">paste image after (Ctrl+V)</span>
+                <span className="share-menu-item-hint">paste image after ({formatModShortcut('V')})</span>
               </span>
             </button>
           </div>

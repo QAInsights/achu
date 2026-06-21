@@ -170,7 +170,7 @@ export default function UpdateChecker() {
               onClick={() => setUpdateStatus('idle')}
               type="button"
             >
-              Later
+              Remind Me Later
             </button>
           </div>
         </div>
@@ -214,7 +214,7 @@ export default function UpdateChecker() {
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
             {simulated 
               ? 'In development mode: auto-restart is simulated.' 
-              : 'The update has been downloaded. Applying update...'}
+              : 'The update will be applied when you restart achu.'}
           </div>
           <button
             className="btn btn-secondary"

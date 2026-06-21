@@ -173,7 +173,7 @@ export default function IssueReviewForm() {
           onClick={resetIssue} 
           style={{ padding: '2px 4px', fontSize: '0.7rem' }}
         >
-          Clear
+          Reset Form
         </button>
       </div>
 
@@ -197,6 +197,7 @@ export default function IssueReviewForm() {
               key={s}
               type="button"
               onClick={() => updateSeverity(s)}
+              aria-label={`Set severity to ${capitalize(s)}`}
               style={{
                 flex: 1,
                 padding: '4px 2px',
@@ -210,7 +211,7 @@ export default function IssueReviewForm() {
                 cursor: 'pointer'
               }}
             >
-              {severityEmojis[s]} {capitalize(s)}
+              <span aria-hidden="true">{severityEmojis[s]}</span> {capitalize(s)}
             </button>
           ))}
         </div>

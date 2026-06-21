@@ -36,6 +36,12 @@
   gap: 6px;
   cursor: pointer;
   line-height: 1.6;
+  border-radius: 3px;
+  transition: background 120ms ease;
+}
+
+.code-preview-gutter .breakpoint-row:hover {
+  background: rgba(128, 128, 128, 0.08);
 }
 
 .code-preview-gutter .breakpoint-marker {

@@ -137,7 +137,7 @@ export default function PrivacyGuardSettings() {
                 <Sparkles className="w-4 h-4" /> Scan Screenshot
               </button>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: '1.4', textAlign: 'center' }}>
-                Uses local Tesseract WASM. One-time model download (~12MB), then fully offline.
+                Text detection runs locally on your device. A small one-time download (~12MB) is needed, then it works fully offline.
               </span>
             </div>
           )}

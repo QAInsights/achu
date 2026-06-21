@@ -112,4 +112,13 @@ describe('GrabTextModal', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('shows Try Again button on error state', async () => {
+    mockContext.imageSrc = null;
+    render(<GrabTextModal onClose={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByText(/No image loaded/)).toBeInTheDocument();
+    });
+    expect(screen.getByText('Try Again')).toBeInTheDocument();
+  });
 });

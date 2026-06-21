@@ -23,6 +23,7 @@ export default function PromptModal() {
             }
           }}
           id="custom-prompt-input"
+          aria-label={promptConfig.message}
           style={{ width: '100%', marginBottom: '1.25rem' }}
         />
         <div className="modal-actions">

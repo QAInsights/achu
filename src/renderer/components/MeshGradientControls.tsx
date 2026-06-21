@@ -234,6 +234,7 @@ export default function MeshGradientControls() {
           <button
             className="btn btn-secondary"
             style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
+            title="Reset blur to 60px, grain to 15%, opacity to 100%, spread to 100%"
             onClick={() => {
               setMeshBlur(60);
               setMeshGrain(15);

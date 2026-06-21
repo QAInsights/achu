@@ -317,4 +317,35 @@ describe('GalleryView', () => {
       expect(toast.closest('.gallery-toast')).toHaveAttribute('aria-live', 'polite');
     });
   });
+
+  it('gallery cards are keyboard-navigable with Enter to open', async () => {
+    mockGalleryCtx.galleryItems = [makeItem()];
+    const { container } = render(<GalleryView />);
+    const card = container.querySelector('.gallery-card') as HTMLElement;
+    expect(card).toHaveAttribute('tabIndex', '0');
+    expect(card).toHaveAttribute('role', 'article');
+    fireEvent.keyDown(card, { key: 'Enter' });
+    await waitFor(() => {
+      expect(mockGalleryCtx.openInEditor).toHaveBeenCalled();
+    });
+  });
+
+  it('gallery cards support Delete key to delete', async () => {
+    mockGalleryCtx.galleryItems = [makeItem()];
+    mockGalleryCtx.deleteItem.mockResolvedValue(true);
+    const { container } = render(<GalleryView />);
+    const card = container.querySelector('.gallery-card') as HTMLElement;
+    fireEvent.keyDown(card, { key: 'Delete' });
+    await waitFor(() => {
+      expect(mockGalleryCtx.deleteItem).toHaveBeenCalledWith('/mock/gallery/test.png');
+    });
+  });
+
+  it('empty state shows Back to Workspace button', () => {
+    render(<GalleryView />);
+    const backBtn = screen.getByText('Back to Workspace');
+    expect(backBtn).toBeInTheDocument();
+    fireEvent.click(backBtn);
+    expect(mockGalleryCtx.closeGallery).toHaveBeenCalled();
+  });
 });
