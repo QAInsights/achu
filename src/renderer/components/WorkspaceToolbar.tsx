@@ -1,5 +1,5 @@
 import {
-  Sidebar,
+  PaintRoller,
   Bot,
   ImagePlus,
   LayoutGrid,
@@ -73,28 +73,8 @@ export default function WorkspaceToolbar() {
 
   return (
     <div className="toolbar-dock">
-      {/* Left: Sidebar toggle + Undo/Redo */}
+      {/* Left: Gallery + Undo/Redo */}
       <div className="toolbar-group">
-        <Tooltip position="right">
-          <button
-            className={`tool-btn ${sidebarVisible ? 'active' : ''}`}
-            onClick={() => setSidebarVisible(prev => !prev)}
-            title={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
-          >
-            <Sidebar className="w-4 h-4" />
-          </button>
-        </Tooltip>
-
-        <Tooltip position="right">
-          <button
-            className={`tool-btn ${secondarySidebarVisible ? 'active' : ''}`}
-            onClick={() => setSecondarySidebarVisible(prev => !prev)}
-            title={secondarySidebarVisible ? 'Hide AI & OCR Panel' : 'Show AI & OCR Panel'}
-          >
-            <Bot className="w-4 h-4" />
-          </button>
-        </Tooltip>
-
         <Tooltip position="right">
           <button
             className={`tool-btn ${galleryVisible ? 'active' : ''}`}
@@ -345,8 +325,28 @@ export default function WorkspaceToolbar() {
 
       <div className="toolbar-divider" />
 
-      {/* Code Studio toggle + controls */}
+      {/* Sidebar + AI & OCR + Code Studio toggle + controls */}
       <div className="toolbar-group">
+        <Tooltip position="right">
+          <button
+            className={`tool-btn ${sidebarVisible ? 'active' : ''}`}
+            onClick={() => setSidebarVisible(prev => !prev)}
+            title={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
+          >
+            <PaintRoller className="w-4 h-4" />
+          </button>
+        </Tooltip>
+
+        <Tooltip position="right">
+          <button
+            className={`tool-btn ${secondarySidebarVisible ? 'active' : ''}`}
+            onClick={() => setSecondarySidebarVisible(prev => !prev)}
+            title={secondarySidebarVisible ? 'Hide AI & OCR Panel' : 'Show AI & OCR Panel'}
+          >
+            <Bot className="w-4 h-4" />
+          </button>
+        </Tooltip>
+
         <Tooltip position="right">
           <button
             className={`tool-btn ${codeStudioActive ? 'active' : ''}`}
