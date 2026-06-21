@@ -603,17 +603,17 @@ describe('SettingsModal', () => {
 describe('WorkspaceToolbar', () => {
   it('renders sidebar toggle button', () => {
     render(<WorkspaceToolbar />);
-    
-    const toggleButton = screen.getByTitle('Hide Sidebar');
+
+    const toggleButton = screen.getByTitle('Hide Settings Panel');
     expect(toggleButton).toBeInTheDocument();
   });
 
   it('toggles sidebar on button click', () => {
     render(<WorkspaceToolbar />);
-    
-    const toggleButton = screen.getByTitle('Hide Sidebar');
+
+    const toggleButton = screen.getByTitle('Hide Settings Panel');
     fireEvent.click(toggleButton);
-    
+
     expect(mockContext.setSidebarVisible).toHaveBeenCalled();
   });
 
