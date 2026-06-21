@@ -157,11 +157,11 @@ describe('GalleryView', () => {
     expect(screen.getByText(/Jun 15, 2024/)).toBeInTheDocument();
   });
 
-  it('opens item in editor on double-click', async () => {
+  it('opens item in editor on single click', async () => {
     mockGalleryCtx.galleryItems = [makeItem()];
     const { container } = render(<GalleryView />);
     const card = container.querySelector('.gallery-card') as HTMLElement;
-    fireEvent.doubleClick(card);
+    fireEvent.click(card);
     await waitFor(() => {
       expect(mockGalleryCtx.openInEditor).toHaveBeenCalled();
     });
@@ -298,5 +298,23 @@ describe('GalleryView', () => {
     expect(screen.getByTitle('Copy to Clipboard')).toBeInTheDocument();
     expect(screen.getByTitle('Open in File Explorer')).toBeInTheDocument();
     expect(screen.getByTitle('Delete')).toBeInTheDocument();
+  });
+
+  it('closes gallery when Escape key is pressed', () => {
+    render(<GalleryView />);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(mockGalleryCtx.closeGallery).toHaveBeenCalled();
+  });
+
+  it('gallery toast has role="status" for accessibility', async () => {
+    mockGalleryCtx.galleryItems = [makeItem()];
+    mockGalleryCtx.copyToClipboard.mockResolvedValue(true);
+    render(<GalleryView />);
+    fireEvent.click(screen.getByTitle('Copy to Clipboard'));
+    await waitFor(() => {
+      const toast = screen.getByText('Copied to clipboard');
+      expect(toast.closest('.gallery-toast')).toHaveAttribute('role', 'status');
+      expect(toast.closest('.gallery-toast')).toHaveAttribute('aria-live', 'polite');
+    });
   });
 });

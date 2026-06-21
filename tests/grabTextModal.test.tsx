@@ -105,4 +105,11 @@ describe('GrabTextModal', () => {
     });
     expect(screen.queryByText('Copy Text')).not.toBeInTheDocument();
   });
+
+  it('closes modal when Escape key is pressed', () => {
+    const onClose = vi.fn();
+    render(<GrabTextModal onClose={onClose} />);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalled();
+  });
 });

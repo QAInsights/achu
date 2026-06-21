@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Layers, FolderOpen } from 'lucide-react';
 import { useBurstPackContext } from '../../contexts/BurstPackContext';
 import { useGalleryContext } from '../../contexts/GalleryContext';
@@ -15,6 +15,14 @@ export default function BurstPackModal() {
   const [selectedPackId, setSelectedPackId] = useState<string | null>('launch-kit');
   const [customKeys, setCustomKeys] = useState<string[]>([]);
   const busy = phase === 'rendering' || phase === 'saving';
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !busy) closeModal();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [closeModal, busy]);
 
   if (!modalOpen) return null;
 

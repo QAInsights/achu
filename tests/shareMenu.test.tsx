@@ -118,4 +118,13 @@ describe('WorkspaceFooter & ShareMenu', () => {
     fireEvent.mouseDown(document.body);
     expect(screen.queryByTestId('share-menu-popover')).not.toBeInTheDocument();
   });
+
+  it('closes share menu popover when Escape is pressed', () => {
+    render(<WorkspaceFooter />);
+    fireEvent.click(screen.getByText('Share'));
+    expect(screen.getByTestId('share-menu-popover')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByTestId('share-menu-popover')).not.toBeInTheDocument();
+  });
 });

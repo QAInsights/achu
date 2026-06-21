@@ -6,7 +6,7 @@ const mockBurst = {
   modalOpen: true,
   openModal: vi.fn(),
   closeModal: vi.fn(),
-  phase: 'idle' as const,
+  phase: 'idle' as 'idle' | 'rendering' | 'saving',
   progress: { current: 0, total: 0 },
   toast: null,
   saveBurstPack: vi.fn().mockResolvedValue({ success: true, variantCount: 4 }),
@@ -73,5 +73,18 @@ describe('BurstPackModal', () => {
     expect(mockBurst.saveBurstPack).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText('Save Burst Pack'));
     expect(mockBurst.saveBurstPack).toHaveBeenCalledWith(null, expect.arrayContaining([expect.any(String)]));
+  });
+
+  it('closes modal when Escape key is pressed', () => {
+    render(<BurstPackModal />);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(mockBurst.closeModal).toHaveBeenCalled();
+  });
+
+  it('does not close on Escape when busy', () => {
+    mockBurst.phase = 'rendering';
+    render(<BurstPackModal />);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(mockBurst.closeModal).not.toHaveBeenCalled();
   });
 });

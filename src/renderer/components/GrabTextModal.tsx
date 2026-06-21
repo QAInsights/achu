@@ -19,6 +19,14 @@ export default function GrabTextModal({ onClose }: GrabTextModalProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
     let isMounted = true;
     let worker: any = null;
 

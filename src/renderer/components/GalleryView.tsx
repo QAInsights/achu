@@ -67,6 +67,14 @@ export default function GalleryView() {
   }, [loadGallery]);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeGallery();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [closeGallery]);
+
+  useEffect(() => {
     const loadId = ++thumbnailLoadId.current;
     const loadThumbs = async () => {
       if (!window.snapFrameAPI || galleryItems.length === 0) return;
@@ -181,7 +189,7 @@ export default function GalleryView() {
               <div
                 key={item.path}
                 className="gallery-card"
-                onDoubleClick={() => handleOpenInEditor(item)}
+                onClick={() => handleOpenInEditor(item)}
               >
                 <div className="gallery-card-image">
                   {item.isBurstBundle && item.burstVariantCount && (
@@ -242,7 +250,7 @@ export default function GalleryView() {
         )}
       </div>
 
-      {toast && <div className="gallery-toast">{toast}</div>}
+      {toast && <div className="gallery-toast" role="status" aria-live="polite">{toast}</div>}
     </div>
   );
 }

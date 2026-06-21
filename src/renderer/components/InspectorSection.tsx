@@ -13,16 +13,22 @@ export default function InspectorSection({ title, icon, children, defaultOpen = 
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className={`inspector-section ${open ? 'open' : ''}`}>
-      <div className="inspector-section-header" onClick={() => setOpen(!open)}>
+      <button
+        type="button"
+        className="inspector-section-header"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        title={open ? `Collapse ${title}` : `Expand ${title}`}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
           {icon && <span className="inspector-section-icon">{icon}</span>}
           <span className="inspector-section-title">{title}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
           {headerActions}
-          <ChevronDown className="inspector-section-chevron w-4 h-4" />
+          <ChevronDown className="inspector-section-chevron w-4 h-4" aria-hidden="true" />
         </div>
-      </div>
+      </button>
       <div className="inspector-section-content">
         <div className="inspector-section-inner">
           <div className="inspector-section-body">
