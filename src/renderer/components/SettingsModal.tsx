@@ -1,46 +1,54 @@
 import React from 'react';
 import { useAppContext } from '../AppContext';
-import { useGalleryContext } from '../contexts/GalleryContext';
-import { X, Sliders, Cpu, Keyboard, FolderOpen } from 'lucide-react';
-import { updateUserDefault, clearUserDefaults, DEFAULT_SETTINGS } from '../utils/storageUtils';
+import { X, Sliders, Cpu, Keyboard, Search } from 'lucide-react';
+import { clearUserDefaults, DEFAULT_SETTINGS } from '../utils/storageUtils';
+import { getKeywordsForTab } from '../utils/settingsRegistry';
 import AiIntegrationsSection from './AiIntegrationsSection';
 import ShortcutsHelpSection from './ShortcutsHelpSection';
+import GeneralSettingsTab from './GeneralSettingsTab';
+
+type Tab = 'general' | 'ai' | 'shortcuts';
+
+function countMatches(keywords: string, q: string): number {
+  if (!q) return 0;
+  return q.split(' ').filter(word => word && keywords.includes(word)).length;
+}
 
 export default function SettingsModal() {
-  const { galleryFolder, changeFolder } = useGalleryContext();
   const {
     settingsVisible,
     setSettingsVisible,
-    padding, setPadding,
-    rounded, setRounded,
-    shadow, setShadow,
-    watermarkEnabled, setWatermarkEnabled,
-    watermarkText, setWatermarkText,
-    watermarkPosition, setWatermarkPosition,
-    watermarkOpacity, setWatermarkOpacity,
-    watermarkFont = 'sans-serif', setWatermarkFont,
-    watermarkBold = false, setWatermarkBold,
-    watermarkItalic = false, setWatermarkItalic,
-    systemFonts = [],
-    exportFormat, setExportFormat,
-    jpegQuality, setJpegQuality,
-    compressionMode, setCompressionMode,
-    pushHistory,
-    getCurrentConfig,
-    sidebarPosition, setSidebarPosition,
-    secondarySidebarPosition, setSecondarySidebarPosition,
-    autoImportCaptured, setAutoImportCaptured,
-    captureShortcut, setCaptureShortcut,
+    setPadding, setRounded, setShadow,
+    setWatermarkEnabled, setWatermarkText, setWatermarkPosition,
+    setWatermarkOpacity, setWatermarkFont, setWatermarkBold, setWatermarkItalic,
+    setExportFormat, setJpegQuality, setCompressionMode,
+    setSidebarPosition, setSecondarySidebarPosition,
+    setAutoImportCaptured, setCaptureShortcut,
+    pushHistory, getCurrentConfig,
   } = useAppContext();
 
-  const [activeTab, setActiveTab] = React.useState<'general' | 'ai' | 'shortcuts'>('general');
+  const [activeTab, setActiveTab] = React.useState<Tab>('general');
+  const [searchQuery, setSearchQuery] = React.useState('');
+
+  const q = searchQuery.toLowerCase().trim();
+
+  React.useEffect(() => {
+    if (!q) return;
+    const scores: Record<Tab, number> = {
+      general: countMatches(getKeywordsForTab('general'), q),
+      ai: countMatches(getKeywordsForTab('ai'), q),
+      shortcuts: countMatches(getKeywordsForTab('shortcuts'), q),
+    };
+    const best = (Object.entries(scores) as [Tab, number][])
+      .sort((a, b) => b[1] - a[1])[0];
+    if (best[1] > 0) setActiveTab(best[0]);
+  }, [q]);
 
   if (!settingsVisible) return null;
 
-  const updateSetting = (key: string, val: any, setter: (v: any) => void) => {
-    setter(val);
-    updateUserDefault(key, val);
-    pushHistory(getCurrentConfig());
+  const handleClose = () => {
+    setSettingsVisible(false);
+    setSearchQuery('');
   };
 
   const handleReset = () => {
@@ -80,7 +88,7 @@ export default function SettingsModal() {
   };
 
   return (
-    <div className="modal-overlay" onClick={() => setSettingsVisible(false)}>
+    <div className="modal-overlay" onClick={handleClose}>
       <div
         className="modal-card"
         onClick={(e) => e.stopPropagation()}
@@ -90,20 +98,38 @@ export default function SettingsModal() {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          padding: '24px',
+          padding: '20px',
         }}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
           <h2 className="modal-title" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Preferences</h2>
           <button
             className="preset-delete-btn"
-            onClick={() => setSettingsVisible(false)}
+            onClick={handleClose}
             style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             type="button"
           >
             <X className="w-4 h-4" />
           </button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="settings-search" style={{ marginBottom: '8px', flexShrink: 0, maxWidth: '100%', alignSelf: 'stretch', height: '28px' }}>
+          <Search className="w-3 h-3" style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+          <input
+            className="settings-search-input"
+            type="text"
+            placeholder="Search settings…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            autoFocus
+          />
+          {searchQuery && (
+            <button className="settings-search-clear" onClick={() => setSearchQuery('')} type="button">
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
         {/* Two-column body: vertical tabs + scrollable content */}
@@ -138,371 +164,12 @@ export default function SettingsModal() {
 
           {/* Scrollable Content */}
           <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', scrollbarGutter: 'stable', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '8px', paddingBottom: '8px' }}>
-          
-          {activeTab === 'general' && (
-            <>
-              {/* General Settings Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>General Settings</h3>
-                <div className="control-group">
-                  <span className="control-label">Sidebar Position</span>
-                  <div className="format-toggle" style={{ marginTop: '4px' }}>
-                    <button
-                      className={`format-toggle-btn ${sidebarPosition === 'left' ? 'active' : ''}`}
-                      onClick={() => {
-                        updateSetting('sidebarPosition', 'left', setSidebarPosition);
-                        if (secondarySidebarPosition === 'left') {
-                          updateSetting('secondarySidebarPosition', 'right', setSecondarySidebarPosition);
-                        }
-                      }}
-                      style={{ flex: 1 }}
-                      type="button"
-                    >
-                      Left
-                    </button>
-                    <button
-                      className={`format-toggle-btn ${sidebarPosition === 'right' ? 'active' : ''}`}
-                      onClick={() => {
-                        updateSetting('sidebarPosition', 'right', setSidebarPosition);
-                        if (secondarySidebarPosition === 'right') {
-                          updateSetting('secondarySidebarPosition', 'left', setSecondarySidebarPosition);
-                        }
-                      }}
-                      style={{ flex: 1 }}
-                      type="button"
-                    >
-                      Right
-                    </button>
-                  </div>
-                </div>
 
-                <div className="control-group">
-                  <span className="control-label">AI & OCR Sidebar Position</span>
-                  <div className="format-toggle" style={{ marginTop: '4px' }}>
-                    <button
-                      className={`format-toggle-btn ${secondarySidebarPosition === 'left' ? 'active' : ''}`}
-                      onClick={() => {
-                        updateSetting('secondarySidebarPosition', 'left', setSecondarySidebarPosition);
-                        if (sidebarPosition === 'left') {
-                          updateSetting('sidebarPosition', 'right', setSidebarPosition);
-                        }
-                      }}
-                      style={{ flex: 1 }}
-                      type="button"
-                    >
-                      Left
-                    </button>
-                    <button
-                      className={`format-toggle-btn ${secondarySidebarPosition === 'right' ? 'active' : ''}`}
-                      onClick={() => {
-                        updateSetting('secondarySidebarPosition', 'right', setSecondarySidebarPosition);
-                        if (sidebarPosition === 'right') {
-                          updateSetting('sidebarPosition', 'left', setSidebarPosition);
-                        }
-                      }}
-                      style={{ flex: 1 }}
-                      type="button"
-                    >
-                      Right
-                    </button>
-                  </div>
-                </div>
-              </div>
+          {activeTab === 'general' && <GeneralSettingsTab searchQuery={searchQuery} />}
 
-              {/* Screen Capture Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>Screen Capture</h3>
-                
-                <div className="switch-container">
-                  <span className="control-label">Auto-Import from Clipboard on Focus</span>
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={autoImportCaptured}
-                      onChange={(e) => updateSetting('autoImportCaptured', e.target.checked, setAutoImportCaptured)}
-                    />
-                    <span className="slider-switch" />
-                  </label>
-                </div>
+          {activeTab === 'ai' && <AiIntegrationsSection searchQuery={searchQuery} />}
 
-                <div className="control-group">
-                  <span className="control-label">Global Capture Shortcut</span>
-                  <select
-                    value={captureShortcut}
-                    onChange={(e) => updateSetting('captureShortcut', e.target.value, setCaptureShortcut)}
-                    style={{ marginTop: '4px' }}
-                  >
-                    <option value="PrintScreen">Print Screen</option>
-                    <option value="CommandOrControl+Shift+S">Ctrl + Shift + S</option>
-                    <option value="CommandOrControl+Alt+S">Ctrl + Alt + S</option>
-                    <option value="Disabled">Disabled</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Gallery Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>Gallery</h3>
-                <div className="control-group">
-                  <span className="control-label">Screenshot Folder</span>
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '4px', alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      value={galleryFolder}
-                      readOnly
-                      style={{ flex: 1, fontSize: '0.78rem', cursor: 'default' }}
-                    />
-                    <button
-                      className="btn btn-secondary"
-                      style={{ padding: '0 10px', height: '28px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
-                      onClick={async () => {
-                        if (window.snapFrameAPI) {
-                          const folder = await window.snapFrameAPI.chooseGalleryFolder();
-                          if (folder) {
-                            await changeFolder(folder);
-                          }
-                        }
-                      }}
-                      type="button"
-                    >
-                      <FolderOpen className="w-3.5 h-3.5" /> Browse
-                    </button>
-                  </div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px', display: 'block', lineHeight: 1.45 }}>
-                    Deleted images move to <code style={{ fontFamily: 'var(--font-mono)', fontSize: '0.92em' }}>.achu-trash</code> and are removed after 30 days.
-                  </span>
-                </div>
-              </div>
-
-              {/* Canvas Defaults Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>Canvas Defaults</h3>
-                <div className="control-group">
-                  <div className="control-label-container">
-                    <span className="control-label">Default Padding</span>
-                    <span className="control-value">{padding}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={padding}
-                    onChange={(e) => updateSetting('padding', parseInt(e.target.value, 10), setPadding)}
-                  />
-                </div>
-                <div className="control-group">
-                  <div className="control-label-container">
-                    <span className="control-label">Default Border Radius</span>
-                    <span className="control-value">{rounded}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="50"
-                    value={rounded}
-                    onChange={(e) => updateSetting('rounded', parseInt(e.target.value, 10), setRounded)}
-                  />
-                </div>
-                <div className="control-group">
-                  <div className="control-label-container">
-                    <span className="control-label">Default Shadow Blur</span>
-                    <span className="control-value">{shadow}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={shadow}
-                    onChange={(e) => updateSetting('shadow', parseInt(e.target.value, 10), setShadow)}
-                  />
-                </div>
-              </div>
-
-              {/* Export Defaults Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>Export Preferences</h3>
-                <div className="control-group">
-                  <span className="control-label">Default Format</span>
-                  <div className="format-toggle" style={{ marginTop: '4px' }}>
-                    <button
-                      className={`format-toggle-btn ${exportFormat === 'png' ? 'active' : ''}`}
-                      onClick={() => updateSetting('exportFormat', 'png', setExportFormat)}
-                      style={{ flex: 1 }}
-                      type="button"
-                    >
-                      PNG
-                    </button>
-                    <button
-                      className={`format-toggle-btn ${exportFormat === 'jpeg' ? 'active' : ''}`}
-                      onClick={() => updateSetting('exportFormat', 'jpeg', setExportFormat)}
-                      style={{ flex: 1 }}
-                      type="button"
-                    >
-                      JPEG
-                    </button>
-                    <button
-                      className={`format-toggle-btn ${exportFormat === 'webp' ? 'active' : ''}`}
-                      onClick={() => updateSetting('exportFormat', 'webp', setExportFormat)}
-                      style={{ flex: 1 }}
-                      type="button"
-                    >
-                      WebP
-                    </button>
-                  </div>
-                </div>
-                {(exportFormat === 'jpeg' || exportFormat === 'webp') && (
-                  <div className="control-group">
-                    <div className="control-label-container">
-                      <span className="control-label">Quality</span>
-                      <span className="control-value">{jpegQuality}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="10"
-                      max="100"
-                      value={jpegQuality}
-                      onChange={(e) => updateSetting('jpegQuality', parseInt(e.target.value, 10), setJpegQuality)}
-                    />
-                  </div>
-                )}
-                <div className="control-group">
-                  <span className="control-label">Default Optimization</span>
-                  <div className="format-toggle" style={{ marginTop: '4px' }}>
-                    <button
-                      className={`format-toggle-btn ${compressionMode === 'original' ? 'active' : ''}`}
-                      onClick={() => updateSetting('compressionMode', 'original', setCompressionMode)}
-                      style={{ flex: 1 }}
-                      type="button"
-                    >
-                      Original
-                    </button>
-                    <button
-                      className={`format-toggle-btn ${compressionMode === 'balanced' ? 'active' : ''}`}
-                      onClick={() => updateSetting('compressionMode', 'balanced', setCompressionMode)}
-                      style={{ flex: 1 }}
-                      type="button"
-                    >
-                      Balanced
-                    </button>
-                    <button
-                      className={`format-toggle-btn ${compressionMode === 'small' ? 'active' : ''}`}
-                      onClick={() => updateSetting('compressionMode', 'small', setCompressionMode)}
-                      style={{ flex: 1 }}
-                      type="button"
-                    >
-                      Small
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Watermark Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>Watermark Defaults</h3>
-                <div className="switch-container">
-                  <span className="control-label">Enable Watermark by Default</span>
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={watermarkEnabled}
-                      onChange={(e) => updateSetting('watermarkEnabled', e.target.checked, setWatermarkEnabled)}
-                    />
-                    <span className="slider-switch" />
-                  </label>
-                </div>
-                <div className="control-group">
-                  <span className="control-label">Default Text</span>
-                  <input
-                    type="text"
-                    value={watermarkText}
-                    onChange={(e) => updateSetting('watermarkText', e.target.value, setWatermarkText)}
-                    style={{ marginTop: '4px' }}
-                  />
-                </div>
-                <div className="control-group">
-                  <span className="control-label">Default Font Family</span>
-                  <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
-                    <select
-                      value={watermarkFont}
-                      onChange={(e) => updateSetting('watermarkFont', e.target.value, setWatermarkFont)}
-                      style={{ flex: 1 }}
-                    >
-                      {systemFonts.map((f) => (
-                        <option key={f} value={f}>{f}</option>
-                      ))}
-                    </select>
-                    <button
-                      className={`btn btn-secondary ${watermarkBold ? 'active' : ''}`}
-                      style={{
-                        padding: '0 8px',
-                        fontWeight: 'bold',
-                        backgroundColor: watermarkBold ? 'var(--accent)' : 'var(--surface-2)',
-                        color: watermarkBold ? 'var(--on-accent)' : 'var(--text-secondary)',
-                        border: 'none',
-                        borderRadius: '4px',
-                        height: '28px',
-                      }}
-                      onClick={() => updateSetting('watermarkBold', !watermarkBold, setWatermarkBold)}
-                      title="Bold"
-                      type="button"
-                    >
-                      B
-                    </button>
-                    <button
-                      className={`btn btn-secondary ${watermarkItalic ? 'active' : ''}`}
-                      style={{
-                        padding: '0 8px',
-                        fontStyle: 'italic',
-                        backgroundColor: watermarkItalic ? 'var(--accent)' : 'var(--surface-2)',
-                        color: watermarkItalic ? 'var(--on-accent)' : 'var(--text-secondary)',
-                        border: 'none',
-                        borderRadius: '4px',
-                        height: '28px',
-                      }}
-                      onClick={() => updateSetting('watermarkItalic', !watermarkItalic, setWatermarkItalic)}
-                      title="Italic"
-                      type="button"
-                    >
-                      I
-                    </button>
-                  </div>
-                </div>
-                <div className="control-group">
-                  <span className="control-label">Default Position</span>
-                  <select
-                    value={watermarkPosition}
-                    onChange={(e) => updateSetting('watermarkPosition', e.target.value, setWatermarkPosition)}
-                    style={{ marginTop: '4px' }}
-                  >
-                    <option value="left">Bottom Left</option>
-                    <option value="middle">Bottom Center</option>
-                    <option value="right">Bottom Right</option>
-                    <option value="top left">Top Left</option>
-                    <option value="top middle">Top Center</option>
-                    <option value="top right">Top Right</option>
-                  </select>
-                </div>
-                <div className="control-group">
-                  <div className="control-label-container">
-                    <span className="control-label">Default Opacity</span>
-                    <span className="control-value">{Math.round(watermarkOpacity * 100)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={Math.round(watermarkOpacity * 100)}
-                    onChange={(e) => updateSetting('watermarkOpacity', parseFloat(e.target.value) / 100, setWatermarkOpacity)}
-                    style={{ marginTop: '4px' }}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {activeTab === 'ai' && <AiIntegrationsSection />}
-
-          {activeTab === 'shortcuts' && <ShortcutsHelpSection />}
+          {activeTab === 'shortcuts' && <ShortcutsHelpSection searchQuery={searchQuery} />}
         </div>
       </div>
 
@@ -511,7 +178,7 @@ export default function SettingsModal() {
         <button className="btn btn-ghost" onClick={handleReset} style={{ fontSize: '0.8rem', padding: '0 8px' }} type="button">
           Reset Defaults
         </button>
-        <button className="btn btn-primary" onClick={() => setSettingsVisible(false)} style={{ padding: '0 16px' }} type="button">
+        <button className="btn btn-primary" onClick={handleClose} style={{ padding: '0 16px' }} type="button">
           Done
         </button>
       </div>

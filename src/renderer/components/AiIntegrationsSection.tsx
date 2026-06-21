@@ -2,8 +2,19 @@ import React from 'react';
 import { useAppContext } from '../AppContext';
 import { Cpu } from 'lucide-react';
 import { updateUserDefault } from '../utils/storageUtils';
+import { registerSettingsSection } from '../utils/settingsRegistry';
 
-export default function AiIntegrationsSection() {
+const PROVIDER_KEYWORDS = 'ai provider ollama openai gemini claude anthropic model endpoint api key connection test custom google local cloud';
+const GITHUB_KEYWORDS = 'github integration repository repo token pat personal access attribution markdown';
+
+registerSettingsSection({ tab: 'ai', label: 'AI Provider Configuration', keywords: PROVIDER_KEYWORDS });
+registerSettingsSection({ tab: 'ai', label: 'GitHub Integration', keywords: GITHUB_KEYWORDS });
+
+export default function AiIntegrationsSection({ searchQuery = '' }: { searchQuery?: string }) {
+  const showProviders = !searchQuery || PROVIDER_KEYWORDS.includes(searchQuery.toLowerCase()) ||
+    PROVIDER_KEYWORDS.split(' ').some(w => w.includes(searchQuery.toLowerCase()));
+  const showGitHub = !searchQuery || GITHUB_KEYWORDS.includes(searchQuery.toLowerCase()) ||
+    GITHUB_KEYWORDS.split(' ').some(w => w.includes(searchQuery.toLowerCase()));
   const {
     aiProvider, setAiProvider,
     ollamaEndpoint, setOllamaEndpoint,
@@ -96,8 +107,13 @@ export default function AiIntegrationsSection() {
   const isStandardClaudeModel = ['claude-3-5-sonnet-latest', 'claude-3-7-sonnet-latest', 'claude-3-5-opus-latest'].includes(claudeModel);
   const claudeSelectValue = isStandardClaudeModel ? claudeModel : 'custom';
 
+  if (!showProviders && !showGitHub) {
+    return <div className="settings-no-results">No settings match "{searchQuery}"</div>;
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {showProviders && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px 0' }}>AI Provider Configuration</h3>
         
@@ -322,8 +338,9 @@ export default function AiIntegrationsSection() {
           )}
         </div>
       </div>
+      )}
 
-      {/* GitHub Settings Section */}
+      {showGitHub && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0' }}>GitHub Integration</h3>
         
@@ -380,6 +397,7 @@ export default function AiIntegrationsSection() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
