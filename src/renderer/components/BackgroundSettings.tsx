@@ -5,6 +5,7 @@ import InspectorSection from './InspectorSection';
 import Tooltip from './Tooltip';
 import PresetSelector from './PresetSelector';
 import MeshGradientControls from './MeshGradientControls';
+import { formatModShortcut } from '../utils/shortcutLabels';
 import {
   disneyHollywoodGradients,
   defaultGradients,
@@ -98,7 +99,7 @@ export default function BackgroundSettings() {
         </div>
 
         {vibeToast && (
-          <p className="vibe-toast">✨ Vibe applied! Press Ctrl+Z to undo</p>
+          <p className="vibe-toast">✨ Vibe applied! Press {formatModShortcut('Z')} to undo</p>
         )}
       </div>
 

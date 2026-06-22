@@ -1,5 +1,6 @@
 import { Image as ImageIcon, Sparkles, Code } from 'lucide-react';
 import { useAppContext } from '../AppContext';
+import { getModKeyLabel } from '../utils/shortcutLabels';
 
 export default function EmptyState() {
   const {
@@ -17,7 +18,7 @@ export default function EmptyState() {
       <div onClick={selectFile} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <ImageIcon className="empty-state-icon" />
         <h3 className="empty-state-title">Drag & Drop screenshot here</h3>
-        <p className="empty-state-subtitle">Or click to select an image, or copy-paste directly (Ctrl+V)</p>
+        <p className="empty-state-subtitle">Or click to select an image, or copy-paste directly ({getModKeyLabel()}+V)</p>
       </div>
 
       <div className="empty-state-actions">
@@ -60,7 +61,7 @@ export default function EmptyState() {
       </div>
 
       <div className="empty-state-hotkeys">
-        <span>Hotkey:</span> <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>V</kbd> <span>to snap from clipboard</span>
+        <span>Hotkey:</span> <kbd>{getModKeyLabel()}</kbd> <kbd>Alt</kbd> <kbd>V</kbd> <span>to snap from clipboard</span>
       </div>
     </div>
   );

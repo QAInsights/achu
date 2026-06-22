@@ -562,16 +562,17 @@ describe('SettingsModal', () => {
 
   it('displays keyboard shortcuts', () => {
     mockContext.settingsVisible = true;
-    
+
     render(<SettingsModal />);
-    
+
     fireEvent.click(screen.getByText('Shortcuts & Support'));
-    
+
     expect(screen.getByText('Paste Image')).toBeInTheDocument();
     expect(screen.getByText('Undo / Redo')).toBeInTheDocument();
     expect(screen.getByText('Save to Gallery')).toBeInTheDocument();
     expect(screen.getByText('Export to file')).toBeInTheDocument();
-    expect(screen.getByText('Platform Burst Pack')).toBeInTheDocument();
+    expect(screen.getByText('Toggle Gallery')).toBeInTheDocument();
+    expect(screen.getByText('Toggle Code Studio')).toBeInTheDocument();
     expect(screen.getByText('Delete Annotation')).toBeInTheDocument();
   });
 
@@ -620,8 +621,8 @@ describe('WorkspaceToolbar', () => {
   it('renders undo and redo buttons', () => {
     render(<WorkspaceToolbar />);
     
-    expect(screen.getByTitle('Undo (Ctrl+Z)')).toBeInTheDocument();
-    expect(screen.getByTitle('Redo (Ctrl+Y)')).toBeInTheDocument();
+    expect(screen.getByTitle('Undo (Ctrl + Z)')).toBeInTheDocument();
+    expect(screen.getByTitle('Redo (Ctrl + Y)')).toBeInTheDocument();
   });
 
   it('disables undo button when history is empty', () => {
@@ -629,7 +630,7 @@ describe('WorkspaceToolbar', () => {
     
     render(<WorkspaceToolbar />);
     
-    const undoButton = screen.getByTitle('Undo (Ctrl+Z)');
+    const undoButton = screen.getByTitle('Undo (Ctrl + Z)');
     expect(undoButton).toBeDisabled();
   });
 
@@ -639,7 +640,7 @@ describe('WorkspaceToolbar', () => {
     
     render(<WorkspaceToolbar />);
     
-    const redoButton = screen.getByTitle('Redo (Ctrl+Y)');
+    const redoButton = screen.getByTitle('Redo (Ctrl + Y)');
     expect(redoButton).toBeDisabled();
   });
 
@@ -649,7 +650,7 @@ describe('WorkspaceToolbar', () => {
     
     render(<WorkspaceToolbar />);
     
-    fireEvent.click(screen.getByTitle('Undo (Ctrl+Z)'));
+    fireEvent.click(screen.getByTitle('Undo (Ctrl + Z)'));
     expect(mockContext.handleUndo).toHaveBeenCalled();
   });
 
@@ -659,7 +660,7 @@ describe('WorkspaceToolbar', () => {
     
     render(<WorkspaceToolbar />);
     
-    fireEvent.click(screen.getByTitle('Redo (Ctrl+Y)'));
+    fireEvent.click(screen.getByTitle('Redo (Ctrl + Y)'));
     expect(mockContext.handleRedo).toHaveBeenCalled();
   });
 
@@ -824,14 +825,14 @@ describe('WorkspaceToolbar', () => {
   it('renders clear workspace button', () => {
     render(<WorkspaceToolbar />);
     
-    const clearButton = screen.getByTitle('Clear workspace (Ctrl+N)');
+    const clearButton = screen.getByTitle('Clear workspace (Ctrl + N)');
     expect(clearButton).toBeInTheDocument();
   });
 
   it('clears workspace on button click', () => {
     render(<WorkspaceToolbar />);
     
-    fireEvent.click(screen.getByTitle('Clear workspace (Ctrl+N)'));
+    fireEvent.click(screen.getByTitle('Clear workspace (Ctrl + N)'));
     
     expect(mockContext.clearWorkspace).toHaveBeenCalled();
   });

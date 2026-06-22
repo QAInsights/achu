@@ -4,6 +4,7 @@ import { useGalleryContext } from '../contexts/GalleryContext';
 import { FolderOpen } from 'lucide-react';
 import { updateUserDefault } from '../utils/storageUtils';
 import { registerSettingsSection } from '../utils/settingsRegistry';
+import { getModKeyLabel } from '../utils/shortcutLabels';
 
 registerSettingsSection({ tab: 'general', label: 'General Settings', keywords: 'general sidebar position ai ocr left right' });
 registerSettingsSection({ tab: 'general', label: 'Screen Capture', keywords: 'screen capture auto import clipboard focus global shortcut printscreen hotkey' });
@@ -138,8 +139,8 @@ export default function GeneralSettingsTab({ searchQuery = '' }: { searchQuery?:
               style={{ marginTop: '4px' }}
             >
               <option value="PrintScreen">Print Screen</option>
-              <option value="CommandOrControl+Shift+S">Ctrl + Shift + S</option>
-              <option value="CommandOrControl+Alt+S">Ctrl + Alt + S</option>
+              <option value="CommandOrControl+Shift+S">{getModKeyLabel()} + Shift + S</option>
+              <option value="CommandOrControl+Alt+S">{getModKeyLabel()} + Alt + S</option>
               <option value="Disabled">Disabled</option>
             </select>
           </div>

@@ -9,6 +9,8 @@ const SHORTCUTS = [
   { label: 'Undo / Redo', keys: 'ctrl z y' },
   { label: 'Save to Gallery', keys: 'mod s save' },
   { label: 'Export to file', keys: 'mod shift s export' },
+  { label: 'Toggle Gallery', keys: 'mod g gallery' },
+  { label: 'Toggle Code Studio', keys: 'mod shift c code studio' },
   { label: 'Delete Annotation', keys: 'delete backspace annotation' },
 ];
 
@@ -23,7 +25,7 @@ const TOOLBAR_SHORTCUTS = [
 
 const SUPPORT_KEYWORDS = 'support project donate donation github repo repository buy coffee';
 
-registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export select move rectangle circle line arrow text pen emoji' });
+registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji' });
 registerSettingsSection({ tab: 'shortcuts', label: 'Support & Project', keywords: SUPPORT_KEYWORDS });
 
 export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery?: string }) {
@@ -50,10 +52,12 @@ export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery
             <React.Fragment key={s.label}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
-                {s.label === 'Paste Image' && <div><kbd>Ctrl</kbd> <kbd>V</kbd> or <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>V</kbd></div>}
-                {s.label === 'Undo / Redo' && <div><kbd>Ctrl</kbd> <kbd>Z</kbd> / <kbd>Ctrl</kbd> <kbd>Y</kbd></div>}
+                {s.label === 'Paste Image' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>V</kbd> or <kbd>{getModKeyLabel()}</kbd> <kbd>Alt</kbd> <kbd>V</kbd></div>}
+                {s.label === 'Undo / Redo' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>Z</kbd> / <kbd>{getModKeyLabel()}</kbd> <kbd>Y</kbd></div>}
                 {s.label === 'Save to Gallery' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>S</kbd></div>}
                 {s.label === 'Export to file' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>Shift</kbd> <kbd>S</kbd></div>}
+                {s.label === 'Toggle Gallery' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>G</kbd></div>}
+                {s.label === 'Toggle Code Studio' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>Shift</kbd> <kbd>C</kbd></div>}
                 {s.label === 'Delete Annotation' && <div><kbd>Delete</kbd> or <kbd>Backspace</kbd></div>}
               </div>
               {i === filteredShortcuts.length - 1 && filteredToolbar.length > 0 && (

@@ -27,6 +27,7 @@ import { toggleTheme } from '../utils/uiUtils';
 import Tooltip from './Tooltip';
 import FontSelector from './FontSelector';
 import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
+import { formatModShortcut } from '../utils/shortcutLabels';
 
 export default function WorkspaceToolbar() {
   useToolbarShortcuts();
@@ -79,7 +80,7 @@ export default function WorkspaceToolbar() {
           <button
             className={`tool-btn ${galleryVisible ? 'active' : ''}`}
             onClick={() => galleryVisible ? closeGallery() : openGallery()}
-            title={galleryVisible ? 'Back to Workspace' : 'Open Gallery'}
+            title={galleryVisible ? `Back to Workspace (${formatModShortcut('G')})` : `Open Gallery (${formatModShortcut('G')})`}
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
@@ -117,12 +118,12 @@ export default function WorkspaceToolbar() {
 
       <div className="toolbar-group">
         <Tooltip position="right">
-          <button className="tool-btn" onClick={handleUndo} disabled={historyIndex <= 0} title="Undo (Ctrl+Z)">
+          <button className="tool-btn" onClick={handleUndo} disabled={historyIndex <= 0} title={`Undo (${formatModShortcut('Z')})`}>
             <Undo2 className="w-4 h-4" />
           </button>
         </Tooltip>
         <Tooltip position="right">
-          <button className="tool-btn" onClick={handleRedo} disabled={historyIndex >= history.length - 1} title="Redo (Ctrl+Y)">
+          <button className="tool-btn" onClick={handleRedo} disabled={historyIndex >= history.length - 1} title={`Redo (${formatModShortcut('Y')})`}>
             <Redo2 className="w-4 h-4" />
           </button>
         </Tooltip>
@@ -130,7 +131,7 @@ export default function WorkspaceToolbar() {
           <button
             className="tool-btn"
             onClick={clearWorkspace}
-            title="Clear workspace (Ctrl+N)"
+            title={`Clear workspace (${formatModShortcut('N')})`}
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -369,7 +370,7 @@ export default function WorkspaceToolbar() {
                 }
               }
             }}
-            title={codeStudioActive ? 'Exit Code Studio' : 'Code Studio'}
+            title={codeStudioActive ? `Exit Code Studio (${formatModShortcut('Shift + C')})` : `Code Studio (${formatModShortcut('Shift + C')})`}
           >
             <Code className="w-4 h-4" />
           </button>
