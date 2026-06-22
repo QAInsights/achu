@@ -519,6 +519,69 @@ describe('AppContext', () => {
       });
       expect(screen.getByTestId('tool')).toHaveTextContent('pointer');
     });
+
+    it('toggles Code Studio on Ctrl+Shift+C', () => {
+      let currentCtx: any;
+      function ShortcutConsumer() {
+        currentCtx = useAppContext();
+        return <div data-testid="code-studio">{String(currentCtx.codeStudioActive)}</div>;
+      }
+      render(
+        <AppProvider>
+          <ShortcutConsumer />
+        </AppProvider>
+      );
+
+      expect(currentCtx.codeStudioActive).toBe(false);
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, shiftKey: true, key: 'c', bubbles: true }));
+      });
+      expect(currentCtx.codeStudioActive).toBe(true);
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, shiftKey: true, key: 'c', bubbles: true }));
+      });
+      expect(currentCtx.codeStudioActive).toBe(false);
+    });
+
+    it('toggles Code Studio on Cmd+Shift+C (macOS)', () => {
+      let currentCtx: any;
+      function ShortcutConsumer() {
+        currentCtx = useAppContext();
+        return <div data-testid="code-studio">{String(currentCtx.codeStudioActive)}</div>;
+      }
+      render(
+        <AppProvider>
+          <ShortcutConsumer />
+        </AppProvider>
+      );
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { metaKey: true, shiftKey: true, key: 'c', bubbles: true }));
+      });
+      expect(currentCtx.codeStudioActive).toBe(true);
+    });
+
+    it('does not toggle Code Studio on Ctrl+Shift+C when focused on input', () => {
+      let currentCtx: any;
+      function ShortcutConsumer() {
+        currentCtx = useAppContext();
+        return <input type="text" data-testid="text-input" />;
+      }
+      render(
+        <AppProvider>
+          <ShortcutConsumer />
+        </AppProvider>
+      );
+      const input = screen.getByTestId('text-input') as HTMLInputElement;
+      input.focus();
+
+      act(() => {
+        input.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, shiftKey: true, key: 'c', bubbles: true }));
+      });
+      expect(currentCtx.codeStudioActive).toBe(false);
+    });
   });
 
   describe('Paste event', () => {

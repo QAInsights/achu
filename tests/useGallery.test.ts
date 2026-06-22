@@ -212,4 +212,69 @@ describe('useGallery', () => {
 
     expect(result.current.galleryVisible).toBe(false);
   });
+
+  it('Ctrl+G toggles gallery from closed to open', () => {
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
+
+    expect(result.current.galleryVisible).toBe(false);
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'g', ctrlKey: true, bubbles: true }));
+    });
+
+    expect(result.current.galleryVisible).toBe(true);
+  });
+
+  it('Ctrl+G toggles gallery from open to closed', () => {
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
+
+    act(() => {
+      result.current.openGallery();
+    });
+    expect(result.current.galleryVisible).toBe(true);
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'g', ctrlKey: true, bubbles: true }));
+    });
+
+    expect(result.current.galleryVisible).toBe(false);
+  });
+
+  it('Ctrl+G does not trigger when Shift or Alt is held', () => {
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'g', ctrlKey: true, shiftKey: true, bubbles: true }));
+    });
+    expect(result.current.galleryVisible).toBe(false);
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'g', ctrlKey: true, altKey: true, bubbles: true }));
+    });
+    expect(result.current.galleryVisible).toBe(false);
+  });
+
+  it('Ctrl+G does not trigger when focus is on an input element', () => {
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+
+    act(() => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'g', ctrlKey: true, bubbles: true }));
+    });
+
+    expect(result.current.galleryVisible).toBe(false);
+    document.body.removeChild(input);
+  });
+
+  it('Meta+G (macOS Cmd) toggles gallery', () => {
+    const { result } = renderHook(() => useGallery(mockOpenGalleryImage));
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'g', metaKey: true, bubbles: true }));
+    });
+
+    expect(result.current.galleryVisible).toBe(true);
+  });
 });

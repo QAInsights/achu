@@ -164,6 +164,25 @@ export function useGallery(
     loadGalleryFolder();
   }, [loadGalleryFolder]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        if (galleryVisible) {
+          closeGallery();
+        } else {
+          openGallery();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [galleryVisible, openGallery, closeGallery]);
+
   return {
     galleryVisible, setGalleryVisible,
     galleryFolder, setGalleryFolder,
