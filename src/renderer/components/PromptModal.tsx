@@ -7,7 +7,7 @@ export default function PromptModal() {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card">
+      <div className="modal-card" role="dialog" aria-modal="true" aria-label={promptConfig.message}>
         <div className="modal-title">{promptConfig.message}</div>
         <input
           type="text"

@@ -46,7 +46,7 @@ describe('GrabTextModal', () => {
   it('calls onClose when close button is clicked', () => {
     const onClose = vi.fn();
     render(<GrabTextModal onClose={onClose} />);
-    const closeButtons = screen.getAllByTitle('Close');
+    const closeButtons = screen.getAllByLabelText('Close');
     fireEvent.click(closeButtons[0]);
     expect(onClose).toHaveBeenCalled();
   });

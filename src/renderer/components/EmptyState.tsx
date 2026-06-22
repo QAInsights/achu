@@ -11,10 +11,11 @@ export default function EmptyState() {
     pushHistory,
     getCurrentConfig,
     setCodeStudioActive,
+    isDragging,
   } = useAppContext();
 
   return (
-    <div className="empty-state">
+    <div className={`empty-state${isDragging ? ' dragging' : ''}`}>
       <div onClick={selectFile} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <ImageIcon className="empty-state-icon" />
         <h3 className="empty-state-title">Drag & Drop screenshot here</h3>

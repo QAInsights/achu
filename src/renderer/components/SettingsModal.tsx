@@ -91,6 +91,9 @@ export default function SettingsModal() {
     <div className="modal-overlay" onClick={handleClose}>
       <div
         className="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Preferences"
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '640px',
@@ -107,6 +110,7 @@ export default function SettingsModal() {
           <button
             className="preset-delete-btn"
             onClick={handleClose}
+            aria-label="Close preferences"
             style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             type="button"
           >

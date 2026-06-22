@@ -10,7 +10,7 @@
   display: flex;
   flex-direction: column;
   min-width: 170px;
-  animation: dropdownFadeIn 140ms var(--ease-out-quint);
+  animation: dropdownFadeIn var(--dur-fast) var(--ease-out-quint);
   backdrop-filter: blur(8px);
 }
 
@@ -29,7 +29,7 @@
   text-align: left;
   width: 100%;
   cursor: pointer;
-  transition: background var(--dur-fast), color var(--dur-fast);
+  transition: background var(--dur-fast) var(--ease-out-quint), color var(--dur-fast) var(--ease-out-quint), transform var(--dur-fast) var(--ease-out-quint);
 }
 
 .context-menu-item:hover:not(:disabled) {
@@ -37,8 +37,12 @@
   color: var(--accent);
 }
 
+.context-menu-item:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
 .context-menu-item:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
   color: var(--text-tertiary);
 }

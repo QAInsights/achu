@@ -85,7 +85,7 @@ describe('HelpModal', () => {
 
     it('closes modal when X button is clicked', () => {
       render(<HelpModal />);
-      const closeBtn = screen.getByTitle('Close help');
+      const closeBtn = screen.getByLabelText('Close help');
       fireEvent.click(closeBtn);
       expect(mockContext.setHelpVisible).toHaveBeenCalledWith(false);
     });

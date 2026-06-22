@@ -81,6 +81,8 @@ export default function WorkspaceToolbar() {
             className={`tool-btn ${galleryVisible ? 'active' : ''}`}
             onClick={() => galleryVisible ? closeGallery() : openGallery()}
             title={galleryVisible ? `Back to Workspace (${formatModShortcut('G')})` : `Open Gallery (${formatModShortcut('G')})`}
+            aria-label={galleryVisible ? 'Back to Workspace' : 'Open Gallery'}
+            aria-pressed={galleryVisible}
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
@@ -93,6 +95,7 @@ export default function WorkspaceToolbar() {
                 className="tool-btn"
                 onClick={selectFile}
                 title="Upload Screenshot"
+                aria-label="Upload Screenshot"
               >
                 <ImagePlus className="w-4 h-4" />
               </button>
@@ -118,12 +121,12 @@ export default function WorkspaceToolbar() {
 
       <div className="toolbar-group">
         <Tooltip position="right">
-          <button className="tool-btn" onClick={handleUndo} disabled={historyIndex <= 0} title={`Undo (${formatModShortcut('Z')})`}>
+          <button className="tool-btn" onClick={handleUndo} disabled={historyIndex <= 0} title={`Undo (${formatModShortcut('Z')})`} aria-label="Undo">
             <Undo2 className="w-4 h-4" />
           </button>
         </Tooltip>
         <Tooltip position="right">
-          <button className="tool-btn" onClick={handleRedo} disabled={historyIndex >= history.length - 1} title={`Redo (${formatModShortcut('Y')})`}>
+          <button className="tool-btn" onClick={handleRedo} disabled={historyIndex >= history.length - 1} title={`Redo (${formatModShortcut('Y')})`} aria-label="Redo">
             <Redo2 className="w-4 h-4" />
           </button>
         </Tooltip>
@@ -132,6 +135,7 @@ export default function WorkspaceToolbar() {
             className="tool-btn"
             onClick={clearWorkspace}
             title={`Clear workspace (${formatModShortcut('N')})`}
+            aria-label="Clear workspace"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -335,6 +339,8 @@ export default function WorkspaceToolbar() {
             className={`tool-btn ${sidebarVisible ? 'active' : ''}`}
             onClick={() => setSidebarVisible(prev => !prev)}
             title={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
+            aria-label={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
+            aria-pressed={sidebarVisible}
           >
             <PaintRoller className="w-4 h-4" />
           </button>
@@ -345,6 +351,8 @@ export default function WorkspaceToolbar() {
             className={`tool-btn ${secondarySidebarVisible ? 'active' : ''}`}
             onClick={() => setSecondarySidebarVisible(prev => !prev)}
             title={secondarySidebarVisible ? 'Hide AI & OCR Panel' : 'Show AI & OCR Panel'}
+            aria-label={secondarySidebarVisible ? 'Hide AI & OCR Panel' : 'Show AI & OCR Panel'}
+            aria-pressed={secondarySidebarVisible}
           >
             <Bot className="w-4 h-4" />
           </button>
@@ -371,6 +379,8 @@ export default function WorkspaceToolbar() {
               }
             }}
             title={codeStudioActive ? `Exit Code Studio (${formatModShortcut('Shift + C')})` : `Code Studio (${formatModShortcut('Shift + C')})`}
+            aria-label={codeStudioActive ? 'Exit Code Studio' : 'Code Studio'}
+            aria-pressed={codeStudioActive}
           >
             <Code className="w-4 h-4" />
           </button>
@@ -388,6 +398,7 @@ export default function WorkspaceToolbar() {
             className="tool-btn"
             onClick={() => setAppTheme(toggleTheme(appTheme))}
             title={appTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label={appTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
             {appTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
@@ -397,6 +408,8 @@ export default function WorkspaceToolbar() {
             className={`tool-btn ${settingsVisible ? 'active' : ''}`}
             onClick={() => setSettingsVisible(prev => !prev)}
             title="Settings"
+            aria-label="Settings"
+            aria-pressed={settingsVisible}
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -406,6 +419,8 @@ export default function WorkspaceToolbar() {
             className={`tool-btn ${helpVisible ? 'active' : ''}`}
             onClick={() => setHelpVisible(prev => !prev)}
             title="Help"
+            aria-label="Help"
+            aria-pressed={helpVisible}
           >
             <HelpCircle className="w-4 h-4" />
           </button>

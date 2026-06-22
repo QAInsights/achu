@@ -62,6 +62,11 @@
   transform: scale(0.98);
 }
 
+.share-menu-item:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .share-menu-item svg {
   color: var(--text-tertiary);
   transition: color var(--dur-fast) var(--ease-out-quint);

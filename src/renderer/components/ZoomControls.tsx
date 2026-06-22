@@ -22,6 +22,7 @@ export default function ZoomControls({
           onClick={handleZoomOut}
           disabled={zoomLevel !== 'Zoom to fit' && parseInt(zoomLevel, 10) <= 10}
           title="Zoom out (10%)"
+          aria-label="Zoom out"
         >
           <Minus className="w-3.5 h-3.5" />
         </button>
@@ -42,6 +43,7 @@ export default function ZoomControls({
           onClick={handleZoomIn}
           disabled={zoomLevel !== 'Zoom to fit' && parseInt(zoomLevel, 10) >= 500}
           title="Zoom in (10%)"
+          aria-label="Zoom in"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>

@@ -9,7 +9,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: dropdownFadeIn 180ms var(--ease-out-quint);
+  animation: dropdownFadeIn var(--dur-fast) var(--ease-out-quint);
 }
 
 .font-search-wrapper {
@@ -71,7 +71,7 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
   margin-bottom: 1px;
-  transition: background-color var(--dur-fast);
+  transition: background-color var(--dur-fast) var(--ease-out-quint);
   font-size: 0.85rem;
   color: var(--text-primary);
 }

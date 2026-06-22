@@ -126,6 +126,9 @@ export default function GrabTextModal({ onClose }: GrabTextModalProps) {
     <div className="modal-overlay" onClick={onClose}>
       <div
         className="modal-card grab-text-modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Grab Text"
         onClick={(e) => e.stopPropagation()}
         style={{ position: 'relative' }}
       >
@@ -133,7 +136,7 @@ export default function GrabTextModal({ onClose }: GrabTextModalProps) {
         <button
           className="preset-delete-btn"
           onClick={onClose}
-          title="Close"
+          aria-label="Close"
           style={{
             position: 'absolute',
             top: '16px',

@@ -163,7 +163,7 @@ interface AppContextType {
   applyMeshPalette: (colors: string[]) => void;
   generateRandomPalette: () => void;
   handleDragOver: (e: React.DragEvent) => void;
-  handleDragLeave: () => void;
+  handleDragLeave: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent) => void;
   customPrompt: (message: string, defaultValue?: string) => Promise<string | null>;
   handlePointerDown: (e: React.PointerEvent, idx: number) => void;
@@ -736,7 +736,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
-  const handleDragLeave = () => { setIsDragging(false); };
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear when actually leaving the container, not when moving between children.
+    if (e && e.currentTarget && e.relatedTarget !== null && e.currentTarget.contains(e.relatedTarget as Node)) {
+      return;
+    }
+    setIsDragging(false);
+  };
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {

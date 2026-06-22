@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return;
 
+  // Respect reduced-motion preference: keep the static fallback image
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
   let particles = [];
   let w = 0;
   let h = 0;
@@ -39,6 +42,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start loop
     tick();
+
+    // Pause animation when canvas is off-screen to save CPU
+    const visObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          if (!animationFrameId) tick();
+        } else {
+          if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+          }
+        }
+      }
+    }, { threshold: 0 });
+    visObserver.observe(canvas);
   };
 
   function initParticles() {

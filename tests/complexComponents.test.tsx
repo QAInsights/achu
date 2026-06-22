@@ -948,7 +948,7 @@ describe('HelpModal', () => {
     mockContext.helpVisible = true;
     render(<HelpModal />);
 
-    fireEvent.click(screen.getByTitle('Close help'));
+    fireEvent.click(screen.getByLabelText('Close help'));
     expect(mockContext.setHelpVisible).toHaveBeenCalledWith(false);
   });
 

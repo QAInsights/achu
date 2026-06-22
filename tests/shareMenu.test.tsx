@@ -33,6 +33,7 @@ describe('WorkspaceFooter & ShareMenu', () => {
       setJpegQuality: vi.fn(),
       compressionMode: 'balanced',
       setCompressionMode: vi.fn(),
+      showToast: vi.fn(),
     };
     window.snapFrameAPI = {
       openURL: vi.fn(),
@@ -126,5 +127,30 @@ describe('WorkspaceFooter & ShareMenu', () => {
 
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByTestId('share-menu-popover')).not.toBeInTheDocument();
+  });
+
+  it('shows a success toast after Copy completes', async () => {
+    render(<WorkspaceFooter />);
+    fireEvent.click(screen.getByText('Copy'));
+    await waitFor(() => {
+      expect(mockContext.copyBeautifiedImage).toHaveBeenCalled();
+      expect(mockContext.showToast).toHaveBeenCalledWith('Copied to clipboard');
+    });
+  });
+
+  it('shows a success toast after Export is triggered', () => {
+    render(<WorkspaceFooter />);
+    fireEvent.click(screen.getByText('Export'));
+    expect(mockContext.triggerExport).toHaveBeenCalled();
+    expect(mockContext.showToast).toHaveBeenCalledWith('Exported successfully');
+  });
+
+  it('shows an error toast when Copy fails', async () => {
+    mockContext.copyBeautifiedImage = vi.fn().mockRejectedValue(new Error('clip'));
+    render(<WorkspaceFooter />);
+    fireEvent.click(screen.getByText('Copy'));
+    await waitFor(() => {
+      expect(mockContext.showToast).toHaveBeenCalledWith('Copy failed', 4000);
+    });
   });
 });

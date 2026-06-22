@@ -60,6 +60,9 @@ export default function HelpModal() {
     <div className="modal-overlay" onClick={() => setHelpVisible(false)}>
       <div
         className="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Help"
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '420px',
@@ -73,7 +76,7 @@ export default function HelpModal() {
         <button
           className="preset-delete-btn"
           onClick={() => setHelpVisible(false)}
-          title="Close help"
+          aria-label="Close help"
           style={{
             position: 'absolute',
             top: '16px',

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Download, Copy, Share2, MessageSquare, FolderInput, Layers } from 'lucide-react';
+import { Download, Copy, Share2, MessageSquare, FolderInput, Layers, Loader2 } from 'lucide-react';
 
 import { useAppContext } from '../AppContext';
 import { useBurstPackContext } from '../contexts/BurstPackContext';
@@ -16,11 +16,13 @@ export default function WorkspaceFooter() {
     triggerExport,
     copyBeautifiedImage,
     handleSaveToGallery,
-    galleryToast
+    galleryToast,
+    showToast,
   } = useAppContext();
   const { openModal: openBurstModal, toast: burstToast } = useBurstPackContext();
 
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
   const shareContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,6 +44,41 @@ export default function WorkspaceFooter() {
 
   if (!imageSrc && !noImageMode) return null;
 
+  const handleExportClick = () => {
+    if (busyAction) return;
+    setBusyAction('export');
+    try {
+      triggerExport();
+      showToast?.('Exported successfully');
+    } catch {
+      showToast?.('Export failed', 4000);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleCopyClick = async () => {
+    if (busyAction) return;
+    setBusyAction('copy');
+    try {
+      await copyBeautifiedImage();
+      showToast?.('Copied to clipboard');
+    } catch {
+      showToast?.('Copy failed', 4000);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleGalleryClick = async () => {
+    if (busyAction) return;
+    setBusyAction('gallery');
+    try {
+      await handleSaveToGallery();
+    } finally {
+      setBusyAction(null);
+    }
+  };
 
   const handleShareX = async () => {
     setIsShareMenuOpen(false);
@@ -143,20 +180,20 @@ export default function WorkspaceFooter() {
 
       <div className="toolbar-divider" />
 
-      <button className="btn btn-primary" onClick={triggerExport}>
-        <Download className="w-4 h-4" /> Export
+      <button className="btn btn-primary" onClick={handleExportClick} disabled={busyAction === 'export'}>
+        {busyAction === 'export' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Export
       </button>
 
-      <button className="btn btn-secondary" onClick={handleSaveToGallery} title={`Save to Gallery (${formatModShortcut('S')})`}>
-        <FolderInput className="w-4 h-4" /> Gallery
+      <button className="btn btn-secondary" onClick={handleGalleryClick} title={`Save to Gallery (${formatModShortcut('S')})`} disabled={busyAction === 'gallery'}>
+        {busyAction === 'gallery' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderInput className="w-4 h-4" />} Gallery
       </button>
 
       <button className="btn btn-secondary" onClick={openBurstModal} title="Export platform burst pack to gallery">
         <Layers className="w-4 h-4" /> Burst
       </button>
 
-      <button className="btn btn-secondary" onClick={copyBeautifiedImage}>
-        <Copy className="w-4 h-4" /> Copy
+      <button className="btn btn-secondary" onClick={handleCopyClick} disabled={busyAction === 'copy'}>
+        {busyAction === 'copy' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />} Copy
       </button>
 
       <div className="share-container" ref={shareContainerRef}>
@@ -194,7 +231,7 @@ export default function WorkspaceFooter() {
         )}
       </div>
       {(galleryToast || burstToast) && (
-        <div className="gallery-toast">{galleryToast || burstToast}</div>
+        <div className="gallery-toast" role="status" aria-live="polite">{galleryToast || burstToast}</div>
       )}
     </div>
   );

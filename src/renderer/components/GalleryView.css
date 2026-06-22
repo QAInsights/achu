@@ -122,12 +122,15 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   cursor: pointer;
-  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+  transition: border-color var(--dur-fast) var(--ease-out-quint),
+              box-shadow var(--dur-fast) var(--ease-out-quint),
+              transform var(--dur-fast) var(--ease-out-quint);
 }
 
 .gallery-card:hover {
   border-color: var(--border-strong);
   box-shadow: var(--elev-1);
+  transform: translateY(-2px);
 }
 
 .gallery-card-image {
@@ -178,7 +181,7 @@
   gap: var(--space-2);
   background: rgba(0, 0, 0, 0.55);
   opacity: 0;
-  transition: opacity var(--dur-fast) ease;
+  transition: opacity var(--dur-fast) var(--ease-out-quint);
 }
 
 .gallery-card:hover .gallery-card-overlay {
@@ -196,11 +199,20 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background var(--dur-fast) ease;
+  transition: background var(--dur-fast) var(--ease-out-quint), transform var(--dur-fast) var(--ease-out-quint);
 }
 
 .gallery-card-action:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+.gallery-card-action:active {
+  transform: scale(0.95);
+}
+
+.gallery-card-action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .gallery-card-action.danger:hover {
@@ -210,6 +222,7 @@
 .gallery-card-action:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  background: transparent;
 }
 
 .gallery-card-info {
