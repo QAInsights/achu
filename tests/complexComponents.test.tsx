@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import React from 'react';
 import Sidebar from '../src/renderer/components/Sidebar';
 import SettingsModal from '../src/renderer/components/SettingsModal';
@@ -532,14 +532,25 @@ describe('SettingsModal', () => {
 
   it('calls setSettingsVisible(false) on overlay click', () => {
     mockContext.settingsVisible = true;
-    
+
     const { container } = render(<SettingsModal />);
-    
+
     const overlay = container.querySelector('.modal-overlay');
     if (overlay) {
       fireEvent.click(overlay);
       expect(mockContext.setSettingsVisible).toHaveBeenCalledWith(false);
     }
+  });
+
+  it('calls setSettingsVisible(false) on Escape key press', () => {
+    mockContext.settingsVisible = true;
+
+    render(<SettingsModal />);
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+    expect(mockContext.setSettingsVisible).toHaveBeenCalledWith(false);
   });
 
   it('resets all settings on Reset Defaults click', () => {

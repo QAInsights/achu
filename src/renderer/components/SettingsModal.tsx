@@ -44,6 +44,19 @@ export default function SettingsModal() {
     if (best[1] > 0) setActiveTab(best[0]);
   }, [q]);
 
+  React.useEffect(() => {
+    if (!settingsVisible) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setSettingsVisible(false);
+        setSearchQuery('');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [settingsVisible, setSettingsVisible]);
+
   if (!settingsVisible) return null;
 
   const handleClose = () => {
