@@ -43,6 +43,9 @@ export interface AppSettings {
     annotationFontSize?: number;
     annotationBold?: boolean;
     annotationItalic?: boolean;
+    annotationOutlineEnabled?: boolean;
+    annotationOutlineColor?: string;
+    annotationOutlineWidth?: number;
     position: string;
     captureShortcut?: string;
     autoImportCaptured?: boolean;
@@ -101,6 +104,9 @@ export const defaultSettings: AppSettings = {
     annotationFontSize: 24,
     annotationBold: true,
     annotationItalic: false,
+    annotationOutlineEnabled: false,
+    annotationOutlineColor: '#000000',
+    annotationOutlineWidth: 3,
     position: 'Middle center',
     captureShortcut: 'PrintScreen',
     autoImportCaptured: true,

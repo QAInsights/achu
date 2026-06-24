@@ -76,6 +76,9 @@ interface AppContextType {
   annotationFontSize: number; setAnnotationFontSize: React.Dispatch<React.SetStateAction<number>>;
   annotationBold: boolean; setAnnotationBold: React.Dispatch<React.SetStateAction<boolean>>;
   annotationItalic: boolean; setAnnotationItalic: React.Dispatch<React.SetStateAction<boolean>>;
+  annotationOutlineEnabled: boolean; setAnnotationOutlineEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  annotationOutlineColor: string; setAnnotationOutlineColor: React.Dispatch<React.SetStateAction<string>>;
+  annotationOutlineWidth: number; setAnnotationOutlineWidth: React.Dispatch<React.SetStateAction<number>>;
   systemFonts: string[]; setSystemFonts: React.Dispatch<React.SetStateAction<string[]>>;
   previewFont: string | null; setPreviewFont: React.Dispatch<React.SetStateAction<string | null>>;
   position: string; setPosition: React.Dispatch<React.SetStateAction<string>>;
@@ -293,6 +296,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [annotationFontSize, setAnnotationFontSize] = useState<number>(() => getUserDefault('annotationFontSize', 24));
   const [annotationBold, setAnnotationBold] = useState<boolean>(() => getUserDefault('annotationBold', true));
   const [annotationItalic, setAnnotationItalic] = useState<boolean>(() => getUserDefault('annotationItalic', false));
+  const [annotationOutlineEnabled, setAnnotationOutlineEnabled] = useState<boolean>(() => getUserDefault('annotationOutlineEnabled', false));
+  const [annotationOutlineColor, setAnnotationOutlineColor] = useState<string>(() => getUserDefault('annotationOutlineColor', '#000000'));
+  const [annotationOutlineWidth, setAnnotationOutlineWidth] = useState<number>(() => getUserDefault('annotationOutlineWidth', 3));
   const [systemFonts, setSystemFonts] = useState<string[]>(SYSTEM_FONT_FALLBACKS);
   const [previewFont, setPreviewFont] = useState<string | null>(null);
   const [position, setPosition] = useState<string>('Middle center');
@@ -474,6 +480,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     watermarkPosition, watermarkOpacity,
     watermarkFont, watermarkBold, watermarkItalic,
     annotationFont, annotationFontSize, annotationBold, annotationItalic,
+    annotationOutlineEnabled, annotationOutlineColor, annotationOutlineWidth,
     position, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread,
     noImage: noImageMode,
     imageSrc,
@@ -549,6 +556,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAnnotationFontSize(config.annotationFontSize ?? 24);
     setAnnotationBold(config.annotationBold ?? true);
     setAnnotationItalic(config.annotationItalic ?? false);
+    setAnnotationOutlineEnabled(config.annotationOutlineEnabled ?? false);
+    setAnnotationOutlineColor(config.annotationOutlineColor ?? '#000000');
+    setAnnotationOutlineWidth(config.annotationOutlineWidth ?? 3);
     setPosition(config.position ?? 'Middle center');
     setAnnotations(config.annotations ?? []);
     setRedactions(config.redactions ?? []);
@@ -1766,6 +1776,7 @@ Severity rules:
       watermarkPosition, setWatermarkPosition, watermarkOpacity, setWatermarkOpacity, position, setPosition,
       watermarkFont, setWatermarkFont, watermarkBold, setWatermarkBold, watermarkItalic, setWatermarkItalic,
       annotationFont, setAnnotationFont, annotationFontSize, setAnnotationFontSize, annotationBold, setAnnotationBold, annotationItalic, setAnnotationItalic,
+      annotationOutlineEnabled, setAnnotationOutlineEnabled, annotationOutlineColor, setAnnotationOutlineColor, annotationOutlineWidth, setAnnotationOutlineWidth,
       systemFonts, setSystemFonts,
       previewFont, setPreviewFont,
       activeTool, setActiveTool, arrowStyle, setArrowStyle, annotations, setAnnotations, annotationColor, setAnnotationColor,

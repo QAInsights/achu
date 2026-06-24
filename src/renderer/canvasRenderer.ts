@@ -15,6 +15,9 @@ export interface Annotation {
   fontSize?: number;
   fontBold?: boolean;
   fontItalic?: boolean;
+  outlineEnabled?: boolean;
+  outlineColor?: string;
+  outlineWidth?: number;
   imageSrc?: string;
 }
 
@@ -118,6 +121,9 @@ export interface RenderConfig {
   annotationFontSize?: number;
   annotationBold?: boolean;
   annotationItalic?: boolean;
+  annotationOutlineEnabled?: boolean;
+  annotationOutlineColor?: string;
+  annotationOutlineWidth?: number;
   position: string; // "Middle center", "Top center", "Bottom center", "Middle left", "Middle right"
   annotations?: Annotation[];
   meshPoints?: Array<{ id: string; color: string; x: number; y: number; radius: number }>;
@@ -1319,14 +1325,20 @@ function drawAnnotationsOnCanvas(
       ctx.font = `${style} ${weight} ${fontSize}px ${ann.fontFamily || 'sans-serif'}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
- 
-      ctx.save();
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = Math.max(2, fontSize * 0.15);
-      ctx.lineJoin = 'round';
-      ctx.strokeText(ann.text, 0, 0);
-      ctx.restore();
- 
+
+      if (ann.outlineEnabled) {
+        const outlineColor = ann.outlineColor || '#000000';
+        const outlineW = ann.outlineWidth !== undefined
+          ? Math.max(1, ann.outlineWidth * sf)
+          : Math.max(2, fontSize * 0.15);
+        ctx.save();
+        ctx.strokeStyle = outlineColor;
+        ctx.lineWidth = outlineW;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(ann.text, 0, 0);
+        ctx.restore();
+      }
+
       ctx.fillText(ann.text, 0, 0);
     } else if (ann.type === 'emoji' && ann.text) {
       const fontSize = Math.min(Math.abs(w), Math.abs(h));

@@ -186,6 +186,9 @@ describe('configUtils', () => {
       annotationFontSize: 24,
       annotationBold: true,
       annotationItalic: false,
+      annotationOutlineEnabled: false,
+      annotationOutlineColor: '#000000',
+      annotationOutlineWidth: 3,
       position: 'Middle center',
       annotations: [],
       meshPoints: [
@@ -280,6 +283,9 @@ describe('configUtils', () => {
       setAnnotationFontSize: vi.fn(),
       setAnnotationBold: vi.fn(),
       setAnnotationItalic: vi.fn(),
+      setAnnotationOutlineEnabled: vi.fn(),
+      setAnnotationOutlineColor: vi.fn(),
+      setAnnotationOutlineWidth: vi.fn(),
       setPosition: vi.fn(),
       setAnnotations: vi.fn(),
       setMeshPoints: vi.fn(),
@@ -335,6 +341,9 @@ describe('configUtils', () => {
         annotationFontSize: 30,
         annotationBold: false,
         annotationItalic: true,
+        annotationOutlineEnabled: true,
+        annotationOutlineColor: '#ff0000',
+        annotationOutlineWidth: 5,
         position: 'Top left',
         annotations: [],
         meshPoints: DEFAULT_MESH_POINTS,
@@ -377,6 +386,9 @@ describe('configUtils', () => {
       expect(setters.setAnnotationFontSize).toHaveBeenCalledWith(30);
       expect(setters.setAnnotationBold).toHaveBeenCalledWith(false);
       expect(setters.setAnnotationItalic).toHaveBeenCalledWith(true);
+      expect(setters.setAnnotationOutlineEnabled).toHaveBeenCalledWith(true);
+      expect(setters.setAnnotationOutlineColor).toHaveBeenCalledWith('#ff0000');
+      expect(setters.setAnnotationOutlineWidth).toHaveBeenCalledWith(5);
       expect(setters.setPosition).toHaveBeenCalledWith('Top left');
       expect(setters.setAnnotations).toHaveBeenCalledWith([]);
       expect(setters.setMeshBlur).toHaveBeenCalledWith(80);
@@ -431,6 +443,9 @@ describe('configUtils', () => {
         annotationFontSize: 18,
         annotationBold: false,
         annotationItalic: true,
+        annotationOutlineEnabled: false,
+        annotationOutlineColor: '#000000',
+        annotationOutlineWidth: 3,
         position: 'Top right',
         annotations: [],
         meshPoints: DEFAULT_MESH_POINTS,

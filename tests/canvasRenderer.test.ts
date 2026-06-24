@@ -718,6 +718,39 @@ describe('renderCanvas', () => {
     expect(ctx._state.font).toBe('italic bold 32px Verdana');
   });
 
+  it('does not stroke text by default (no outline)', () => {
+    const { canvas, ctx } = makeMockCanvas();
+    const img = makeMockImage();
+    const annotations: Annotation[] = [{
+      id: '1', type: 'text', x: 0.1, y: 0.1, w: 0.3, h: 0.2,
+      color: '#ffffff', strokeWidth: 4, text: 'Hello World',
+      fontSize: 32,
+    }];
+    const config = { ...baseConfig, annotations };
+    renderCanvas(canvas, img, config);
+    expect(ctx.calls.some(c => c.startsWith('fillText'))).toBe(true);
+    expect(ctx.calls).not.toContain('strokeText');
+  });
+
+  it('strokes text with configurable outline color and width when enabled', () => {
+    const { canvas, ctx } = makeMockCanvas();
+    const img = makeMockImage();
+    const annotations: Annotation[] = [{
+      id: '1', type: 'text', x: 0.1, y: 0.1, w: 0.3, h: 0.2,
+      color: '#ffffff', strokeWidth: 4, text: 'Hello World',
+      fontSize: 32,
+      outlineEnabled: true,
+      outlineColor: '#ff0000',
+      outlineWidth: 6,
+    }];
+    const config = { ...baseConfig, annotations };
+    renderCanvas(canvas, img, config);
+    expect(ctx.calls).toContain('strokeText');
+    expect(ctx._state.strokeStyle).toBe('#ff0000');
+    expect(ctx._state.lineWidth).toBe(6);
+    expect(ctx.calls.some(c => c.startsWith('fillText'))).toBe(true);
+  });
+
   it('renders annotations of type emoji', () => {
     const { canvas, ctx } = makeMockCanvas();
     const img = makeMockImage();

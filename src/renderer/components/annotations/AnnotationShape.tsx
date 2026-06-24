@@ -159,6 +159,11 @@ export default function AnnotationShape({
     const fSize = ann.fontSize || Math.max(12, rectH * 0.7);
     const style = ann.fontItalic ? 'italic' : 'normal';
     const weight = ann.fontBold !== false ? 'bold' : 'normal';
+    const outlineEnabled = ann.outlineEnabled === true;
+    const outlineColor = ann.outlineColor || '#000000';
+    const outlineW = ann.outlineWidth !== undefined
+      ? ann.outlineWidth
+      : Math.max(2, fSize * 0.15);
     return (
       <text
         x={0}
@@ -172,8 +177,8 @@ export default function AnnotationShape({
           fontWeight: weight,
           fontStyle: style,
           paintOrder: 'stroke',
-          stroke: '#0f172a',
-          strokeWidth: `${Math.max(2, fSize * 0.15)}px`,
+          stroke: outlineEnabled ? outlineColor : 'none',
+          strokeWidth: outlineEnabled ? `${outlineW}px` : 0,
           strokeLinejoin: 'round',
         }}
       >

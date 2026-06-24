@@ -40,6 +40,9 @@ export function createGalleryImportConfig(imageSrc: string | null): RenderConfig
     annotationFontSize: 24,
     annotationBold: true,
     annotationItalic: false,
+    annotationOutlineEnabled: false,
+    annotationOutlineColor: '#000000',
+    annotationOutlineWidth: 3,
     position: 'Middle center',
     annotations: [],
     redactions: [],
@@ -131,6 +134,9 @@ export function getCurrentConfig(state: {
   annotationFontSize: number;
   annotationBold: boolean;
   annotationItalic: boolean;
+  annotationOutlineEnabled: boolean;
+  annotationOutlineColor: string;
+  annotationOutlineWidth: number;
   position: string;
   annotations: Annotation[];
   meshPoints: Array<{ id: string; color: string; x: number; y: number; radius: number }>;
@@ -175,6 +181,9 @@ export function getCurrentConfig(state: {
     annotationFontSize: state.annotationFontSize,
     annotationBold: state.annotationBold,
     annotationItalic: state.annotationItalic,
+    annotationOutlineEnabled: state.annotationOutlineEnabled,
+    annotationOutlineColor: state.annotationOutlineColor,
+    annotationOutlineWidth: state.annotationOutlineWidth,
     position: state.position,
     annotations: state.annotations,
     meshPoints: state.meshPoints,
@@ -223,6 +232,9 @@ export function applyConfig(
     setAnnotationFontSize: (v: number) => void;
     setAnnotationBold: (v: boolean) => void;
     setAnnotationItalic: (v: boolean) => void;
+    setAnnotationOutlineEnabled: (v: boolean) => void;
+    setAnnotationOutlineColor: (v: string) => void;
+    setAnnotationOutlineWidth: (v: number) => void;
     setPosition: (v: string) => void;
     setAnnotations: (v: Annotation[]) => void;
     setMeshPoints: (v: Array<{ id: string; color: string; x: number; y: number; radius: number }>) => void;
@@ -268,6 +280,9 @@ export function applyConfig(
   setters.setAnnotationFontSize(config.annotationFontSize ?? 24);
   setters.setAnnotationBold(config.annotationBold ?? true);
   setters.setAnnotationItalic(config.annotationItalic ?? false);
+  setters.setAnnotationOutlineEnabled(config.annotationOutlineEnabled ?? false);
+  setters.setAnnotationOutlineColor(config.annotationOutlineColor ?? '#000000');
+  setters.setAnnotationOutlineWidth(config.annotationOutlineWidth ?? 3);
   setters.setPosition(config.position ?? 'Middle center');
   setters.setAnnotations(config.annotations ?? []);
   setters.setMeshPoints(config.meshPoints ?? DEFAULT_MESH_POINTS);

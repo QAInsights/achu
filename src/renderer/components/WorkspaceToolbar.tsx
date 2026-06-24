@@ -12,6 +12,7 @@ import {
   Slash,
   ArrowUpRight,
   Type,
+  TypeOutline,
   Pencil,
   Smile,
   Palette,
@@ -47,6 +48,9 @@ export default function WorkspaceToolbar() {
     annotationFontSize = 24, setAnnotationFontSize,
     annotationBold = true, setAnnotationBold,
     annotationItalic = false, setAnnotationItalic,
+    annotationOutlineEnabled = false, setAnnotationOutlineEnabled,
+    annotationOutlineColor = '#000000', setAnnotationOutlineColor,
+    annotationOutlineWidth = 3, setAnnotationOutlineWidth,
     systemFonts = [],
     pushHistory, getCurrentConfig, selectFile, colorInputRef,
     appTheme, setAppTheme,
@@ -279,6 +283,75 @@ export default function WorkspaceToolbar() {
                 I
               </button>
             </Tooltip>
+            <Tooltip position="right">
+              <button
+                className={`tool-btn ${annotationOutlineEnabled ? 'active' : ''}`}
+                style={{
+                  backgroundColor: annotationOutlineEnabled ? 'var(--accent)' : 'transparent',
+                  color: annotationOutlineEnabled ? 'var(--on-accent)' : 'var(--text-secondary)',
+                }}
+                onClick={() => {
+                  setAnnotationOutlineEnabled(!annotationOutlineEnabled);
+                  pushHistory({ ...getCurrentConfig(), annotationOutlineEnabled: !annotationOutlineEnabled });
+                }}
+                title="Text Outline (toggle on/off)"
+              >
+                <TypeOutline className="w-4 h-4" style={{ strokeWidth: 2.5 }} />
+              </button>
+            </Tooltip>
+            <Tooltip position="right">
+              <button
+                className="tool-btn"
+                style={{
+                  position: 'relative',
+                  border: `1px solid ${annotationOutlineColor}`,
+                  backgroundColor: 'var(--surface-2)',
+                  padding: 0,
+                }}
+                title="Outline Color"
+              >
+                <span style={{ display: 'block', width: '16px', height: '16px', borderRadius: '2px', background: annotationOutlineColor }} />
+                <input
+                  type="color"
+                  value={annotationOutlineColor}
+                  onChange={(e) => {
+                    setAnnotationOutlineColor(e.target.value);
+                    if (!annotationOutlineEnabled) {
+                      setAnnotationOutlineEnabled(true);
+                      pushHistory({ ...getCurrentConfig(), annotationOutlineColor: e.target.value, annotationOutlineEnabled: true });
+                    } else {
+                      pushHistory({ ...getCurrentConfig(), annotationOutlineColor: e.target.value });
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    opacity: 0,
+                    cursor: 'pointer',
+                  }}
+                />
+              </button>
+            </Tooltip>
+            {annotationOutlineEnabled && (
+              <Tooltip position="right">
+                <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>
+                  <span className="toolbar-control-label">Outline</span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={annotationOutlineWidth}
+                    onChange={(e) => setAnnotationOutlineWidth(parseInt(e.target.value, 10))}
+                    style={{ width: '50px' }}
+                    title={`Outline Width: ${annotationOutlineWidth}px`}
+                  />
+                  <span className="toolbar-control-value">{annotationOutlineWidth}px</span>
+                </div>
+              </Tooltip>
+            )}
           </div>
         </>
       )}

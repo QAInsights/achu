@@ -22,6 +22,10 @@ export default function ExtraSettings() {
     annotationFontSize = 24, setAnnotationFontSize,
     annotationBold = true, setAnnotationBold,
     annotationItalic = false, setAnnotationItalic,
+    annotationOutlineEnabled = false, setAnnotationOutlineEnabled,
+    annotationOutlineColor = '#000000', setAnnotationOutlineColor,
+    annotationOutlineWidth = 3, setAnnotationOutlineWidth,
+    activeTool,
     systemFonts = [],
     getCurrentConfig, pushHistory, handleSliderRelease
   } = useAppContext();
@@ -118,6 +122,7 @@ export default function ExtraSettings() {
         </div>
 
         {/* Font style controls for text tool */}
+        {activeTool === 'text' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
             <span className="control-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Font Family</span>
@@ -189,7 +194,78 @@ export default function ExtraSettings() {
               </button>
             </div>
           </div>
+
+          {/* Text Outline controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <label className="switch" style={{ flexShrink: 0 }}>
+              <input
+                type="checkbox"
+                checked={annotationOutlineEnabled}
+                onChange={(e) => {
+                  setAnnotationOutlineEnabled(e.target.checked);
+                  pushHistory({ ...getCurrentConfig(), annotationOutlineEnabled: e.target.checked });
+                }}
+              />
+              <span className="slider" />
+            </label>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Outline</span>
+            <div style={{ position: 'relative', width: '28px', height: '28px', flexShrink: 0 }}>
+              <button
+                className="btn btn-secondary"
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  padding: 0,
+                  border: `1px solid ${annotationOutlineColor}`,
+                  backgroundColor: 'var(--surface-2)',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+                title="Outline Color"
+              >
+                <span style={{ display: 'block', width: '14px', height: '14px', borderRadius: '2px', background: annotationOutlineColor, margin: 'auto' }} />
+              </button>
+              <input
+                type="color"
+                value={annotationOutlineColor}
+                onChange={(e) => {
+                  setAnnotationOutlineColor(e.target.value);
+                  if (!annotationOutlineEnabled) {
+                    setAnnotationOutlineEnabled(true);
+                    pushHistory({ ...getCurrentConfig(), annotationOutlineColor: e.target.value, annotationOutlineEnabled: true });
+                  } else {
+                    pushHistory({ ...getCurrentConfig(), annotationOutlineColor: e.target.value });
+                  }
+                }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  opacity: 0,
+                  cursor: 'pointer',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
+              <div className="control-label-container">
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Width</span>
+                <span className="control-value">{annotationOutlineWidth}px</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="20"
+                value={annotationOutlineWidth}
+                onChange={(e) => setAnnotationOutlineWidth(parseInt(e.target.value, 10))}
+                onMouseUp={handleSliderRelease}
+                disabled={!annotationOutlineEnabled}
+                style={{ opacity: annotationOutlineEnabled ? 1 : 0.4 }}
+              />
+            </div>
+          </div>
         </div>
+        )}
 
         {annotations.length > 0 && (
           <button 

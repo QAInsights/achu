@@ -159,8 +159,8 @@ describe('storageUtils', () => {
       expect(DEFAULT_SETTINGS).toHaveProperty('galleryFolder', '');
     });
 
-    it('has exactly 24 keys', () => {
-      expect(Object.keys(DEFAULT_SETTINGS)).toHaveLength(24);
+    it('has exactly 27 keys', () => {
+      expect(Object.keys(DEFAULT_SETTINGS)).toHaveLength(27);
     });
   });
 });

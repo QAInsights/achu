@@ -50,6 +50,7 @@ beforeEach(() => {
     setAnnotationColor: vi.fn(),
     annotationStrokeWidth: 4,
     setAnnotationStrokeWidth: vi.fn(),
+    activeTool: 'text',
     annotations: [],
     setAnnotations: vi.fn(),
     watermarkEnabled: false,
@@ -76,6 +77,12 @@ beforeEach(() => {
     setAnnotationBold: vi.fn(),
     annotationItalic: false,
     setAnnotationItalic: vi.fn(),
+    annotationOutlineEnabled: false,
+    setAnnotationOutlineEnabled: vi.fn(),
+    annotationOutlineColor: '#000000',
+    setAnnotationOutlineColor: vi.fn(),
+    annotationOutlineWidth: 3,
+    setAnnotationOutlineWidth: vi.fn(),
     systemFonts: [],
     handleSliderRelease: vi.fn(),
     getCurrentConfig: vi.fn(() => ({})),
@@ -415,10 +422,10 @@ describe('ExtraSettings', () => {
 
   it('toggles watermark', () => {
     render(<ExtraSettings />);
-    
-    const checkbox = screen.getByRole('checkbox');
+
+    const checkbox = screen.getAllByRole('checkbox')[1];
     fireEvent.click(checkbox);
-    
+
     expect(mockContext.setWatermarkEnabled).toHaveBeenCalledWith(true);
     expect(mockContext.pushHistory).toHaveBeenCalled();
   });
@@ -464,7 +471,7 @@ describe('ExtraSettings', () => {
     mockContext.watermarkEnabled = true;
     render(<ExtraSettings />);
     
-    const slider = screen.getAllByRole('slider')[3];
+    const slider = screen.getAllByRole('slider')[4];
     fireEvent.change(slider, { target: { value: '75' } });
     
     expect(mockContext.setWatermarkOpacity).toHaveBeenCalledWith(0.75);

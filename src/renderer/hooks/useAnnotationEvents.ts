@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, RefObject } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, RefObject } from 'react';
 import { Annotation } from '../canvasRenderer';
 import { SnapGuide, snapDragPosition, snapResizeDimensions, snapDrawingDimensions } from '../utils/snapUtils';
 
@@ -18,6 +18,12 @@ interface UseAnnotationEventsProps {
   setAnnotationBold?: (bold: boolean) => void;
   annotationItalic?: boolean;
   setAnnotationItalic?: (italic: boolean) => void;
+  annotationOutlineEnabled?: boolean;
+  setAnnotationOutlineEnabled?: (enabled: boolean) => void;
+  annotationOutlineColor?: string;
+  setAnnotationOutlineColor?: (color: string) => void;
+  annotationOutlineWidth?: number;
+  setAnnotationOutlineWidth?: (width: number) => void;
   onSaveHistory: (newAnns?: Annotation[]) => void;
   customPrompt: (message: string, defaultValue?: string) => Promise<string | null>;
   containerRef: RefObject<HTMLDivElement | null>;
@@ -51,6 +57,12 @@ export function useAnnotationEvents({
   setAnnotationBold,
   annotationItalic,
   setAnnotationItalic,
+  annotationOutlineEnabled,
+  setAnnotationOutlineEnabled,
+  annotationOutlineColor,
+  setAnnotationOutlineColor,
+  annotationOutlineWidth,
+  setAnnotationOutlineWidth,
   onSaveHistory,
   customPrompt,
   containerRef,
@@ -97,6 +109,20 @@ export function useAnnotationEvents({
     setDimensions({ width: rect.width || 1, height: rect.height || 1 });
     return () => observer.disconnect();
   }, [containerRef]);
+
+  // Sync dimensions on every render so that size changes caused by parent
+  // re-renders (e.g. image loading after gallery close) are caught even if
+  // the ResizeObserver timing misses the transition from 0×0 to real size.
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    setDimensions(prev => {
+      if (prev.width === w && prev.height === h) return prev;
+      return { width: w, height: h };
+    });
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -177,13 +203,25 @@ export function useAnnotationEvents({
       updatedAnn.fontItalic = annotationItalic;
       changed = true;
     }
+    if (annotationOutlineEnabled !== undefined && selectedAnn.outlineEnabled !== annotationOutlineEnabled) {
+      updatedAnn.outlineEnabled = annotationOutlineEnabled;
+      changed = true;
+    }
+    if (annotationOutlineColor !== undefined && selectedAnn.outlineColor !== annotationOutlineColor) {
+      updatedAnn.outlineColor = annotationOutlineColor;
+      changed = true;
+    }
+    if (annotationOutlineWidth !== undefined && selectedAnn.outlineWidth !== annotationOutlineWidth) {
+      updatedAnn.outlineWidth = annotationOutlineWidth;
+      changed = true;
+    }
 
     if (changed) {
       const updated = annotations.map(a => (a.id === selectedId ? updatedAnn : a));
       setAnnotations(updated);
       onSaveHistory(updated);
     }
-  }, [annotationFont, annotationFontSize, annotationBold, annotationItalic, selectedId]);
+  }, [annotationFont, annotationFontSize, annotationBold, annotationItalic, annotationOutlineEnabled, annotationOutlineColor, annotationOutlineWidth, selectedId]);
 
   // Update active selectors state to match selected annotation's font properties
   useEffect(() => {
@@ -203,7 +241,16 @@ export function useAnnotationEvents({
     if (selectedAnn.fontItalic !== undefined && selectedAnn.fontItalic !== annotationItalic && setAnnotationItalic) {
       setAnnotationItalic(selectedAnn.fontItalic);
     }
-  }, [selectedId, setAnnotationFont, setAnnotationFontSize, setAnnotationBold, setAnnotationItalic]);
+    if (selectedAnn.outlineEnabled !== undefined && selectedAnn.outlineEnabled !== annotationOutlineEnabled && setAnnotationOutlineEnabled) {
+      setAnnotationOutlineEnabled(selectedAnn.outlineEnabled);
+    }
+    if (selectedAnn.outlineColor !== undefined && selectedAnn.outlineColor !== annotationOutlineColor && setAnnotationOutlineColor) {
+      setAnnotationOutlineColor(selectedAnn.outlineColor);
+    }
+    if (selectedAnn.outlineWidth !== undefined && selectedAnn.outlineWidth !== annotationOutlineWidth && setAnnotationOutlineWidth) {
+      setAnnotationOutlineWidth(selectedAnn.outlineWidth);
+    }
+  }, [selectedId, setAnnotationFont, setAnnotationFontSize, setAnnotationBold, setAnnotationItalic, setAnnotationOutlineEnabled, setAnnotationOutlineColor, setAnnotationOutlineWidth]);
 
   const handleFreehandDraw = (mouseX: number, mouseY: number, startX: number, startY: number) => {
     const newPoints = [...penPoints, { x: mouseX, y: mouseY }];
@@ -342,6 +389,9 @@ export function useAnnotationEvents({
       fontSize: activeTool === 'text' ? (annotationFontSize || 24) : undefined,
       fontBold: activeTool === 'text' ? (annotationBold ?? true) : undefined,
       fontItalic: activeTool === 'text' ? (annotationItalic ?? false) : undefined,
+      outlineEnabled: activeTool === 'text' ? (annotationOutlineEnabled ?? false) : undefined,
+      outlineColor: activeTool === 'text' ? (annotationOutlineColor || '#000000') : undefined,
+      outlineWidth: activeTool === 'text' ? (annotationOutlineWidth ?? 3) : undefined,
     };
     if (activeTool === 'pen') setPenPoints([{ x: mouseX, y: mouseY }]);
     setDrawingAnnotation(newAnn);
