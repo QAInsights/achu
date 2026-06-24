@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Annotation } from './canvasRenderer';
 import { useAppContext } from './AppContext';
 import { useAnnotationEvents } from './hooks/useAnnotationEvents';
@@ -6,7 +6,14 @@ import AnnotationShape from './components/annotations/AnnotationShape';
 import SelectionBox from './components/annotations/SelectionBox';
 import TextEditor from './components/annotations/TextEditor';
 import SnapGuides from './components/annotations/SnapGuides';
+import AnnotationContextMenu, { LayerOrderAction } from './components/AnnotationContextMenu';
 import { transformCoordinates, getDeleteButtonPosition } from './utils/layoutUtils';
+import {
+  bringToFront,
+  bringForward,
+  sendBackward,
+  sendToBack,
+} from './utils/layerOrderUtils';
 
 interface AnnotationsLayerProps {
   annotations: Annotation[];
@@ -48,6 +55,7 @@ export default function AnnotationsLayer({
     dimensions,
     drawingAnnotation,
     selectedId,
+    setSelectedId,
     activeGuides,
     editingTextId,
     setEditingTextId,
@@ -85,6 +93,30 @@ export default function AnnotationsLayer({
   if (drawingAnnotation) {
     allAnnotations.push(drawingAnnotation);
   }
+
+  const [orderMenu, setOrderMenu] = useState<{ x: number; y: number; id: string } | null>(null);
+
+  const handleAnnotationContextMenu = (e: React.MouseEvent, ann: Annotation) => {
+    if (activeTool !== 'pointer') return;
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedId(ann.id);
+    setOrderMenu({ x: e.clientX, y: e.clientY, id: ann.id });
+  };
+
+  const handleOrder = (action: LayerOrderAction) => {
+    if (!orderMenu) return;
+    const id = orderMenu.id;
+    let updated = annotations;
+    if (action === 'bring-to-front') updated = bringToFront(annotations, id);
+    else if (action === 'bring-forward') updated = bringForward(annotations, id);
+    else if (action === 'send-backward') updated = sendBackward(annotations, id);
+    else if (action === 'send-to-back') updated = sendToBack(annotations, id);
+    if (updated !== annotations) {
+      setAnnotations(updated);
+      onSaveHistory(updated);
+    }
+  };
 
   return (
     <div
@@ -129,6 +161,7 @@ export default function AnnotationsLayer({
                 style={{ pointerEvents, cursor: activeTool === 'pointer' ? 'move' : 'crosshair' }}
                 onPointerDown={(e) => startDrag(e, ann)}
                 onDoubleClick={(e) => handleDoubleClick(e, ann)}
+                onContextMenu={(e) => handleAnnotationContextMenu(e, ann)}
               >
                 {(ann.type === 'line' || ann.type === 'arrow' || ann.type === 'pen') && (
                   <g style={{ opacity: 0 }}>
@@ -237,6 +270,15 @@ export default function AnnotationsLayer({
           </div>
         );
       })()}
+
+      {orderMenu && (
+        <AnnotationContextMenu
+          x={orderMenu.x}
+          y={orderMenu.y}
+          onClose={() => setOrderMenu(null)}
+          onOrder={handleOrder}
+        />
+      )}
 
       {editingTextId && (() => {
         const ann = annotations.find(a => a.id === editingTextId);
