@@ -98,26 +98,30 @@ export function useAnnotationEvents({
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      if (entries.length > 0) {
-        const { width, height } = entries[0].contentRect;
-        setDimensions({ width: width || 1, height: height || 1 });
-      }
+    const observer = new ResizeObserver(() => {
+      // Use offsetWidth/offsetHeight (pre-transform CSS layout size) to match
+      // the SVG coordinate space. getBoundingClientRect() returns post-transform
+      // dimensions which differ from the SVG's coordinate system when the parent
+      // has a CSS transform (e.g. zoom scale), causing annotation misplacement.
+      const el = containerRef.current;
+      if (!el) return;
+      setDimensions({ width: el.offsetWidth || 1, height: el.offsetHeight || 1 });
     });
     observer.observe(containerRef.current);
-    const rect = containerRef.current.getBoundingClientRect();
-    setDimensions({ width: rect.width || 1, height: rect.height || 1 });
+    const el = containerRef.current;
+    setDimensions({ width: el.offsetWidth || 1, height: el.offsetHeight || 1 });
     return () => observer.disconnect();
   }, [containerRef]);
 
   // Sync dimensions on every render so that size changes caused by parent
   // re-renders (e.g. image loading after gallery close) are caught even if
   // the ResizeObserver timing misses the transition from 0×0 to real size.
+  // Use offsetWidth/offsetHeight (pre-transform) to match SVG coordinate space.
   useLayoutEffect(() => {
     if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const w = rect.width || 1;
-    const h = rect.height || 1;
+    const el = containerRef.current;
+    const w = el.offsetWidth || 1;
+    const h = el.offsetHeight || 1;
     setDimensions(prev => {
       if (prev.width === w && prev.height === h) return prev;
       return { width: w, height: h };

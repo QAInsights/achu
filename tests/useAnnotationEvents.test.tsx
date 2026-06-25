@@ -488,10 +488,10 @@ describe('useAnnotationEvents', () => {
   it('syncs dimensions from container on re-render via useLayoutEffect', () => {
     // Create a real DOM element with a non-trivial size
     const div = document.createElement('div');
-    // jsdom doesn't do layout, so getBoundingClientRect returns 0s by default.
-    // We mock it to simulate a container that has real dimensions.
-    const mockRect = { width: 800, height: 600, top: 0, left: 0, right: 800, bottom: 600, x: 0, y: 0, toJSON: () => {} };
-    div.getBoundingClientRect = () => mockRect;
+    // jsdom doesn't do layout, so offsetWidth/offsetHeight return 0 by default.
+    // We mock them to simulate a container that has real dimensions.
+    Object.defineProperty(div, 'offsetWidth', { value: 800, configurable: true, writable: true });
+    Object.defineProperty(div, 'offsetHeight', { value: 600, configurable: true, writable: true });
     containerRef = { current: div };
 
     const { result, rerender } = renderHook(() =>
@@ -512,8 +512,8 @@ describe('useAnnotationEvents', () => {
     expect(result.current.dimensions).toEqual({ width: 800, height: 600 });
 
     // Simulate the container growing (e.g. image loaded after gallery close)
-    const grownRect = { width: 1024, height: 768, top: 0, left: 0, right: 1024, bottom: 768, x: 0, y: 0, toJSON: () => {} };
-    div.getBoundingClientRect = () => grownRect;
+    Object.defineProperty(div, 'offsetWidth', { value: 1024, configurable: true, writable: true });
+    Object.defineProperty(div, 'offsetHeight', { value: 768, configurable: true, writable: true });
 
     // Re-render (e.g. parent re-renders after image load) — layout effect should sync
     rerender();
@@ -523,8 +523,8 @@ describe('useAnnotationEvents', () => {
 
   it('does not update dimensions when container size has not changed', () => {
     const div = document.createElement('div');
-    const mockRect = { width: 500, height: 400, top: 0, left: 0, right: 500, bottom: 400, x: 0, y: 0, toJSON: () => {} };
-    div.getBoundingClientRect = () => mockRect;
+    Object.defineProperty(div, 'offsetWidth', { value: 500, configurable: true, writable: true });
+    Object.defineProperty(div, 'offsetHeight', { value: 400, configurable: true, writable: true });
     containerRef = { current: div };
 
     const { result, rerender } = renderHook(() =>
@@ -546,5 +546,41 @@ describe('useAnnotationEvents', () => {
     // Re-render with no size change — dimensions should stay the same
     rerender();
     expect(result.current.dimensions).toEqual({ width: 500, height: 400 });
+  });
+
+  it('uses pre-transform dimensions (offsetWidth) not post-transform (getBoundingClientRect) for rendering', () => {
+    // Simulate a CSS transform: scale(0.5) on the parent container.
+    // getBoundingClientRect returns post-transform (scaled) dimensions,
+    // but offsetWidth/offsetHeight return pre-transform (CSS layout) dimensions.
+    // The SVG coordinate space uses pre-transform dimensions, so dimensions
+    // state must use offsetWidth/offsetHeight to render annotations correctly.
+    const div = document.createElement('div');
+    // Pre-transform size: 800x600 (what the SVG coordinate space uses)
+    Object.defineProperty(div, 'offsetWidth', { value: 800, configurable: true, writable: true });
+    Object.defineProperty(div, 'offsetHeight', { value: 600, configurable: true, writable: true });
+    // Post-transform size: 400x300 (what getBoundingClientRect returns after scale(0.5))
+    div.getBoundingClientRect = () => ({
+      width: 400, height: 300, top: 0, left: 0, right: 400, bottom: 300, x: 0, y: 0, toJSON: () => {}
+    });
+    containerRef = { current: div };
+
+    const { result } = renderHook(() =>
+      useAnnotationEvents({
+        annotations: [],
+        setAnnotations,
+        activeTool: 'pointer',
+        color: '#ff0000',
+        strokeWidth: 4,
+        arrowStyle: 'classic',
+        onSaveHistory,
+        customPrompt,
+        containerRef,
+      })
+    );
+
+    // dimensions should be the pre-transform size (800x600), NOT the post-transform (400x300)
+    expect(result.current.dimensions).toEqual({ width: 800, height: 600 });
+    expect(result.current.dimensions.width).not.toBe(400);
+    expect(result.current.dimensions.height).not.toBe(300);
   });
 });
