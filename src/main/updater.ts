@@ -8,7 +8,8 @@ const isDev = !app.isPackaged;
 
 const GITHUB_LATEST_URL = 'https://api.github.com/repos/QAInsights/achu/releases/latest';
 const RELEASE_PAGE_URL = 'https://github.com/QAInsights/achu/releases/latest';
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour for startup/auto checks
+const MANUAL_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes for manual checks
 
 /**
  * Compares two CalVer or SemVer strings segment by segment.
@@ -70,35 +71,52 @@ interface UpdateCheckResult {
 
 /**
  * Core logic for checking updates against GitHub releases API.
+ * Uses ETag-based conditional requests to avoid hitting the 60 req/hr
+ * unauthenticated rate limit. 304 responses don't count against the limit.
  * Exported so it can be called from both IPC handler and startup auto-check.
  */
 export async function performUpdateCheck(useCache: boolean): Promise<UpdateCheckResult> {
   const settings = loadSettings();
+  const ttl = useCache ? CACHE_TTL_MS : MANUAL_CACHE_TTL_MS;
 
-  // Use cached result if within TTL and not forced
-  if (useCache && settings.lastUpdateCheck && settings.lastUpdateResult) {
+  // Use cached result if within TTL
+  if (settings.lastUpdateCheck && settings.lastUpdateResult) {
     const age = Date.now() - settings.lastUpdateCheck;
-    if (age < CACHE_TTL_MS) {
+    if (age < ttl) {
       return settings.lastUpdateResult;
     }
   }
 
-  const currentVersion = app.getVersion();
-  const response = await fetch(GITHUB_LATEST_URL, {
-    headers: { 'User-Agent': 'achu-updater' },
-  });
+  // Build headers — include ETag for conditional request if we have one
+  const headers: Record<string, string> = { 'User-Agent': 'achu-updater' };
+  if (settings.lastUpdateETag) {
+    headers['If-None-Match'] = settings.lastUpdateETag;
+  }
+
+  const response = await fetch(GITHUB_LATEST_URL, { headers });
+
+  // 304 Not Modified — release hasn't changed, use cached result
+  if (response.status === 304) {
+    if (settings.lastUpdateResult) {
+      persistUpdateCache(settings, settings.lastUpdateResult, settings.lastUpdateETag || null);
+      return settings.lastUpdateResult;
+    }
+  }
 
   if (!response.ok) {
     throw new Error(`GitHub API returned status ${response.status}`);
   }
 
+  // Store ETag for future conditional requests
+  const etag = response.headers.get('etag') || null;
+
   const data = (await response.json()) as any;
   const latestVersion = data.tag_name || '';
-  const newer = isNewerVersion(currentVersion, latestVersion);
+  const newer = isNewerVersion(app.getVersion(), latestVersion);
 
   if (!newer) {
     const result: UpdateCheckResult = { available: false };
-    persistUpdateCache(settings, result);
+    persistUpdateCache(settings, result, etag);
     return result;
   }
 
@@ -165,17 +183,23 @@ export async function performUpdateCheck(useCache: boolean): Promise<UpdateCheck
     releaseUrl: data.html_url || RELEASE_PAGE_URL,
     downloadSize,
   };
-  persistUpdateCache(settings, result);
+  persistUpdateCache(settings, result, etag);
   return result;
 }
 
-function persistUpdateCache(settings: AppSettings, result: UpdateCheckResult) {
+function persistUpdateCache(settings: AppSettings, result: UpdateCheckResult, etag: string | null) {
   settings.lastUpdateCheck = Date.now();
   settings.lastUpdateResult = {
     available: result.available,
     version: result.version,
     releaseUrl: result.releaseUrl,
+    downloadUrl: result.downloadUrl,
+    downloadSize: result.downloadSize,
+    releaseNotes: result.releaseNotes,
   };
+  if (etag !== null) {
+    settings.lastUpdateETag = etag;
+  }
   saveSettings(settings);
 }
 
@@ -417,7 +441,8 @@ function performLinuxUpdate(tempPath: string): void {
  * Registers IPC handlers for update checks and update installation.
  */
 export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => BrowserWindow | null) {
-  // Check for updates (force = true bypasses cache)
+  // Check for updates. force=true uses a shorter 5-min cache TTL (manual check);
+  // force=false uses the full 1-hour TTL (startup auto-check).
   ipcMain.handle('update:check', async (_event: any, force?: boolean) => {
     try {
       const result = await performUpdateCheck(!force);

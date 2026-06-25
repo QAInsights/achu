@@ -63,7 +63,8 @@ export interface AppSettings {
   galleryFolder?: string;
   checkForUpdatesOnStartup?: boolean;
   lastUpdateCheck?: number;
-  lastUpdateResult?: { available: boolean; version?: string; releaseUrl?: string } | null;
+  lastUpdateResult?: { available: boolean; version?: string; releaseUrl?: string; downloadUrl?: string; downloadSize?: number; releaseNotes?: string } | null;
+  lastUpdateETag?: string | null;
 }
 
 export const getSettingsPath = () => {
@@ -119,6 +120,7 @@ export const defaultSettings: AppSettings = {
   checkForUpdatesOnStartup: true,
   lastUpdateCheck: 0,
   lastUpdateResult: null,
+  lastUpdateETag: null,
 };
 
 export function loadSettings(): AppSettings {
@@ -146,6 +148,9 @@ export function loadSettings(): AppSettings {
       }
       if (parsed.lastUpdateResult === undefined) {
         parsed.lastUpdateResult = defaultSettings.lastUpdateResult;
+      }
+      if (parsed.lastUpdateETag === undefined) {
+        parsed.lastUpdateETag = defaultSettings.lastUpdateETag;
       }
       return parsed;
     }

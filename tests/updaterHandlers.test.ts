@@ -31,6 +31,7 @@ vi.mock('../src/main/settings', () => ({
     checkForUpdatesOnStartup: true,
     lastUpdateCheck: 0,
     lastUpdateResult: null,
+    lastUpdateETag: null,
   })),
   saveSettings: vi.fn(),
   getDefaultGalleryFolder: () => '/mocked/home/achu-screenshots',
@@ -43,6 +44,19 @@ function getHandler(channel: string) {
   return call ? call[1] : null;
 }
 
+/** Builds a mock fetch Response with headers support (for ETag). */
+function mockResponse(body: any, opts: { ok?: boolean; status?: number; etag?: string } = {}) {
+  const { ok = true, status = 200, etag } = opts;
+  return {
+    ok,
+    status,
+    headers: {
+      get: (name: string) => name.toLowerCase() === 'etag' ? (etag || null) : null,
+    },
+    json: () => Promise.resolve(body),
+  };
+}
+
 const mockMainWindow = { webContents: { send: vi.fn() } };
 
 beforeEach(() => {
@@ -52,10 +66,10 @@ beforeEach(() => {
 
 describe('Updater handlers (update:check)', () => {
   it('returns available:false when current is newer', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ tag_name: 'v2026.5.29', assets: [], body: '' }),
-    }) as any;
+    global.fetch = vi.fn().mockResolvedValue(mockResponse(
+      { tag_name: 'v2026.5.29', assets: [], body: '' },
+      { etag: '"abc123"' }
+    )) as any;
 
     const handler = getHandler('update:check');
     const result = await handler();
@@ -68,18 +82,15 @@ describe('Updater handlers (update:check)', () => {
     Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
     Object.defineProperty(process, 'arch', { value: 'x64', configurable: true });
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        tag_name: 'v2026.6.1',
-        body: 'Release notes',
-        html_url: 'https://github.com/releases/1',
-        assets: [
-          { name: 'achu-x64-2026.6.1.exe', browser_download_url: 'https://dl/x64.exe' },
-          { name: 'achu-arm64-2026.6.1.exe', browser_download_url: 'https://dl/arm64.exe' },
-        ],
-      }),
-    }) as any;
+    global.fetch = vi.fn().mockResolvedValue(mockResponse({
+      tag_name: 'v2026.6.1',
+      body: 'Release notes',
+      html_url: 'https://github.com/releases/1',
+      assets: [
+        { name: 'achu-x64-2026.6.1.exe', browser_download_url: 'https://dl/x64.exe' },
+        { name: 'achu-arm64-2026.6.1.exe', browser_download_url: 'https://dl/arm64.exe' },
+      ],
+    })) as any;
 
     const handler = getHandler('update:check');
     const result = await handler();
@@ -97,18 +108,15 @@ describe('Updater handlers (update:check)', () => {
     Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
     Object.defineProperty(process, 'arch', { value: 'arm64', configurable: true });
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        tag_name: 'v2026.6.1',
-        body: '',
-        html_url: 'https://github.com/releases/1',
-        assets: [
-          { name: 'achu-x64-2026.6.1.exe', browser_download_url: 'https://dl/x64.exe' },
-          { name: 'achu-arm64-2026.6.1.exe', browser_download_url: 'https://dl/arm64.exe' },
-        ],
-      }),
-    }) as any;
+    global.fetch = vi.fn().mockResolvedValue(mockResponse({
+      tag_name: 'v2026.6.1',
+      body: '',
+      html_url: 'https://github.com/releases/1',
+      assets: [
+        { name: 'achu-x64-2026.6.1.exe', browser_download_url: 'https://dl/x64.exe' },
+        { name: 'achu-arm64-2026.6.1.exe', browser_download_url: 'https://dl/arm64.exe' },
+      ],
+    })) as any;
 
     const handler = getHandler('update:check');
     const result = await handler();
@@ -122,17 +130,14 @@ describe('Updater handlers (update:check)', () => {
     const origPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        tag_name: 'v2026.6.1',
-        body: '',
-        html_url: 'https://github.com/releases/1',
-        assets: [
-          { name: 'achu-linux.AppImage', browser_download_url: 'https://dl/app.AppImage' },
-        ],
-      }),
-    }) as any;
+    global.fetch = vi.fn().mockResolvedValue(mockResponse({
+      tag_name: 'v2026.6.1',
+      body: '',
+      html_url: 'https://github.com/releases/1',
+      assets: [
+        { name: 'achu-linux.AppImage', browser_download_url: 'https://dl/app.AppImage' },
+      ],
+    })) as any;
 
     const handler = getHandler('update:check');
     const result = await handler();
@@ -142,10 +147,7 @@ describe('Updater handlers (update:check)', () => {
   });
 
   it('throws friendly error on API error response', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-    }) as any;
+    global.fetch = vi.fn().mockResolvedValue(mockResponse(null, { ok: false, status: 500 })) as any;
 
     const handler = getHandler('update:check');
     await expect(handler()).rejects.toThrow('temporarily unavailable');
@@ -162,17 +164,14 @@ describe('Updater handlers (update:check)', () => {
     const origPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        tag_name: 'v2026.6.1',
-        body: '',
-        html_url: 'https://github.com/releases/1',
-        assets: [
-          { name: 'achu-universal.dmg', browser_download_url: 'https://dl/app.dmg' },
-        ],
-      }),
-    }) as any;
+    global.fetch = vi.fn().mockResolvedValue(mockResponse({
+      tag_name: 'v2026.6.1',
+      body: '',
+      html_url: 'https://github.com/releases/1',
+      assets: [
+        { name: 'achu-universal.dmg', browser_download_url: 'https://dl/app.dmg' },
+      ],
+    })) as any;
 
     const handler = getHandler('update:check');
     const result = await handler();
@@ -188,17 +187,14 @@ describe('Updater handlers (update:check)', () => {
     Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
     Object.defineProperty(process, 'arch', { value: 'x64', configurable: true });
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        tag_name: 'v2026.6.1',
-        body: '',
-        html_url: 'https://github.com/releases/1',
-        assets: [
-          { name: 'achu-amd64.AppImage', browser_download_url: 'https://dl/app.AppImage' },
-        ],
-      }),
-    }) as any;
+    global.fetch = vi.fn().mockResolvedValue(mockResponse({
+      tag_name: 'v2026.6.1',
+      body: '',
+      html_url: 'https://github.com/releases/1',
+      assets: [
+        { name: 'achu-amd64.AppImage', browser_download_url: 'https://dl/app.AppImage' },
+      ],
+    })) as any;
 
     const handler = getHandler('update:check');
     const result = await handler();
@@ -207,6 +203,36 @@ describe('Updater handlers (update:check)', () => {
 
     Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
     Object.defineProperty(process, 'arch', { value: origArch, configurable: true });
+  });
+
+  it('uses cached result on 304 Not Modified', async () => {
+    // First, populate the cache with a real response
+    const origPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+
+    // Simulate settings that already have a cached result + ETag
+    const { loadSettings } = await import('../src/main/settings');
+    (loadSettings as any).mockImplementationOnce(() => ({
+      checkForUpdatesOnStartup: true,
+      lastUpdateCheck: Date.now() - 10 * 60 * 1000, // 10 min ago — past 5-min TTL
+      lastUpdateResult: { available: true, version: '2026.6.1', releaseUrl: 'https://github.com/releases/1', downloadUrl: 'https://dl/app.dmg', downloadSize: 1000, releaseNotes: '' },
+      lastUpdateETag: '"abc123"',
+    }));
+
+    // 304 response — should return cached result without parsing JSON
+    global.fetch = vi.fn().mockResolvedValue(mockResponse(null, { ok: false, status: 304 })) as any;
+
+    const handler = getHandler('update:check');
+    // Pass force=true to bypass the 5-min TTL (so we actually hit the API)
+    const result = await handler({}, true);
+    expect(result.available).toBe(true);
+    expect(result.version).toBe('2026.6.1');
+
+    // Verify If-None-Match header was sent
+    const fetchCall = (global.fetch as any).mock.calls[0];
+    expect(fetchCall[1].headers['If-None-Match']).toBe('"abc123"');
+
+    Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
   });
 });
 
