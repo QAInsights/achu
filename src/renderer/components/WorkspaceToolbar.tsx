@@ -56,6 +56,7 @@ export default function WorkspaceToolbar() {
     appTheme, setAppTheme,
     settingsVisible, setSettingsVisible,
     helpVisible, setHelpVisible,
+    updateAvailable, setUpdateAvailable,
     setImageSrc,
     clearWorkspace,
     codeStudioActive,
@@ -490,12 +491,31 @@ export default function WorkspaceToolbar() {
         <Tooltip position="right">
           <button
             className={`tool-btn ${helpVisible ? 'active' : ''}`}
-            onClick={() => setHelpVisible(prev => !prev)}
+            onClick={() => {
+              setHelpVisible(prev => !prev);
+              if (updateAvailable) setUpdateAvailable(null);
+            }}
             title="Help"
             aria-label="Help"
             aria-pressed={helpVisible}
+            style={{ position: 'relative' }}
           >
             <HelpCircle className="w-4 h-4" />
+            {updateAvailable && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '2px',
+                  right: '2px',
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: '#ef4444',
+                  border: '2px solid var(--surface-1, #0b0f19)',
+                }}
+                aria-label="Update available"
+              />
+            )}
           </button>
         </Tooltip>
       </div>

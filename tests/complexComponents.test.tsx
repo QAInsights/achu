@@ -110,6 +110,10 @@ beforeEach(() => {
     setCaptureShortcut: vi.fn(),
     helpVisible: false,
     setHelpVisible: vi.fn(),
+    updateAvailable: null,
+    setUpdateAvailable: vi.fn(),
+    checkForUpdatesOnStartup: true,
+    setCheckForUpdatesOnStartup: vi.fn(),
     padding: 38,
     setPadding: vi.fn(),
     rounded: 20,
@@ -761,6 +765,7 @@ describe('WorkspaceToolbar', () => {
   });
 
   it('renders stroke width slider', () => {
+    mockContext.activeTool = 'rect';
     render(<WorkspaceToolbar />);
     
     const slider = screen.getByTitle('Stroke Width: 4px');
@@ -768,6 +773,7 @@ describe('WorkspaceToolbar', () => {
   });
 
   it('updates stroke width on slider change', () => {
+    mockContext.activeTool = 'rect';
     render(<WorkspaceToolbar />);
     
     const slider = screen.getByTitle('Stroke Width: 4px');

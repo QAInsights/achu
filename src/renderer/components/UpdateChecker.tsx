@@ -1,14 +1,40 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpCircle, CheckCircle, AlertCircle, RefreshCw, Download } from 'lucide-react';
+import { ArrowUpCircle, CheckCircle, AlertCircle, RefreshCw, Download, ExternalLink } from 'lucide-react';
+import { useAppContext } from '../AppContext';
+
+function formatSize(bytes: number): string {
+  if (!bytes || bytes <= 0) return '';
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export default function UpdateChecker() {
+  const { updateAvailable, setUpdateAvailable } = useAppContext();
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'no-update' | 'update-available' | 'downloading' | 'error' | 'success'>('idle');
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const [releaseNotes, setReleaseNotes] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [releaseUrl, setReleaseUrl] = useState<string | null>(null);
+  const [downloadSize, setDownloadSize] = useState<number>(0);
   const [simulated, setSimulated] = useState<boolean>(false);
+
+  // Listen for startup auto-update notification
+  useEffect(() => {
+    if (!window.snapFrameAPI?.onUpdateAvailable) return;
+    const unsubscribe = window.snapFrameAPI.onUpdateAvailable((info: { version: string; releaseUrl: string }) => {
+      setUpdateAvailable(info);
+    });
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, [setUpdateAvailable]);
+
+  // When updateAvailable is set from startup check, auto-trigger the check UI
+  useEffect(() => {
+    if (updateAvailable && updateStatus === 'idle') {
+      handleCheckUpdates();
+    }
+  }, [updateAvailable]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -29,14 +55,17 @@ export default function UpdateChecker() {
       if (!window.snapFrameAPI || typeof window.snapFrameAPI.checkForUpdates !== 'function') {
         throw new Error('Update API is not available in this environment');
       }
-      const result = await window.snapFrameAPI.checkForUpdates();
+      const result = await window.snapFrameAPI.checkForUpdates(true);
       if (result.available) {
         setLatestVersion(result.version);
         setReleaseNotes(result.releaseNotes);
         setDownloadUrl(result.downloadUrl);
+        setReleaseUrl(result.releaseUrl);
+        setDownloadSize(result.downloadSize || 0);
         setUpdateStatus('update-available');
       } else {
         setUpdateStatus('no-update');
+        setUpdateAvailable(null);
       }
     } catch (err: any) {
       setUpdateError(err.message || 'Failed to check for updates');
@@ -53,12 +82,23 @@ export default function UpdateChecker() {
       if (result && result.simulated) {
         setSimulated(true);
         setUpdateStatus('success');
-      } else if (result && result.opened) {
+      } else if (result && (result.opened || result.success)) {
         setUpdateStatus('success');
       }
+      setUpdateAvailable(null);
     } catch (err: any) {
       setUpdateError(err.message || 'Failed to download and install update');
       setUpdateStatus('error');
+    }
+  };
+
+  const handleOpenReleasePage = () => {
+    if (window.snapFrameAPI?.openReleasePage) {
+      window.snapFrameAPI.openReleasePage();
+    } else if (releaseUrl) {
+      window.open(releaseUrl, '_blank');
+    } else {
+      window.open('https://github.com/QAInsights/achu/releases/latest', '_blank');
     }
   };
 
@@ -139,6 +179,11 @@ export default function UpdateChecker() {
             <ArrowUpCircle className="w-4 h-4" style={{ color: 'var(--accent, #3b82f6)' }} />
             New Version Available: v{latestVersion}
           </div>
+          {downloadSize > 0 && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+              Download size: {formatSize(downloadSize)}
+            </div>
+          )}
           {releaseNotes && (
             <div style={{
               fontSize: '0.75rem',
@@ -166,11 +211,20 @@ export default function UpdateChecker() {
             </button>
             <button
               className="btn btn-secondary"
+              style={{ height: '32px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+              onClick={handleOpenReleasePage}
+              type="button"
+              title="Open release page in browser"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+            <button
+              className="btn btn-secondary"
               style={{ height: '32px', fontSize: '0.8rem' }}
               onClick={() => setUpdateStatus('idle')}
               type="button"
             >
-              Remind Me Later
+              Later
             </button>
           </div>
         </div>
@@ -193,6 +247,11 @@ export default function UpdateChecker() {
           <div style={{ width: '100%', height: '6px', background: 'var(--surface-3, #151b26)', borderRadius: '3px', overflow: 'hidden' }}>
             <div style={{ width: `${downloadProgress}%`, height: '100%', background: 'var(--accent, #3b82f6)', transition: 'width 0.1s linear' }} />
           </div>
+          {downloadSize > 0 && (
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+              {formatSize(Math.round(downloadSize * downloadProgress / 100))} of {formatSize(downloadSize)}
+            </div>
+          )}
         </div>
       )}
 
@@ -212,8 +271,8 @@ export default function UpdateChecker() {
             Update Downloaded!
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-            {simulated 
-              ? 'In development mode: auto-restart is simulated.' 
+            {simulated
+              ? 'In development mode: auto-restart is simulated.'
               : 'The update will be applied when you restart achu.'}
           </div>
           <button
@@ -245,14 +304,24 @@ export default function UpdateChecker() {
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
             {updateError || 'An error occurred during update.'}
           </div>
-          <button
-            className="btn btn-secondary"
-            style={{ width: '100%', fontSize: '0.8rem', height: '30px', marginTop: '4px' }}
-            onClick={handleCheckUpdates}
-            type="button"
-          >
-            Try Again
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="btn btn-secondary"
+              style={{ flex: 1, fontSize: '0.8rem', height: '30px', marginTop: '4px' }}
+              onClick={handleCheckUpdates}
+              type="button"
+            >
+              Try Again
+            </button>
+            <button
+              className="btn btn-secondary"
+              style={{ flex: 1, fontSize: '0.8rem', height: '30px', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+              onClick={handleOpenReleasePage}
+              type="button"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Download from GitHub
+            </button>
+          </div>
         </div>
       )}
     </div>

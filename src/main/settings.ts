@@ -61,6 +61,9 @@ export interface AppSettings {
   githubToken?: string;
   secureKeys?: Record<string, string>;
   galleryFolder?: string;
+  checkForUpdatesOnStartup?: boolean;
+  lastUpdateCheck?: number;
+  lastUpdateResult?: { available: boolean; version?: string; releaseUrl?: string } | null;
 }
 
 export const getSettingsPath = () => {
@@ -113,6 +116,9 @@ export const defaultSettings: AppSettings = {
   },
   presets: [],
   galleryFolder: getDefaultGalleryFolder(),
+  checkForUpdatesOnStartup: true,
+  lastUpdateCheck: 0,
+  lastUpdateResult: null,
 };
 
 export function loadSettings(): AppSettings {
@@ -131,6 +137,15 @@ export function loadSettings(): AppSettings {
       }
       if (!parsed.galleryFolder) {
         parsed.galleryFolder = getDefaultGalleryFolder();
+      }
+      if (parsed.checkForUpdatesOnStartup === undefined) {
+        parsed.checkForUpdatesOnStartup = defaultSettings.checkForUpdatesOnStartup;
+      }
+      if (parsed.lastUpdateCheck === undefined) {
+        parsed.lastUpdateCheck = defaultSettings.lastUpdateCheck;
+      }
+      if (parsed.lastUpdateResult === undefined) {
+        parsed.lastUpdateResult = defaultSettings.lastUpdateResult;
       }
       return parsed;
     }

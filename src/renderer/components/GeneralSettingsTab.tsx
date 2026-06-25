@@ -6,7 +6,7 @@ import { updateUserDefault } from '../utils/storageUtils';
 import { registerSettingsSection } from '../utils/settingsRegistry';
 import { getModKeyLabel } from '../utils/shortcutLabels';
 
-registerSettingsSection({ tab: 'general', label: 'General Settings', keywords: 'general sidebar position ai ocr left right' });
+registerSettingsSection({ tab: 'general', label: 'General Settings', keywords: 'general sidebar position ai ocr left right updates auto check' });
 registerSettingsSection({ tab: 'general', label: 'Screen Capture', keywords: 'screen capture auto import clipboard focus global shortcut printscreen hotkey' });
 registerSettingsSection({ tab: 'general', label: 'Gallery', keywords: 'gallery screenshot folder path browse storage trash' });
 registerSettingsSection({ tab: 'general', label: 'Canvas Defaults', keywords: 'canvas defaults padding border radius shadow blur' });
@@ -41,6 +41,7 @@ export default function GeneralSettingsTab({ searchQuery = '' }: { searchQuery?:
     sidebarPosition, setSidebarPosition,
     secondarySidebarPosition, setSecondarySidebarPosition,
     autoImportCaptured, setAutoImportCaptured,
+    checkForUpdatesOnStartup, setCheckForUpdatesOnStartup,
     captureShortcut, setCaptureShortcut,
   } = useAppContext();
 
@@ -111,6 +112,17 @@ export default function GeneralSettingsTab({ searchQuery = '' }: { searchQuery?:
                 type="button"
               >Right</button>
             </div>
+          </div>
+          <div className="switch-container" style={{ marginTop: '0.75rem' }}>
+            <span className="control-label">Check for Updates on Startup</span>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={checkForUpdatesOnStartup}
+                onChange={(e) => updateSetting('checkForUpdatesOnStartup', e.target.checked, setCheckForUpdatesOnStartup)}
+              />
+              <span className="slider-switch" />
+            </label>
           </div>
         </>
       ),

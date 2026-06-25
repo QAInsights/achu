@@ -6,7 +6,7 @@ import { registerIpcHandlers } from './ipc';
 import { registerGalleryIpcHandlers } from './gallery';
 import { registerBurstIpcHandlers } from './burst';
 import { setupFocusCheck, updateCaptureConfigurations, cleanupCaptureModule, triggerOSScreenCapture } from './capture';
-import { registerUpdaterHandlers } from './updater';
+import { registerUpdaterHandlers, performStartupUpdateCheck } from './updater';
 
 const isDev = process.env.NODE_ENV === 'development';
 let mainWindow: BrowserWindow | null = null;
@@ -244,6 +244,11 @@ app.whenReady().then(() => {
   // Register Auto-Updater IPC Handlers
   const { ipcMain } = require('electron');
   registerUpdaterHandlers(ipcMain, () => mainWindow);
+
+  // Auto-check for updates on startup (after 5s delay, silent)
+  setTimeout(() => {
+    performStartupUpdateCheck(() => mainWindow);
+  }, 5000);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

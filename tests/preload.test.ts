@@ -44,6 +44,8 @@ describe('Preload Script', () => {
     expect(api).toHaveProperty('checkForUpdates');
     expect(api).toHaveProperty('startUpdate');
     expect(api).toHaveProperty('onUpdateProgress');
+    expect(api).toHaveProperty('onUpdateAvailable');
+    expect(api).toHaveProperty('openReleasePage');
 
     expect(typeof api.getSettings).toBe('function');
     expect(typeof api.saveSettings).toBe('function');
@@ -57,6 +59,8 @@ describe('Preload Script', () => {
     expect(typeof api.checkForUpdates).toBe('function');
     expect(typeof api.startUpdate).toBe('function');
     expect(typeof api.onUpdateProgress).toBe('function');
+    expect(typeof api.onUpdateAvailable).toBe('function');
+    expect(typeof api.openReleasePage).toBe('function');
   });
 
   it('getSettings calls ipcRenderer.invoke with correct channel', () => {
@@ -181,7 +185,19 @@ describe('Preload Script', () => {
   it('checkForUpdates calls ipcRenderer.invoke', () => {
     const api = getApi();
     api.checkForUpdates();
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('update:check');
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('update:check', undefined);
+  });
+
+  it('checkForUpdates with force calls ipcRenderer.invoke with force flag', () => {
+    const api = getApi();
+    api.checkForUpdates(true);
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('update:check', true);
+  });
+
+  it('openReleasePage calls ipcRenderer.invoke', () => {
+    const api = getApi();
+    api.openReleasePage();
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('update:open-release-page');
   });
 
   it('startUpdate calls ipcRenderer.invoke with downloadUrl', () => {

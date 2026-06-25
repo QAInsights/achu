@@ -51,7 +51,7 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
   },
 
   // Update check APIs
-  checkForUpdates: () => ipcRenderer.invoke('update:check'),
+  checkForUpdates: (force?: boolean) => ipcRenderer.invoke('update:check', force),
   startUpdate: (downloadUrl: string) => ipcRenderer.invoke('update:start', downloadUrl),
   onUpdateProgress: (callback: (progress: number) => void) => {
     const subscription = (_event: any, progress: number) => callback(progress);
@@ -60,6 +60,14 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
       ipcRenderer.removeListener('update:progress', subscription);
     };
   },
+  onUpdateAvailable: (callback: (info: { version: string; releaseUrl: string }) => void) => {
+    const subscription = (_event: any, info: { version: string; releaseUrl: string }) => callback(info);
+    ipcRenderer.on('update:available', subscription);
+    return () => {
+      ipcRenderer.removeListener('update:available', subscription);
+    };
+  },
+  openReleasePage: () => ipcRenderer.invoke('update:open-release-page'),
 
   // Gallery APIs
   ensureGalleryDir: () => ipcRenderer.invoke('gallery:ensure-dir'),

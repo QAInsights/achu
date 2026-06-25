@@ -422,6 +422,18 @@ export function makeFullMockContext(overrides: Record<string, any> = {}) {
     applyAutoVibe: async () => {},
     clearWorkspace: noop,
     containerRef: { current: null },
+    helpVisible: false,
+    setHelpVisible: noop,
+    settingsVisible: false,
+    setSettingsVisible: noop,
+    updateAvailable: null as { version: string; releaseUrl: string } | null,
+    setUpdateAvailable: noop,
+    autoImportCaptured: true,
+    setAutoImportCaptured: noop,
+    checkForUpdatesOnStartup: true,
+    setCheckForUpdatesOnStartup: noop,
+    captureShortcut: 'PrintScreen',
+    setCaptureShortcut: noop,
     ...overrides,
   };
 }

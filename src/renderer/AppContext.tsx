@@ -98,6 +98,7 @@ interface AppContextType {
   secondarySidebarPosition: 'left' | 'right'; setSecondarySidebarPosition: React.Dispatch<React.SetStateAction<'left' | 'right'>>;
   settingsVisible: boolean; setSettingsVisible: React.Dispatch<React.SetStateAction<boolean>>;
   helpVisible: boolean; setHelpVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  updateAvailable: { version: string; releaseUrl: string } | null; setUpdateAvailable: React.Dispatch<React.SetStateAction<{ version: string; releaseUrl: string } | null>>;
   imageSrc: string | null; setImageSrc: React.Dispatch<React.SetStateAction<string | null>>;
   documentName: string | null; setDocumentName: React.Dispatch<React.SetStateAction<string | null>>;
   isDragging: boolean; setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
@@ -110,6 +111,7 @@ interface AppContextType {
   jpegQuality: number; setJpegQuality: React.Dispatch<React.SetStateAction<number>>;
   compressionMode: CompressionMode; setCompressionMode: React.Dispatch<React.SetStateAction<CompressionMode>>;
   autoImportCaptured: boolean; setAutoImportCaptured: (val: boolean) => void;
+  checkForUpdatesOnStartup: boolean; setCheckForUpdatesOnStartup: (val: boolean) => void;
   captureShortcut: string; setCaptureShortcut: (val: string) => void;
   zoomLevel: string; setZoomLevel: React.Dispatch<React.SetStateAction<string>>;
   history: any[]; setHistory: React.Dispatch<React.SetStateAction<any[]>>;
@@ -267,6 +269,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [chromeTheme, setChromeTheme] = useState<'dark' | 'light'>('dark');
   const [blurDensity, setBlurDensity] = useState<number>(40);
   const [autoImportCaptured, setAutoImportCapturedState] = useState<boolean>(() => getUserDefault('autoImportCaptured', true));
+  const [checkForUpdatesOnStartup, setCheckForUpdatesOnStartupState] = useState<boolean>(() => getUserDefault('checkForUpdatesOnStartup', true));
   const [captureShortcut, setCaptureShortcutState] = useState<string>(() => getUserDefault('captureShortcut', 'PrintScreen'));
   
   // Better Gradient States
@@ -417,6 +420,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAutoImportCapturedState(val);
     updateUserDefault('autoImportCaptured', val);
   };
+  const setCheckForUpdatesOnStartup = (val: boolean) => {
+    setCheckForUpdatesOnStartupState(val);
+    updateUserDefault('checkForUpdatesOnStartup', val);
+  };
   const setCaptureShortcut = (val: string) => {
     setCaptureShortcutState(val);
     updateUserDefault('captureShortcut', val);
@@ -429,6 +436,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [secondarySidebarPosition, setSecondarySidebarPosition] = useState<'left' | 'right'>(() => getUserDefault('secondarySidebarPosition', 'right'));
   const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
   const [helpVisible, setHelpVisible] = useState<boolean>(false);
+  const [updateAvailable, setUpdateAvailable] = useState<{ version: string; releaseUrl: string } | null>(null);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [documentName, setDocumentName] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -1545,6 +1553,15 @@ Severity rules:
     initApp();
   }, []);
 
+  // Listen for startup auto-update notification
+  useEffect(() => {
+    if (!window.snapFrameAPI?.onUpdateAvailable) return;
+    const unsubscribe = window.snapFrameAPI.onUpdateAvailable((info: { version: string; releaseUrl: string }) => {
+      setUpdateAvailable(info);
+    });
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
+
   // Load dynamic models from models.dev with localStorage caching
   useEffect(() => {
     const loadDynamicModels = async () => {
@@ -1632,7 +1649,7 @@ Severity rules:
     const saveSettingsToMain = async () => {
       if (window.snapFrameAPI) {
         const config = getCurrentConfig();
-        const settings = { windowBounds: {}, lastConfig: { ...config, annotations: [], redactions: [] }, presets: customPresets };
+        const settings = { windowBounds: {}, lastConfig: { ...config, annotations: [], redactions: [] }, presets: customPresets, checkForUpdatesOnStartup };
         await window.snapFrameAPI.saveSettings(settings);
       }
     };
@@ -1645,7 +1662,7 @@ Severity rules:
     watermarkText, watermarkSize, watermarkPosition, watermarkOpacity, position, customPresets, meshPoints, meshBlur, meshGrain, meshOpacity,
     meshSpread, noImageMode, redactions, redactionStyle, exportFormat, jpegQuality, sidebarPosition,
     bgGrain, lightRaysStyle, lightRaysOpacity, lightRaysAngle, lightRaysCount, lightRaysSourceX, lightRaysSourceY,
-    autoImportCaptured, captureShortcut
+    autoImportCaptured, captureShortcut, checkForUpdatesOnStartup
   ]);
 
 
@@ -1785,6 +1802,7 @@ Severity rules:
       secondarySidebarPosition, setSecondarySidebarPosition,
       settingsVisible, setSettingsVisible,
       helpVisible, setHelpVisible,
+      updateAvailable, setUpdateAvailable,
       imageSrc, setImageSrc, documentName, setDocumentName, isDragging, setIsDragging, customPresets, setCustomPresets, newPresetName, setNewPresetName,
       showAdvancedInset, setShowAdvancedInset, showAdvancedShadow, setShowAdvancedShadow, showAdvancedBorder, setShowAdvancedBorder,
       exportFormat, setExportFormat, jpegQuality, setJpegQuality, compressionMode, setCompressionMode, zoomLevel, setZoomLevel, history, setHistory,
@@ -1793,6 +1811,7 @@ Severity rules:
       appTheme, setAppTheme,
       sidebarPosition, setSidebarPosition,
       autoImportCaptured, setAutoImportCaptured,
+      checkForUpdatesOnStartup, setCheckForUpdatesOnStartup,
       captureShortcut, setCaptureShortcut,
       vibePalette, vibeVariantIndex, vibeUpdateDrawColor, setVibeUpdateDrawColor,
       fileInputRef, colorInputRef,

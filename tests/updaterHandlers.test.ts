@@ -8,7 +8,7 @@ vi.mock('electron', () => ({
     getPath: (name: string) => `/mocked/temp/${name}`,
     quit: vi.fn(),
   },
-  shell: { openPath: vi.fn() },
+  shell: { openPath: vi.fn(), openExternal: vi.fn() },
   BrowserWindow: class {},
 }));
 
@@ -18,9 +18,25 @@ vi.mock('fs', () => ({
   createWriteStream: vi.fn(),
   writeFileSync: vi.fn(),
   readFileSync: vi.fn(),
+  rmSync: vi.fn(),
+  mkdirSync: vi.fn(),
+  readdirSync: vi.fn().mockReturnValue([]),
+  copyFileSync: vi.fn(),
+  unlinkSync: vi.fn(),
+  chmodSync: vi.fn(),
 }));
 
-import { registerUpdaterHandlers } from '../src/main/updater';
+vi.mock('../src/main/settings', () => ({
+  loadSettings: vi.fn().mockImplementation(() => ({
+    checkForUpdatesOnStartup: true,
+    lastUpdateCheck: 0,
+    lastUpdateResult: null,
+  })),
+  saveSettings: vi.fn(),
+  getDefaultGalleryFolder: () => '/mocked/home/achu-screenshots',
+}));
+
+import { registerUpdaterHandlers, isNewerVersion, friendlyUpdateError } from '../src/main/updater';
 
 function getHandler(channel: string) {
   const call = mockHandle.mock.calls.find(([ch]: [string]) => ch === channel);
@@ -125,21 +141,21 @@ describe('Updater handlers (update:check)', () => {
     Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
   });
 
-  it('throws on API error response', async () => {
+  it('throws friendly error on API error response', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
     }) as any;
 
     const handler = getHandler('update:check');
-    await expect(handler()).rejects.toThrow('GitHub API returned status 500');
+    await expect(handler()).rejects.toThrow('temporarily unavailable');
   });
 
-  it('throws on network error', async () => {
+  it('throws friendly error on network error', async () => {
     global.fetch = vi.fn().mockRejectedValue(new Error('Network fail')) as any;
 
     const handler = getHandler('update:check');
-    await expect(handler()).rejects.toThrow('Network fail');
+    await expect(handler()).rejects.toThrow('internet connection');
   });
 
   it('selects dmg asset on darwin', async () => {
@@ -198,5 +214,49 @@ describe('Updater handlers (update:start)', () => {
   it('throws when no download URL provided', async () => {
     const handler = getHandler('update:start');
     await expect(handler({}, '')).rejects.toThrow('No download URL provided');
+  });
+});
+
+describe('isNewerVersion', () => {
+  it('returns true when latest is newer', () => {
+    expect(isNewerVersion('2026.5.30', '2026.6.1')).toBe(true);
+  });
+
+  it('returns false when latest is older', () => {
+    expect(isNewerVersion('2026.6.1', '2026.5.30')).toBe(false);
+  });
+
+  it('returns false when versions are equal', () => {
+    expect(isNewerVersion('2026.5.30', '2026.5.30')).toBe(false);
+  });
+
+  it('normalizes full-year CalVer', () => {
+    expect(isNewerVersion('2026.5.30', '26.6.1')).toBe(true);
+  });
+
+  it('handles v prefix', () => {
+    expect(isNewerVersion('2026.5.30', 'v2026.6.1')).toBe(true);
+  });
+});
+
+describe('friendlyUpdateError', () => {
+  it('maps 403 to rate limit message', () => {
+    expect(friendlyUpdateError('GitHub API returned status 403')).toContain('rate limit');
+  });
+
+  it('maps network errors to connection message', () => {
+    expect(friendlyUpdateError('fetch failed: ECONNREFUSED')).toContain('internet connection');
+  });
+
+  it('maps 5xx to server unavailable message', () => {
+    expect(friendlyUpdateError('GitHub API returned status 503')).toContain('temporarily unavailable');
+  });
+
+  it('maps missing file error', () => {
+    expect(friendlyUpdateError('Downloaded update file is missing or empty.')).toContain('incomplete');
+  });
+
+  it('passes through unknown errors', () => {
+    expect(friendlyUpdateError('Something weird happened')).toBe('Something weird happened');
   });
 });
