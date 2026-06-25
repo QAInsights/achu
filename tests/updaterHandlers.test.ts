@@ -40,7 +40,7 @@ vi.mock('../src/main/settings', () => ({
 import { registerUpdaterHandlers, isNewerVersion, friendlyUpdateError } from '../src/main/updater';
 
 function getHandler(channel: string) {
-  const call = mockHandle.mock.calls.find(([ch]: [string]) => ch === channel);
+  const call = mockHandle.mock.calls.find((args: any[]) => args[0] === channel);
   return call ? call[1] : null;
 }
 

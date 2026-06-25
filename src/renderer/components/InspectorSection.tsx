@@ -13,10 +13,12 @@ export default function InspectorSection({ title, icon, children, defaultOpen = 
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className={`inspector-section ${open ? 'open' : ''}`}>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         className="inspector-section-header"
         onClick={() => setOpen(!open)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!open); } }}
         aria-expanded={open}
         title={open ? `Collapse ${title}` : `Expand ${title}`}
       >
@@ -28,7 +30,7 @@ export default function InspectorSection({ title, icon, children, defaultOpen = 
           {headerActions}
           <ChevronDown className="inspector-section-chevron w-4 h-4" aria-hidden="true" />
         </div>
-      </button>
+      </div>
       <div className="inspector-section-content">
         <div className="inspector-section-inner">
           <div className="inspector-section-body">
