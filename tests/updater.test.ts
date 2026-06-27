@@ -13,7 +13,7 @@ vi.mock('electron', () => ({
   BrowserWindow: class {},
 }));
 
-import { isNewerVersion, registerUpdaterHandlers } from '../src/main/updater';
+import { isNewerVersion, registerUpdaterHandlers, selectMacAsset, selectWindowsAsset, selectLinuxAsset } from '../src/main/updater';
 
 describe('Updater isNewerVersion helper', () => {
   it('correctly compares version segments', () => {
@@ -71,5 +71,184 @@ describe('registerUpdaterHandlers', () => {
 
     expect(mockIpcMain.handle).toHaveBeenCalledWith('update:check', expect.any(Function));
     expect(mockIpcMain.handle).toHaveBeenCalledWith('update:start', expect.any(Function));
+  });
+});
+
+describe('selectMacAsset (issue #8 — macOS upgrade picks zip that fails to expand)', () => {
+  it('prefers .dmg over .zip even when zip is listed first', () => {
+    const assets = [
+      { name: 'achu-26.6.19-universal-mac.zip', browser_download_url: 'https://dl/app.zip' },
+      { name: 'achu-26.6.19-universal.dmg', browser_download_url: 'https://dl/app.dmg' },
+    ];
+    const picked = selectMacAsset(assets);
+    expect(picked?.name).toBe('achu-26.6.19-universal.dmg');
+  });
+
+  it('falls back to .zip when no .dmg is present', () => {
+    const assets = [
+      { name: 'achu-26.6.19-universal-mac.zip', browser_download_url: 'https://dl/app.zip' },
+    ];
+    const picked = selectMacAsset(assets);
+    expect(picked?.name).toBe('achu-26.6.19-universal-mac.zip');
+  });
+
+  it('returns undefined when neither dmg nor zip present', () => {
+    const assets = [
+      { name: 'achu-x64-2026.6.1.exe', browser_download_url: 'https://dl/app.exe' },
+    ];
+    expect(selectMacAsset(assets)).toBeUndefined();
+  });
+
+  it('returns undefined for an empty asset list', () => {
+    expect(selectMacAsset([])).toBeUndefined();
+  });
+
+  it('is case-insensitive on file extensions', () => {
+    const assets = [
+      { name: 'achu-universal.DMG', browser_download_url: 'https://dl/app.dmg' },
+    ];
+    expect(selectMacAsset(assets)?.name).toBe('achu-universal.DMG');
+  });
+});
+
+describe('selectWindowsAsset', () => {
+  it('picks the x64 exe on x64 arch', () => {
+    const assets = [
+      { name: 'achu-x64-26.6.19.exe', browser_download_url: 'https://dl/x64.exe' },
+      { name: 'achu-arm64-26.6.19.exe', browser_download_url: 'https://dl/arm64.exe' },
+    ];
+    expect(selectWindowsAsset(assets, 'x64')?.name).toBe('achu-x64-26.6.19.exe');
+  });
+
+  it('picks the arm64 exe on arm64 arch', () => {
+    const assets = [
+      { name: 'achu-x64-26.6.19.exe', browser_download_url: 'https://dl/x64.exe' },
+      { name: 'achu-arm64-26.6.19.exe', browser_download_url: 'https://dl/arm64.exe' },
+    ];
+    expect(selectWindowsAsset(assets, 'arm64')?.name).toBe('achu-arm64-26.6.19.exe');
+  });
+
+  it('excludes .appx files (Store packages cannot be auto-replaced)', () => {
+    const assets = [
+      { name: 'achu-x64-26.6.19.appx', browser_download_url: 'https://dl/x64.appx' },
+      { name: 'achu-x64-26.6.19.exe', browser_download_url: 'https://dl/x64.exe' },
+    ];
+    expect(selectWindowsAsset(assets, 'x64')?.name).toBe('achu-x64-26.6.19.exe');
+  });
+
+  it('falls back to first exe when no arch match', () => {
+    const assets = [
+      { name: 'achu-26.6.19.exe', browser_download_url: 'https://dl/app.exe' },
+    ];
+    expect(selectWindowsAsset(assets, 'x64')?.name).toBe('achu-26.6.19.exe');
+  });
+
+  it('returns undefined when no exe assets', () => {
+    const assets = [
+      { name: 'achu-26.6.19.appx', browser_download_url: 'https://dl/app.appx' },
+    ];
+    expect(selectWindowsAsset(assets, 'x64')).toBeUndefined();
+  });
+});
+
+describe('selectLinuxAsset', () => {
+  it('prefers AppImage over deb for x64', () => {
+    const assets = [
+      { name: 'achu_26.6.19_amd64.deb', browser_download_url: 'https://dl/amd64.deb' },
+      { name: 'achu-26.6.19.AppImage', browser_download_url: 'https://dl/app.AppImage' },
+    ];
+    // deb is listed first, but AppImage should be preferred (in-place update, no sudo)
+    expect(selectLinuxAsset(assets, 'x64')?.name).toBe('achu-26.6.19.AppImage');
+  });
+
+  it('prefers AppImage over deb for arm64', () => {
+    const assets = [
+      { name: 'achu_26.6.19_arm64.deb', browser_download_url: 'https://dl/arm64.deb' },
+      { name: 'achu-26.6.19-arm64.AppImage', browser_download_url: 'https://dl/arm64.AppImage' },
+    ];
+    expect(selectLinuxAsset(assets, 'arm64')?.name).toBe('achu-26.6.19-arm64.AppImage');
+  });
+
+  it('picks the arm64 AppImage, not the x64 one, on arm64', () => {
+    const assets = [
+      { name: 'achu-26.6.19.AppImage', browser_download_url: 'https://dl/app.AppImage' },
+      { name: 'achu-26.6.19-arm64.AppImage', browser_download_url: 'https://dl/arm64.AppImage' },
+    ];
+    expect(selectLinuxAsset(assets, 'arm64')?.name).toBe('achu-26.6.19-arm64.AppImage');
+  });
+
+  it('falls back to deb when no AppImage present', () => {
+    const assets = [
+      { name: 'achu_26.6.19_amd64.deb', browser_download_url: 'https://dl/amd64.deb' },
+    ];
+    expect(selectLinuxAsset(assets, 'x64')?.name).toBe('achu_26.6.19_amd64.deb');
+  });
+
+  it('returns undefined when neither AppImage nor deb present', () => {
+    const assets = [
+      { name: 'achu-x64-26.6.19.exe', browser_download_url: 'https://dl/app.exe' },
+    ];
+    expect(selectLinuxAsset(assets, 'x64')).toBeUndefined();
+  });
+});
+
+/**
+ * Regression test for issue #8 — uses the ACTUAL asset order from the
+ * v26.6.19 GitHub release to prove the fix works against real-world data.
+ * Before the fix, macOS picked the .zip (listed before .dmg) which
+ * triggered "Error 94 - Bad message" in Archive Utility.
+ */
+describe('issue #8 regression — real v26.6.19 release asset order', () => {
+  // Exact asset order returned by GitHub API for v26.06.19
+  const realAssets = [
+    { name: 'achu-26.6.19-arm64.AppImage', browser_download_url: 'https://dl/arm64.AppImage' },
+    { name: 'achu-26.6.19-universal-mac.zip', browser_download_url: 'https://dl/mac.zip' },
+    { name: 'achu-26.6.19-universal-mac.zip.blockmap', browser_download_url: 'https://dl/mac.zip.blockmap' },
+    { name: 'achu-26.6.19-universal.dmg', browser_download_url: 'https://dl/mac.dmg' },
+    { name: 'achu-26.6.19-universal.dmg.blockmap', browser_download_url: 'https://dl/mac.dmg.blockmap' },
+    { name: 'achu-26.6.19.AppImage', browser_download_url: 'https://dl/app.AppImage' },
+    { name: 'achu-26.6.19.exe', browser_download_url: 'https://dl/app.exe' },
+    { name: 'achu-arm64-26.6.19.appx', browser_download_url: 'https://dl/arm64.appx' },
+    { name: 'achu-arm64-26.6.19.exe', browser_download_url: 'https://dl/arm64.exe' },
+    { name: 'achu-x64-26.6.19.appx', browser_download_url: 'https://dl/x64.appx' },
+    { name: 'achu-x64-26.6.19.exe', browser_download_url: 'https://dl/x64.exe' },
+    { name: 'achu_26.6.19_amd64.deb', browser_download_url: 'https://dl/amd64.deb' },
+    { name: 'achu_26.6.19_arm64.deb', browser_download_url: 'https://dl/arm64.deb' },
+    { name: 'builder-debug.yml', browser_download_url: 'https://dl/builder-debug.yml' },
+    { name: 'latest-linux-arm64.yml', browser_download_url: 'https://dl/latest-linux-arm64.yml' },
+    { name: 'latest-linux.yml', browser_download_url: 'https://dl/latest-linux.yml' },
+    { name: 'latest-mac.yml', browser_download_url: 'https://dl/latest-mac.yml' },
+  ];
+
+  it('macOS: picks .dmg, NOT .zip (the bug was picking .zip first)', () => {
+    const picked = selectMacAsset(realAssets);
+    expect(picked?.name).toBe('achu-26.6.19-universal.dmg');
+    expect(picked?.name).not.toContain('.zip');
+  });
+
+  it('macOS: does not pick .blockmap or .yml metadata files', () => {
+    const picked = selectMacAsset(realAssets);
+    expect(picked).toBeDefined();
+    expect(picked!.name).not.toMatch(/\.(blockmap|yml)$/);
+  });
+
+  it('Windows x64: picks x64 exe, not appx or arm64 exe', () => {
+    const picked = selectWindowsAsset(realAssets, 'x64');
+    expect(picked?.name).toBe('achu-x64-26.6.19.exe');
+  });
+
+  it('Windows arm64: picks arm64 exe, not appx or x64 exe', () => {
+    const picked = selectWindowsAsset(realAssets, 'arm64');
+    expect(picked?.name).toBe('achu-arm64-26.6.19.exe');
+  });
+
+  it('Linux x64: picks AppImage, not deb (AppImage supports in-place update)', () => {
+    const picked = selectLinuxAsset(realAssets, 'x64');
+    expect(picked?.name).toBe('achu-26.6.19.AppImage');
+  });
+
+  it('Linux arm64: picks arm64 AppImage, not arm64 deb', () => {
+    const picked = selectLinuxAsset(realAssets, 'arm64');
+    expect(picked?.name).toBe('achu-26.6.19-arm64.AppImage');
   });
 });

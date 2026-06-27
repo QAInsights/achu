@@ -181,6 +181,53 @@ describe('Updater handlers (update:check)', () => {
     Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
   });
 
+  it('prefers dmg over zip on darwin even when zip is listed first (issue #8)', async () => {
+    const origPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+
+    // Both assets present (electron-builder ships both for universal builds).
+    // The zip appears FIRST to prove we don't just pick the first match.
+    global.fetch = vi.fn().mockResolvedValue(mockResponse({
+      tag_name: 'v26.6.19',
+      body: '',
+      html_url: 'https://github.com/releases/1',
+      assets: [
+        { name: 'achu-26.6.19-universal-mac.zip', browser_download_url: 'https://dl/app.zip', size: 90000000 },
+        { name: 'achu-26.6.19-universal.dmg', browser_download_url: 'https://dl/app.dmg', size: 95000000 },
+      ],
+    })) as any;
+
+    const handler = getHandler('update:check');
+    const result = await handler();
+    expect(result.available).toBe(true);
+    // Must select the DMG — the zip path triggers "Error 94 - Bad message".
+    expect(result.downloadUrl).toContain('.dmg');
+    expect(result.downloadUrl).not.toContain('.zip');
+
+    Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
+  });
+
+  it('falls back to zip on darwin when no dmg is present', async () => {
+    const origPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+
+    global.fetch = vi.fn().mockResolvedValue(mockResponse({
+      tag_name: 'v26.6.19',
+      body: '',
+      html_url: 'https://github.com/releases/1',
+      assets: [
+        { name: 'achu-26.6.19-universal-mac.zip', browser_download_url: 'https://dl/app.zip', size: 90000000 },
+      ],
+    })) as any;
+
+    const handler = getHandler('update:check');
+    const result = await handler();
+    expect(result.available).toBe(true);
+    expect(result.downloadUrl).toContain('.zip');
+
+    Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
+  });
+
   it('selects AppImage on linux', async () => {
     const origPlatform = process.platform;
     const origArch = process.arch;
@@ -200,6 +247,59 @@ describe('Updater handlers (update:check)', () => {
     const result = await handler();
     expect(result.available).toBe(true);
     expect(result.downloadUrl).toContain('AppImage');
+
+    Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
+    Object.defineProperty(process, 'arch', { value: origArch, configurable: true });
+  });
+
+  it('linux: prefers AppImage over deb even when deb is listed first (issue #8 sibling)', async () => {
+    const origPlatform = process.platform;
+    const origArch = process.arch;
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    Object.defineProperty(process, 'arch', { value: 'x64', configurable: true });
+
+    global.fetch = vi.fn().mockResolvedValue(mockResponse({
+      tag_name: 'v26.6.19',
+      body: '',
+      html_url: 'https://github.com/releases/1',
+      assets: [
+        { name: 'achu_26.6.19_amd64.deb', browser_download_url: 'https://dl/amd64.deb' },
+        { name: 'achu-26.6.19.AppImage', browser_download_url: 'https://dl/app.AppImage' },
+      ],
+    })) as any;
+
+    const handler = getHandler('update:check');
+    const result = await handler();
+    expect(result.available).toBe(true);
+    // Must pick AppImage (in-place update, no sudo) — not deb
+    expect(result.downloadUrl).toContain('AppImage');
+    expect(result.downloadUrl).not.toContain('.deb');
+
+    Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
+    Object.defineProperty(process, 'arch', { value: origArch, configurable: true });
+  });
+
+  it('linux arm64: picks arm64 AppImage, not x64 AppImage or arm64 deb', async () => {
+    const origPlatform = process.platform;
+    const origArch = process.arch;
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    Object.defineProperty(process, 'arch', { value: 'arm64', configurable: true });
+
+    global.fetch = vi.fn().mockResolvedValue(mockResponse({
+      tag_name: 'v26.6.19',
+      body: '',
+      html_url: 'https://github.com/releases/1',
+      assets: [
+        { name: 'achu-26.6.19.AppImage', browser_download_url: 'https://dl/x64.AppImage' },
+        { name: 'achu-26.6.19-arm64.AppImage', browser_download_url: 'https://dl/arm64.AppImage' },
+        { name: 'achu_26.6.19_arm64.deb', browser_download_url: 'https://dl/arm64.deb' },
+      ],
+    })) as any;
+
+    const handler = getHandler('update:check');
+    const result = await handler();
+    expect(result.available).toBe(true);
+    expect(result.downloadUrl).toContain('arm64.AppImage');
 
     Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
     Object.defineProperty(process, 'arch', { value: origArch, configurable: true });

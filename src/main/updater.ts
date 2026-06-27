@@ -69,6 +69,77 @@ interface UpdateCheckResult {
   error?: string;
 }
 
+interface ReleaseAsset {
+  name: string;
+  browser_download_url: string;
+  size?: number;
+}
+
+/**
+ * Selects the best macOS release asset from a GitHub release.
+ * Strongly prefers .dmg (the native macOS installer format, handled
+ * robustly via hdiutil) over .zip. Falls back to .zip only when no
+ * DMG is present — the zip path is fragile because electron-builder's
+ * universal zips use zip64 + extended attributes that stock `unzip`
+ * and Archive Utility mishandle (the "Error 94 - Bad message" failure).
+ * Exported for unit testing.
+ */
+export function selectMacAsset(assets: ReleaseAsset[]): ReleaseAsset | undefined {
+  const dmg = assets.find((a) => a.name.toLowerCase().endsWith('.dmg'));
+  if (dmg) return dmg;
+  const zip = assets.find((a) => a.name.toLowerCase().endsWith('.zip'));
+  return zip;
+}
+
+/**
+ * Selects the best Windows release asset from a GitHub release.
+ * Filters to .exe (portable) assets and picks the one matching the
+ * current architecture. The updater can only replace a portable exe,
+ * not an .appx (Store package), so .appx is deliberately excluded.
+ * Exported for unit testing.
+ */
+export function selectWindowsAsset(assets: ReleaseAsset[], arch: string): ReleaseAsset | undefined {
+  const exeAssets = assets.filter((a) => a.name.toLowerCase().endsWith('.exe'));
+  if (exeAssets.length === 0) return undefined;
+  // Prefer an exact `-${arch}-` match (e.g. achu-x64-26.6.19.exe)
+  let asset = exeAssets.find((a) => a.name.toLowerCase().includes(`-${arch}-`));
+  if (!asset) {
+    if (arch === 'arm64') {
+      asset = exeAssets.find((a) => a.name.toLowerCase().includes('arm64'));
+    } else {
+      asset = exeAssets.find((a) => !a.name.toLowerCase().includes('arm64'));
+    }
+  }
+  if (!asset) asset = exeAssets[0];
+  return asset;
+}
+
+/**
+ * Selects the best Linux release asset from a GitHub release.
+ * Strongly prefers .AppImage (supports in-place replacement without
+ * sudo) over .deb (requires pkexec/dpkg). Within each format, picks
+ * the asset matching the current architecture. Exported for unit
+ * testing.
+ */
+export function selectLinuxAsset(assets: ReleaseAsset[], arch: string): ReleaseAsset | undefined {
+  const appImages = assets.filter((a) => a.name.toLowerCase().endsWith('.appimage'));
+  const debs = assets.filter((a) => a.name.toLowerCase().endsWith('.deb'));
+
+  const pickByArch = (list: ReleaseAsset[]): ReleaseAsset | undefined => {
+    if (arch === 'arm64') {
+      return list.find((a) => a.name.toLowerCase().includes('arm64'));
+    }
+    // x64: match 'amd64' (deb naming) or no-arch (AppImage default build)
+    return list.find((a) =>
+      a.name.toLowerCase().includes('amd64') ||
+      (a.name.toLowerCase().endsWith('.appimage') && !a.name.toLowerCase().includes('arm64'))
+    );
+  };
+
+  // Prefer AppImage (in-place update, no sudo) over deb (needs pkexec)
+  return pickByArch(appImages) || pickByArch(debs) || appImages[0] || debs[0];
+}
+
 /**
  * Core logic for checking updates against GitHub releases API.
  * Uses ETag-based conditional requests to avoid hitting the 60 req/hr
@@ -126,43 +197,20 @@ export async function performUpdateCheck(useCache: boolean): Promise<UpdateCheck
 
   // Match asset by platform
   if (process.platform === 'win32') {
-    const exeAssets = assets.filter((a: any) => a.name.endsWith('.exe'));
-    const arch = process.arch;
-    let exeAsset = exeAssets.find((a: any) => a.name.toLowerCase().includes(`-${arch}-`));
-    if (!exeAsset) {
-      if (arch === 'arm64') {
-        exeAsset = exeAssets.find((a: any) => a.name.toLowerCase().includes('arm64'));
-      } else {
-        exeAsset = exeAssets.find((a: any) => !a.name.toLowerCase().includes('arm64'));
-      }
-    }
-    if (!exeAsset && exeAssets.length > 0) exeAsset = exeAssets[0];
-    if (exeAsset) {
-      downloadUrl = exeAsset.browser_download_url;
-      downloadSize = exeAsset.size || 0;
+    const winAsset = selectWindowsAsset(assets, process.arch);
+    if (winAsset) {
+      downloadUrl = winAsset.browser_download_url;
+      downloadSize = winAsset.size || 0;
     }
   } else if (process.platform === 'darwin') {
-    const dmgAsset = assets.find((a: any) => a.name.endsWith('.dmg') || a.name.endsWith('.zip'));
-    if (dmgAsset) {
-      downloadUrl = dmgAsset.browser_download_url;
-      downloadSize = dmgAsset.size || 0;
+    const macAsset = selectMacAsset(assets);
+    if (macAsset) {
+      downloadUrl = macAsset.browser_download_url;
+      downloadSize = macAsset.size || 0;
     }
   } else {
     // Linux
-    const arch = process.arch;
-    const linuxAssets = assets.filter((a: any) =>
-      a.name.endsWith('.AppImage') || a.name.endsWith('.deb')
-    );
-    let linuxAsset;
-    if (arch === 'arm64') {
-      linuxAsset = linuxAssets.find((a: any) => a.name.toLowerCase().includes('arm64'));
-    } else {
-      linuxAsset = linuxAssets.find((a: any) =>
-        a.name.toLowerCase().includes('amd64') ||
-        (a.name.toLowerCase().includes('.appimage') && !a.name.toLowerCase().includes('arm64'))
-      );
-    }
-    if (!linuxAsset && linuxAssets.length > 0) linuxAsset = linuxAssets[0];
+    const linuxAsset = selectLinuxAsset(assets, process.arch);
     if (linuxAsset) {
       downloadUrl = linuxAsset.browser_download_url;
       downloadSize = linuxAsset.size || 0;
@@ -301,6 +349,43 @@ del "%~f0"
 
 // ─── macOS: mount DMG, copy app, relaunch ───
 
+/**
+ * Safely replaces the running .app bundle with the new one.
+ * The old app is renamed aside BEFORE the copy so a failed copy never
+ * leaves the user with no app at all. `ditto` is used for the copy
+ * because (unlike `cp -R`) it preserves resource forks, extended
+ * attributes, and code signatures that Gatekeeper requires.
+ */
+function replaceAppBundle(srcApp: string, destApp: string, appBundlePath: string | null): void {
+  const { execSync } = require('child_process');
+  // Move the old app aside first so a failed copy is recoverable.
+  // A running app's binary is memory-mapped, but renaming the bundle
+  // directory is safe on macOS (the running process keeps its file handles).
+  let backupPath: string | null = null;
+  if (appBundlePath && fs.existsSync(appBundlePath)) {
+    backupPath = `${appBundlePath}.old`;
+    // Clean up any stale backup from a previous attempt
+    if (fs.existsSync(backupPath)) {
+      fs.rmSync(backupPath, { recursive: true, force: true });
+    }
+    fs.renameSync(appBundlePath, backupPath);
+  }
+  try {
+    // ditto preserves resource forks, extended attributes, and code signatures.
+    execSync(`ditto "${srcApp}" "${destApp}"`);
+  } catch (err) {
+    // Copy failed — restore the old app so the user isn't left with nothing.
+    if (backupPath && fs.existsSync(backupPath)) {
+      try { fs.renameSync(backupPath, appBundlePath!); } catch { /* best effort */ }
+    }
+    throw err;
+  }
+  // Copy succeeded — remove the old backup asynchronously (best effort).
+  if (backupPath) {
+    try { fs.rmSync(backupPath, { recursive: true, force: true }); } catch { /* non-fatal */ }
+  }
+}
+
 function performMacUpdate(tempPath: string): void {
   const { execSync, spawn } = require('child_process');
   const appPath = process.execPath;
@@ -310,20 +395,23 @@ function performMacUpdate(tempPath: string): void {
     ? appPath.split('.app')[0] + '.app'
     : null;
 
+  let mountPoint: string | null = null;
+
   try {
     if (tempPath.endsWith('.dmg')) {
       // Mount the DMG
       const mountOutput = execSync(`hdiutil attach "${tempPath}" -nobrowse -quiet`, { encoding: 'utf-8' });
       // Extract mount point from hdiutil output (last volume path)
       const lines = mountOutput.trim().split('\n');
-      const mountPoint = lines[lines.length - 1].trim();
+      const mp = lines[lines.length - 1].trim();
+      mountPoint = mp; // tracked for detach in finally
       // Find the .app inside the mounted volume
-      const volumes = fs.readdirSync(mountPoint);
+      const volumes = fs.readdirSync(mp);
       const appName = volumes.find((f: string) => f.endsWith('.app'));
       if (!appName) {
         throw new Error('No .app found in DMG');
       }
-      const srcApp = path.join(mountPoint, appName);
+      const srcApp = path.join(mp, appName);
 
       // Copy to /Applications (or wherever the current app lives)
       const destDir = appBundlePath
@@ -331,14 +419,7 @@ function performMacUpdate(tempPath: string): void {
         : '/Applications';
       const destApp = path.join(destDir, appName);
 
-      // Remove old app and copy new one
-      if (appBundlePath && fs.existsSync(appBundlePath)) {
-        fs.rmSync(appBundlePath, { recursive: true, force: true });
-      }
-      execSync(`cp -R "${srcApp}" "${destApp}"`);
-
-      // Detach the DMG
-      execSync(`hdiutil detach "${mountPoint}" -quiet`);
+      replaceAppBundle(srcApp, destApp, appBundlePath);
 
       // Relaunch
       spawn('open', ['-n', destApp], { detached: true, stdio: 'ignore' }).unref();
@@ -347,11 +428,15 @@ function performMacUpdate(tempPath: string): void {
     }
 
     if (tempPath.endsWith('.zip')) {
-      // Unzip to temp dir
+      // Extract the zip. `ditto` is used instead of `unzip` because
+      // electron-builder's universal-build zips use zip64 + extended
+      // attributes that the stock `unzip` (and Archive Utility) mishandle —
+      // the documented "Error 94 - Bad message" failure. ditto is Apple's
+      // native tool and preserves resource forks + code signatures.
       const unzipDir = path.join(app.getPath('temp'), 'achu-update-extract');
       if (fs.existsSync(unzipDir)) fs.rmSync(unzipDir, { recursive: true, force: true });
       fs.mkdirSync(unzipDir, { recursive: true });
-      execSync(`unzip -q "${tempPath}" -d "${unzipDir}"`);
+      execSync(`ditto -x -k "${tempPath}" "${unzipDir}"`);
 
       // Find the .app
       const files = fs.readdirSync(unzipDir);
@@ -366,22 +451,27 @@ function performMacUpdate(tempPath: string): void {
         : '/Applications';
       const destApp = path.join(destDir, appName);
 
-      if (appBundlePath && fs.existsSync(appBundlePath)) {
-        fs.rmSync(appBundlePath, { recursive: true, force: true });
-      }
-      execSync(`cp -R "${srcApp}" "${destApp}"`);
+      replaceAppBundle(srcApp, destApp, appBundlePath);
 
       spawn('open', ['-n', destApp], { detached: true, stdio: 'ignore' }).unref();
       app.quit();
       return;
     }
 
-    // Unknown format — fall back to opening it
-    shell.openPath(tempPath);
+    // Unknown format — open the release page so the user can install manually.
+    shell.openExternal(RELEASE_PAGE_URL);
   } catch (err) {
-    console.error('[Updater] macOS auto-install failed, falling back to opening file:', err);
-    // Fallback: open the file so user can install manually
-    shell.openPath(tempPath);
+    console.error('[Updater] macOS auto-install failed, opening release page:', err);
+    // Fallback: open the release page in the browser so the user can
+    // download/install manually. Do NOT shell.openPath() the raw archive —
+    // that invokes Archive Utility, which fails with "Error 94 - Bad message"
+    // on electron-builder universal zips.
+    shell.openExternal(RELEASE_PAGE_URL);
+  } finally {
+    // Always detach the DMG if we mounted one, even on failure.
+    if (mountPoint) {
+      try { execSync(`hdiutil detach "${mountPoint}" -quiet`); } catch { /* best effort */ }
+    }
   }
 }
 
@@ -396,13 +486,30 @@ function performLinuxUpdate(tempPath: string): void {
       // Make executable
       fs.chmodSync(tempPath, 0o755);
 
-      // Try to replace the current AppImage
-      // Linux doesn't lock running executables, so we can move over the current one
+      // Try to replace the current AppImage.
+      // Linux doesn't lock running executables, so we can replace the
+      // current one — but we rename it aside first so a failed copy
+      // never leaves the user with a corrupted AppImage.
       if (execPath && fs.existsSync(execPath)) {
-        // Move new file to the same location as the current one
-        fs.copyFileSync(tempPath, execPath);
-        fs.chmodSync(execPath, 0o755);
-        fs.unlinkSync(tempPath);
+        let backupPath: string | null = null;
+        try {
+          backupPath = `${execPath}.old`;
+          if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
+          fs.renameSync(execPath, backupPath);
+          fs.copyFileSync(tempPath, execPath);
+          fs.chmodSync(execPath, 0o755);
+        } catch (err) {
+          // Copy failed — restore the old AppImage so the user isn't left with nothing.
+          if (backupPath && fs.existsSync(backupPath)) {
+            try { fs.renameSync(backupPath, execPath); } catch { /* best effort */ }
+          }
+          throw err;
+        }
+        // Copy succeeded — clean up
+        try { fs.unlinkSync(tempPath); } catch { /* non-fatal */ }
+        if (backupPath) {
+          try { fs.unlinkSync(backupPath); } catch { /* non-fatal */ }
+        }
 
         // Relaunch
         spawn(execPath, [], { detached: true, stdio: 'ignore' }).unref();
