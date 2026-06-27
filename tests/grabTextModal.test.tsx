@@ -30,6 +30,16 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockWorker.recognize.mockResolvedValue({ data: { text: 'Hello World' } });
   mockWorker.terminate.mockResolvedValue(undefined);
+
+  (window as any).snapFrameAPI = {
+    copyTextToClipboard: vi.fn().mockResolvedValue(true),
+  };
+
+  Object.defineProperty(navigator, 'clipboard', {
+    value: { writeText: vi.fn().mockResolvedValue(undefined) },
+    writable: true,
+    configurable: true,
+  });
 });
 
 describe('GrabTextModal', () => {
@@ -120,5 +130,45 @@ describe('GrabTextModal', () => {
       expect(screen.getByText(/No image loaded/)).toBeInTheDocument();
     });
     expect(screen.getByText('Try Again')).toBeInTheDocument();
+  });
+
+  it('copies extracted text via snapFrameAPI.copyTextToClipboard', async () => {
+    render(<GrabTextModal onClose={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByText('Copy Text')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('Copy Text'));
+    await waitFor(() => {
+      expect((window as any).snapFrameAPI.copyTextToClipboard).toHaveBeenCalledWith('Hello World');
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Copied!')).toBeInTheDocument();
+    });
+  });
+
+  it('falls back to navigator.clipboard when IPC returns false', async () => {
+    (window as any).snapFrameAPI.copyTextToClipboard = vi.fn().mockResolvedValue(false);
+    render(<GrabTextModal onClose={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByText('Copy Text')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('Copy Text'));
+    await waitFor(() => {
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Hello World');
+    });
+  });
+
+  it('applies trim transform before copying when trim is enabled', async () => {
+    mockWorker.recognize.mockResolvedValue({ data: { text: '  foo  \n\nbar\n' } });
+    render(<GrabTextModal onClose={vi.fn()} />);
+    await waitFor(() => {
+      expect(document.querySelector('textarea')).toBeTruthy();
+    });
+    const checkbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByText('Copy Text'));
+    await waitFor(() => {
+      expect((window as any).snapFrameAPI.copyTextToClipboard).toHaveBeenCalledWith('foo\nbar');
+    });
   });
 });

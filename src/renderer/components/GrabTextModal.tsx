@@ -96,7 +96,7 @@ export default function GrabTextModal({ onClose }: GrabTextModalProps) {
     };
   }, [imageSrc]);
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     let finalPayload = text;
 
     if (trimText) {
@@ -109,17 +109,27 @@ export default function GrabTextModal({ onClose }: GrabTextModalProps) {
         .trim();
     }
 
-    navigator.clipboard.writeText(finalPayload)
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => {
-          setCopied(false);
-        }, 2000);
-      })
-      .catch((err) => {
+    // Prefer the IPC-backed clipboard (works even when the renderer is not
+    // focused, e.g. right after the OCR worker finishes). Fall back to the
+    // browser clipboard API if the preload bridge is unavailable.
+    try {
+      const success = await window.snapFrameAPI?.copyTextToClipboard?.(finalPayload);
+      if (!success) throw new Error('Clipboard write returned false');
+    } catch (ipcErr) {
+      console.warn('IPC clipboard copy failed, falling back to navigator.clipboard:', ipcErr);
+      try {
+        await navigator.clipboard.writeText(finalPayload);
+      } catch (err) {
         console.error('Clipboard copy failed:', err);
         alert('Could not copy text to clipboard.');
-      });
+        return;
+      }
+    }
+
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
 
   return (
