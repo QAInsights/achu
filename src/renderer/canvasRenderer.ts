@@ -154,6 +154,15 @@ export interface RenderConfig {
   autoImportCaptured?: boolean;
   captureShortcut?: string;
   forceCanvasSize?: { width: number; height: number };
+  /**
+   * On-screen width (CSS pixels) at which the annotation layer is currently
+   * rendered in the live preview. Annotation `strokeWidth`, `fontSize` and
+   * `outlineWidth` are stored relative to this display width, so the export
+   * must scale them by `contentWidth / annotationDisplayWidth` to match what
+   * the user sees on canvas. When unset, falls back to the natural image
+   * width (legacy behavior).
+   */
+  annotationDisplayWidth?: number;
   codeStudioActive?: boolean;
   codeStudioCode?: string;
   codeStudioLanguage?: string;
@@ -1139,7 +1148,7 @@ export function renderCanvas(
   // If noImage is true and not code studio, draw annotations directly on the background and return
   if (config.noImage && !config.codeStudioActive) {
     if (config.annotations && config.annotations.length > 0) {
-      drawAnnotationsOnCanvas(ctx, dims.width, dims.height, config.annotations);
+      drawAnnotationsOnCanvas(ctx, dims.width, dims.height, config.annotations, 0, 0, 1, config.annotationDisplayWidth);
     }
     drawWatermark(ctx, dims.width, dims.height, config);
     return;
@@ -1267,18 +1276,27 @@ function drawAnnotationsOnCanvas(
   annotations: Annotation[],
   originX?: number,
   originY?: number,
-  scaleFactor?: number
+  scaleFactor?: number,
+  refWidth?: number
 ) {
   const ox = originX ?? 0;
   const oy = originY ?? 0;
   const sf = scaleFactor ?? 1;
+  // `strokeWidth`, `fontSize` and `outlineWidth` are stored as CSS pixels
+  // relative to the on-screen annotation layer width. To reproduce what the
+  // user sees on canvas, scale them by the ratio of the export content width
+  // to that display width. When no display width is known, fall back to the
+  // natural image width (`canvasW / sf`) so legacy annotations keep their
+  // original export appearance.
+  const refW = refWidth && refWidth > 0 ? refWidth : canvasW / (sf || 1);
+  const pxScale = canvasW / refW;
 
   annotations.forEach((ann) => {
     ctx.save();
     ctx.strokeStyle = ann.color;
     ctx.fillStyle = ann.color;
 
-    const strokeW = (ann.strokeWidth / 1000) * canvasW;
+    const strokeW = ann.strokeWidth * pxScale;
     ctx.lineWidth = Math.max(1, strokeW);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -1300,7 +1318,7 @@ function drawAnnotationsOnCanvas(
       ctx.strokeRect(-halfW, -halfH, w, h);
     } else if (ann.type === 'filled-rect') {
       ctx.beginPath();
-      const r = Math.min(8 * sf, Math.abs(w) * 0.1, Math.abs(h) * 0.1);
+      const r = Math.min(8 * pxScale, Math.abs(w) * 0.1, Math.abs(h) * 0.1);
       ctx.roundRect ? ctx.roundRect(-halfW, -halfH, w, h, r) : ctx.rect(-halfW, -halfH, w, h);
       ctx.fill();
     } else if (ann.type === 'circle') {
@@ -1319,7 +1337,7 @@ function drawAnnotationsOnCanvas(
     } else if (ann.type === 'arrow') {
       drawArrowOnCanvas(ctx, ann, halfW, halfH, strokeW);
     } else if (ann.type === 'text' && ann.text) {
-      const fontSize = ann.fontSize ? ann.fontSize * sf : Math.max(12, Math.abs(h) * 0.7);
+      const fontSize = ann.fontSize ? ann.fontSize * pxScale : Math.max(12, Math.abs(h) * 0.7);
       const style = ann.fontItalic ? 'italic' : 'normal';
       const weight = ann.fontBold ? 'bold' : 'normal';
       ctx.font = `${style} ${weight} ${fontSize}px ${ann.fontFamily || 'sans-serif'}`;
@@ -1329,7 +1347,7 @@ function drawAnnotationsOnCanvas(
       if (ann.outlineEnabled) {
         const outlineColor = ann.outlineColor || '#000000';
         const outlineW = ann.outlineWidth !== undefined
-          ? Math.max(1, ann.outlineWidth * sf)
+          ? Math.max(1, ann.outlineWidth * pxScale)
           : Math.max(2, fontSize * 0.15);
         ctx.save();
         ctx.strokeStyle = outlineColor;
@@ -1371,7 +1389,7 @@ function drawAnnotationsOnCanvas(
     ctx.beginPath();
     ctx.rect(contentX, contentY + scaledChromeHeight, contentW, imgH * scale);
     ctx.clip();
-    drawAnnotationsOnCanvas(ctx, contentW, imgH * scale, config.annotations, contentX, contentY + scaledChromeHeight, scale);
+    drawAnnotationsOnCanvas(ctx, contentW, imgH * scale, config.annotations, contentX, contentY + scaledChromeHeight, scale, config.annotationDisplayWidth);
     ctx.restore();
   }
 

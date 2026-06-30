@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppContext } from '../AppContext';
 import AnnotationsLayer from '../AnnotationsLayer';
 import { zoomIn, zoomOut } from '../utils/layoutUtils';
@@ -70,6 +70,7 @@ export default function CanvasPreview() {
     annotationColor,
     setAnnotationColor,
     annotationStrokeWidth,
+    setAnnotationDisplayWidth,
     getCurrentConfig,
     pushHistory,
     customPrompt,
@@ -95,6 +96,15 @@ export default function CanvasPreview() {
     codeStudioBreakpoints, setCodeStudioBreakpoints,
     codeStudioShowBreakpoints,
   } = useAppContext();
+
+  // Report the on-screen annotation layer width up to AppContext so the export
+  // pipeline can scale strokeWidth/fontSize to match the live canvas preview.
+  const handleAnnotationDimensionsChange = useCallback(
+    (dims: { width: number; height: number }) => {
+      setAnnotationDisplayWidth(dims.width || 0);
+    },
+    [setAnnotationDisplayWidth],
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 1024, height: 768 });
@@ -420,6 +430,7 @@ export default function CanvasPreview() {
                         pushHistory(cfg);
                       }}
                       customPrompt={customPrompt}
+                      onDimensionsChange={handleAnnotationDimensionsChange}
                     />
                   </div>
                 )}
@@ -440,6 +451,7 @@ export default function CanvasPreview() {
                     pushHistory(cfg);
                   }}
                   customPrompt={customPrompt}
+                  onDimensionsChange={handleAnnotationDimensionsChange}
                 />
               </div>
             )}

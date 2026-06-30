@@ -246,6 +246,8 @@ export function makeFullMockContext(overrides: Record<string, any> = {}) {
     setAnnotationColor: noop,
     annotationStrokeWidth: 4,
     setAnnotationStrokeWidth: noop,
+    annotationDisplayWidth: 0,
+    setAnnotationDisplayWidth: noop,
     arrowStyle: 'classic' as const,
     setArrowStyle: noop,
     annotationFont: 'sans-serif',

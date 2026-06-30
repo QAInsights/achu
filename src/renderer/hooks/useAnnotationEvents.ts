@@ -27,6 +27,7 @@ interface UseAnnotationEventsProps {
   onSaveHistory: (newAnns?: Annotation[]) => void;
   customPrompt: (message: string, defaultValue?: string) => Promise<string | null>;
   containerRef: RefObject<HTMLDivElement | null>;
+  onDimensionsChange?: (dims: { width: number; height: number }) => void;
 }
 
 function rotatePoint(x: number, y: number, cx: number, cy: number, angleDeg: number) {
@@ -66,6 +67,7 @@ export function useAnnotationEvents({
   onSaveHistory,
   customPrompt,
   containerRef,
+  onDimensionsChange,
 }: UseAnnotationEventsProps) {
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
   const [drawingAnnotation, setDrawingAnnotation] = useState<Annotation | null>(null);
@@ -127,6 +129,12 @@ export function useAnnotationEvents({
       return { width: w, height: h };
     });
   });
+
+  // Report the live annotation-layer dimensions up so the export pipeline can
+  // scale strokeWidth/fontSize to match what the user sees on canvas.
+  useEffect(() => {
+    if (onDimensionsChange) onDimensionsChange(dimensions);
+  }, [dimensions, onDimensionsChange]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

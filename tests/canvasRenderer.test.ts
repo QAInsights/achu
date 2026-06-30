@@ -1135,3 +1135,111 @@ describe('drawBackground url() cover-scale regression', () => {
     expect(calledSync).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Regression: annotation stroke/font/outline must scale with the export
+// content width relative to the on-screen preview width, so objects render
+// at the same proportions on export as they do on the live canvas.
+// Bug: with a large screenshot, drawn objects looked smaller on export/copy
+// than on the live canvas.
+// ---------------------------------------------------------------------------
+describe('annotation export scaling parity with live preview', () => {
+  it('scales text fontSize by contentWidth / annotationDisplayWidth (large screenshot)', () => {
+    const { canvas, ctx } = makeMockCanvas();
+    // Large screenshot (2400px) displayed at 800px in the live preview.
+    const img = makeMockImage(2400, 1600);
+    const annotations: Annotation[] = [{
+      id: '1', type: 'text', x: 0.1, y: 0.1, w: 0.3, h: 0.2,
+      color: '#ffffff', strokeWidth: 4, text: 'Hello',
+      fontSize: 24,
+    }];
+    const config = { ...baseConfig, annotations, annotationDisplayWidth: 800 };
+    renderCanvas(canvas, img, config);
+    // contentW = 2400, displayWidth = 800 -> pxScale = 3 -> fontSize = 24 * 3 = 72
+    expect(ctx._state.font).toContain('72px');
+  });
+
+  it('scales stroke width by contentWidth / annotationDisplayWidth', () => {
+    const { canvas, ctx } = makeMockCanvas();
+    const img = makeMockImage(2400, 1600);
+    const annotations: Annotation[] = [{
+      id: '1', type: 'rect', x: 0.1, y: 0.1, w: 0.3, h: 0.2,
+      color: '#ff0000', strokeWidth: 4,
+    }];
+    const config = { ...baseConfig, annotations, annotationDisplayWidth: 800 };
+    renderCanvas(canvas, img, config);
+    // pxScale = 2400 / 800 = 3 -> strokeW = 4 * 3 = 12
+    expect(ctx._state.lineWidth).toBe(12);
+  });
+
+  it('scales text outline width by contentWidth / annotationDisplayWidth', () => {
+    const { canvas, ctx } = makeMockCanvas();
+    const img = makeMockImage(2400, 1600);
+    const annotations: Annotation[] = [{
+      id: '1', type: 'text', x: 0.1, y: 0.1, w: 0.3, h: 0.2,
+      color: '#ffffff', strokeWidth: 4, text: 'Hello',
+      fontSize: 24,
+      outlineEnabled: true,
+      outlineColor: '#000000',
+      outlineWidth: 6,
+    }];
+    const config = { ...baseConfig, annotations, annotationDisplayWidth: 800 };
+    renderCanvas(canvas, img, config);
+    // pxScale = 3 -> outlineW = max(1, 6 * 3) = 18
+    expect(ctx._state.lineWidth).toBe(18);
+  });
+
+  it('preserves live-preview proportions: fontSize matches on-screen ratio', () => {
+    // On the live canvas the user sees fontSize=24 over an 800px-wide screenshot
+    // (24/800 = 3% of width). The export draws the screenshot at 2400px, so the
+    // font must be 72px to keep the same 3% proportion.
+    const { canvas, ctx } = makeMockCanvas();
+    const img = makeMockImage(2400, 1600);
+    const annotations: Annotation[] = [{
+      id: '1', type: 'text', x: 0.1, y: 0.1, w: 0.3, h: 0.2,
+      color: '#ffffff', strokeWidth: 4, text: 'Hello',
+      fontSize: 24,
+    }];
+    const config = { ...baseConfig, annotations, annotationDisplayWidth: 800 };
+    renderCanvas(canvas, img, config);
+    const fontMatch = ctx._state.font.match(/(\d+(?:\.\d+)?)px/);
+    const exportedFontSize = fontMatch ? parseFloat(fontMatch[1]) : 0;
+    // Proportion of font to content width should match the live preview ratio.
+    const contentW = 2400; // imgW * scale(100%)
+    expect(exportedFontSize / contentW).toBeCloseTo(24 / 800, 5);
+  });
+
+  it('falls back to legacy scaling when annotationDisplayWidth is not provided', () => {
+    // Without annotationDisplayWidth, fontSize should scale by `sf` only
+    // (legacy behavior), preserving backward compatibility for old annotations.
+    const { canvas, ctx } = makeMockCanvas();
+    const img = makeMockImage(800, 600);
+    const annotations: Annotation[] = [{
+      id: '1', type: 'text', x: 0.1, y: 0.1, w: 0.3, h: 0.2,
+      color: '#ffffff', strokeWidth: 4, text: 'Hello',
+      fontSize: 32,
+      fontFamily: 'Verdana',
+      fontBold: true,
+      fontItalic: true,
+    }];
+    const config = { ...baseConfig, annotations };
+    renderCanvas(canvas, img, config);
+    // scale = 100 -> sf = 1 -> legacy fontSize = 32 * 1 = 32
+    expect(ctx._state.font).toBe('italic bold 32px Verdana');
+  });
+
+  it('does not shrink fontSize when screenshot is large but displayed at natural size', () => {
+    // If the user views the screenshot at its natural width (displayWidth = imgW),
+    // pxScale = 1 and fontSize should equal the stored value (no shrink).
+    const { canvas, ctx } = makeMockCanvas();
+    const img = makeMockImage(2400, 1600);
+    const annotations: Annotation[] = [{
+      id: '1', type: 'text', x: 0.1, y: 0.1, w: 0.3, h: 0.2,
+      color: '#ffffff', strokeWidth: 4, text: 'Hello',
+      fontSize: 24,
+    }];
+    const config = { ...baseConfig, annotations, annotationDisplayWidth: 2400 };
+    renderCanvas(canvas, img, config);
+    expect(ctx._state.font).toContain('24px');
+  });
+});

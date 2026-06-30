@@ -44,6 +44,7 @@ beforeEach(() => {
     position: 'Middle center',
     annotations: [],
     setAnnotations: vi.fn(),
+    setAnnotationDisplayWidth: vi.fn(),
     imageSrc: 'data:image/png;base64,mock',
     zoomLevel: 'Zoom to fit',
     setZoomLevel: vi.fn(),

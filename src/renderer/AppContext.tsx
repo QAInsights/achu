@@ -87,6 +87,7 @@ interface AppContextType {
   annotations: Annotation[]; setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
   annotationColor: string; setAnnotationColor: React.Dispatch<React.SetStateAction<string>>;
   annotationStrokeWidth: number; setAnnotationStrokeWidth: React.Dispatch<React.SetStateAction<number>>;
+  annotationDisplayWidth: number; setAnnotationDisplayWidth: React.Dispatch<React.SetStateAction<number>>;
   redactions: RedactionItem[]; setRedactions: React.Dispatch<React.SetStateAction<RedactionItem[]>>;
   isScanningSecrets: boolean; setIsScanningSecrets: React.Dispatch<React.SetStateAction<boolean>>;
   scanProgress: number; setScanProgress: React.Dispatch<React.SetStateAction<number>>;
@@ -310,6 +311,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [annotationColor, setAnnotationColor] = useState<string>('#f43f5e');
   const [annotationStrokeWidth, setAnnotationStrokeWidth] = useState<number>(4);
+  const [annotationDisplayWidth, setAnnotationDisplayWidth] = useState<number>(0);
   const [redactions, setRedactions] = useState<RedactionItem[]>([]);
   const [isScanningSecrets, setIsScanningSecrets] = useState<boolean>(false);
   const [scanProgress, setScanProgress] = useState<number>(0);
@@ -491,6 +493,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     annotationOutlineEnabled, annotationOutlineColor, annotationOutlineWidth,
     position, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread,
     noImage: noImageMode,
+    annotationDisplayWidth,
     imageSrc,
     selectedPreset,
     showSafeZone,
@@ -1797,7 +1800,7 @@ Severity rules:
       systemFonts, setSystemFonts,
       previewFont, setPreviewFont,
       activeTool, setActiveTool, arrowStyle, setArrowStyle, annotations, setAnnotations, annotationColor, setAnnotationColor,
-      annotationStrokeWidth, setAnnotationStrokeWidth, promptConfig, setPromptConfig, sidebarVisible, setSidebarVisible,
+      annotationStrokeWidth, setAnnotationStrokeWidth, annotationDisplayWidth, setAnnotationDisplayWidth, promptConfig, setPromptConfig, sidebarVisible, setSidebarVisible,
       secondarySidebarVisible, setSecondarySidebarVisible,
       secondarySidebarPosition, setSecondarySidebarPosition,
       settingsVisible, setSettingsVisible,

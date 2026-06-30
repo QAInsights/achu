@@ -25,6 +25,7 @@ interface AnnotationsLayerProps {
   strokeWidth: number;
   onSaveHistory: (newAnns?: Annotation[]) => void;
   customPrompt: (message: string, defaultValue?: string) => Promise<string | null>;
+  onDimensionsChange?: (dims: { width: number; height: number }) => void;
 }
 
 export default function AnnotationsLayer({
@@ -36,6 +37,7 @@ export default function AnnotationsLayer({
   strokeWidth,
   onSaveHistory,
   customPrompt,
+  onDimensionsChange,
 }: AnnotationsLayerProps) {
   const {
     arrowStyle,
@@ -99,6 +101,7 @@ export default function AnnotationsLayer({
     onSaveHistory,
     customPrompt,
     containerRef,
+    onDimensionsChange,
   });
 
   const allAnnotations = [...annotations];
