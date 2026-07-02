@@ -1,4 +1,21 @@
 
+// Network/timeout errors that represent an expected "service not reachable" state
+// for a health check, not a bug. These should be reported quietly (or not at all)
+// rather than logged as errors with full stack traces.
+const QUIET_ERROR_CODES = new Set([
+  'ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'EAI_AGAIN', 'EHOSTUNREACH', 'ENETUNREACH'
+]);
+
+function isQuietHealthCheckError(err: unknown): boolean {
+  if (!err) return false;
+  // AbortSignal.timeout throws a TimeoutError (name === 'TimeoutError') or AbortError
+  const name = (err as { name?: string }).name;
+  if (name === 'AbortError' || name === 'TimeoutError') return true;
+  // Node's undici wraps the underlying socket error in err.cause.code
+  const code = (err as { code?: string }).code ?? (err as { cause?: { code?: string } }).cause?.code;
+  return !!code && QUIET_ERROR_CODES.has(code);
+}
+
 export async function checkAIHealth(provider: string, endpoint: string, apiKey: string): Promise<boolean> {
   if (provider === 'ollama') {
     try {
@@ -7,7 +24,12 @@ export async function checkAIHealth(provider: string, endpoint: string, apiKey: 
       });
       return res.ok;
     } catch (err) {
-      console.error('[checkAIHealth] Ollama health check failed with error:', err);
+      if (isQuietHealthCheckError(err)) {
+        // Expected when Ollama isn't running locally — no need to spam the console.
+        console.debug(`[checkAIHealth] Ollama not reachable at ${endpoint}`);
+      } else {
+        console.error('[checkAIHealth] Ollama health check failed with error:', err);
+      }
       return false;
     }
   }
@@ -53,7 +75,11 @@ export async function checkAIHealth(provider: string, endpoint: string, apiKey: 
       return res.status !== 401;
     }
   } catch (err) {
-    console.error(`[checkAIHealth] Health check exception for ${provider}:`, err);
+    if (isQuietHealthCheckError(err)) {
+      console.debug(`[checkAIHealth] ${provider} endpoint not reachable`);
+    } else {
+      console.error(`[checkAIHealth] Health check exception for ${provider}:`, err);
+    }
     return false;
   }
 

@@ -82,6 +82,47 @@ describe('aiService - checkAIHealth', () => {
     expect(ok).toBe(false);
   });
 
+  it('should not log an error for ECONNREFUSED (Ollama not running)', async () => {
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const mockFetch = vi.mocked(fetch);
+    // Node's undici wraps socket errors in err.cause.code
+    mockFetch.mockRejectedValueOnce(
+      new TypeError('fetch failed', { cause: Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }) })
+    );
+    const ok = await checkAIHealth('ollama', 'http://localhost:11434', '');
+    expect(ok).toBe(false);
+    expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('Ollama not reachable'));
+    expect(errorSpy).not.toHaveBeenCalled();
+    debugSpy.mockRestore();
+    errorSpy.mockRestore();
+  });
+
+  it('should not log an error for AbortError/timeout (service slow to respond)', async () => {
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const mockFetch = vi.mocked(fetch);
+    const abortErr = new Error('The operation was aborted due to timeout');
+    abortErr.name = 'TimeoutError';
+    mockFetch.mockRejectedValueOnce(abortErr);
+    const ok = await checkAIHealth('ollama', 'http://localhost:11434', '');
+    expect(ok).toBe(false);
+    expect(debugSpy).toHaveBeenCalled();
+    expect(errorSpy).not.toHaveBeenCalled();
+    debugSpy.mockRestore();
+    errorSpy.mockRestore();
+  });
+
+  it('should still log an error for unexpected Ollama failures', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockRejectedValueOnce(new TypeError('invalid URL'));
+    const ok = await checkAIHealth('ollama', 'http://localhost:11434', '');
+    expect(ok).toBe(false);
+    expect(errorSpy).toHaveBeenCalledWith('[checkAIHealth] Ollama health check failed with error:', expect.anything());
+    errorSpy.mockRestore();
+  });
+
   it('should return false on OpenAI health check exception', async () => {
     const mockFetch = vi.mocked(fetch);
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
