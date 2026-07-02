@@ -435,7 +435,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [sidebarVisible, setSidebarVisible] = useState<boolean>(true);
   const [secondarySidebarVisible, setSecondarySidebarVisible] = useState<boolean>(() => getUserDefault('secondarySidebarVisible', true));
-  const [secondarySidebarPosition, setSecondarySidebarPosition] = useState<'left' | 'right'>(() => getUserDefault('secondarySidebarPosition', 'right'));
   const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
   const [helpVisible, setHelpVisible] = useState<boolean>(false);
   const [updateAvailable, setUpdateAvailable] = useState<{ version: string; releaseUrl: string } | null>(null);
@@ -458,7 +457,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return (saved as 'dark' | 'light') || 'dark';
   });
 
-  const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>(() => getUserDefault('sidebarPosition', 'left'));
+  // Style sidebar (primary). Default right.
+  const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>(() => getUserDefault('sidebarPosition', 'right'));
+  // AI & OCR sidebar (secondary). Default left, and must always be on the
+  // opposite side from the style sidebar. If persisted settings put both on
+  // the same side, flip the secondary to the opposite of the primary.
+  const [secondarySidebarPosition, setSecondarySidebarPosition] = useState<'left' | 'right'>(() => {
+    const primary = getUserDefault('sidebarPosition', 'right');
+    const saved = getUserDefault('secondarySidebarPosition', 'left');
+    return saved === primary ? (primary === 'left' ? 'right' : 'left') : saved;
+  });
+
+  // Defense-in-depth: if any code path puts both sidebars on the same side
+  // after mount, force the secondary back to the opposite side.
+  useEffect(() => {
+    if (secondarySidebarPosition === sidebarPosition) {
+      setSecondarySidebarPosition(sidebarPosition === 'left' ? 'right' : 'left');
+    }
+  }, [sidebarPosition, secondarySidebarPosition]);
 
   // Auto-Vibe state
   const [vibePalette, setVibePalette] = useState<VibePalette | null>(null);

@@ -155,7 +155,7 @@ describe('storageUtils', () => {
       expect(DEFAULT_SETTINGS).toHaveProperty('exportFormat', 'png');
       expect(DEFAULT_SETTINGS).toHaveProperty('jpegQuality', 90);
       expect(DEFAULT_SETTINGS).toHaveProperty('compressionMode', 'balanced');
-      expect(DEFAULT_SETTINGS).toHaveProperty('sidebarPosition', 'left');
+      expect(DEFAULT_SETTINGS).toHaveProperty('sidebarPosition', 'right');
       expect(DEFAULT_SETTINGS).toHaveProperty('galleryFolder', '');
     });
 

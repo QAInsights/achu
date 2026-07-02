@@ -366,7 +366,7 @@ describe('AppContext', () => {
       expect(mockUseExport.saveToGallery).not.toHaveBeenCalled();
     });
 
-    it('fires clear workspace on Ctrl+N', () => {
+    it('fires new workspace on Ctrl+N', () => {
       let currentCtx: any;
       function ShortcutConsumer() {
         currentCtx = useAppContext();
@@ -749,7 +749,7 @@ describe('AppContext', () => {
           <span data-testid="redactions-count">{ctx.redactions.length}</span>
           <span data-testid="meshPoints-count">{ctx.meshPoints.length}</span>
           <button data-testid="reset-btn" onClick={ctx.resetStyles}>Reset Styles</button>
-          <button data-testid="clear-btn" onClick={ctx.clearWorkspace}>Clear Workspace</button>
+          <button data-testid="clear-btn" onClick={ctx.clearWorkspace}>New Workspace</button>
           <button data-testid="redact-all-btn" onClick={ctx.redactAll}>Redact All</button>
           <button data-testid="reveal-all-btn" onClick={ctx.revealAll}>Reveal All</button>
           <button data-testid="apply-mesh" onClick={() => ctx.applyMeshPalette(['#ff0000', '#00ff00'])}>Apply Mesh</button>
@@ -933,7 +933,17 @@ describe('AppContext', () => {
       );
     }
 
-    it('defaults sidebar position to left', () => {
+    it('defaults sidebar position to right', () => {
+      render(
+        <AppProvider>
+          <SidebarConsumer />
+        </AppProvider>
+      );
+      expect(screen.getByTestId('sidebar-pos')).toHaveTextContent('right');
+    });
+
+    it('reads sidebar position from localStorage', () => {
+      localStorage.setItem('snapframe-user-defaults', JSON.stringify({ sidebarPosition: 'left' }));
       render(
         <AppProvider>
           <SidebarConsumer />
@@ -942,14 +952,47 @@ describe('AppContext', () => {
       expect(screen.getByTestId('sidebar-pos')).toHaveTextContent('left');
     });
 
-    it('reads sidebar position from localStorage', () => {
-      localStorage.setItem('snapframe-user-defaults', JSON.stringify({ sidebarPosition: 'right' }));
+    it('defaults secondary sidebar position to left (opposite of style sidebar)', () => {
+      function DualConsumer() {
+        const ctx = useAppContext();
+        return (
+          <div>
+            <span data-testid="sidebar-pos">{ctx.sidebarPosition}</span>
+            <span data-testid="secondary-pos">{ctx.secondarySidebarPosition}</span>
+          </div>
+        );
+      }
       render(
         <AppProvider>
-          <SidebarConsumer />
+          <DualConsumer />
         </AppProvider>
       );
       expect(screen.getByTestId('sidebar-pos')).toHaveTextContent('right');
+      expect(screen.getByTestId('secondary-pos')).toHaveTextContent('left');
+    });
+
+    it('flips secondary sidebar to opposite side when persisted settings put both on the same side', () => {
+      localStorage.setItem('snapframe-user-defaults', JSON.stringify({
+        sidebarPosition: 'left',
+        secondarySidebarPosition: 'left'
+      }));
+      function DualConsumer() {
+        const ctx = useAppContext();
+        return (
+          <div>
+            <span data-testid="sidebar-pos">{ctx.sidebarPosition}</span>
+            <span data-testid="secondary-pos">{ctx.secondarySidebarPosition}</span>
+          </div>
+        );
+      }
+      render(
+        <AppProvider>
+          <DualConsumer />
+        </AppProvider>
+      );
+      // Style sidebar honored at 'left'; secondary must flip to 'right'.
+      expect(screen.getByTestId('sidebar-pos')).toHaveTextContent('left');
+      expect(screen.getByTestId('secondary-pos')).toHaveTextContent('right');
     });
   });
 

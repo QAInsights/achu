@@ -109,7 +109,7 @@ describe('storageUtils - Extended', () => {
       expect(DEFAULT_SETTINGS.watermarkOpacity).toBe(0.45);
       expect(DEFAULT_SETTINGS.exportFormat).toBe('png');
       expect(DEFAULT_SETTINGS.jpegQuality).toBe(90);
-      expect(DEFAULT_SETTINGS.sidebarPosition).toBe('left');
+      expect(DEFAULT_SETTINGS.sidebarPosition).toBe('right');
     });
   });
 });

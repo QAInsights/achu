@@ -28,7 +28,7 @@ function TestConsumer() {
       
       <button data-testid="change-format" onClick={() => setExportFormat('jpeg')}>Change Format</button>
       <button data-testid="change-quality" onClick={() => setJpegQuality(75)}>Change Quality</button>
-      <button data-testid="change-sidebar" onClick={() => setSidebarPosition('right')}>Change Sidebar</button>
+      <button data-testid="change-sidebar" onClick={() => setSidebarPosition('left')}>Change Sidebar</button>
     </div>
   );
 }
@@ -49,7 +49,7 @@ describe('Settings Synchronization', () => {
     // Initial values
     expect(screen.getByTestId('exportFormat').textContent).toBe('png');
     expect(screen.getByTestId('jpegQuality').textContent).toBe('90');
-    expect(screen.getByTestId('sidebarPosition').textContent).toBe('left');
+    expect(screen.getByTestId('sidebarPosition').textContent).toBe('right');
 
     // Change exportFormat
     act(() => {
@@ -78,11 +78,11 @@ describe('Settings Synchronization', () => {
     act(() => {
       fireEvent.click(screen.getByTestId('change-sidebar'));
     });
-    expect(screen.getByTestId('sidebarPosition').textContent).toBe('right');
+    expect(screen.getByTestId('sidebarPosition').textContent).toBe('left');
 
     await waitFor(() => {
       const defaults = JSON.parse(localStorage.getItem('snapframe-user-defaults') || '{}');
-      expect(defaults.sidebarPosition).toBe('right');
+      expect(defaults.sidebarPosition).toBe('left');
     });
 
     // Verify snapFrameAPI.saveSettings is eventually called with the updated config
@@ -91,7 +91,7 @@ describe('Settings Synchronization', () => {
       const lastCallArgs = mockSaveSettings.mock.calls[mockSaveSettings.mock.calls.length - 1][0];
       expect(lastCallArgs.lastConfig.exportFormat).toBe('jpeg');
       expect(lastCallArgs.lastConfig.jpegQuality).toBe(75);
-      expect(lastCallArgs.lastConfig.sidebarPosition).toBe('right');
+      expect(lastCallArgs.lastConfig.sidebarPosition).toBe('left');
     }, { timeout: 2500 });
   });
 });
