@@ -845,18 +845,18 @@ describe('WorkspaceToolbar', () => {
     expect(helpButton).toHaveClass('active');
   });
 
-  it('renders clear workspace button', () => {
+  it('renders new workspace button', () => {
     render(<WorkspaceToolbar />);
-    
-    const clearButton = screen.getByTitle('Clear workspace (Ctrl + N)');
-    expect(clearButton).toBeInTheDocument();
+
+    const newButton = screen.getByTitle('New workspace (Ctrl + N)');
+    expect(newButton).toBeInTheDocument();
   });
 
   it('clears workspace on button click', () => {
     render(<WorkspaceToolbar />);
-    
-    fireEvent.click(screen.getByTitle('Clear workspace (Ctrl + N)'));
-    
+
+    fireEvent.click(screen.getByTitle('New workspace (Ctrl + N)'));
+
     expect(mockContext.clearWorkspace).toHaveBeenCalled();
   });
 

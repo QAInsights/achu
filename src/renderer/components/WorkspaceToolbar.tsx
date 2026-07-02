@@ -5,7 +5,7 @@ import {
   LayoutGrid,
   Undo2,
   Redo2,
-  RotateCcw,
+  FilePlus,
   MousePointer,
   Square,
   Circle,
@@ -139,10 +139,10 @@ export default function WorkspaceToolbar() {
           <button
             className="tool-btn"
             onClick={clearWorkspace}
-            title={`Clear workspace (${formatModShortcut('N')})`}
-            aria-label="Clear workspace"
+            title={`New workspace (${formatModShortcut('N')})`}
+            aria-label="New workspace"
           >
-            <RotateCcw className="w-4 h-4" />
+            <FilePlus className="w-4 h-4" />
           </button>
         </Tooltip>
       </div>
