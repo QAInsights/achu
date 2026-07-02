@@ -24,6 +24,14 @@ interface UseAnnotationEventsProps {
   setAnnotationOutlineColor?: (color: string) => void;
   annotationOutlineWidth?: number;
   setAnnotationOutlineWidth?: (width: number) => void;
+  annotationGradientEnabled?: boolean;
+  setAnnotationGradientEnabled?: (enabled: boolean) => void;
+  annotationGradientColor1?: string;
+  setAnnotationGradientColor1?: (color: string) => void;
+  annotationGradientColor2?: string;
+  setAnnotationGradientColor2?: (color: string) => void;
+  annotationGradientAngle?: number;
+  setAnnotationGradientAngle?: (angle: number) => void;
   onSaveHistory: (newAnns?: Annotation[]) => void;
   customPrompt: (message: string, defaultValue?: string) => Promise<string | null>;
   containerRef: RefObject<HTMLDivElement | null>;
@@ -64,6 +72,14 @@ export function useAnnotationEvents({
   setAnnotationOutlineColor,
   annotationOutlineWidth,
   setAnnotationOutlineWidth,
+  annotationGradientEnabled,
+  setAnnotationGradientEnabled,
+  annotationGradientColor1,
+  setAnnotationGradientColor1,
+  annotationGradientColor2,
+  setAnnotationGradientColor2,
+  annotationGradientAngle,
+  setAnnotationGradientAngle,
   onSaveHistory,
   customPrompt,
   containerRef,
@@ -227,13 +243,29 @@ export function useAnnotationEvents({
       updatedAnn.outlineWidth = annotationOutlineWidth;
       changed = true;
     }
+    if (annotationGradientEnabled !== undefined && selectedAnn.gradientEnabled !== annotationGradientEnabled) {
+      updatedAnn.gradientEnabled = annotationGradientEnabled;
+      changed = true;
+    }
+    if (annotationGradientColor1 !== undefined && selectedAnn.gradientColor1 !== annotationGradientColor1) {
+      updatedAnn.gradientColor1 = annotationGradientColor1;
+      changed = true;
+    }
+    if (annotationGradientColor2 !== undefined && selectedAnn.gradientColor2 !== annotationGradientColor2) {
+      updatedAnn.gradientColor2 = annotationGradientColor2;
+      changed = true;
+    }
+    if (annotationGradientAngle !== undefined && selectedAnn.gradientAngle !== annotationGradientAngle) {
+      updatedAnn.gradientAngle = annotationGradientAngle;
+      changed = true;
+    }
 
     if (changed) {
       const updated = annotations.map(a => (a.id === selectedId ? updatedAnn : a));
       setAnnotations(updated);
       onSaveHistory(updated);
     }
-  }, [annotationFont, annotationFontSize, annotationBold, annotationItalic, annotationOutlineEnabled, annotationOutlineColor, annotationOutlineWidth, selectedId]);
+  }, [annotationFont, annotationFontSize, annotationBold, annotationItalic, annotationOutlineEnabled, annotationOutlineColor, annotationOutlineWidth, annotationGradientEnabled, annotationGradientColor1, annotationGradientColor2, annotationGradientAngle, selectedId]);
 
   // Update active selectors state to match selected annotation's font properties
   useEffect(() => {
@@ -262,7 +294,19 @@ export function useAnnotationEvents({
     if (selectedAnn.outlineWidth !== undefined && selectedAnn.outlineWidth !== annotationOutlineWidth && setAnnotationOutlineWidth) {
       setAnnotationOutlineWidth(selectedAnn.outlineWidth);
     }
-  }, [selectedId, setAnnotationFont, setAnnotationFontSize, setAnnotationBold, setAnnotationItalic, setAnnotationOutlineEnabled, setAnnotationOutlineColor, setAnnotationOutlineWidth]);
+    if (selectedAnn.gradientEnabled !== undefined && selectedAnn.gradientEnabled !== annotationGradientEnabled && setAnnotationGradientEnabled) {
+      setAnnotationGradientEnabled(selectedAnn.gradientEnabled);
+    }
+    if (selectedAnn.gradientColor1 !== undefined && selectedAnn.gradientColor1 !== annotationGradientColor1 && setAnnotationGradientColor1) {
+      setAnnotationGradientColor1(selectedAnn.gradientColor1);
+    }
+    if (selectedAnn.gradientColor2 !== undefined && selectedAnn.gradientColor2 !== annotationGradientColor2 && setAnnotationGradientColor2) {
+      setAnnotationGradientColor2(selectedAnn.gradientColor2);
+    }
+    if (selectedAnn.gradientAngle !== undefined && selectedAnn.gradientAngle !== annotationGradientAngle && setAnnotationGradientAngle) {
+      setAnnotationGradientAngle(selectedAnn.gradientAngle);
+    }
+  }, [selectedId, setAnnotationFont, setAnnotationFontSize, setAnnotationBold, setAnnotationItalic, setAnnotationOutlineEnabled, setAnnotationOutlineColor, setAnnotationOutlineWidth, setAnnotationGradientEnabled, setAnnotationGradientColor1, setAnnotationGradientColor2, setAnnotationGradientAngle]);
 
   const handleFreehandDraw = (mouseX: number, mouseY: number, startX: number, startY: number) => {
     const newPoints = [...penPoints, { x: mouseX, y: mouseY }];
@@ -404,6 +448,10 @@ export function useAnnotationEvents({
       outlineEnabled: activeTool === 'text' ? (annotationOutlineEnabled ?? false) : undefined,
       outlineColor: activeTool === 'text' ? (annotationOutlineColor || '#000000') : undefined,
       outlineWidth: activeTool === 'text' ? (annotationOutlineWidth ?? 3) : undefined,
+      gradientEnabled: activeTool === 'text' ? (annotationGradientEnabled ?? false) : undefined,
+      gradientColor1: activeTool === 'text' ? (annotationGradientColor1 || '#ff0080') : undefined,
+      gradientColor2: activeTool === 'text' ? (annotationGradientColor2 || '#7928ca') : undefined,
+      gradientAngle: activeTool === 'text' ? (annotationGradientAngle ?? 135) : undefined,
     };
     if (activeTool === 'pen') setPenPoints([{ x: mouseX, y: mouseY }]);
     setDrawingAnnotation(newAnn);

@@ -2,6 +2,7 @@ import { useAppContext } from '../AppContext';
 import InspectorSection from './InspectorSection';
 import { Sparkles } from 'lucide-react';
 import FontSelector from './FontSelector';
+import ColorSwatchPicker from './annotations/ColorSwatchPicker';
 
 export default function ExtraSettings() {
   const {
@@ -25,6 +26,10 @@ export default function ExtraSettings() {
     annotationOutlineEnabled = false, setAnnotationOutlineEnabled,
     annotationOutlineColor = '#000000', setAnnotationOutlineColor,
     annotationOutlineWidth = 3, setAnnotationOutlineWidth,
+    annotationGradientEnabled = false, setAnnotationGradientEnabled,
+    annotationGradientColor1 = '#ff0080', setAnnotationGradientColor1,
+    annotationGradientColor2 = '#7928ca', setAnnotationGradientColor2,
+    annotationGradientAngle = 135, setAnnotationGradientAngle,
     activeTool,
     systemFonts = [],
     getCurrentConfig, pushHistory, handleSliderRelease
@@ -264,6 +269,56 @@ export default function ExtraSettings() {
               />
             </div>
           </div>
+
+          {/* Text Gradient controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <label className="switch" style={{ flexShrink: 0 }}>
+              <input
+                type="checkbox"
+                checked={annotationGradientEnabled}
+                onChange={(e) => {
+                  setAnnotationGradientEnabled(e.target.checked);
+                  pushHistory({ ...getCurrentConfig(), annotationGradientEnabled: e.target.checked });
+                }}
+              />
+              <span className="slider" />
+            </label>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Gradient</span>
+            <ColorSwatchPicker
+              value={annotationGradientColor1}
+              onChange={(color) => {
+                setAnnotationGradientColor1(color);
+                pushHistory({ ...getCurrentConfig(), annotationGradientColor1: color });
+              }}
+              title="Gradient Start Color"
+              styleType="sidebar"
+            />
+            <ColorSwatchPicker
+              value={annotationGradientColor2}
+              onChange={(color) => {
+                setAnnotationGradientColor2(color);
+                pushHistory({ ...getCurrentConfig(), annotationGradientColor2: color });
+              }}
+              title="Gradient End Color"
+              styleType="sidebar"
+            />
+          </div>
+          {annotationGradientEnabled && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <div className="control-label-container">
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Gradient Angle</span>
+                <span className="control-value">{annotationGradientAngle}°</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                value={annotationGradientAngle}
+                onChange={(e) => setAnnotationGradientAngle(parseInt(e.target.value, 10))}
+                onMouseUp={handleSliderRelease}
+              />
+            </div>
+          )}
         </div>
         )}
 

@@ -83,6 +83,14 @@ beforeEach(() => {
     setAnnotationOutlineColor: vi.fn(),
     annotationOutlineWidth: 3,
     setAnnotationOutlineWidth: vi.fn(),
+    annotationGradientEnabled: false,
+    setAnnotationGradientEnabled: vi.fn(),
+    annotationGradientColor1: '#ff0080',
+    setAnnotationGradientColor1: vi.fn(),
+    annotationGradientColor2: '#7928ca',
+    setAnnotationGradientColor2: vi.fn(),
+    annotationGradientAngle: 135,
+    setAnnotationGradientAngle: vi.fn(),
     systemFonts: [],
     handleSliderRelease: vi.fn(),
     getCurrentConfig: vi.fn(() => ({})),
@@ -423,7 +431,9 @@ describe('ExtraSettings', () => {
   it('toggles watermark', () => {
     render(<ExtraSettings />);
 
-    const checkbox = screen.getAllByRole('checkbox')[1];
+    const watermarkLabel = screen.getByText('Watermark');
+    const switchContainer = watermarkLabel.closest('.switch-container');
+    const checkbox = switchContainer!.querySelector('input[type="checkbox"]') as HTMLInputElement;
     fireEvent.click(checkbox);
 
     expect(mockContext.setWatermarkEnabled).toHaveBeenCalledWith(true);

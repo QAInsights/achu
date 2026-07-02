@@ -46,6 +46,10 @@ export interface AppSettings {
     annotationOutlineEnabled?: boolean;
     annotationOutlineColor?: string;
     annotationOutlineWidth?: number;
+    annotationGradientEnabled?: boolean;
+    annotationGradientColor1?: string;
+    annotationGradientColor2?: string;
+    annotationGradientAngle?: number;
     position: string;
     captureShortcut?: string;
     autoImportCaptured?: boolean;
@@ -111,6 +115,10 @@ export const defaultSettings: AppSettings = {
     annotationOutlineEnabled: false,
     annotationOutlineColor: '#000000',
     annotationOutlineWidth: 3,
+    annotationGradientEnabled: false,
+    annotationGradientColor1: '#ff0080',
+    annotationGradientColor2: '#7928ca',
+    annotationGradientAngle: 135,
     position: 'Middle center',
     captureShortcut: 'PrintScreen',
     autoImportCaptured: true,

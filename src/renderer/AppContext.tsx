@@ -79,6 +79,10 @@ interface AppContextType {
   annotationOutlineEnabled: boolean; setAnnotationOutlineEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   annotationOutlineColor: string; setAnnotationOutlineColor: React.Dispatch<React.SetStateAction<string>>;
   annotationOutlineWidth: number; setAnnotationOutlineWidth: React.Dispatch<React.SetStateAction<number>>;
+  annotationGradientEnabled: boolean; setAnnotationGradientEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  annotationGradientColor1: string; setAnnotationGradientColor1: React.Dispatch<React.SetStateAction<string>>;
+  annotationGradientColor2: string; setAnnotationGradientColor2: React.Dispatch<React.SetStateAction<string>>;
+  annotationGradientAngle: number; setAnnotationGradientAngle: React.Dispatch<React.SetStateAction<number>>;
   systemFonts: string[]; setSystemFonts: React.Dispatch<React.SetStateAction<string[]>>;
   previewFont: string | null; setPreviewFont: React.Dispatch<React.SetStateAction<string | null>>;
   position: string; setPosition: React.Dispatch<React.SetStateAction<string>>;
@@ -303,6 +307,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [annotationOutlineEnabled, setAnnotationOutlineEnabled] = useState<boolean>(() => getUserDefault('annotationOutlineEnabled', false));
   const [annotationOutlineColor, setAnnotationOutlineColor] = useState<string>(() => getUserDefault('annotationOutlineColor', '#000000'));
   const [annotationOutlineWidth, setAnnotationOutlineWidth] = useState<number>(() => getUserDefault('annotationOutlineWidth', 3));
+  const [annotationGradientEnabled, setAnnotationGradientEnabled] = useState<boolean>(() => getUserDefault('annotationGradientEnabled', false));
+  const [annotationGradientColor1, setAnnotationGradientColor1] = useState<string>(() => getUserDefault('annotationGradientColor1', '#ff0080'));
+  const [annotationGradientColor2, setAnnotationGradientColor2] = useState<string>(() => getUserDefault('annotationGradientColor2', '#7928ca'));
+  const [annotationGradientAngle, setAnnotationGradientAngle] = useState<number>(() => getUserDefault('annotationGradientAngle', 135));
   const [systemFonts, setSystemFonts] = useState<string[]>(SYSTEM_FONT_FALLBACKS);
   const [previewFont, setPreviewFont] = useState<string | null>(null);
   const [position, setPosition] = useState<string>('Middle center');
@@ -507,6 +515,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     watermarkFont, watermarkBold, watermarkItalic,
     annotationFont, annotationFontSize, annotationBold, annotationItalic,
     annotationOutlineEnabled, annotationOutlineColor, annotationOutlineWidth,
+    annotationGradientEnabled, annotationGradientColor1, annotationGradientColor2, annotationGradientAngle,
     position, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread,
     noImage: noImageMode,
     annotationDisplayWidth,
@@ -586,6 +595,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAnnotationOutlineEnabled(config.annotationOutlineEnabled ?? false);
     setAnnotationOutlineColor(config.annotationOutlineColor ?? '#000000');
     setAnnotationOutlineWidth(config.annotationOutlineWidth ?? 3);
+    setAnnotationGradientEnabled(config.annotationGradientEnabled ?? false);
+    setAnnotationGradientColor1(config.annotationGradientColor1 ?? '#ff0080');
+    setAnnotationGradientColor2(config.annotationGradientColor2 ?? '#7928ca');
+    setAnnotationGradientAngle(config.annotationGradientAngle ?? 135);
     setPosition(config.position ?? 'Middle center');
     setAnnotations(config.annotations ?? []);
     setRedactions(config.redactions ?? []);
@@ -1813,6 +1826,7 @@ Severity rules:
       watermarkFont, setWatermarkFont, watermarkBold, setWatermarkBold, watermarkItalic, setWatermarkItalic,
       annotationFont, setAnnotationFont, annotationFontSize, setAnnotationFontSize, annotationBold, setAnnotationBold, annotationItalic, setAnnotationItalic,
       annotationOutlineEnabled, setAnnotationOutlineEnabled, annotationOutlineColor, setAnnotationOutlineColor, annotationOutlineWidth, setAnnotationOutlineWidth,
+      annotationGradientEnabled, setAnnotationGradientEnabled, annotationGradientColor1, setAnnotationGradientColor1, annotationGradientColor2, setAnnotationGradientColor2, annotationGradientAngle, setAnnotationGradientAngle,
       systemFonts, setSystemFonts,
       previewFont, setPreviewFont,
       activeTool, setActiveTool, arrowStyle, setArrowStyle, annotations, setAnnotations, annotationColor, setAnnotationColor,

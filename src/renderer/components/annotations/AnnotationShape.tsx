@@ -164,11 +164,14 @@ export default function AnnotationShape({
     const outlineW = ann.outlineWidth !== undefined
       ? ann.outlineWidth
       : Math.max(2, fSize * 0.15);
-    return (
+    const useGradient = ann.gradientEnabled && ann.gradientColor1 && ann.gradientColor2;
+    const fillValue = useGradient ? `url(#text-grad-${ann.id})` : ann.color;
+
+    const textEl = (
       <text
         x={0}
         y={0}
-        fill={ann.color}
+        fill={fillValue}
         fontSize={`${fSize}px`}
         textAnchor="middle"
         dominantBaseline="middle"
@@ -185,6 +188,25 @@ export default function AnnotationShape({
         {ann.text}
       </text>
     );
+
+    if (useGradient) {
+      const angleRad = (((ann.gradientAngle ?? 135) - 90) * Math.PI) / 180;
+      const cos = Math.cos(angleRad);
+      const sin = Math.sin(angleRad);
+      return (
+        <g>
+          <defs>
+            <linearGradient id={`text-grad-${ann.id}`} x1={0.5 - cos * 0.5} y1={0.5 - sin * 0.5} x2={0.5 + cos * 0.5} y2={0.5 + sin * 0.5}>
+              <stop offset="0%" stopColor={ann.gradientColor1} />
+              <stop offset="100%" stopColor={ann.gradientColor2} />
+            </linearGradient>
+          </defs>
+          {textEl}
+        </g>
+      );
+    }
+
+    return textEl;
   }
 
   if (ann.type === 'emoji' && ann.text) {

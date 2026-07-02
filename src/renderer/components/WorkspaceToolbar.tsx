@@ -27,6 +27,7 @@ import { useGalleryContext } from '../contexts/GalleryContext';
 import { toggleTheme } from '../utils/uiUtils';
 import Tooltip from './Tooltip';
 import FontSelector from './FontSelector';
+import ColorSwatchPicker from './annotations/ColorSwatchPicker';
 import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 import { formatModShortcut } from '../utils/shortcutLabels';
 
@@ -51,6 +52,10 @@ export default function WorkspaceToolbar() {
     annotationOutlineEnabled = false, setAnnotationOutlineEnabled,
     annotationOutlineColor = '#000000', setAnnotationOutlineColor,
     annotationOutlineWidth = 3, setAnnotationOutlineWidth,
+    annotationGradientEnabled = false, setAnnotationGradientEnabled,
+    annotationGradientColor1 = '#ff0080', setAnnotationGradientColor1,
+    annotationGradientColor2 = '#7928ca', setAnnotationGradientColor2,
+    annotationGradientAngle = 135, setAnnotationGradientAngle,
     systemFonts = [],
     pushHistory, getCurrentConfig, selectFile, colorInputRef,
     appTheme, setAppTheme,
@@ -352,6 +357,69 @@ export default function WorkspaceToolbar() {
                   <span className="toolbar-control-value">{annotationOutlineWidth}px</span>
                 </div>
               </Tooltip>
+            )}
+            <Tooltip position="right">
+              <button
+                className={`tool-btn ${annotationGradientEnabled ? 'active' : ''}`}
+                style={{
+                  backgroundColor: annotationGradientEnabled ? 'var(--accent)' : 'transparent',
+                  color: annotationGradientEnabled ? 'var(--on-accent)' : 'var(--text-secondary)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+                onClick={() => {
+                  setAnnotationGradientEnabled(!annotationGradientEnabled);
+                  pushHistory({ ...getCurrentConfig(), annotationGradientEnabled: !annotationGradientEnabled });
+                }}
+                title="Gradient Text (toggle on/off)"
+              >
+                <span style={{
+                  display: 'block',
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '2px',
+                  background: `linear-gradient(${annotationGradientAngle}deg, ${annotationGradientColor1}, ${annotationGradientColor2})`,
+                }} />
+              </button>
+            </Tooltip>
+            {annotationGradientEnabled && (
+              <>
+                <Tooltip position="right">
+                  <ColorSwatchPicker
+                    value={annotationGradientColor1}
+                    onChange={(color) => {
+                      setAnnotationGradientColor1(color);
+                      pushHistory({ ...getCurrentConfig(), annotationGradientColor1: color });
+                    }}
+                    title="Gradient Start Color"
+                  />
+                </Tooltip>
+                <Tooltip position="right">
+                  <ColorSwatchPicker
+                    value={annotationGradientColor2}
+                    onChange={(color) => {
+                      setAnnotationGradientColor2(color);
+                      pushHistory({ ...getCurrentConfig(), annotationGradientColor2: color });
+                    }}
+                    title="Gradient End Color"
+                  />
+                </Tooltip>
+                <Tooltip position="right">
+                  <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>
+                    <span className="toolbar-control-label">Angle</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="360"
+                      value={annotationGradientAngle}
+                      onChange={(e) => setAnnotationGradientAngle(parseInt(e.target.value, 10))}
+                      style={{ width: '50px' }}
+                      title={`Gradient Angle: ${annotationGradientAngle}°`}
+                    />
+                    <span className="toolbar-control-value">{annotationGradientAngle}°</span>
+                  </div>
+                </Tooltip>
+              </>
             )}
           </div>
         </>

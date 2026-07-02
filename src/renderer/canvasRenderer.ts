@@ -18,6 +18,10 @@ export interface Annotation {
   outlineEnabled?: boolean;
   outlineColor?: string;
   outlineWidth?: number;
+  gradientEnabled?: boolean;
+  gradientColor1?: string;
+  gradientColor2?: string;
+  gradientAngle?: number;
   imageSrc?: string;
 }
 
@@ -124,6 +128,10 @@ export interface RenderConfig {
   annotationOutlineEnabled?: boolean;
   annotationOutlineColor?: string;
   annotationOutlineWidth?: number;
+  annotationGradientEnabled?: boolean;
+  annotationGradientColor1?: string;
+  annotationGradientColor2?: string;
+  annotationGradientAngle?: number;
   position: string; // "Middle center", "Top center", "Bottom center", "Middle left", "Middle right"
   annotations?: Annotation[];
   meshPoints?: Array<{ id: string; color: string; x: number; y: number; radius: number }>;
@@ -1355,6 +1363,21 @@ function drawAnnotationsOnCanvas(
         ctx.lineJoin = 'round';
         ctx.strokeText(ann.text, 0, 0);
         ctx.restore();
+      }
+
+      if (ann.gradientEnabled && ann.gradientColor1 && ann.gradientColor2) {
+        const angleRad = (((ann.gradientAngle ?? 135) - 90) * Math.PI) / 180;
+        const metrics = ctx.measureText(ann.text);
+        const textW = metrics.width;
+        const textH = fontSize;
+        const ghw = textW / 2;
+        const ghh = textH / 2;
+        const dx = Math.cos(angleRad) * ghw;
+        const dy = Math.sin(angleRad) * ghh;
+        const grad = ctx.createLinearGradient(-dx, -dy, dx, dy);
+        grad.addColorStop(0, ann.gradientColor1);
+        grad.addColorStop(1, ann.gradientColor2);
+        ctx.fillStyle = grad;
       }
 
       ctx.fillText(ann.text, 0, 0);
