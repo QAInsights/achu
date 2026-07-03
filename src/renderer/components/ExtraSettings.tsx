@@ -151,8 +151,8 @@ export default function ExtraSettings() {
               <input 
                 type="range" 
                 min="12" 
-                max="72" 
-                value={annotationFontSize} 
+                max="124"
+                value={annotationFontSize}
                 onChange={(e) => {
                   setAnnotationFontSize(parseInt(e.target.value, 10));
                 }}

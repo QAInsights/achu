@@ -40,7 +40,7 @@ export function getCurvedArrowPoints(
   const cx = midX + nx * offset;
   const cy = midY + ny * offset;
 
-  const headLen = Math.max(12, strokeW * 3.5);
+  const headLen = Math.max(18, strokeW * 5);
   const hLen = Math.min(headLen, L * 0.55);
   const angle = Math.atan2(y1 - cy, x1 - cx);
 
@@ -90,7 +90,7 @@ export function getTaperedCurvedArrowPoints(
   const cy = midY + ny * offset;
 
   // Arrowhead size
-  const headLen = Math.max(12, strokeW * 3.5);
+  const headLen = Math.max(18, strokeW * 5);
   const hLen = Math.min(headLen, L * 0.55);
   const t_h = Math.max(0.1, 1 - hLen / L);
 
@@ -209,7 +209,7 @@ export function drawArrowOnCanvas(
     // classic or dashed
     const isDashed = style === 'dashed';
     const angle = Math.atan2(halfH * 2, halfW * 2);
-    const headLen = Math.max(12, strokeW * 3);
+    const headLen = Math.max(18, strokeW * 4.5);
 
     if (isDashed) {
       ctx.save();

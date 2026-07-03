@@ -246,7 +246,7 @@ export default function WorkspaceToolbar() {
                 <input
                   type="range"
                   min="12"
-                  max="72"
+                  max="124"
                   value={annotationFontSize}
                   onChange={(e) => setAnnotationFontSize(parseInt(e.target.value, 10))}
                   style={{ width: '60px' }}
