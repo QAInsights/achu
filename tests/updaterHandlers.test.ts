@@ -334,6 +334,25 @@ describe('Updater handlers (update:check)', () => {
 
     Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
   });
+
+  it('handles 304 Not Modified gracefully when no cached result exists (stale ETag)', async () => {
+    // Simulate settings with an ETag but NO cached result (corrupted/interrupted write)
+    const { loadSettings } = await import('../src/main/settings');
+    (loadSettings as any).mockImplementationOnce(() => ({
+      checkForUpdatesOnStartup: true,
+      lastUpdateCheck: Date.now() - 10 * 60 * 1000, // past TTL
+      lastUpdateResult: null,
+      lastUpdateETag: '"stale-etag"',
+    }));
+
+    // Server returns 304 — but we have nothing cached
+    global.fetch = vi.fn().mockResolvedValue(mockResponse(null, { ok: false, status: 304 })) as any;
+
+    const handler = getHandler('update:check');
+    // Should NOT throw — should return { available: false } gracefully
+    const result = await handler({}, true);
+    expect(result).toEqual({ available: false });
+  });
 });
 
 describe('Updater handlers (update:start)', () => {

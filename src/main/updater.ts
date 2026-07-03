@@ -172,6 +172,11 @@ export async function performUpdateCheck(useCache: boolean): Promise<UpdateCheck
       persistUpdateCache(settings, settings.lastUpdateResult, settings.lastUpdateETag || null);
       return settings.lastUpdateResult;
     }
+    // Stale ETag without a cached result — clear it so the next check is fresh
+    console.warn('[Updater] Got 304 without cached result; clearing stale ETag');
+    settings.lastUpdateETag = null;
+    saveSettings(settings);
+    return { available: false };
   }
 
   if (!response.ok) {
@@ -585,13 +590,20 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
       }
 
       if (process.platform === 'win32') {
-        performWindowsUpdate(tempPath);
+        // performWindowsUpdate spawns a detached batch script then calls app.quit().
+        // We must return the IPC reply FIRST, then delay the quit so the renderer
+        // actually receives { success: true } before the IPC channel is destroyed.
+        // The batch script handles the actual exe replacement and relaunch.
+        setTimeout(() => performWindowsUpdate(tempPath), 500);
         return { success: true };
       } else if (process.platform === 'darwin') {
-        performMacUpdate(tempPath);
+        // performMacUpdate is synchronous (ditto copy + spawn relaunch + app.quit()).
+        // Same IPC race as Windows — delay so the reply reaches the renderer first.
+        setTimeout(() => performMacUpdate(tempPath), 500);
         return { success: true, opened: true };
       } else {
-        performLinuxUpdate(tempPath);
+        // performLinuxUpdate is synchronous (rename + copy + spawn relaunch + app.quit()).
+        setTimeout(() => performLinuxUpdate(tempPath), 500);
         return { success: true, opened: true };
       }
     } catch (error: any) {

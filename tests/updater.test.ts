@@ -46,6 +46,11 @@ describe('Updater isNewerVersion helper', () => {
     expect(isNewerVersion('2026.5.30', '26.5.30')).toBe(false);
     expect(isNewerVersion('2026.5.30', '26.5.29')).toBe(false);
 
+    // v26.07.00 release — the actual current production scenario
+    expect(isNewerVersion('2026.5.30', 'v26.07.00')).toBe(true);
+    expect(isNewerVersion('26.7.0', 'v26.07.00')).toBe(false); // same version
+    expect(isNewerVersion('26.7.0', 'v26.07.01')).toBe(true);  // micro bump
+
     // Both full-year
     expect(isNewerVersion('2026.5.30', '2026.6.1')).toBe(true);
     expect(isNewerVersion('2026.6.1', '2026.5.30')).toBe(false);
