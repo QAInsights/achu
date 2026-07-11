@@ -327,7 +327,8 @@ export function renderGrainGradientWebGL(
 export function renderStaticMeshWebGL(
   w: number, h: number, colors: string[],
   positions: number, waveX: number, waveXShift: number, waveY: number, waveYShift: number,
-  mixing: number, grainMixer: number, grainOverlay: number
+  mixing: number, grainMixer: number, grainOverlay: number,
+  scale: number, rotation: number, offsetX: number, offsetY: number
 ): HTMLCanvasElement | null {
   if (typeof document === 'undefined') return null;
 
@@ -343,6 +344,12 @@ export function renderStaticMeshWebGL(
   gl.useProgram(program);
   setupFullScreenQuad(gl, program);
   setSizingUniforms(gl, program, w, h);
+
+  // Set the specific scaling/translation uniforms from parameters
+  setFloat(gl, program, 'u_scale', scale);
+  setFloat(gl, program, 'u_rotation', rotation);
+  setFloat(gl, program, 'u_offsetX', offsetX);
+  setFloat(gl, program, 'u_offsetY', offsetY);
 
   // Shader-specific uniforms
   const colorVecs = colors.map(c => getShaderColorFromString(c) as number[]);

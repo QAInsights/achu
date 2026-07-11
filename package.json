@@ -17,6 +17,7 @@
   "license": "MIT",
   "dependencies": {
     "@paper-design/shaders": "0.0.77",
+    "@paper-design/shaders-react": "^0.0.77",
     "geist": "1.7.1",
     "jsonrepair": "^3.14.0",
     "lucide-react": "^0.435.0",

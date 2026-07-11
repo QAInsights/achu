@@ -225,6 +225,19 @@ export default function ShaderControls() {
 
           <div className="control-group">
             <div className="control-label-container">
+              <span className="control-label">Wave X Shift</span>
+              <span className="control-value">{((shaderParams as StaticMeshGradientParams).waveXShift ?? 0).toFixed(2)}</span>
+            </div>
+            <input
+              type="range" min="0" max="1" step="0.01"
+              value={(shaderParams as StaticMeshGradientParams).waveXShift ?? 0}
+              onChange={(e) => updateStaticMeshParam('waveXShift', parseFloat(e.target.value))}
+              onMouseUp={handleSliderRelease}
+            />
+          </div>
+
+          <div className="control-group">
+            <div className="control-label-container">
               <span className="control-label">Wave Y</span>
               <span className="control-value">{((shaderParams as StaticMeshGradientParams).waveY * 100).toFixed(0)}%</span>
             </div>
@@ -232,6 +245,19 @@ export default function ShaderControls() {
               type="range" min="0" max="1" step="0.01"
               value={(shaderParams as StaticMeshGradientParams).waveY}
               onChange={(e) => updateStaticMeshParam('waveY', parseFloat(e.target.value))}
+              onMouseUp={handleSliderRelease}
+            />
+          </div>
+
+          <div className="control-group">
+            <div className="control-label-container">
+              <span className="control-label">Wave Y Shift</span>
+              <span className="control-value">{((shaderParams as StaticMeshGradientParams).waveYShift ?? 0).toFixed(2)}</span>
+            </div>
+            <input
+              type="range" min="0" max="1" step="0.01"
+              value={(shaderParams as StaticMeshGradientParams).waveYShift ?? 0}
+              onChange={(e) => updateStaticMeshParam('waveYShift', parseFloat(e.target.value))}
               onMouseUp={handleSliderRelease}
             />
           </div>
@@ -271,6 +297,58 @@ export default function ShaderControls() {
               type="range" min="0" max="1" step="0.01"
               value={(shaderParams as StaticMeshGradientParams).grainOverlay}
               onChange={(e) => updateStaticMeshParam('grainOverlay', parseFloat(e.target.value))}
+              onMouseUp={handleSliderRelease}
+            />
+          </div>
+
+          <div className="control-group">
+            <div className="control-label-container">
+              <span className="control-label">Scale</span>
+              <span className="control-value">{((shaderParams as StaticMeshGradientParams).scale ?? 1).toFixed(2)}</span>
+            </div>
+            <input
+              type="range" min="0.01" max="4" step="0.01"
+              value={(shaderParams as StaticMeshGradientParams).scale ?? 1}
+              onChange={(e) => updateStaticMeshParam('scale', parseFloat(e.target.value))}
+              onMouseUp={handleSliderRelease}
+            />
+          </div>
+
+          <div className="control-group">
+            <div className="control-label-container">
+              <span className="control-label">Rotation</span>
+              <span className="control-value">{((shaderParams as StaticMeshGradientParams).rotation ?? 0).toFixed(0)}°</span>
+            </div>
+            <input
+              type="range" min="0" max="360" step="1"
+              value={(shaderParams as StaticMeshGradientParams).rotation ?? 0}
+              onChange={(e) => updateStaticMeshParam('rotation', parseFloat(e.target.value))}
+              onMouseUp={handleSliderRelease}
+            />
+          </div>
+
+          <div className="control-group">
+            <div className="control-label-container">
+              <span className="control-label">Offset X</span>
+              <span className="control-value">{((shaderParams as StaticMeshGradientParams).offsetX ?? 0).toFixed(2)}</span>
+            </div>
+            <input
+              type="range" min="-1" max="1" step="0.01"
+              value={(shaderParams as StaticMeshGradientParams).offsetX ?? 0}
+              onChange={(e) => updateStaticMeshParam('offsetX', parseFloat(e.target.value))}
+              onMouseUp={handleSliderRelease}
+            />
+          </div>
+
+          <div className="control-group">
+            <div className="control-label-container">
+              <span className="control-label">Offset Y</span>
+              <span className="control-value">{((shaderParams as StaticMeshGradientParams).offsetY ?? 0).toFixed(2)}</span>
+            </div>
+            <input
+              type="range" min="-1" max="1" step="0.01"
+              value={(shaderParams as StaticMeshGradientParams).offsetY ?? 0}
+              onChange={(e) => updateStaticMeshParam('offsetY', parseFloat(e.target.value))}
               onMouseUp={handleSliderRelease}
             />
           </div>

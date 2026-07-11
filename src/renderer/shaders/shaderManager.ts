@@ -29,7 +29,12 @@ function renderShaderWebGLCanvas(
 ): HTMLCanvasElement | null {
   if (type === 'staticMesh') {
     const p = params as StaticMeshGradientParams;
-    return renderStaticMeshWebGL(width, height, colors, p.positions, p.waveX, p.waveXShift, p.waveY, p.waveYShift, p.mixing, p.grainMixer, p.grainOverlay);
+    return renderStaticMeshWebGL(
+      width, height, colors,
+      p.positions, p.waveX, p.waveXShift, p.waveY, p.waveYShift,
+      p.mixing, p.grainMixer, p.grainOverlay,
+      p.scale ?? 1, p.rotation ?? 0, p.offsetX ?? 0, p.offsetY ?? 0
+    );
   }
   const p = params as GrainGradientParams;
   return renderGrainGradientWebGL(width, height, colors, p.shape, p.softness, p.intensity, p.noise);
@@ -42,18 +47,33 @@ function renderShader2DFallback(
   width: number,
   height: number
 ): HTMLCanvasElement | null {
+  // Optimize resolution for 2D fallback to make per-pixel CPU loop extremely fast
+  const maxW = 300;
+  let renderW = width;
+  let renderH = height;
+  if (width > maxW) {
+    const scaleFactor = maxW / width;
+    renderW = maxW;
+    renderH = Math.round(height * scaleFactor);
+  }
+
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = renderW;
+  canvas.height = renderH;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
 
   if (type === 'staticMesh') {
     const p = params as StaticMeshGradientParams;
-    drawStaticMeshGradient2D(ctx, width, height, colors, p.positions, p.waveX, p.waveXShift, p.waveY, p.waveYShift, p.mixing, p.grainMixer, p.grainOverlay);
+    drawStaticMeshGradient2D(
+      ctx, renderW, renderH, colors,
+      p.positions, p.waveX, p.waveXShift, p.waveY, p.waveYShift,
+      p.mixing, p.grainMixer, p.grainOverlay,
+      p.scale ?? 1, p.rotation ?? 0, p.offsetX ?? 0, p.offsetY ?? 0
+    );
   } else {
     const p = params as GrainGradientParams;
-    drawGrainGradient2D(ctx, width, height, colors, p.shape, p.softness, p.intensity, p.noise);
+    drawGrainGradient2D(ctx, renderW, renderH, colors, p.shape, p.softness, p.intensity, p.noise);
   }
 
   return canvas;

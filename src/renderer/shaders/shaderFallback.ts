@@ -181,46 +181,111 @@ export function drawStaticMeshGradient2D(
   h: number,
   colors: string[],
   positions: number,
-  _waveX: number,
-  _waveXShift: number,
-  _waveY: number,
-  _waveYShift: number,
+  waveX: number,
+  waveXShift: number,
+  waveY: number,
+  waveYShift: number,
   mixing: number,
-  _grainMixer: number,
-  _grainOverlay: number
+  grainMixer: number,
+  grainOverlay: number,
+  scale: number,
+  rotation: number,
+  offsetX: number,
+  offsetY: number
 ): void {
   const imageData = ctx.createImageData(w, h);
   const data = imageData.data;
   const colorRgb = colors.map(hexToRgb);
   const colorCount = colors.length;
 
-  const seed = positions * 0.01;
+  const positionSeed = 25.0 + 0.33 * positions;
   const spots: Array<{ x: number; y: number; idx: number }> = [];
+
   for (let i = 0; i < colorCount; i++) {
-    const angle = (i / colorCount) * Math.PI * 2 + seed;
-    const radius = 0.2 + (i % 2) * 0.15;
+    const a = i * 0.37;
+    const b = 0.6 + (i % 3) * 0.3;
+    const c = 0.8 + ((i + 1) % 4) * 0.25;
+
+    // Spot coordinates in range [0, 1]
+    const sx = 0.5 + 0.5 * Math.sin(positionSeed * b + a);
+    const sy = 0.5 + 0.5 * Math.cos(positionSeed * c + a * 1.5);
+
     spots.push({
-      x: 0.5 + Math.cos(angle) * radius,
-      y: 0.5 + Math.sin(angle) * radius,
+      x: sx,
+      y: sy,
       idx: i,
     });
   }
 
-  const blendSharpness = 1 + mixing * 2;
+  const rad = (rotation * Math.PI) / 180;
+  const cosR = Math.cos(rad);
+  const sinR = Math.sin(rad);
+
+  const mixPow = Math.pow(mixing, 0.7);
+  const power = 2 * (1 - mixPow) + 1 * mixPow;
 
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
       const u = px / w;
       const v = py / h;
 
+      // 1. Center coordinate (range [-0.5, 0.5])
+      let ux = u - 0.5;
+      let uy = v - 0.5;
+
+      // 2. Offset (graphicOffset = vec2(-offsetX, offsetY))
+      ux -= offsetX;
+      uy += offsetY;
+
+      // 3. Scale
+      ux /= scale;
+      uy /= scale;
+
+      // 4. Rotation
+      let rx = cosR * ux - sinR * uy;
+      let ry = sinR * ux + cosR * uy;
+
+      // 5. Shift back to [0, 1]
+      let uvx = rx + 0.5;
+      let uvy = ry + 0.5;
+
+      // 6. Mixer grain (grainMixer noise perturbation of spot positions)
+      const grainVal = hash21(Math.round(uvx * 1000), Math.round(uvy * 1000));
+      const mixerGrain = 0.4 * grainMixer * (grainVal - 0.5);
+
+      // 7. Sine wave distortion (warping)
+      const dx = uvx - 0.5;
+      const dy = uvy - 0.5;
+      const radDist = Math.sqrt(dx * dx + dy * dy);
+      const radius = smoothstep(0, 1, radDist);
+      const center = 1 - radius;
+
+      // Two-pass wave distortion matching fragment shader
+      for (let i = 1; i <= 2; i++) {
+        const termX = (waveX * center) / i * Math.cos(2 * Math.PI * waveXShift + i * 2 * smoothstep(0, 1, uvy));
+        const termY = (waveY * center) / i * Math.cos(2 * Math.PI * waveYShift + i * 2 * smoothstep(0, 1, uvx));
+        uvx += termX;
+        uvy += termY;
+      }
+
       let r = 0, g = 0, b = 0;
       let totalWeight = 0;
 
       for (const spot of spots) {
-        const dx = u - spot.x;
-        const dy = v - spot.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const weight = 1 / Math.pow(dist + 0.01, blendSharpness);
+        // Perturb the spot position with the mixer grain
+        const spotX = spot.x + mixerGrain;
+        const spotY = spot.y + mixerGrain;
+
+        const sdx = uvx - spotX;
+        const sdy = uvy - spotY;
+        let dist = Math.sqrt(sdx * sdx + sdy * sdy);
+
+        dist = Math.pow(dist, power);
+
+        let weight = 1 / (dist + 1e-3);
+        const baseSharpness = 8 * Math.max(0, Math.min(1, weight));
+        const sharpness = baseSharpness * (1 - mixing) + 1 * mixing;
+        weight = Math.pow(weight, sharpness);
 
         r += colorRgb[spot.idx][0] * weight;
         g += colorRgb[spot.idx][1] * weight;
@@ -232,6 +297,14 @@ export function drawStaticMeshGradient2D(
         r /= totalWeight;
         g /= totalWeight;
         b /= totalWeight;
+      }
+
+      // 8. Grain Overlay (fast hash-based overlay)
+      if (grainOverlay > 0) {
+        const noiseVal = (hash21(px, py) - 0.5) * grainOverlay * 40;
+        r += noiseVal;
+        g += noiseVal;
+        b += noiseVal;
       }
 
       const idx = (py * w + px) * 4;

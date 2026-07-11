@@ -11,6 +11,10 @@ export interface StaticMeshGradientParams {
   mixing: number;
   grainMixer: number;
   grainOverlay: number;
+  scale: number;
+  rotation: number;
+  offsetX: number;
+  offsetY: number;
 }
 
 export interface GrainGradientParams {
@@ -39,6 +43,10 @@ export const DEFAULT_STATIC_MESH_PARAMS: StaticMeshGradientParams = {
   mixing: 0.5,
   grainMixer: 0.2,
   grainOverlay: 0.1,
+  scale: 1,
+  rotation: 0,
+  offsetX: 0,
+  offsetY: 0,
 };
 
 export const DEFAULT_GRAIN_GRADIENT_PARAMS: GrainGradientParams = {
