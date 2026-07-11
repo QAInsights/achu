@@ -210,7 +210,7 @@ describe('configUtils - Extended', () => {
 
   describe('Constants', () => {
     it('exports all background types', () => {
-      expect(BACKGROUND_TYPES).toEqual(['gradient', 'color', 'blur', 'mesh']);
+      expect(BACKGROUND_TYPES).toEqual(['gradient', 'color', 'blur', 'mesh', 'shader']);
     });
 
     it('exports all active tools', () => {

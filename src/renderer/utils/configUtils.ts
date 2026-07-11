@@ -113,7 +113,7 @@ export function getCurrentConfig(state: {
   border: number;
   borderColor: string;
   scale: number;
-  backgroundType: 'gradient' | 'color' | 'blur' | 'mesh';
+  backgroundType: 'gradient' | 'color' | 'blur' | 'mesh' | 'shader';
   backgroundValue: string;
   aspectRatio: string;
   canvasWidth: number;
@@ -211,7 +211,7 @@ export function applyConfig(
     setBorder: (v: number) => void;
     setBorderColor: (v: string) => void;
     setScale: (v: number) => void;
-    setBackgroundType: (v: 'gradient' | 'color' | 'blur' | 'mesh') => void;
+    setBackgroundType: (v: 'gradient' | 'color' | 'blur' | 'mesh' | 'shader') => void;
     setBackgroundValue: (v: string) => void;
     setAspectRatio: (v: string) => void;
     setCanvasWidth: (v: number) => void;
@@ -296,7 +296,7 @@ export function applyConfig(
   if (config.sidebarPosition && setters.setSidebarPosition) setters.setSidebarPosition(config.sidebarPosition);
 }
 
-export const BACKGROUND_TYPES = ['gradient', 'color', 'blur', 'mesh'] as const;
+export const BACKGROUND_TYPES = ['gradient', 'color', 'blur', 'mesh', 'shader'] as const;
 export const PADDING_MODES = ['fit', 'fill'] as const;
 export const CHROME_STYLES = ['mac', 'windows', 'none'] as const;
 export const CHROME_THEMES = ['dark', 'light'] as const;

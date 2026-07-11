@@ -37,6 +37,7 @@ export interface RedactionItem {
 }
 
 import { drawArrowOnCanvas } from './arrowUtils';
+import { drawShaderOnCanvas } from './shaders/shaderManager';
 import { getWatermarkCanvasPlacement, getWatermarkInset } from '../shared/watermark';
 import { tokenizeLine } from './utils/codeTokenizer';
 import { getThemeByName } from './utils/codeThemes';
@@ -104,7 +105,7 @@ export interface RenderConfig {
   border: number;
   borderColor: string;
   scale: number;
-  backgroundType: 'color' | 'gradient' | 'blur' | 'mesh';
+  backgroundType: 'color' | 'gradient' | 'blur' | 'mesh' | 'shader';
   backgroundValue: string;
   aspectRatio: string; // "Auto" | "1:1" | "4:3" | "16:9" | "3:2" | "Custom"
   canvasWidth: number;
@@ -139,6 +140,9 @@ export interface RenderConfig {
   meshGrain?: number;
   meshOpacity?: number;
   meshSpread?: number;
+  shaderType?: 'staticMesh' | 'grainGradient';
+  shaderColors?: string[];
+  shaderParams?: any;
   noImage?: boolean;
   imageSrc?: string | null;
   selectedPreset?: string;
@@ -673,6 +677,11 @@ export function drawBackground(
     const op = config.meshOpacity !== undefined ? config.meshOpacity : 100;
     const sp = config.meshSpread !== undefined ? config.meshSpread : 100;
     drawMeshGradient(ctx, w, h, pts, bl, gr, op, sp);
+  } else if (config.backgroundType === 'shader') {
+    const sType = config.shaderType || 'staticMesh';
+    const sColors = config.shaderColors || ['#5100ff', '#00ff80', '#ffcc00', '#ea00ff'];
+    const sParams = config.shaderParams || {};
+    drawShaderOnCanvas(sType, sColors, sParams, ctx, w, h);
   }
 
   // Draw Light Rays if configured

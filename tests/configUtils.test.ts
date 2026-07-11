@@ -538,7 +538,7 @@ describe('configUtils', () => {
 
   describe('constant arrays', () => {
     it('BACKGROUND_TYPES has correct values', () => {
-      expect(BACKGROUND_TYPES).toEqual(['gradient', 'color', 'blur', 'mesh']);
+      expect(BACKGROUND_TYPES).toEqual(['gradient', 'color', 'blur', 'mesh', 'shader']);
     });
 
     it('PADDING_MODES has correct values', () => {

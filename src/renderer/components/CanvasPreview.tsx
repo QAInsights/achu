@@ -46,6 +46,7 @@ export default function CanvasPreview() {
     noImageMode,
     meshPoints,
     meshDataUrl,
+    shaderDataUrl,
     activePointIdx,
     watermarkEnabled,
     watermarkText,
@@ -264,7 +265,7 @@ export default function CanvasPreview() {
             onContextMenu={handleContextMenu}
             style={{
               position: 'relative',
-              ...getBackgroundStyle(backgroundType, backgroundValue, imageSrc, meshDataUrl),
+              ...getBackgroundStyle(backgroundType, backgroundValue, imageSrc, meshDataUrl, shaderDataUrl),
               borderRadius: '12px',
               width: `${dims.width}px`,
               height: `${dims.height}px`,

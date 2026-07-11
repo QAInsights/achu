@@ -69,16 +69,17 @@ export function getAuroraBackground(
 }
 
 export function getBackgroundStyle(
-  backgroundType: 'color' | 'gradient' | 'blur' | 'mesh',
+  backgroundType: 'color' | 'gradient' | 'blur' | 'mesh' | 'shader',
   backgroundValue: string,
   imageSrc: string | null,
-  meshDataUrl: string
+  meshDataUrl: string,
+  shaderDataUrl?: string
 ): React.CSSProperties {
   if (backgroundType === 'color') {
     return { backgroundColor: backgroundValue };
   }
   if (backgroundType === 'gradient') {
-    return { 
+    return {
       backgroundImage: backgroundValue,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
@@ -86,7 +87,7 @@ export function getBackgroundStyle(
     };
   }
   if (backgroundType === 'blur' && imageSrc) {
-    return { 
+    return {
       backgroundImage: `url(${imageSrc})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
@@ -94,8 +95,16 @@ export function getBackgroundStyle(
     };
   }
   if (backgroundType === 'mesh') {
-    return { 
+    return {
       backgroundImage: `url(${meshDataUrl})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat'
+    };
+  }
+  if (backgroundType === 'shader' && shaderDataUrl) {
+    return {
+      backgroundImage: `url(${shaderDataUrl})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat'

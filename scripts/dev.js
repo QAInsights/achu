@@ -33,7 +33,7 @@ async function dev() {
     }
 
     console.log('Starting Electron...');
-    electronProcess = spawn(electronPath, ['app-bundle/main.js', '--disable-gpu', '--disable-software-rasterizer', '--no-sandbox'], {
+    electronProcess = spawn(electronPath, ['app-bundle/main.js', '--no-sandbox'], {
       stdio: 'inherit',
       env: {
         ...process.env,

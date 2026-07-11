@@ -11,6 +11,10 @@ import { createWorker } from 'tesseract.js';
 import { processOcrResults, downsampleImageForOcr } from './utils/privacyGuardUtils';
 import { VibePalette, extractPalette } from './utils/colorExtractor';
 import { generateVibeConfigs } from './utils/vibeUtils';
+import { shaderToDataUrl } from './shaders/shaderManager';
+import type { ShaderType, ShaderParams } from './shaders/shaderPresets';
+import { DEFAULT_STATIC_MESH_PARAMS } from './shaders/shaderPresets';
+import { onNoiseReady } from './shaders/shaderWebGL';
 import { WordBoundingBox, GitHubIssuePayload, buildMarkdown, safeParseJSON } from './utils/githubAgentUtils';
 import { pushToGitHub } from './utils/githubApiUtils';
 import { fetchAndParseModels, DEFAULT_OPENAI_MODELS, DEFAULT_GEMINI_MODELS, DEFAULT_CLAUDE_MODELS } from './utils/modelsDevUtils';
@@ -38,7 +42,7 @@ interface AppContextType {
   border: number; setBorder: React.Dispatch<React.SetStateAction<number>>;
   borderColor: string; setBorderColor: React.Dispatch<React.SetStateAction<string>>;
   scale: number; setScale: React.Dispatch<React.SetStateAction<number>>;
-  backgroundType: 'gradient' | 'color' | 'blur' | 'mesh'; setBackgroundType: React.Dispatch<React.SetStateAction<'gradient' | 'color' | 'blur' | 'mesh'>>;
+  backgroundType: 'gradient' | 'color' | 'blur' | 'mesh' | 'shader'; setBackgroundType: React.Dispatch<React.SetStateAction<'gradient' | 'color' | 'blur' | 'mesh' | 'shader'>>;
   backgroundValue: string; setBackgroundValue: React.Dispatch<React.SetStateAction<string>>;
   bgGrain: number; setBgGrain: React.Dispatch<React.SetStateAction<number>>;
   lightRaysStyle: 'none' | 'diagonal' | 'spotlight' | 'aurora'; setLightRaysStyle: React.Dispatch<React.SetStateAction<'none' | 'diagonal' | 'spotlight' | 'aurora'>>;
@@ -64,6 +68,10 @@ interface AppContextType {
   meshSpread: number; setMeshSpread: React.Dispatch<React.SetStateAction<number>>;
   meshDataUrl: string; setMeshDataUrl: React.Dispatch<React.SetStateAction<string>>;
   activePointIdx: number; setActivePointIdx: React.Dispatch<React.SetStateAction<number>>;
+  shaderType: ShaderType; setShaderType: React.Dispatch<React.SetStateAction<ShaderType>>;
+  shaderColors: string[]; setShaderColors: React.Dispatch<React.SetStateAction<string[]>>;
+  shaderParams: ShaderParams; setShaderParams: React.Dispatch<React.SetStateAction<ShaderParams>>;
+  shaderDataUrl: string; setShaderDataUrl: React.Dispatch<React.SetStateAction<string>>;
   watermarkEnabled: boolean; setWatermarkEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   watermarkText: string; setWatermarkText: React.Dispatch<React.SetStateAction<string>>;
   watermarkSize: number; setWatermarkSize: React.Dispatch<React.SetStateAction<number>>;
@@ -255,7 +263,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [border, setBorder] = useState<number>(0);
   const [borderColor, setBorderColor] = useState<string>('#ffffff');
   const [scale, setScale] = useState<number>(100);
-  const [backgroundType, setBackgroundType] = useState<'gradient' | 'color' | 'blur' | 'mesh'>('gradient');
+  const [backgroundType, setBackgroundType] = useState<'gradient' | 'color' | 'blur' | 'mesh' | 'shader'>('gradient');
   const [backgroundValue, setBackgroundValue] = useState<string>('linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)');
   const [bgGrain, setBgGrain] = useState<number>(() => getUserDefault('bgGrain', 0));
   const [lightRaysStyle, setLightRaysStyle] = useState<'none' | 'diagonal' | 'spotlight' | 'aurora'>(() => getUserDefault('lightRaysStyle', 'none') as any);
@@ -291,6 +299,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [meshSpread, setMeshSpread] = useState<number>(100);
   const [meshDataUrl, setMeshDataUrl] = useState<string>('');
   const [activePointIdx, setActivePointIdx] = useState<number>(0);
+  const [shaderType, setShaderType] = useState<ShaderType>('staticMesh');
+  const [shaderColors, setShaderColors] = useState<string[]>(['#5100ff', '#00ff80', '#ffcc00', '#ea00ff']);
+  const [shaderParams, setShaderParams] = useState<ShaderParams>(DEFAULT_STATIC_MESH_PARAMS);
+  const [shaderDataUrl, setShaderDataUrl] = useState<string>('');
+  const [noiseReadyState, setNoiseReadyState] = useState<boolean>(false);
+
+  useEffect(() => {
+    onNoiseReady(() => {
+      setNoiseReadyState(true);
+    });
+  }, []);
 
   const [watermarkEnabled, setWatermarkEnabled] = useState<boolean>(() => getUserDefault('watermarkEnabled', false));
   const [watermarkText, setWatermarkText] = useState<string>(() => getUserDefault('watermarkText', 'Made using achu.app'));
@@ -517,6 +536,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     annotationOutlineEnabled, annotationOutlineColor, annotationOutlineWidth,
     annotationGradientEnabled, annotationGradientColor1, annotationGradientColor2, annotationGradientAngle,
     position, annotations, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread,
+    shaderType, shaderColors, shaderParams,
     noImage: noImageMode,
     annotationDisplayWidth,
     imageSrc,
@@ -613,6 +633,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMeshGrain(config.meshGrain ?? 15);
     setMeshOpacity(config.meshOpacity ?? 100);
     setMeshSpread(config.meshSpread ?? 100);
+    setShaderType(config.shaderType ?? 'staticMesh');
+    setShaderColors(config.shaderColors ?? ['#5100ff', '#00ff80', '#ffcc00', '#ea00ff']);
+    setShaderParams(config.shaderParams ?? DEFAULT_STATIC_MESH_PARAMS);
     setNoImageMode(config.noImage ?? false);
     if (config.imageSrc !== undefined) setImageSrc(config.imageSrc ?? null);
 
@@ -1693,6 +1716,7 @@ Severity rules:
     canvasHeight, paddingMode, chromeStyle, chromeTheme, blurDensity, watermarkEnabled,
     watermarkText, watermarkSize, watermarkPosition, watermarkOpacity, position, customPresets, meshPoints, meshBlur, meshGrain, meshOpacity,
     meshSpread, noImageMode, redactions, redactionStyle, exportFormat, jpegQuality, sidebarPosition,
+    shaderType, shaderColors, shaderParams,
     bgGrain, lightRaysStyle, lightRaysOpacity, lightRaysAngle, lightRaysCount, lightRaysSourceX, lightRaysSourceY,
     autoImportCaptured, captureShortcut, checkForUpdatesOnStartup
   ]);
@@ -1774,6 +1798,23 @@ Severity rules:
     }
   }, [backgroundType, meshPoints, meshBlur, meshGrain, meshOpacity, meshSpread, aspectRatio, canvasWidth, canvasHeight]);
 
+  // Shader background rendering
+  useEffect(() => {
+    if (backgroundType !== 'shader') return;
+    const baseW = 800;
+    let ratio = 16 / 9;
+    if (aspectRatio === '1:1') ratio = 1;
+    else if (aspectRatio === '4:3') ratio = 4 / 3;
+    else if (aspectRatio === '16:9') ratio = 16 / 9;
+    else if (aspectRatio === '3:2') ratio = 3 / 2;
+    else if (aspectRatio === 'Custom') ratio = canvasWidth / canvasHeight;
+
+    const w = baseW;
+    const h = Math.round(baseW / ratio);
+    const url = shaderToDataUrl(shaderType, shaderColors, shaderParams, w, h);
+    setShaderDataUrl(url);
+  }, [backgroundType, shaderType, shaderColors, shaderParams, aspectRatio, canvasWidth, canvasHeight, noiseReadyState]);
+
   const dragStartRef = useRef<{ idx: number; rect: DOMRect } | null>(null);
 
   const handlePointerDown = (e: React.PointerEvent, idx: number) => {
@@ -1821,6 +1862,7 @@ Severity rules:
       chromeTheme, setChromeTheme, blurDensity, setBlurDensity, noImageMode, setNoImageMode,
       meshPoints, setMeshPoints, meshBlur, setMeshBlur, meshGrain, setMeshGrain, meshOpacity, setMeshOpacity,
       meshSpread, setMeshSpread, meshDataUrl, setMeshDataUrl, activePointIdx, setActivePointIdx,
+      shaderType, setShaderType, shaderColors, setShaderColors, shaderParams, setShaderParams, shaderDataUrl, setShaderDataUrl,
       watermarkEnabled, setWatermarkEnabled, watermarkText, setWatermarkText, watermarkSize, setWatermarkSize,
       watermarkPosition, setWatermarkPosition, watermarkOpacity, setWatermarkOpacity, position, setPosition,
       watermarkFont, setWatermarkFont, watermarkBold, setWatermarkBold, watermarkItalic, setWatermarkItalic,

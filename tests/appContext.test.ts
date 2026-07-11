@@ -232,7 +232,7 @@ describe('AppContext', () => {
         setBorder: (v: number) => { state.border = v; },
         setBorderColor: (v: string) => { state.borderColor = v; },
         setScale: (v: number) => { state.scale = v; },
-        setBackgroundType: (v: 'gradient' | 'color' | 'blur' | 'mesh') => { state.backgroundType = v; },
+        setBackgroundType: (v: 'gradient' | 'color' | 'blur' | 'mesh' | 'shader') => { state.backgroundType = v; },
         setBackgroundValue: (v: string) => { state.backgroundValue = v; },
         setAspectRatio: (v: string) => { state.aspectRatio = v; },
         setCanvasWidth: (v: number) => { state.canvasWidth = v; },
@@ -341,7 +341,7 @@ describe('AppContext', () => {
 
   describe('type constraints', () => {
     it('has correct enum values', () => {
-      expect(BACKGROUND_TYPES.length).toBe(4);
+      expect(BACKGROUND_TYPES.length).toBe(5);
       expect(PADDING_MODES.length).toBe(2);
       expect(CHROME_STYLES.length).toBe(3);
       expect(CHROME_THEMES.length).toBe(2);

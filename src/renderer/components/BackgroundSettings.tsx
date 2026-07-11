@@ -5,6 +5,7 @@ import InspectorSection from './InspectorSection';
 import Tooltip from './Tooltip';
 import PresetSelector from './PresetSelector';
 import MeshGradientControls from './MeshGradientControls';
+import ShaderControls from './ShaderControls';
 import { formatModShortcut } from '../utils/shortcutLabels';
 import {
   disneyHollywoodGradients,
@@ -107,7 +108,7 @@ export default function BackgroundSettings() {
       <div className="control-group">
         <span className="control-label">Background Mode</span>
         <div className="btn-group">
-          {(['color', 'gradient', 'blur', 'mesh'] as const).map((type) => (
+          {(['color', 'gradient', 'blur', 'mesh', 'shader'] as const).map((type) => (
             <button
               key={type}
               className={`btn-group-item ${backgroundType === type ? 'active' : ''}`}
@@ -116,7 +117,7 @@ export default function BackgroundSettings() {
                 pushHistory({ ...getCurrentConfig(), backgroundType: type });
               }}
             >
-              {type === 'color' ? 'Solid' : type === 'gradient' ? 'Preset' : type === 'blur' ? 'Blurred' : 'Mesh'}
+              {type === 'color' ? 'Solid' : type === 'gradient' ? 'Preset' : type === 'blur' ? 'Blurred' : type === 'mesh' ? 'Mesh' : 'Shader'}
             </button>
           ))}
         </div>
@@ -229,6 +230,10 @@ export default function BackgroundSettings() {
 
       {backgroundType === 'mesh' && (
         <MeshGradientControls />
+      )}
+
+      {backgroundType === 'shader' && (
+        <ShaderControls />
       )}
 
       {/* Background Effects */}

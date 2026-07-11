@@ -8,7 +8,7 @@ describe('usePresets', () => {
   let mockSetImageSrc: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<string | null>>>>;
   let mockSetNoImageMode: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<boolean>>>>;
   let mockSetAnnotations: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>>;
-  let mockSetBackgroundType: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<'gradient' | 'color' | 'blur' | 'mesh'>>>>;
+  let mockSetBackgroundType: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<'gradient' | 'color' | 'blur' | 'mesh' | 'shader'>>>>;
   let mockSetBackgroundValue: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<string>>>>;
   let mockGetCurrentConfig: ReturnType<typeof vi.fn<() => any>>;
   let mockPushHistory: ReturnType<typeof vi.fn<(config: any) => void>>;
@@ -41,7 +41,7 @@ describe('usePresets', () => {
     mockSetImageSrc = vi.fn<React.Dispatch<React.SetStateAction<string | null>>>();
     mockSetNoImageMode = vi.fn<React.Dispatch<React.SetStateAction<boolean>>>();
     mockSetAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>();
-    mockSetBackgroundType = vi.fn<React.Dispatch<React.SetStateAction<'gradient' | 'color' | 'blur' | 'mesh'>>>();
+    mockSetBackgroundType = vi.fn<React.Dispatch<React.SetStateAction<'gradient' | 'color' | 'blur' | 'mesh' | 'shader'>>>();
     mockSetBackgroundValue = vi.fn<React.Dispatch<React.SetStateAction<string>>>();
     mockGetCurrentConfig = vi.fn<() => any>().mockReturnValue(defaultConfig);
     mockPushHistory = vi.fn<(config: any) => void>();
@@ -57,7 +57,7 @@ describe('usePresets', () => {
   });
 
   const render = (overrides?: {
-    backgroundType?: 'gradient' | 'color' | 'blur' | 'mesh';
+    backgroundType?: 'gradient' | 'color' | 'blur' | 'mesh' | 'shader';
     backgroundValue?: string;
     setRedactions?: React.Dispatch<React.SetStateAction<any[]>>;
     handlePasteImage?: (src: string) => void;
