@@ -1,7 +1,8 @@
-export type ShaderType = 'staticMesh' | 'grainGradient' | 'dotGrid';
+export type ShaderType = 'staticMesh' | 'grainGradient' | 'dotGrid' | 'pulsingBorder';
 
 export type GrainGradientShape = 'wave' | 'dots' | 'truchet' | 'corners' | 'ripple';
 export type DotGridShape = 'circle' | 'diamond' | 'square' | 'triangle';
+export type PulsingBorderAspectRatio = 'auto' | 'square';
 
 export interface StaticMeshGradientParams {
   positions: number;
@@ -39,7 +40,30 @@ export interface DotGridParams {
   offsetY: number;
 }
 
-export type ShaderParams = StaticMeshGradientParams | GrainGradientParams | DotGridParams;
+export interface PulsingBorderParams {
+  colorBack: string;
+  roundness: number;
+  thickness: number;
+  softness: number;
+  aspectRatio: PulsingBorderAspectRatio;
+  intensity: number;
+  bloom: number;
+  spots: number;
+  spotSize: number;
+  pulse: number;
+  smoke: number;
+  smokeSize: number;
+  marginLeft: number;
+  marginRight: number;
+  marginTop: number;
+  marginBottom: number;
+  scale: number;
+  rotation: number;
+  offsetX: number;
+  offsetY: number;
+}
+
+export type ShaderParams = StaticMeshGradientParams | GrainGradientParams | DotGridParams | PulsingBorderParams;
 
 export interface ShaderPreset {
   id: string;
@@ -81,6 +105,29 @@ export const DEFAULT_DOT_GRID_PARAMS: DotGridParams = {
   opacityRange: 0,
   scale: 1,
   rotation: 0,
+  offsetX: 0,
+  offsetY: 0,
+};
+
+export const DEFAULT_PULSING_BORDER_PARAMS: PulsingBorderParams = {
+  colorBack: '#00000000',
+  roundness: 0,
+  thickness: 0.05,
+  softness: 0,
+  aspectRatio: 'auto',
+  intensity: 0.85,
+  bloom: 0.85,
+  spots: 3,
+  spotSize: 0.88,
+  pulse: 0,
+  smoke: 0,
+  smokeSize: 0.42,
+  marginLeft: 0,
+  marginRight: 0,
+  marginTop: 0,
+  marginBottom: 0,
+  scale: 1,
+  rotation: 160,
   offsetX: 0,
   offsetY: 0,
 };
@@ -184,6 +231,34 @@ export const shaderPresets: ShaderPreset[] = [
     colors: ['#1a0b2e', '#ff4b2b', '#ff416c'],
     params: { ...DEFAULT_DOT_GRID_PARAMS, shape: 'triangle', size: 8, gapX: 48, gapY: 48, sizeRange: 0.3 },
   },
+  {
+    id: 'border-default',
+    name: 'Default Border',
+    type: 'pulsingBorder',
+    colors: ['#83afec'],
+    params: { ...DEFAULT_PULSING_BORDER_PARAMS },
+  },
+  {
+    id: 'border-circle',
+    name: 'Circle Glow',
+    type: 'pulsingBorder',
+    colors: ['#ff4500', '#ff8c00'],
+    params: { ...DEFAULT_PULSING_BORDER_PARAMS, roundness: 1.0, thickness: 0.08, spots: 4, spotSize: 0.5 },
+  },
+  {
+    id: 'border-aurora',
+    name: 'Northern lights',
+    type: 'pulsingBorder',
+    colors: ['#00ffcc', '#00ff66', '#00ffff'],
+    params: { ...DEFAULT_PULSING_BORDER_PARAMS, thickness: 0.12, spots: 4, spotSize: 0.7, smoke: 0.5, smokeSize: 0.6, bloom: 0.9 },
+  },
+  {
+    id: 'border-solid',
+    name: 'Solid line',
+    type: 'pulsingBorder',
+    colors: ['#ff00ff'],
+    params: { ...DEFAULT_PULSING_BORDER_PARAMS, thickness: 0.03, softness: 0, bloom: 0, intensity: 1.0 },
+  },
 ];
 
 export const SHAPE_LABELS: Record<GrainGradientShape, string> = {
@@ -204,3 +279,10 @@ export const DOT_GRID_SHAPE_LABELS: Record<DotGridShape, string> = {
 };
 
 export const DOT_GRID_SHAPE_OPTIONS: DotGridShape[] = ['circle', 'diamond', 'square', 'triangle'];
+
+export const PULSING_BORDER_ASPECT_RATIO_LABELS: Record<PulsingBorderAspectRatio, string> = {
+  auto: 'Auto',
+  square: 'Square',
+};
+
+export const PULSING_BORDER_ASPECT_RATIO_OPTIONS: PulsingBorderAspectRatio[] = ['auto', 'square'];

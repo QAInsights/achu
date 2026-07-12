@@ -6,10 +6,12 @@ import {
   DEFAULT_STATIC_MESH_PARAMS,
   DEFAULT_GRAIN_GRADIENT_PARAMS,
   DEFAULT_DOT_GRID_PARAMS,
+  DEFAULT_PULSING_BORDER_PARAMS,
 } from '../shaders/shaderPresets';
 import StaticMeshControls from './StaticMeshControls';
 import GrainGradientControls from './GrainGradientControls';
 import DotGridControls from './DotGridControls';
+import PulsingBorderControls from './PulsingBorderControls';
 
 export default function ShaderControls() {
   const {
@@ -95,6 +97,16 @@ export default function ShaderControls() {
             }}
           >
             Dot Grid
+          </button>
+          <button
+            className={`btn-group-item ${shaderType === 'pulsingBorder' ? 'active' : ''}`}
+            onClick={() => {
+              setShaderType('pulsingBorder');
+              setShaderParams(DEFAULT_PULSING_BORDER_PARAMS);
+              pushHistory({ ...getCurrentConfig(), shaderType: 'pulsingBorder', shaderParams: DEFAULT_PULSING_BORDER_PARAMS });
+            }}
+          >
+            Border
           </button>
         </div>
       </div>
@@ -188,6 +200,7 @@ export default function ShaderControls() {
       <StaticMeshControls />
       <GrainGradientControls />
       <DotGridControls />
+      <PulsingBorderControls />
     </>
   );
 }

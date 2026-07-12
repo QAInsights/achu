@@ -1,8 +1,9 @@
 import type { ShaderType, ShaderParams } from './shaderPresets';
-import type { StaticMeshGradientParams, GrainGradientParams, DotGridParams } from './shaderPresets';
+import type { StaticMeshGradientParams, GrainGradientParams, DotGridParams, PulsingBorderParams } from './shaderPresets';
 import { drawStaticMeshGradient2D, drawGrainGradient2D } from './shaderFallback';
 import { drawDotGrid2D } from './shaderDotGridFallback';
-import { renderGrainGradientWebGL, renderStaticMeshWebGL, renderDotGridWebGL } from './shaderWebGL';
+import { drawPulsingBorder2D } from './shaderPulsingBorderFallback';
+import { renderGrainGradientWebGL, renderStaticMeshWebGL, renderDotGridWebGL, renderPulsingBorderWebGL } from './shaderWebGL';
 
 /** Try WebGL first, fall back to Canvas 2D if unavailable */
 export function renderShaderToCanvas(
@@ -41,6 +42,16 @@ function renderShaderWebGLCanvas(
       width, height, colors,
       p.shape, p.size, p.gapX, p.gapY, p.strokeWidth,
       p.sizeRange, p.opacityRange,
+      p.scale ?? 1, p.rotation ?? 0, p.offsetX ?? 0, p.offsetY ?? 0
+    );
+  } else if (type === 'pulsingBorder') {
+    const p = params as PulsingBorderParams;
+    return renderPulsingBorderWebGL(
+      width, height, colors,
+      p.roundness, p.thickness, p.softness, p.aspectRatio,
+      p.intensity, p.bloom, p.spots, p.spotSize,
+      p.pulse, p.smoke, p.smokeSize,
+      p.marginLeft, p.marginRight, p.marginTop, p.marginBottom,
       p.scale ?? 1, p.rotation ?? 0, p.offsetX ?? 0, p.offsetY ?? 0
     );
   }
@@ -87,6 +98,16 @@ function renderShader2DFallback(
       p.sizeRange, p.opacityRange,
       p.scale ?? 1, p.rotation ?? 0, p.offsetX ?? 0, p.offsetY ?? 0
     );
+  } else if (type === 'pulsingBorder') {
+    const p = params as PulsingBorderParams;
+    drawPulsingBorder2D(
+      ctx, renderW, renderH, colors,
+      p.roundness, p.thickness, p.softness, p.aspectRatio,
+      p.intensity, p.bloom, p.spots, p.spotSize,
+      p.pulse, p.smoke, p.smokeSize,
+      p.marginLeft, p.marginRight, p.marginTop, p.marginBottom,
+      p.scale ?? 1, p.rotation ?? 0, p.offsetX ?? 0, p.offsetY ?? 0
+    );
   } else {
     const p = params as GrainGradientParams;
     drawGrainGradient2D(ctx, renderW, renderH, colors, p.shape, p.softness, p.intensity, p.noise);
@@ -119,3 +140,4 @@ export function drawShaderOnCanvas(
     targetCtx.drawImage(shaderCanvas, 0, 0, width, height);
   }
 }
+

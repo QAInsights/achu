@@ -4,11 +4,13 @@ import {
   staticMeshGradientFragmentShader,
   dotGridFragmentShader,
   DotGridShapes,
+  pulsingBorderFragmentShader,
+  PulsingBorderAspectRatios,
   getShaderColorFromString,
   getShaderNoiseTexture,
   ShaderFitOptions,
 } from '@paper-design/shaders';
-import type { GrainGradientShape, DotGridShape } from './shaderPresets';
+import type { GrainGradientShape, DotGridShape, PulsingBorderAspectRatio } from './shaderPresets';
 
 // Vertex shader inlined from @paper-design/shaders v0.0.77 (dist/vertex-shader.js)
 // Not in public exports, so we embed it directly. Stable across patch versions.
@@ -427,3 +429,90 @@ export function renderDotGridWebGL(
 
   return canvas;
 }
+
+/** Render a pulsing border shader using real WebGL2. Returns null if WebGL is unavailable. */
+export function renderPulsingBorderWebGL(
+  w: number,
+  h: number,
+  colors: string[],
+  roundness: number,
+  thickness: number,
+  softness: number,
+  aspectRatio: PulsingBorderAspectRatio,
+  intensity: number,
+  bloom: number,
+  spots: number,
+  spotSize: number,
+  pulse: number,
+  smoke: number,
+  smokeSize: number,
+  marginLeft: number,
+  marginRight: number,
+  marginTop: number,
+  marginBottom: number,
+  scale: number,
+  rotation: number,
+  offsetX: number,
+  offsetY: number
+): HTMLCanvasElement | null {
+  if (typeof document === 'undefined') return null;
+  if (!noiseReady || !noiseImg) return null;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, premultipliedAlpha: false });
+  if (!gl) return null;
+
+  const program = linkProgram(gl, vertexShaderSource, pulsingBorderFragmentShader);
+  if (!program) return null;
+
+  gl.useProgram(program);
+  setupFullScreenQuad(gl, program);
+  setSizingUniforms(gl, program, w, h);
+
+  // Set sizing uniforms from parameters
+  setFloat(gl, program, 'u_scale', scale);
+  setFloat(gl, program, 'u_rotation', rotation);
+  setFloat(gl, program, 'u_offsetX', offsetX);
+  setFloat(gl, program, 'u_offsetY', offsetY);
+
+  // Set colors (up to 5 colors)
+  const colorVecs = colors.map(c => getShaderColorFromString(c) as number[]);
+  setVec4Array(gl, program, 'u_colors', colorVecs, 5);
+  setFloat(gl, program, 'u_colorsCount', colors.length);
+
+  // Background color (opaque black or transparent)
+  const locBack = gl.getUniformLocation(program, 'u_colorBack');
+  if (locBack) gl.uniform4fv(locBack, [0, 0, 0, 0]);
+
+  // Shader-specific uniforms
+  setFloat(gl, program, 'u_roundness', roundness);
+  setFloat(gl, program, 'u_thickness', thickness);
+  setFloat(gl, program, 'u_softness', softness);
+  setFloat(gl, program, 'u_marginLeft', marginLeft);
+  setFloat(gl, program, 'u_marginRight', marginRight);
+  setFloat(gl, program, 'u_marginTop', marginTop);
+  setFloat(gl, program, 'u_marginBottom', marginBottom);
+  setFloat(gl, program, 'u_aspectRatio', PulsingBorderAspectRatios[aspectRatio] ?? 0);
+  setFloat(gl, program, 'u_intensity', intensity);
+  setFloat(gl, program, 'u_bloom', bloom);
+  setFloat(gl, program, 'u_spots', spots);
+  setFloat(gl, program, 'u_spotSize', spotSize);
+  setFloat(gl, program, 'u_pulse', pulse);
+  setFloat(gl, program, 'u_smoke', smoke);
+  setFloat(gl, program, 'u_smokeSize', smokeSize);
+
+  // u_time = 0 as requested for static shader (speed = 0)
+  setFloat(gl, program, 'u_time', 0);
+
+  // Noise texture (required for smoke/noisiness calculations)
+  uploadTexture(gl, program, 'u_noiseTexture', noiseImg, 0);
+
+  // Render
+  gl.viewport(0, 0, w, h);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+  return canvas;
+}
+
