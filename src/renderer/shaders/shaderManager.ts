@@ -1,8 +1,8 @@
 import type { ShaderType, ShaderParams } from './shaderPresets';
-import type { StaticMeshGradientParams } from './shaderPresets';
-import type { GrainGradientParams } from './shaderPresets';
+import type { StaticMeshGradientParams, GrainGradientParams, DotGridParams } from './shaderPresets';
 import { drawStaticMeshGradient2D, drawGrainGradient2D } from './shaderFallback';
-import { renderGrainGradientWebGL, renderStaticMeshWebGL } from './shaderWebGL';
+import { drawDotGrid2D } from './shaderDotGridFallback';
+import { renderGrainGradientWebGL, renderStaticMeshWebGL, renderDotGridWebGL } from './shaderWebGL';
 
 /** Try WebGL first, fall back to Canvas 2D if unavailable */
 export function renderShaderToCanvas(
@@ -33,6 +33,14 @@ function renderShaderWebGLCanvas(
       width, height, colors,
       p.positions, p.waveX, p.waveXShift, p.waveY, p.waveYShift,
       p.mixing, p.grainMixer, p.grainOverlay,
+      p.scale ?? 1, p.rotation ?? 0, p.offsetX ?? 0, p.offsetY ?? 0
+    );
+  } else if (type === 'dotGrid') {
+    const p = params as DotGridParams;
+    return renderDotGridWebGL(
+      width, height, colors,
+      p.shape, p.size, p.gapX, p.gapY, p.strokeWidth,
+      p.sizeRange, p.opacityRange,
       p.scale ?? 1, p.rotation ?? 0, p.offsetX ?? 0, p.offsetY ?? 0
     );
   }
@@ -69,6 +77,14 @@ function renderShader2DFallback(
       ctx, renderW, renderH, colors,
       p.positions, p.waveX, p.waveXShift, p.waveY, p.waveYShift,
       p.mixing, p.grainMixer, p.grainOverlay,
+      p.scale ?? 1, p.rotation ?? 0, p.offsetX ?? 0, p.offsetY ?? 0
+    );
+  } else if (type === 'dotGrid') {
+    const p = params as DotGridParams;
+    drawDotGrid2D(
+      ctx, renderW, renderH, colors,
+      p.shape, p.size, p.gapX, p.gapY, p.strokeWidth,
+      p.sizeRange, p.opacityRange,
       p.scale ?? 1, p.rotation ?? 0, p.offsetX ?? 0, p.offsetY ?? 0
     );
   } else {

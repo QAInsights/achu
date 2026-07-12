@@ -1,6 +1,7 @@
-export type ShaderType = 'staticMesh' | 'grainGradient';
+export type ShaderType = 'staticMesh' | 'grainGradient' | 'dotGrid';
 
 export type GrainGradientShape = 'wave' | 'dots' | 'truchet' | 'corners' | 'ripple';
+export type DotGridShape = 'circle' | 'diamond' | 'square' | 'triangle';
 
 export interface StaticMeshGradientParams {
   positions: number;
@@ -24,7 +25,21 @@ export interface GrainGradientParams {
   noise: number;
 }
 
-export type ShaderParams = StaticMeshGradientParams | GrainGradientParams;
+export interface DotGridParams {
+  shape: DotGridShape;
+  size: number;
+  gapX: number;
+  gapY: number;
+  strokeWidth: number;
+  sizeRange: number;
+  opacityRange: number;
+  scale: number;
+  rotation: number;
+  offsetX: number;
+  offsetY: number;
+}
+
+export type ShaderParams = StaticMeshGradientParams | GrainGradientParams | DotGridParams;
 
 export interface ShaderPreset {
   id: string;
@@ -54,6 +69,20 @@ export const DEFAULT_GRAIN_GRADIENT_PARAMS: GrainGradientParams = {
   softness: 0.5,
   intensity: 0,
   noise: 0,
+};
+
+export const DEFAULT_DOT_GRID_PARAMS: DotGridParams = {
+  shape: 'circle',
+  size: 2,
+  gapX: 32,
+  gapY: 32,
+  strokeWidth: 0,
+  sizeRange: 0,
+  opacityRange: 0,
+  scale: 1,
+  rotation: 0,
+  offsetX: 0,
+  offsetY: 0,
 };
 
 export const shaderPresets: ShaderPreset[] = [
@@ -127,6 +156,34 @@ export const shaderPresets: ShaderPreset[] = [
     colors: ['#667eea', '#764ba2', '#f093fb'],
     params: { ...DEFAULT_GRAIN_GRADIENT_PARAMS, shape: 'dots', softness: 0.7 },
   },
+  {
+    id: 'dot-grid-classic',
+    name: 'Classic Dot Grid',
+    type: 'dotGrid',
+    colors: ['#000000', '#ffffff', '#ffaa00'],
+    params: { ...DEFAULT_DOT_GRID_PARAMS },
+  },
+  {
+    id: 'dot-grid-indigo',
+    name: 'Indigo Diamonds',
+    type: 'dotGrid',
+    colors: ['#0b0c10', '#4f46e5', '#818cf8'],
+    params: { ...DEFAULT_DOT_GRID_PARAMS, shape: 'diamond', size: 4, gapX: 24, gapY: 24 },
+  },
+  {
+    id: 'dot-grid-matrix',
+    name: 'Matrix Grid',
+    type: 'dotGrid',
+    colors: ['#050c05', '#00ff66', '#00aa33'],
+    params: { ...DEFAULT_DOT_GRID_PARAMS, shape: 'square', size: 6, gapX: 40, gapY: 40, opacityRange: 0.4 },
+  },
+  {
+    id: 'dot-grid-sunset',
+    name: 'Sunset Triangles',
+    type: 'dotGrid',
+    colors: ['#1a0b2e', '#ff4b2b', '#ff416c'],
+    params: { ...DEFAULT_DOT_GRID_PARAMS, shape: 'triangle', size: 8, gapX: 48, gapY: 48, sizeRange: 0.3 },
+  },
 ];
 
 export const SHAPE_LABELS: Record<GrainGradientShape, string> = {
@@ -138,3 +195,12 @@ export const SHAPE_LABELS: Record<GrainGradientShape, string> = {
 };
 
 export const SHAPE_OPTIONS: GrainGradientShape[] = ['wave', 'dots', 'truchet', 'corners', 'ripple'];
+
+export const DOT_GRID_SHAPE_LABELS: Record<DotGridShape, string> = {
+  circle: 'Circle',
+  diamond: 'Diamond',
+  square: 'Square',
+  triangle: 'Triangle',
+};
+
+export const DOT_GRID_SHAPE_OPTIONS: DotGridShape[] = ['circle', 'diamond', 'square', 'triangle'];

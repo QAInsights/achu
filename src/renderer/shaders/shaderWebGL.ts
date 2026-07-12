@@ -2,11 +2,13 @@ import {
   grainGradientFragmentShader,
   GrainGradientShapes,
   staticMeshGradientFragmentShader,
+  dotGridFragmentShader,
+  DotGridShapes,
   getShaderColorFromString,
   getShaderNoiseTexture,
   ShaderFitOptions,
 } from '@paper-design/shaders';
-import type { GrainGradientShape } from './shaderPresets';
+import type { GrainGradientShape, DotGridShape } from './shaderPresets';
 
 // Vertex shader inlined from @paper-design/shaders v0.0.77 (dist/vertex-shader.js)
 // Not in public exports, so we embed it directly. Stable across patch versions.
@@ -363,6 +365,61 @@ export function renderStaticMeshWebGL(
   setFloat(gl, program, 'u_mixing', mixing);
   setFloat(gl, program, 'u_grainMixer', grainMixer);
   setFloat(gl, program, 'u_grainOverlay', grainOverlay);
+
+  // Render
+  gl.viewport(0, 0, w, h);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+  return canvas;
+}
+
+/** Render a dot grid pattern shader using real WebGL2. Returns null if WebGL is unavailable. */
+export function renderDotGridWebGL(
+  w: number, h: number, colors: string[],
+  shape: DotGridShape, size: number, gapX: number, gapY: number, strokeWidth: number,
+  sizeRange: number, opacityRange: number,
+  scale: number, rotation: number, offsetX: number, offsetY: number
+): HTMLCanvasElement | null {
+  if (typeof document === 'undefined') return null;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, premultipliedAlpha: false });
+  if (!gl) return null;
+
+  const program = linkProgram(gl, vertexShaderSource, dotGridFragmentShader);
+  if (!program) return null;
+
+  gl.useProgram(program);
+  setupFullScreenQuad(gl, program);
+  setSizingUniforms(gl, program, w, h);
+
+  // Set sizing uniforms from parameters
+  setFloat(gl, program, 'u_scale', scale);
+  setFloat(gl, program, 'u_rotation', rotation);
+  setFloat(gl, program, 'u_offsetX', offsetX);
+  setFloat(gl, program, 'u_offsetY', offsetY);
+
+  // Set colors (background, fill, stroke)
+  const backColor = getShaderColorFromString(colors[0] || '#000000') as number[];
+  const fillColor = getShaderColorFromString(colors[1] || '#ffffff') as number[];
+  const strokeColor = getShaderColorFromString(colors[2] || '#ffaa00') as number[];
+
+  const locBack = gl.getUniformLocation(program, 'u_colorBack');
+  if (locBack) gl.uniform4fv(locBack, backColor);
+  const locFill = gl.getUniformLocation(program, 'u_colorFill');
+  if (locFill) gl.uniform4fv(locFill, fillColor);
+  const locStroke = gl.getUniformLocation(program, 'u_colorStroke');
+  if (locStroke) gl.uniform4fv(locStroke, strokeColor);
+
+  setFloat(gl, program, 'u_dotSize', size);
+  setFloat(gl, program, 'u_gapX', gapX);
+  setFloat(gl, program, 'u_gapY', gapY);
+  setFloat(gl, program, 'u_strokeWidth', strokeWidth);
+  setFloat(gl, program, 'u_sizeRange', sizeRange);
+  setFloat(gl, program, 'u_opacityRange', opacityRange);
+  setFloat(gl, program, 'u_shape', DotGridShapes[shape] ?? 0);
 
   // Render
   gl.viewport(0, 0, w, h);
