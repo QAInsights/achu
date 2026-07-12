@@ -41,8 +41,8 @@ export const DEFAULT_STATIC_MESH_PARAMS: StaticMeshGradientParams = {
   waveY: 0.3,
   waveYShift: 0.75,
   mixing: 0.5,
-  grainMixer: 0.2,
-  grainOverlay: 0.1,
+  grainMixer: 0,
+  grainOverlay: 0,
   scale: 1,
   rotation: 0,
   offsetX: 0,
@@ -52,8 +52,8 @@ export const DEFAULT_STATIC_MESH_PARAMS: StaticMeshGradientParams = {
 export const DEFAULT_GRAIN_GRADIENT_PARAMS: GrainGradientParams = {
   shape: 'wave',
   softness: 0.5,
-  intensity: 0.6,
-  noise: 0.3,
+  intensity: 0,
+  noise: 0,
 };
 
 export const shaderPresets: ShaderPreset[] = [
@@ -83,7 +83,7 @@ export const shaderPresets: ShaderPreset[] = [
     name: 'Neon Mesh',
     type: 'staticMesh',
     colors: ['#00f2fe', '#4facfe', '#f093fb', '#f5576c'],
-    params: { ...DEFAULT_STATIC_MESH_PARAMS, grainOverlay: 0.2 },
+    params: { ...DEFAULT_STATIC_MESH_PARAMS },
   },
   {
     id: 'forest-mesh',
@@ -104,7 +104,7 @@ export const shaderPresets: ShaderPreset[] = [
     name: 'Neon Grain',
     type: 'grainGradient',
     colors: ['#f093fb', '#f5576c', '#4facfe', '#00f2fe'],
-    params: { ...DEFAULT_GRAIN_GRADIENT_PARAMS, shape: 'ripple', intensity: 0.8, noise: 0.4 },
+    params: { ...DEFAULT_GRAIN_GRADIENT_PARAMS, shape: 'ripple' },
   },
   {
     id: 'ocean-ripple',
@@ -118,14 +118,14 @@ export const shaderPresets: ShaderPreset[] = [
     name: 'Warm Wave',
     type: 'grainGradient',
     colors: ['#fa709a', '#fee140', '#ff9a9e', '#fad0c4'],
-    params: { ...DEFAULT_GRAIN_GRADIENT_PARAMS, shape: 'wave', intensity: 0.5 },
+    params: { ...DEFAULT_GRAIN_GRADIENT_PARAMS, shape: 'wave' },
   },
   {
     id: 'cosmic-dots',
     name: 'Cosmic Dots',
     type: 'grainGradient',
     colors: ['#667eea', '#764ba2', '#f093fb'],
-    params: { ...DEFAULT_GRAIN_GRADIENT_PARAMS, shape: 'dots', softness: 0.7, noise: 0.5 },
+    params: { ...DEFAULT_GRAIN_GRADIENT_PARAMS, shape: 'dots', softness: 0.7 },
   },
 ];
 
