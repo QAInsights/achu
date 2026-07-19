@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initGallery();
   initMobileMenu();
   initLightbox();
+  initDownloadButton();
 });
 
 // Initialize site-wide branding text
@@ -182,4 +183,87 @@ function initLightbox() {
       closeLightbox();
     }
   });
+}
+
+// Detect visitor's OS and update download button with platform-specific installer link
+function initDownloadButton() {
+  const heroBtn = document.getElementById('hero-github-link');
+  if (!heroBtn) return;
+
+  // Detect OS from user agent
+  const ua = navigator.userAgent.toLowerCase();
+  let os = 'unknown';
+  let osLabel = 'Download';
+
+  if (ua.includes('win')) {
+    os = 'windows';
+    osLabel = 'Download for Windows';
+  } else if (ua.includes('mac')) {
+    os = 'macos';
+    osLabel = 'Download for macOS';
+  } else if (ua.includes('linux')) {
+    os = 'linux';
+    osLabel = 'Download for Linux';
+  }
+
+  // Detect architecture (arm64 vs x64)
+  const isArm64 = ua.includes('arm') || ua.includes('aarch64');
+
+  // Update button text immediately with OS label
+  heroBtn.textContent = osLabel;
+
+  // Fetch latest release and find the matching asset
+  fetch('https://api.github.com/repos/QAInsights/achu/releases/latest')
+    .then(res => res.ok ? res.json() : null)
+    .then(release => {
+      if (!release || !release.assets) return;
+
+      const assets = release.assets;
+      let downloadUrl = null;
+
+      if (os === 'windows') {
+        // Prefer .exe, match arch
+        const exeAssets = assets.filter(a => a.name.toLowerCase().endsWith('.exe'));
+        if (isArm64) {
+          downloadUrl = exeAssets.find(a => a.name.toLowerCase().includes('arm64'))?.browser_download_url;
+        } else {
+          downloadUrl = exeAssets.find(a => a.name.toLowerCase().includes('-x64-'))?.browser_download_url
+            || exeAssets.find(a => !a.name.toLowerCase().includes('arm64'))?.browser_download_url;
+        }
+        if (!downloadUrl && exeAssets.length > 0) downloadUrl = exeAssets[0].browser_download_url;
+      } else if (os === 'macos') {
+        // Prefer .dmg over .zip
+        const dmg = assets.find(a => a.name.toLowerCase().endsWith('.dmg'));
+        const zip = assets.find(a => a.name.toLowerCase().endsWith('.zip'));
+        downloadUrl = (dmg || zip)?.browser_download_url;
+      } else if (os === 'linux') {
+        // Prefer .AppImage, fall back to .deb
+        const appImages = assets.filter(a => a.name.toLowerCase().endsWith('.appimage'));
+        const debs = assets.filter(a => a.name.toLowerCase().endsWith('.deb'));
+
+        if (isArm64) {
+          downloadUrl = appImages.find(a => a.name.toLowerCase().includes('arm64'))?.browser_download_url
+            || debs.find(a => a.name.toLowerCase().includes('arm64'))?.browser_download_url;
+        } else {
+          downloadUrl = appImages.find(a => a.name.toLowerCase().includes('amd64') || !a.name.toLowerCase().includes('arm64'))?.browser_download_url
+            || debs.find(a => a.name.toLowerCase().includes('amd64') || !a.name.toLowerCase().includes('arm64'))?.browser_download_url;
+        }
+        if (!downloadUrl && appImages.length > 0) downloadUrl = appImages[0].browser_download_url;
+        if (!downloadUrl && debs.length > 0) downloadUrl = debs[0].browser_download_url;
+      }
+
+      // Fallback to first asset if no match
+      if (!downloadUrl && assets.length > 0) {
+        downloadUrl = assets[0].browser_download_url;
+      }
+
+      if (downloadUrl) {
+        heroBtn.href = downloadUrl;
+        // Remove target="_blank" so the download happens in the same tab
+        heroBtn.removeAttribute('target');
+      }
+    })
+    .catch(() => {
+      // On error, keep the existing GitHub releases link
+    });
 }
