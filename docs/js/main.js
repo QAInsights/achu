@@ -30,9 +30,9 @@ function initLinks() {
   const navGithub = document.getElementById('nav-github-link');
   if (navGithub) navGithub.href = config.links.github;
 
-  // Hero Actions
-  const heroGithub = document.getElementById('hero-github-link');
-  if (heroGithub) heroGithub.href = config.links.github;
+  // Hero Actions (Download button should point to releases, not main repo page)
+  const heroDownload = document.getElementById('hero-github-link');
+  if (heroDownload) heroDownload.href = config.links.releases || 'https://github.com/QAInsights/achu/releases';
 
   const heroExplore = document.getElementById('hero-explore-link');
   if (heroExplore) heroExplore.href = '#gallery';
@@ -190,6 +190,13 @@ function initDownloadButton() {
   const heroBtn = document.getElementById('hero-github-link');
   if (!heroBtn) return;
 
+  const fallbackReleaseUrl = (typeof config !== 'undefined' && config.links && config.links.releases)
+    ? config.links.releases
+    : 'https://github.com/QAInsights/achu/releases';
+
+  // Ensure initial fallback href points to releases page, not the GitHub repo homepage
+  heroBtn.href = fallbackReleaseUrl;
+
   // Detect OS from user agent
   const ua = navigator.userAgent.toLowerCase();
   let os = 'unknown';
@@ -198,7 +205,7 @@ function initDownloadButton() {
   if (ua.includes('win')) {
     os = 'windows';
     osLabel = 'Download for Windows';
-  } else if (ua.includes('mac')) {
+  } else if (ua.includes('mac') || ua.includes('macintosh') || ua.includes('mac os')) {
     os = 'macos';
     osLabel = 'Download for macOS';
   } else if (ua.includes('linux')) {
@@ -232,9 +239,32 @@ function initDownloadButton() {
         }
         if (!downloadUrl && exeAssets.length > 0) downloadUrl = exeAssets[0].browser_download_url;
       } else if (os === 'macos') {
-        // Prefer .dmg over .zip
-        const dmg = assets.find(a => a.name.toLowerCase().endsWith('.dmg'));
-        const zip = assets.find(a => a.name.toLowerCase().endsWith('.zip'));
+        // Prefer .dmg over .zip / .pkg
+        const dmgAssets = assets.filter(a => a.name.toLowerCase().endsWith('.dmg'));
+        const zipAssets = assets.filter(a => a.name.toLowerCase().endsWith('.zip') || a.name.toLowerCase().endsWith('.pkg'));
+
+        let dmg = null;
+        if (isArm64) {
+          dmg = dmgAssets.find(a => a.name.toLowerCase().includes('arm64'))
+             || dmgAssets.find(a => a.name.toLowerCase().includes('universal'))
+             || dmgAssets[0];
+        } else {
+          dmg = dmgAssets.find(a => a.name.toLowerCase().includes('x64') || a.name.toLowerCase().includes('universal'))
+             || dmgAssets.find(a => !a.name.toLowerCase().includes('arm64'))
+             || dmgAssets[0];
+        }
+
+        let zip = null;
+        if (isArm64) {
+          zip = zipAssets.find(a => a.name.toLowerCase().includes('arm64'))
+             || zipAssets.find(a => a.name.toLowerCase().includes('universal'))
+             || zipAssets[0];
+        } else {
+          zip = zipAssets.find(a => a.name.toLowerCase().includes('x64') || a.name.toLowerCase().includes('universal'))
+             || zipAssets.find(a => !a.name.toLowerCase().includes('arm64'))
+             || zipAssets[0];
+        }
+
         downloadUrl = (dmg || zip)?.browser_download_url;
       } else if (os === 'linux') {
         // Prefer .AppImage, fall back to .deb
@@ -264,6 +294,6 @@ function initDownloadButton() {
       }
     })
     .catch(() => {
-      // On error, keep the existing GitHub releases link
+      heroBtn.href = fallbackReleaseUrl;
     });
 }

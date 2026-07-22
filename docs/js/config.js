@@ -8,6 +8,7 @@ window.config = {
   },
   links: {
     github: "https://github.com/QAInsights/achu",
+    releases: "https://github.com/QAInsights/achu/releases",
     coffee: "https://buymeacoffee.com/qainsights"
   },
   ecosystem: [
