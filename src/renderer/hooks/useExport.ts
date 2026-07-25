@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { renderCanvas, RenderConfig, preloadBgImage } from '../canvasRenderer';
+import { onNoiseReady } from '../shaders/shaderWebGL';
 
 export type CompressionMode = 'original' | 'balanced' | 'small';
 
@@ -108,6 +109,16 @@ export function useExport(
           checkDone();
         });
       }
+    }
+
+    // grainGradient and pulsingBorder WebGL shaders need the noise texture loaded
+    const config = getCurrentConfig();
+    if (bgType === 'shader' && (config.shaderType === 'grainGradient' || config.shaderType === 'pulsingBorder')) {
+      pending++;
+      onNoiseReady(() => {
+        pending--;
+        checkDone();
+      });
     }
 
     checkDone();

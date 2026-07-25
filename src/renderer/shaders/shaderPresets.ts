@@ -110,7 +110,7 @@ export const DEFAULT_DOT_GRID_PARAMS: DotGridParams = {
 };
 
 export const DEFAULT_PULSING_BORDER_PARAMS: PulsingBorderParams = {
-  colorBack: '#00000000',
+  colorBack: '#000000',
   roundness: 0,
   thickness: 0.05,
   softness: 0,

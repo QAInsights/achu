@@ -265,10 +265,13 @@ function uploadTexture(gl: WebGL2RenderingContext, program: WebGLProgram, name: 
   if (loc) gl.uniform1i(loc, unit);
 }
 
+/** Canonical width the shader patterns are designed for. u_pixelRatio scales pattern UVs so output is resolution-independent. */
+const SHADER_REFERENCE_WIDTH = 800;
+
 /** Set the standard sizing uniforms to fill the entire canvas */
 function setSizingUniforms(gl: WebGL2RenderingContext, program: WebGLProgram, w: number, h: number): void {
   setVec2(gl, program, 'u_resolution', w, h);
-  setFloat(gl, program, 'u_pixelRatio', 1);
+  setFloat(gl, program, 'u_pixelRatio', w / SHADER_REFERENCE_WIDTH);
   setFloat(gl, program, 'u_time', 0.7);
   setFloat(gl, program, 'u_fit', ShaderFitOptions.none);
   setFloat(gl, program, 'u_scale', 1);
@@ -435,6 +438,7 @@ export function renderPulsingBorderWebGL(
   w: number,
   h: number,
   colors: string[],
+  colorBack: string,
   roundness: number,
   thickness: number,
   softness: number,
@@ -482,9 +486,10 @@ export function renderPulsingBorderWebGL(
   setVec4Array(gl, program, 'u_colors', colorVecs, 5);
   setFloat(gl, program, 'u_colorsCount', colors.length);
 
-  // Background color (opaque black or transparent)
+  // Background color from user-configurable colorBack param
+  const backVec = getShaderColorFromString(colorBack || '#000000') as number[];
   const locBack = gl.getUniformLocation(program, 'u_colorBack');
-  if (locBack) gl.uniform4fv(locBack, [0, 0, 0, 0]);
+  if (locBack) gl.uniform4fv(locBack, backVec);
 
   // Shader-specific uniforms
   setFloat(gl, program, 'u_roundness', roundness);

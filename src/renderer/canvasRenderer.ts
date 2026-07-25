@@ -38,6 +38,7 @@ export interface RedactionItem {
 
 import { drawArrowOnCanvas } from './arrowUtils';
 import { drawShaderOnCanvas } from './shaders/shaderManager';
+import type { ShaderType } from './shaders/shaderPresets';
 import { getWatermarkCanvasPlacement, getWatermarkInset } from '../shared/watermark';
 import { tokenizeLine } from './utils/codeTokenizer';
 import { getThemeByName } from './utils/codeThemes';
@@ -140,7 +141,7 @@ export interface RenderConfig {
   meshGrain?: number;
   meshOpacity?: number;
   meshSpread?: number;
-  shaderType?: 'staticMesh' | 'grainGradient';
+  shaderType?: ShaderType;
   shaderColors?: string[];
   shaderParams?: any;
   noImage?: boolean;

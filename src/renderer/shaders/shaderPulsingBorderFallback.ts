@@ -3,6 +3,7 @@ export function drawPulsingBorder2D(
   w: number,
   h: number,
   colors: string[],
+  colorBack: string,
   roundness: number,
   thickness: number,
   softness: number,
@@ -23,8 +24,11 @@ export function drawPulsingBorder2D(
   offsetX: number,
   offsetY: number
 ): void {
-  // Clear / draw background (usually transparent, but we draw u_colorBack as opaque if needed)
-  // u_colorBack is set to '#00000000' (transparent) by default
+  // Fill background with user-configurable colorBack
+  ctx.save();
+  ctx.fillStyle = colorBack || '#000000';
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
 
   ctx.save();
 

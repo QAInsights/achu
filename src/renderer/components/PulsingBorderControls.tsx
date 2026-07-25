@@ -31,6 +31,21 @@ export default function PulsingBorderControls() {
   return (
     <>
       <div className="control-group">
+        <span className="control-label">Background</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <input
+            type="color"
+            value={(params.colorBack ?? '#000000').slice(0, 7)}
+            onChange={(e) => updateParam('colorBack', e.target.value)}
+            onMouseUp={handleSliderRelease}
+            className="color-swatch-picker"
+            style={{ width: '32px', height: '32px', cursor: 'pointer' }}
+          />
+          <span className="control-value">{params.colorBack ?? '#000000'}</span>
+        </div>
+      </div>
+
+      <div className="control-group">
         <span className="control-label">Aspect Ratio</span>
         <div className="btn-group" style={{ flexWrap: 'wrap' }}>
           {PULSING_BORDER_ASPECT_RATIO_OPTIONS.map((a) => (

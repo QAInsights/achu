@@ -48,6 +48,7 @@ function renderShaderWebGLCanvas(
     const p = params as PulsingBorderParams;
     return renderPulsingBorderWebGL(
       width, height, colors,
+      p.colorBack ?? '#000000',
       p.roundness, p.thickness, p.softness, p.aspectRatio,
       p.intensity, p.bloom, p.spots, p.spotSize,
       p.pulse, p.smoke, p.smokeSize,
@@ -66,8 +67,8 @@ function renderShader2DFallback(
   width: number,
   height: number
 ): HTMLCanvasElement | null {
-  // Optimize resolution for 2D fallback to make per-pixel CPU loop extremely fast
-  const maxW = 300;
+  // Cap 2D fallback at the shader reference width so pattern density matches the preview
+  const maxW = 800;
   let renderW = width;
   let renderH = height;
   if (width > maxW) {
@@ -102,6 +103,7 @@ function renderShader2DFallback(
     const p = params as PulsingBorderParams;
     drawPulsingBorder2D(
       ctx, renderW, renderH, colors,
+      p.colorBack ?? '#000000',
       p.roundness, p.thickness, p.softness, p.aspectRatio,
       p.intensity, p.bloom, p.spots, p.spotSize,
       p.pulse, p.smoke, p.smokeSize,
