@@ -149,6 +149,15 @@ achu uses `electron-builder` to package lightweight native binaries for Windows,
 * **Linux Target:** Standalone AppImage and `.deb` packages.
 * **macOS Target:** Standalone `.dmg` disk image and `.zip` archives.
 
+> **macOS Gatekeeper Note:** Since achu is not yet code-signed with an Apple Developer ID, macOS may show
+> *"Can't be opened because Apple cannot check it for malicious software."* To bypass this:
+>
+> ```bash
+> xattr -cr /Applications/achu.app
+> ```
+>
+> Or right-click the app in Finder, select **Open**, then click **Open** in the confirmation dialog.
+
 ---
 
 ## 🔒 Security & Privacy

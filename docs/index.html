@@ -161,6 +161,14 @@
               "@type": "Answer",
               "text": "Yes. achu is free and open source under the MIT License. Download from https://github.com/QAInsights/achu/releases."
             }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does macOS say achu can't be opened because Apple cannot check it for malicious software?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "achu is not yet code-signed with an Apple Developer ID. To open it, run 'xattr -cr /Applications/achu.app' in Terminal, or right-click the app in Finder, select Open, then click Open in the confirmation dialog. The app is open source and built from publicly auditable code."
+            }
           }
         ]
       }
@@ -354,6 +362,13 @@
             <svg class="faq-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
           </summary>
           <p class="faq-answer">Yes. achu is free and open source under the MIT License. <a href="https://github.com/QAInsights/achu/releases" target="_blank" rel="noopener noreferrer">Download from GitHub Releases</a>.</p>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>macOS says "Can't be opened because Apple cannot check it for malicious software"</span>
+            <svg class="faq-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <p class="faq-answer">achu is not yet code-signed with an Apple Developer ID. To open it, run <code>xattr -cr /Applications/achu.app</code> in Terminal, or right-click the app in Finder, select <strong>Open</strong>, then click <strong>Open</strong> in the confirmation dialog. This is safe; the app is open source and built from <a href="https://github.com/QAInsights/achu" target="_blank" rel="noopener noreferrer">publicly auditable code</a>.</p>
         </details>
       </div>
     </section>
