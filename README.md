@@ -149,14 +149,65 @@ achu uses `electron-builder` to package lightweight native binaries for Windows,
 * **Linux Target:** Standalone AppImage and `.deb` packages.
 * **macOS Target:** Standalone `.dmg` disk image and `.zip` archives.
 
-> **macOS Gatekeeper Note:** Since achu is not yet code-signed with an Apple Developer ID, macOS may show
-> *"Can't be opened because Apple cannot check it for malicious software."* To bypass this:
->
-> ```bash
-> xattr -cr /Applications/achu.app
-> ```
->
-> Or right-click the app in Finder, select **Open**, then click **Open** in the confirmation dialog.
+### macOS Gatekeeper (unsigned builds)
+
+achu is **not yet code-signed or notarized** with an Apple Developer ID. After installing from a browser-downloaded DMG, macOS Gatekeeper (especially **Sequoia 15+**) may block the first launch with:
+
+> **"achu" Not Opened** — *Apple could not verify "achu" is free of malware that may harm your Mac or compromise your privacy.*
+
+Buttons are typically **Done** and **Move to Trash**. Do **not** choose **Move to Trash** if you want to keep the app.
+
+> **Note:** Clearing quarantine with `xattr -cr` alone is often **not enough** on modern macOS. Right-click → **Open** is also unreliable on Sequoia. Prefer the steps below.
+
+#### Option 1 — System Settings (recommended, no Terminal)
+
+1. Try to open **achu** once so macOS records the block.
+2. Click **Done** (not **Move to Trash**).
+3. Open **System Settings → Privacy & Security**.
+4. Scroll to the **Security** section.
+5. Find a message like **"achu" was blocked to protect your Mac** and click **Open Anyway**.
+6. Authenticate with Touch ID or your password.
+7. Open **achu** again. When the warning reappears, click **Open**.
+
+After the first successful open, subsequent launches should work normally.
+
+#### Option 2 — Terminal
+
+If the app is in `/Applications` (restore it from Trash first if needed):
+
+```bash
+# Strip quarantine attributes from the installed app
+xattr -cr /Applications/achu.app
+
+# Optional: apply an ad-hoc signature (can help when Gatekeeper reports the app as damaged)
+codesign --force --deep --sign - /Applications/achu.app
+
+open /Applications/achu.app
+```
+
+If Gatekeeper still blocks the app after this, complete **Option 1** (Open Anyway). On Sequoia, the System Settings path is often still required for unsigned downloads.
+
+#### Option 3 — Build from source
+
+A local build never receives the browser download quarantine flag:
+
+```bash
+git clone https://github.com/QAInsights/achu.git
+cd achu
+npm install
+npm run dev
+```
+
+To package a local app bundle instead of using the release DMG:
+
+```bash
+npm run build
+npx electron-builder --mac --publish never
+```
+
+#### Permanent fix (roadmap)
+
+The lasting fix is **Developer ID signing + Apple notarization** in the release pipeline. Until that ships, Gatekeeper prompts on first launch of web-downloaded builds are expected.
 
 ---
 
