@@ -11,6 +11,9 @@ const SHORTCUTS = [
   { label: 'Export to file', keys: 'mod shift s export' },
   { label: 'Toggle Gallery', keys: 'mod g gallery' },
   { label: 'Toggle Code Studio', keys: 'mod shift c code studio' },
+  { label: 'Copy Annotation', keys: 'mod c copy annotation' },
+  { label: 'Cut Annotation', keys: 'mod x cut annotation' },
+  { label: 'Paste Annotation', keys: 'mod v paste annotation' },
   { label: 'Delete Annotation', keys: 'delete backspace annotation' },
 ];
 
@@ -25,7 +28,7 @@ const TOOLBAR_SHORTCUTS = [
 
 const SUPPORT_KEYWORDS = 'support project donate donation github repo repository buy coffee';
 
-registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji' });
+registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy cut annotation' });
 registerSettingsSection({ tab: 'shortcuts', label: 'Support & Project', keywords: SUPPORT_KEYWORDS });
 
 export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery?: string }) {
@@ -58,6 +61,9 @@ export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery
                 {s.label === 'Export to file' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>Shift</kbd> <kbd>S</kbd></div>}
                 {s.label === 'Toggle Gallery' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>G</kbd></div>}
                 {s.label === 'Toggle Code Studio' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>Shift</kbd> <kbd>C</kbd></div>}
+                {s.label === 'Copy Annotation' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>C</kbd></div>}
+                {s.label === 'Cut Annotation' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>X</kbd></div>}
+                {s.label === 'Paste Annotation' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>V</kbd></div>}
                 {s.label === 'Delete Annotation' && <div><kbd>Delete</kbd> or <kbd>Backspace</kbd></div>}
               </div>
               {i === filteredShortcuts.length - 1 && filteredToolbar.length > 0 && (

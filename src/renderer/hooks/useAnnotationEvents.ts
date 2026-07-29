@@ -1,6 +1,13 @@
-import { useState, useEffect, useLayoutEffect, useRef, RefObject } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, RefObject } from 'react';
 import { Annotation } from '../canvasRenderer';
 import { SnapGuide, snapDragPosition, snapResizeDimensions, snapDrawingDimensions } from '../utils/snapUtils';
+import {
+  ANNOTATION_PASTE_OFFSET,
+  cloneAnnotation,
+  getAnnotationClipboard,
+  hasAnnotationClipboard,
+  setAnnotationClipboard,
+} from '../utils/annotationClipboardUtils';
 
 interface UseAnnotationEventsProps {
   annotations: Annotation[];
@@ -152,10 +159,66 @@ export function useAnnotationEvents({
     if (onDimensionsChange) onDimensionsChange(dimensions);
   }, [dimensions, onDimensionsChange]);
 
+  const copyAnnotation = useCallback((id?: string | null) => {
+    const targetId = id ?? selectedId;
+    if (!targetId) return;
+    const ann = annotations.find(a => a.id === targetId);
+    if (!ann) return;
+    // Store without offset so the first paste is a clean offset from the original.
+    setAnnotationClipboard(cloneAnnotation(ann));
+  }, [annotations, selectedId]);
+
+  const cutAnnotation = useCallback((id?: string | null) => {
+    const targetId = id ?? selectedId;
+    if (!targetId) return;
+    const ann = annotations.find(a => a.id === targetId);
+    if (!ann) return;
+    setAnnotationClipboard(cloneAnnotation(ann));
+    const updated = annotations.filter(a => a.id !== targetId);
+    setAnnotations(updated);
+    if (selectedId === targetId) setSelectedId(null);
+    onSaveHistory(updated);
+  }, [annotations, selectedId, setAnnotations, onSaveHistory]);
+
+  const pasteAnnotation = useCallback(() => {
+    const source = getAnnotationClipboard();
+    if (!source) return;
+    const pasted = cloneAnnotation(source, { offset: ANNOTATION_PASTE_OFFSET });
+    // Cascade: next paste offsets from this pasted clone.
+    setAnnotationClipboard(pasted);
+    const updated = [...annotations, pasted];
+    setAnnotations(updated);
+    setSelectedId(pasted.id);
+    onSaveHistory(updated);
+  }, [annotations, setAnnotations, onSaveHistory]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      const mod = e.ctrlKey || e.metaKey;
+      // Require plain mod+key (no Shift/Alt) so we don't steal Ctrl+Shift+C (Code Studio), etc.
+      if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'c') {
+        if (selectedId) {
+          e.preventDefault();
+          copyAnnotation(selectedId);
+        }
+        return;
+      }
+      if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'x') {
+        if (selectedId) {
+          e.preventDefault();
+          cutAnnotation(selectedId);
+        }
+        return;
+      }
+      if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'v') {
+        if (hasAnnotationClipboard()) {
+          e.preventDefault();
+          pasteAnnotation();
+        }
         return;
       }
       if (selectedId && (e.key === 'Delete' || e.key === 'Backspace')) {
@@ -167,7 +230,7 @@ export function useAnnotationEvents({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, annotations, setAnnotations, onSaveHistory]);
+  }, [selectedId, annotations, setAnnotations, onSaveHistory, copyAnnotation, cutAnnotation, pasteAnnotation]);
 
   useEffect(() => {
     if (selectedId && arrowStyle) {
@@ -728,5 +791,9 @@ export function useAnnotationEvents({
     startResize,
     handleDoubleClick,
     deleteAnnotation,
+    copyAnnotation,
+    cutAnnotation,
+    pasteAnnotation,
+    canPasteAnnotation: hasAnnotationClipboard,
   };
 }

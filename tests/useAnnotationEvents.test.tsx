@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnnotationEvents } from '../src/renderer/hooks/useAnnotationEvents';
 import { Annotation } from '../src/renderer/canvasRenderer';
+import { clearAnnotationClipboard } from '../src/renderer/utils/annotationClipboardUtils';
 
 describe('useAnnotationEvents', () => {
   let containerRef: any;
@@ -582,5 +583,186 @@ describe('useAnnotationEvents', () => {
     expect(result.current.dimensions).toEqual({ width: 800, height: 600 });
     expect(result.current.dimensions.width).not.toBe(400);
     expect(result.current.dimensions.height).not.toBe(300);
+  });
+
+  describe('copy / cut / paste', () => {
+    beforeEach(() => {
+      clearAnnotationClipboard();
+    });
+
+    const sampleAnn: Annotation = {
+      id: 'ann-1',
+      type: 'rect',
+      x: 0.1,
+      y: 0.2,
+      w: 0.3,
+      h: 0.25,
+      color: '#ff0000',
+      strokeWidth: 4,
+    };
+
+    function setup(annotations: Annotation[] = [sampleAnn]) {
+      let currentAnnotations = [...annotations];
+      const wrappedSetAnnotations = vi.fn<React.Dispatch<React.SetStateAction<Annotation[]>>>().mockImplementation((updater: any) => {
+        if (typeof updater === 'function') {
+          currentAnnotations = updater(currentAnnotations);
+          return currentAnnotations;
+        }
+        currentAnnotations = updater;
+        return updater;
+      });
+
+      const hook = renderHook(() =>
+        useAnnotationEvents({
+          annotations: currentAnnotations,
+          setAnnotations: wrappedSetAnnotations,
+          activeTool: 'pointer',
+          color: '#ff0000',
+          strokeWidth: 4,
+          arrowStyle: 'classic',
+          onSaveHistory,
+          customPrompt,
+          containerRef,
+        })
+      );
+
+      return { ...hook, getAnnotations: () => currentAnnotations, wrappedSetAnnotations };
+    }
+
+    it('copyAnnotation stores a clone on the clipboard without mutating canvas', () => {
+      const { result, getAnnotations } = setup();
+      act(() => {
+        result.current.setSelectedId('ann-1');
+      });
+      act(() => {
+        result.current.copyAnnotation();
+      });
+      expect(result.current.canPasteAnnotation()).toBe(true);
+      expect(getAnnotations()).toHaveLength(1);
+      expect(onSaveHistory).not.toHaveBeenCalled();
+    });
+
+    it('cutAnnotation removes the selected annotation and saves history', () => {
+      const { result, getAnnotations } = setup();
+      act(() => {
+        result.current.setSelectedId('ann-1');
+      });
+      act(() => {
+        result.current.cutAnnotation();
+      });
+      expect(getAnnotations()).toEqual([]);
+      expect(result.current.selectedId).toBeNull();
+      expect(result.current.canPasteAnnotation()).toBe(true);
+      expect(onSaveHistory).toHaveBeenCalledWith([]);
+    });
+
+    it('pasteAnnotation appends an offset clone with a new id and selects it', () => {
+      const { result, getAnnotations } = setup();
+      act(() => {
+        result.current.setSelectedId('ann-1');
+      });
+      act(() => {
+        result.current.copyAnnotation();
+      });
+      act(() => {
+        result.current.pasteAnnotation();
+      });
+      const anns = getAnnotations();
+      expect(anns).toHaveLength(2);
+      expect(anns[1].id).not.toBe('ann-1');
+      expect(anns[1].x).toBeCloseTo(0.12);
+      expect(anns[1].y).toBeCloseTo(0.22);
+      expect(result.current.selectedId).toBe(anns[1].id);
+      expect(onSaveHistory).toHaveBeenCalled();
+    });
+
+    it('Ctrl/Cmd+C copies the selected annotation', () => {
+      const { result } = setup();
+      act(() => {
+        result.current.setSelectedId('ann-1');
+      });
+      act(() => {
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'c', ctrlKey: true, bubbles: true })
+        );
+      });
+      expect(result.current.canPasteAnnotation()).toBe(true);
+    });
+
+    it('Ctrl/Cmd+X cuts the selected annotation', () => {
+      const { result, getAnnotations } = setup();
+      act(() => {
+        result.current.setSelectedId('ann-1');
+      });
+      act(() => {
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'x', ctrlKey: true, bubbles: true })
+        );
+      });
+      expect(getAnnotations()).toEqual([]);
+      expect(onSaveHistory).toHaveBeenCalled();
+    });
+
+    it('Ctrl/Cmd+V pastes when clipboard has content', () => {
+      const { result, getAnnotations } = setup();
+      act(() => {
+        result.current.setSelectedId('ann-1');
+      });
+      act(() => {
+        result.current.copyAnnotation();
+      });
+      act(() => {
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'v', ctrlKey: true, bubbles: true })
+        );
+      });
+      expect(getAnnotations()).toHaveLength(2);
+    });
+
+    it('Ctrl/Cmd+V is a no-op when clipboard is empty', () => {
+      const { result, getAnnotations } = setup();
+      act(() => {
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'v', ctrlKey: true, bubbles: true })
+        );
+      });
+      expect(getAnnotations()).toHaveLength(1);
+      expect(onSaveHistory).not.toHaveBeenCalled();
+    });
+
+    it('ignores cut shortcut when event originates from a textarea', () => {
+      const { result, getAnnotations } = setup();
+      act(() => {
+        result.current.setSelectedId('ann-1');
+      });
+      const textarea = document.createElement('textarea');
+      document.body.appendChild(textarea);
+      act(() => {
+        // Event target is the textarea → handler must no-op
+        textarea.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'x', ctrlKey: true, bubbles: true })
+        );
+      });
+      document.body.removeChild(textarea);
+      expect(getAnnotations()).toHaveLength(1);
+      expect(onSaveHistory).not.toHaveBeenCalled();
+    });
+
+    it('copyAnnotation accepts an explicit id (context menu)', () => {
+      const second: Annotation = { ...sampleAnn, id: 'ann-2', x: 0.5 };
+      const { result, getAnnotations } = setup([sampleAnn, second]);
+      act(() => {
+        result.current.copyAnnotation('ann-2');
+      });
+      expect(result.current.canPasteAnnotation()).toBe(true);
+      act(() => {
+        result.current.pasteAnnotation();
+      });
+      const anns = getAnnotations();
+      expect(anns).toHaveLength(3);
+      const pasted = anns[anns.length - 1];
+      expect(pasted.id).not.toBe('ann-2');
+      expect(pasted.x).toBeCloseTo(0.52);
+    });
   });
 });

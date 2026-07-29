@@ -84,6 +84,10 @@ export default function AnnotationsLayer({
     startResize,
     handleDoubleClick,
     deleteAnnotation,
+    copyAnnotation,
+    cutAnnotation,
+    pasteAnnotation,
+    canPasteAnnotation,
   } = useAnnotationEvents({
     annotations,
     setAnnotations,
@@ -308,6 +312,10 @@ export default function AnnotationsLayer({
           y={orderMenu.y}
           onClose={() => setOrderMenu(null)}
           onOrder={handleOrder}
+          onCut={() => cutAnnotation(orderMenu.id)}
+          onCopy={() => copyAnnotation(orderMenu.id)}
+          onPaste={() => pasteAnnotation()}
+          canPaste={canPasteAnnotation()}
         />
       )}
 

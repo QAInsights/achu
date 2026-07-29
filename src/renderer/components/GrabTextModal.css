@@ -53,6 +53,19 @@
   margin: 4px 0;
 }
 
+.context-menu-shortcut {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.context-menu-item:disabled .context-menu-shortcut {
+  color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
 /* Grab Text Modal Styles */
 .grab-text-modal-content {
   display: flex;

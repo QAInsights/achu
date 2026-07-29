@@ -8,26 +8,64 @@ describe('AnnotationContextMenu', () => {
     y: 100,
     onClose: vi.fn(),
     onOrder: vi.fn(),
+    onCut: vi.fn(),
+    onCopy: vi.fn(),
+    onPaste: vi.fn(),
+    canPaste: true,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders all four layer-order items with grammar-correct labels', () => {
+  it('renders clipboard items and all four layer-order items', () => {
     render(<AnnotationContextMenu {...defaultProps} />);
+    expect(screen.getByText('Cut')).toBeInTheDocument();
+    expect(screen.getByText('Copy')).toBeInTheDocument();
+    expect(screen.getByText('Paste')).toBeInTheDocument();
     expect(screen.getByText('Bring to Front')).toBeInTheDocument();
     expect(screen.getByText('Bring Forward')).toBeInTheDocument();
     expect(screen.getByText('Send Backward')).toBeInTheDocument();
     expect(screen.getByText('Send to Back')).toBeInTheDocument();
   });
 
-  it('all four items are always enabled (no-op safe at edges)', () => {
+  it('all four layer-order items are always enabled (no-op safe at edges)', () => {
     render(<AnnotationContextMenu {...defaultProps} />);
     expect(screen.getByText('Bring to Front').closest('button')).not.toBeDisabled();
     expect(screen.getByText('Bring Forward').closest('button')).not.toBeDisabled();
     expect(screen.getByText('Send Backward').closest('button')).not.toBeDisabled();
     expect(screen.getByText('Send to Back').closest('button')).not.toBeDisabled();
+  });
+
+  it('disables Paste when canPaste is false', () => {
+    render(<AnnotationContextMenu {...defaultProps} canPaste={false} />);
+    expect(screen.getByText('Paste').closest('button')).toBeDisabled();
+  });
+
+  it('enables Paste when canPaste is true', () => {
+    render(<AnnotationContextMenu {...defaultProps} canPaste={true} />);
+    expect(screen.getByText('Paste').closest('button')).not.toBeDisabled();
+  });
+
+  it('calls onCut and onClose when Cut clicked', () => {
+    render(<AnnotationContextMenu {...defaultProps} />);
+    fireEvent.click(screen.getByText('Cut'));
+    expect(defaultProps.onCut).toHaveBeenCalled();
+    expect(defaultProps.onClose).toHaveBeenCalled();
+  });
+
+  it('calls onCopy and onClose when Copy clicked', () => {
+    render(<AnnotationContextMenu {...defaultProps} />);
+    fireEvent.click(screen.getByText('Copy'));
+    expect(defaultProps.onCopy).toHaveBeenCalled();
+    expect(defaultProps.onClose).toHaveBeenCalled();
+  });
+
+  it('calls onPaste and onClose when Paste clicked', () => {
+    render(<AnnotationContextMenu {...defaultProps} />);
+    fireEvent.click(screen.getByText('Paste'));
+    expect(defaultProps.onPaste).toHaveBeenCalled();
+    expect(defaultProps.onClose).toHaveBeenCalled();
   });
 
   it('calls onOrder("bring-to-front") and onClose when Bring to Front clicked', () => {
@@ -82,16 +120,16 @@ describe('AnnotationContextMenu', () => {
     // window.innerWidth in jsdom defaults to 1024
     render(<AnnotationContextMenu {...defaultProps} x={2000} y={100} />);
     const menu = document.body.querySelector('.custom-context-menu') as HTMLElement;
-    // MENU_WIDTH=180, padding 8 -> clamped to 1024 - 180 - 8 = 836
-    expect(Number(menu.style.left.replace('px', ''))).toBeLessThanOrEqual(836);
+    // MENU_WIDTH=200, padding 8 -> clamped to 1024 - 200 - 8 = 816
+    expect(Number(menu.style.left.replace('px', ''))).toBeLessThanOrEqual(816);
   });
 
   it('clamps position to prevent viewport overflow on the bottom edge', () => {
     // window.innerHeight in jsdom defaults to 768
     render(<AnnotationContextMenu {...defaultProps} x={100} y={2000} />);
     const menu = document.body.querySelector('.custom-context-menu') as HTMLElement;
-    // MENU_HEIGHT=184, padding 8 -> clamped to 768 - 184 - 8 = 576
-    expect(Number(menu.style.top.replace('px', ''))).toBeLessThanOrEqual(576);
+    // MENU_HEIGHT=280, padding 8 -> clamped to 768 - 280 - 8 = 480
+    expect(Number(menu.style.top.replace('px', ''))).toBeLessThanOrEqual(480);
   });
 
   it('closes on Escape key', () => {

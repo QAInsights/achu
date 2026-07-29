@@ -1,6 +1,12 @@
 import { useEffect } from 'react';
 import { detectLanguage } from '../utils/codeTokenizer';
 
+/**
+ * System clipboard paste: images and auto-detected code.
+ * Independent of the in-app annotation clipboard (Cut/Copy/Paste objects).
+ * When that clipboard has content, mod+V is handled in useAnnotationEvents
+ * (preventDefault) so this paste path does not run for that keystroke.
+ */
 export function useClipboardPaste(
   codeStudioActive: boolean,
   toggleCodeStudio: (active: boolean, codeText?: string, codeLang?: string) => void,

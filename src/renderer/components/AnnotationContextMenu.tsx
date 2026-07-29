@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { BringToFront, ArrowUp, ArrowDown, SendToBack } from 'lucide-react';
+import {
+  BringToFront,
+  ArrowUp,
+  ArrowDown,
+  SendToBack,
+  Scissors,
+  Copy,
+  ClipboardPaste,
+} from 'lucide-react';
+import { getModKeyLabel } from '../utils/shortcutLabels';
 import './GrabTextModal.css';
 
 export type LayerOrderAction =
@@ -14,26 +23,38 @@ interface AnnotationContextMenuProps {
   y: number;
   onClose: () => void;
   onOrder: (action: LayerOrderAction) => void;
+  onCut: () => void;
+  onCopy: () => void;
+  onPaste: () => void;
+  canPaste?: boolean;
 }
 
-const MENU_WIDTH = 180;
-const MENU_HEIGHT = 184;
+// 3 clipboard + 2 dividers + 4 layer ≈ 7 rows + 2 dividers
+const MENU_WIDTH = 200;
+const MENU_HEIGHT = 280;
 
 /**
- * Right-click layer-order menu for a single annotation object.
+ * Right-click menu for a single annotation: clipboard (Cut/Copy/Paste) plus
+ * layer-order actions.
  *
  * Reuses the existing `.custom-context-menu` / `.context-menu-item` /
  * `.context-menu-divider` styles from GrabTextModal.css so it visually matches
- * the app's other context menu. All four actions are always enabled; the
+ * the app's other context menu. Layer-order actions are always enabled; the
  * underlying helpers are no-op safe when the object is already at an edge.
+ * Paste is disabled when the in-app annotation clipboard is empty.
  */
 export default function AnnotationContextMenu({
   x,
   y,
   onClose,
   onOrder,
+  onCut,
+  onCopy,
+  onPaste,
+  canPaste = false,
 }: AnnotationContextMenuProps) {
   const [coords, setCoords] = useState({ x, y });
+  const mod = getModKeyLabel();
 
   useEffect(() => {
     const screenWidth = window.innerWidth;
@@ -64,8 +85,13 @@ export default function AnnotationContextMenu({
     };
   }, [onClose]);
 
-  const run = (action: LayerOrderAction) => {
+  const runOrder = (action: LayerOrderAction) => {
     onOrder(action);
+    onClose();
+  };
+
+  const runClipboard = (fn: () => void) => {
+    fn();
     onClose();
   };
 
@@ -81,7 +107,40 @@ export default function AnnotationContextMenu({
     >
       <button
         className="context-menu-item"
-        onClick={() => run('bring-to-front')}
+        onClick={() => runClipboard(onCut)}
+        title={`Cut (${mod}+X)`}
+      >
+        <Scissors className="w-4 h-4" />
+        <span>Cut</span>
+        <span className="context-menu-shortcut">{mod}+X</span>
+      </button>
+
+      <button
+        className="context-menu-item"
+        onClick={() => runClipboard(onCopy)}
+        title={`Copy (${mod}+C)`}
+      >
+        <Copy className="w-4 h-4" />
+        <span>Copy</span>
+        <span className="context-menu-shortcut">{mod}+C</span>
+      </button>
+
+      <button
+        className="context-menu-item"
+        onClick={() => runClipboard(onPaste)}
+        title={canPaste ? `Paste (${mod}+V)` : 'Nothing to paste'}
+        disabled={!canPaste}
+      >
+        <ClipboardPaste className="w-4 h-4" />
+        <span>Paste</span>
+        <span className="context-menu-shortcut">{mod}+V</span>
+      </button>
+
+      <div className="context-menu-divider" />
+
+      <button
+        className="context-menu-item"
+        onClick={() => runOrder('bring-to-front')}
         title="Bring to Front"
       >
         <BringToFront className="w-4 h-4" />
@@ -90,7 +149,7 @@ export default function AnnotationContextMenu({
 
       <button
         className="context-menu-item"
-        onClick={() => run('bring-forward')}
+        onClick={() => runOrder('bring-forward')}
         title="Bring Forward"
       >
         <ArrowUp className="w-4 h-4" />
@@ -101,7 +160,7 @@ export default function AnnotationContextMenu({
 
       <button
         className="context-menu-item"
-        onClick={() => run('send-backward')}
+        onClick={() => runOrder('send-backward')}
         title="Send Backward"
       >
         <ArrowDown className="w-4 h-4" />
@@ -110,7 +169,7 @@ export default function AnnotationContextMenu({
 
       <button
         className="context-menu-item"
-        onClick={() => run('send-to-back')}
+        onClick={() => runOrder('send-to-back')}
         title="Send to Back"
       >
         <SendToBack className="w-4 h-4" />
