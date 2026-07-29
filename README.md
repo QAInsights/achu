@@ -153,13 +153,13 @@ achu uses `electron-builder` to package lightweight native binaries for Windows,
 
 achu is **not yet code-signed or notarized** with an Apple Developer ID. After installing from a browser-downloaded DMG, macOS Gatekeeper (especially **Sequoia 15+**) may block the first launch with:
 
-> **"achu" Not Opened** — *Apple could not verify "achu" is free of malware that may harm your Mac or compromise your privacy.*
+> **"achu" Not Opened** - *Apple could not verify "achu" is free of malware that may harm your Mac or compromise your privacy.*
 
 Buttons are typically **Done** and **Move to Trash**. Do **not** choose **Move to Trash** if you want to keep the app.
 
 > **Note:** Clearing quarantine with `xattr -cr` alone is often **not enough** on modern macOS. Right-click → **Open** is also unreliable on Sequoia. Prefer the steps below.
 
-#### Option 1 — System Settings (recommended, no Terminal)
+#### Option 1 - System Settings (recommended, no Terminal)
 
 1. Try to open **achu** once so macOS records the block.
 2. Click **Done** (not **Move to Trash**).
@@ -171,7 +171,7 @@ Buttons are typically **Done** and **Move to Trash**. Do **not** choose **Move t
 
 After the first successful open, subsequent launches should work normally.
 
-#### Option 2 — Terminal
+#### Option 2 - Terminal
 
 If the app is in `/Applications` (restore it from Trash first if needed):
 
@@ -187,7 +187,7 @@ open /Applications/achu.app
 
 If Gatekeeper still blocks the app after this, complete **Option 1** (Open Anyway). On Sequoia, the System Settings path is often still required for unsigned downloads.
 
-#### Option 3 — Build from source
+#### Option 3 - Build from source
 
 A local build never receives the browser download quarantine flag:
 
