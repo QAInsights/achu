@@ -6,9 +6,15 @@ const mockBurst = {
   modalOpen: true,
   openModal: vi.fn(),
   closeModal: vi.fn(),
-  phase: 'idle' as 'idle' | 'rendering' | 'saving',
+  phase: 'idle' as 'idle' | 'rendering' | 'saving' | 'done' | 'error',
   progress: { current: 0, total: 0 },
   toast: null,
+  lastResult: null as null | {
+    bundlePath: string;
+    documentName: string;
+    variantCount: number;
+    primaryExportPath: string;
+  },
   saveBurstPack: vi.fn().mockResolvedValue({ success: true, variantCount: 4 }),
 };
 
@@ -18,6 +24,7 @@ const mockGallery = {
 
 const mockApp = {
   documentName: 'my-screenshot',
+  showToast: vi.fn(),
 };
 
 vi.mock('../src/renderer/contexts/BurstPackContext', () => ({
@@ -86,5 +93,20 @@ describe('BurstPackModal', () => {
     render(<BurstPackModal />);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(mockBurst.closeModal).not.toHaveBeenCalled();
+  });
+
+  it('shows launch checklist after successful save', () => {
+    mockBurst.phase = 'done';
+    mockBurst.lastResult = {
+      bundlePath: 'C:\\Users\\me\\Pictures\\Screenshot Beaut\\my-screenshot',
+      documentName: 'my-screenshot',
+      variantCount: 4,
+      primaryExportPath: 'C:\\Users\\me\\Pictures\\Screenshot Beaut\\my-screenshot\\og.png',
+    };
+    render(<BurstPackModal />);
+    expect(screen.getByTestId('burst-pack-done')).toBeInTheDocument();
+    expect(screen.getByText(/4 platform variants saved/i)).toBeInTheDocument();
+    expect(screen.getByText(/Copy Product Hunt caption/i)).toBeInTheDocument();
+    expect(screen.getByText(/Copy launch tweet/i)).toBeInTheDocument();
   });
 });

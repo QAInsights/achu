@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { renderCanvas, RenderConfig, preloadBgImage } from '../canvasRenderer';
 import { onNoiseReady } from '../shaders/shaderWebGL';
+import { composeBeforeAfter, renderRawBeforePanel } from '../utils/beforeAfterExport';
 
 export type CompressionMode = 'original' | 'balanced' | 'small';
 
@@ -124,7 +125,7 @@ export function useExport(
     checkDone();
   };
 
-  const copyBeautifiedImage = async (): Promise<void> => {
+  const copyBeautifiedImage = async (caption?: string): Promise<void> => {
     if (!noImageMode && !imageSrc) return;
     return new Promise<void>((resolve, reject) => {
       loadImages(imageSrc, getCurrentConfig().backgroundValue, async (img) => {
@@ -140,17 +141,75 @@ export function useExport(
 
           const config = getCurrentConfig();
           const codeText = (config.codeStudioActive && config.codeStudioCode) ? config.codeStudioCode : undefined;
+          // Prefer explicit share caption (viral), then Code Studio source, else nothing.
+          const clipboardText = caption ?? codeText;
 
           if (window.snapFrameAPI) {
-            await window.snapFrameAPI.copyImageToClipboard(base64Data, codeText);
+            await window.snapFrameAPI.copyImageToClipboard(base64Data, clipboardText);
           } else {
             const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
             if (blob) {
               const clipboardItems: Record<string, Blob> = { 'image/png': blob };
-              if (codeText) {
-                clipboardItems['text/plain'] = new Blob([codeText], { type: 'text/plain' });
+              if (clipboardText) {
+                clipboardItems['text/plain'] = new Blob([clipboardText], { type: 'text/plain' });
               }
               await navigator.clipboard.write([new ClipboardItem(clipboardItems)]);
+            }
+          }
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+  };
+
+  const buildBeforeAfterCanvas = (
+    img: HTMLImageElement | null,
+    resolveEmpty: () => void
+  ): HTMLCanvasElement | null => {
+    if (!img || noImageMode) {
+      resolveEmpty();
+      return null;
+    }
+    const afterCanvas = document.createElement('canvas');
+    renderCanvas(afterCanvas, img, getCurrentConfig());
+    const targetH = Math.min(afterCanvas.height, 900);
+    const beforeCanvas = renderRawBeforePanel(img, targetH);
+    return composeBeforeAfter(beforeCanvas, afterCanvas);
+  };
+
+  const exportBeforeAfter = () => {
+    if (!imageSrc || noImageMode) return;
+    loadImages(imageSrc, getCurrentConfig().backgroundValue, (img) => {
+      const composed = buildBeforeAfterCanvas(img, () => undefined);
+      if (!composed) return;
+      const base64Data = composed.toDataURL('image/png');
+      if (window.snapFrameAPI) {
+        window.snapFrameAPI.saveFile(base64Data, 'png', 100, 'original');
+      } else {
+        const link = document.createElement('a');
+        link.download = 'achu-before-after.png';
+        link.href = base64Data;
+        link.click();
+      }
+    });
+  };
+
+  const copyBeforeAfter = async (): Promise<void> => {
+    if (!imageSrc || noImageMode) return;
+    return new Promise<void>((resolve, reject) => {
+      loadImages(imageSrc, getCurrentConfig().backgroundValue, async (img) => {
+        try {
+          const composed = buildBeforeAfterCanvas(img, () => resolve());
+          if (!composed) return;
+          const base64Data = composed.toDataURL('image/png');
+          if (window.snapFrameAPI) {
+            await window.snapFrameAPI.copyImageToClipboard(base64Data);
+          } else {
+            const blob = await new Promise<Blob | null>((res) => composed.toBlob(res, 'image/png'));
+            if (blob) {
+              await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
             }
           }
           resolve();
@@ -241,6 +300,8 @@ export function useExport(
     setCompressionMode,
     copyBeautifiedImage,
     triggerExport,
-    saveToGallery
+    saveToGallery,
+    exportBeforeAfter,
+    copyBeforeAfter,
   };
 }

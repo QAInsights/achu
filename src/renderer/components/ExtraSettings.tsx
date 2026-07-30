@@ -3,6 +3,7 @@ import InspectorSection from './InspectorSection';
 import { Sparkles } from 'lucide-react';
 import FontSelector from './FontSelector';
 import ColorSwatchPicker from './annotations/ColorSwatchPicker';
+import { updateUserDefault } from '../utils/storageUtils';
 
 export default function ExtraSettings() {
   const {
@@ -336,22 +337,30 @@ export default function ExtraSettings() {
         )}
       </div>
 
-      {/* Watermark Section */}
+      {/* Watermark Section — brand default helps viral growth; one-click off */}
       <div className="control-group" style={{ paddingBottom: '2rem' }}>
         <div className="switch-container">
-          <span className="control-label">Watermark</span>
+          <span className="control-label" title="Shown on exports by default. Turn off anytime — preference is saved.">
+            Watermark
+          </span>
           <label className="switch">
             <input 
               type="checkbox" 
               checked={watermarkEnabled} 
               onChange={(e) => {
                 setWatermarkEnabled(e.target.checked);
+                updateUserDefault('watermarkEnabled', e.target.checked);
                 pushHistory({ ...getCurrentConfig(), watermarkEnabled: e.target.checked });
               }} 
             />
             <span className="slider-switch"></span>
           </label>
         </div>
+        {!watermarkEnabled && (
+          <p style={{ margin: '0.35rem 0 0', fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.35 }}>
+            Tip: a subtle &quot;Made with achu&quot; badge helps others discover the app. Re-enable anytime.
+          </p>
+        )}
         {watermarkEnabled && (
           <>
             <input 

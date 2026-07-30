@@ -270,13 +270,18 @@ export default function GeneralSettingsTab({ searchQuery = '' }: { searchQuery?:
       render: () => (
         <>
           <div className="switch-container">
-            <span className="control-label">Enable Watermark by Default</span>
+            <span className="control-label" title="On by default so shared images can mention achu. Easy to turn off.">
+              Brand Watermark by Default
+            </span>
             <label className="switch">
               <input type="checkbox" checked={watermarkEnabled}
                 onChange={(e) => updateSetting('watermarkEnabled', e.target.checked, setWatermarkEnabled)} />
               <span className="slider-switch" />
             </label>
           </div>
+          <p style={{ margin: '0 0 0.5rem', fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.35 }}>
+            New sessions start with a subtle &quot;Made with achu · achu.app&quot; badge. Disable if you prefer clean exports.
+          </p>
           <div className="control-group">
             <span className="control-label">Default Text</span>
             <input type="text" value={watermarkText}

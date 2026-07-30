@@ -65,7 +65,12 @@ describe('useBurstPack', () => {
     );
     mockSaveBurstPack.mockResolvedValue({
       success: true,
-      data: { variantCount: 4, bundlePath: '/gallery/my-screenshot', documentName: 'my-screenshot' },
+      data: {
+        variantCount: 4,
+        bundlePath: '/gallery/my-screenshot',
+        documentName: 'my-screenshot',
+        primaryExportPath: '/gallery/my-screenshot/og.png',
+      },
     });
     window.snapFrameAPI = {
       saveBurstPack: mockSaveBurstPack,
@@ -132,6 +137,8 @@ describe('useBurstPack', () => {
       useBurstPack('data:image/png;base64,abc', false, mockGetCurrentConfig, mockEnsureDocumentName, 'png', 90, 'balanced')
     );
 
+    act(() => result.current.openModal());
+
     let saveResult: { success: boolean; variantCount?: number };
     await act(async () => {
       saveResult = await result.current.saveBurstPack('launch-kit', []);
@@ -153,7 +160,10 @@ describe('useBurstPack', () => {
         ]),
       })
     );
-    expect(result.current.modalOpen).toBe(false);
+    // Stay open so the launch checklist (viral post-export UX) can show
+    expect(result.current.modalOpen).toBe(true);
+    expect(result.current.phase).toBe('done');
+    expect(result.current.lastResult?.variantCount).toBe(4);
     expect(result.current.toast).toContain('Burst Pack saved');
   });
 

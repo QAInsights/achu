@@ -7,7 +7,7 @@ import {
   estimateBase64SizeKb,
 } from '../../shared/burstReframe';
 import { buildBurstVariantFilename } from '../../shared/burstVariantFilename';
-import type { BurstVariantPayload } from '../../shared/burstTypes';
+import type { BurstPackSaveResult, BurstVariantPayload } from '../../shared/burstTypes';
 import { loadBurstImages } from '../utils/burstImageLoader';
 import { findPresetByKey } from '../utils/burstPresetLookup';
 import type { CompressionMode } from './useExport';
@@ -27,6 +27,7 @@ export function useBurstPack(
   const [phase, setPhase] = useState<BurstPackPhase>('idle');
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [toast, setToast] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<BurstPackSaveResult | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback((message: string, duration = 3000) => {
@@ -38,11 +39,16 @@ export function useBurstPack(
     }, duration);
   }, []);
 
-  const openModal = useCallback(() => setModalOpen(true), []);
+  const openModal = useCallback(() => {
+    setLastResult(null);
+    setPhase('idle');
+    setModalOpen(true);
+  }, []);
   const closeModal = useCallback(() => {
     if (phase === 'rendering' || phase === 'saving') return;
     setModalOpen(false);
     setPhase('idle');
+    setLastResult(null);
   }, [phase]);
 
   const renderVariants = useCallback(
@@ -148,8 +154,9 @@ export function useBurstPack(
             });
 
             if (result.success && result.data) {
+              setLastResult(result.data);
               setPhase('done');
-              setModalOpen(false);
+              // Keep modal open with launch checklist (viral post-export UX)
               showToast(`Burst Pack saved (${result.data.variantCount} variants)`);
               resolve({ success: true, variantCount: result.data.variantCount });
             } else {
@@ -163,8 +170,6 @@ export function useBurstPack(
             const msg = err instanceof Error ? err.message : 'Burst pack failed';
             showToast(msg, 4000);
             resolve({ success: false, error: msg });
-          } finally {
-            setTimeout(() => setPhase('idle'), 300);
           }
         });
       });
@@ -189,6 +194,7 @@ export function useBurstPack(
     phase,
     progress,
     toast,
+    lastResult,
     saveBurstPack,
   };
 }

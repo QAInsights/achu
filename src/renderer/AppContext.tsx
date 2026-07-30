@@ -169,8 +169,10 @@ interface AppContextType {
   pasteFromClipboard: () => Promise<void>;
   saveCustomPreset: () => void;
   deleteCustomPreset: (id: string, e: React.MouseEvent) => void;
-  copyBeautifiedImage: () => Promise<void>;
+  copyBeautifiedImage: (caption?: string) => Promise<void>;
   triggerExport: () => void;
+  exportBeforeAfter: () => void;
+  copyBeforeAfter: () => Promise<void>;
   saveToGallery: () => Promise<{ success: boolean; path?: string; name?: string; error?: { code: string; message: string } }>;
   handleSaveToGallery: () => Promise<void>;
   galleryToast: string | null;
@@ -311,11 +313,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, []);
 
-  const [watermarkEnabled, setWatermarkEnabled] = useState<boolean>(() => getUserDefault('watermarkEnabled', false));
-  const [watermarkText, setWatermarkText] = useState<string>(() => getUserDefault('watermarkText', 'Made using achu.app'));
+  const [watermarkEnabled, setWatermarkEnabled] = useState<boolean>(() => getUserDefault('watermarkEnabled', true));
+  const [watermarkText, setWatermarkText] = useState<string>(() => getUserDefault('watermarkText', 'Made with achu · achu.app'));
   const [watermarkSize, setWatermarkSize] = useState<number>(() => getUserDefault('watermarkSize', 20));
-  const [watermarkPosition, setWatermarkPosition] = useState<'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right'>(() => getUserDefault('watermarkPosition', 'middle') as any);
-  const [watermarkOpacity, setWatermarkOpacity] = useState<number>(() => getUserDefault('watermarkOpacity', 0.45));
+  const [watermarkPosition, setWatermarkPosition] = useState<'left' | 'middle' | 'right' | 'top left' | 'top middle' | 'top right'>(() => getUserDefault('watermarkPosition', 'right') as any);
+  const [watermarkOpacity, setWatermarkOpacity] = useState<number>(() => getUserDefault('watermarkOpacity', 0.38));
   const [watermarkFont, setWatermarkFont] = useState<string>(() => getUserDefault('watermarkFont', 'sans-serif'));
   const [watermarkBold, setWatermarkBold] = useState<boolean>(() => getUserDefault('watermarkBold', false));
   const [watermarkItalic, setWatermarkItalic] = useState<boolean>(() => getUserDefault('watermarkItalic', false));
@@ -600,11 +602,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setChromeStyle(config.chromeStyle ?? 'mac');
     setChromeTheme(config.chromeTheme ?? 'dark');
     setBlurDensity(config.blurDensity ?? 40);
+    // Prefer explicit project value; missing field means "off" so older projects stay clean.
     setWatermarkEnabled(config.watermarkEnabled ?? false);
-    setWatermarkText(config.watermarkText ?? 'Made using achu.app');
+    setWatermarkText(config.watermarkText ?? 'Made with achu · achu.app');
     setWatermarkSize(config.watermarkSize ?? 20);
-    setWatermarkPosition(config.watermarkPosition ?? 'middle');
-    setWatermarkOpacity(config.watermarkOpacity ?? 0.45);
+    setWatermarkPosition(config.watermarkPosition ?? 'right');
+    setWatermarkOpacity(config.watermarkOpacity ?? 0.38);
     setWatermarkFont(config.watermarkFont ?? 'sans-serif');
     setWatermarkBold(config.watermarkBold ?? false);
     setWatermarkItalic(config.watermarkItalic ?? false);
@@ -747,7 +750,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     exportFormat, setExportFormat,
     jpegQuality, setJpegQuality,
     compressionMode, setCompressionMode,
-    copyBeautifiedImage, triggerExport, saveToGallery
+    copyBeautifiedImage, triggerExport, saveToGallery, exportBeforeAfter, copyBeforeAfter
   } = useExport(imageSrc, noImageMode, getCurrentConfig, ensureDocumentName, setDocumentName);
 
   const [galleryToast, setGalleryToast] = useState<string | null>(null);
@@ -1238,11 +1241,11 @@ Severity rules:
       chromeStyle: 'mac',
       chromeTheme: 'dark',
       blurDensity: 40,
-      watermarkEnabled: false,
-      watermarkText: 'Made using achu.app',
+      watermarkEnabled: true,
+      watermarkText: 'Made with achu · achu.app',
       watermarkSize: 20,
-      watermarkPosition: 'middle',
-      watermarkOpacity: 0.45,
+      watermarkPosition: 'right',
+      watermarkOpacity: 0.38,
       position: 'Middle center',
       meshPoints: [
         { id: '1', color: '#ff5f6d', x: 0.2, y: 0.2, radius: 180 },
@@ -1897,7 +1900,7 @@ Severity rules:
       redactionStyle, setRedactionStyle,
       scanForSecrets, toggleRedaction, redactAll, revealAll,
       getCurrentConfig, pushHistory, applyConfig, handleUndo, handleRedo, selectFile, handleHTMLFileInput,
-      pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport, saveToGallery, handleSaveToGallery, galleryToast,
+      pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport, exportBeforeAfter, copyBeforeAfter, saveToGallery, handleSaveToGallery, galleryToast,
       showToast: showGalleryToast,
       selectBackgroundPreset, handleSliderRelease, getZoomStyle, applyMeshPalette, generateRandomPalette,
       handleDragOver, handleDragLeave, handleDrop, customPrompt, handlePointerDown, handlePointerMove, handlePointerUp,

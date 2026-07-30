@@ -27,6 +27,8 @@ describe('WorkspaceFooter & ShareMenu', () => {
       jpegQuality: 90,
       triggerExport: vi.fn(),
       copyBeautifiedImage: vi.fn().mockResolvedValue(undefined),
+      exportBeforeAfter: vi.fn(),
+      copyBeforeAfter: vi.fn().mockResolvedValue(undefined),
       handleSaveToGallery: vi.fn().mockResolvedValue(undefined),
       galleryToast: null,
       setExportFormat: vi.fn(),
@@ -37,6 +39,7 @@ describe('WorkspaceFooter & ShareMenu', () => {
     };
     window.snapFrameAPI = {
       openURL: vi.fn(),
+      copyTextToClipboard: vi.fn().mockResolvedValue(true),
     };
   });
 
@@ -82,13 +85,15 @@ describe('WorkspaceFooter & ShareMenu', () => {
     expect(mockContext.triggerExport).toHaveBeenCalled();
   });
 
-  it('copies image and opens X/Twitter intent URL when Copy & post on X is clicked', async () => {
+  it('copies image with caption and opens X/Twitter intent URL when Copy & post on X is clicked', async () => {
     render(<WorkspaceFooter />);
     fireEvent.click(screen.getByText('Share'));
     fireEvent.click(screen.getByText('Copy & post on X'));
 
     await waitFor(() => {
-      expect(mockContext.copyBeautifiedImage).toHaveBeenCalled();
+      expect(mockContext.copyBeautifiedImage).toHaveBeenCalledWith(
+        expect.stringContaining('achu.app')
+      );
       expect(window.snapFrameAPI.openURL).toHaveBeenCalledWith(
         expect.stringContaining('x.com/intent/post')
       );
@@ -96,18 +101,39 @@ describe('WorkspaceFooter & ShareMenu', () => {
     expect(screen.queryByTestId('share-menu-popover')).not.toBeInTheDocument();
   });
 
-  it('copies image and opens WhatsApp intent URL when Copy & send on WhatsApp is clicked', async () => {
+  it('copies image with caption and opens WhatsApp intent URL when Copy & send on WhatsApp is clicked', async () => {
     render(<WorkspaceFooter />);
     fireEvent.click(screen.getByText('Share'));
     fireEvent.click(screen.getByText('Copy & send on WhatsApp'));
 
     await waitFor(() => {
-      expect(mockContext.copyBeautifiedImage).toHaveBeenCalled();
+      expect(mockContext.copyBeautifiedImage).toHaveBeenCalledWith(
+        expect.stringContaining('achu.app')
+      );
       expect(window.snapFrameAPI.openURL).toHaveBeenCalledWith(
         expect.stringContaining('api.whatsapp.com/send')
       );
     });
     expect(screen.queryByTestId('share-menu-popover')).not.toBeInTheDocument();
+  });
+
+  it('shows Before/After export and copy-caption items', () => {
+    render(<WorkspaceFooter />);
+    expect(screen.getByTestId('before-after-export')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Share'));
+    expect(screen.getByTestId('copy-caption-only')).toBeInTheDocument();
+    expect(screen.getByTestId('share-before-after')).toBeInTheDocument();
+  });
+
+  it('copies caption only when Copy achu caption is clicked', async () => {
+    render(<WorkspaceFooter />);
+    fireEvent.click(screen.getByText('Share'));
+    fireEvent.click(screen.getByTestId('copy-caption-only'));
+    await waitFor(() => {
+      expect(window.snapFrameAPI.copyTextToClipboard).toHaveBeenCalledWith(
+        expect.stringContaining('achu.app')
+      );
+    });
   });
 
   it('closes share menu popover when clicking outside', () => {

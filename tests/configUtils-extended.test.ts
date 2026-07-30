@@ -74,7 +74,7 @@ describe('configUtils - Extended', () => {
       paddingMode: 'fit',
       chromeStyle: 'mac', chromeTheme: 'dark',
       blurDensity: 40,
-      watermarkEnabled: false, watermarkText: 'Made using achu.app', watermarkSize: 20,
+      watermarkEnabled: false, watermarkText: 'Made with achu · achu.app', watermarkSize: 20,
       watermarkPosition: 'middle', watermarkOpacity: 0.45,
       watermarkFont: 'sans-serif', watermarkBold: false, watermarkItalic: false,
       annotationFont: 'sans-serif', annotationFontSize: 24,

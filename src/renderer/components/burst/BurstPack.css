@@ -254,3 +254,61 @@
   justify-content: flex-end;
   gap: var(--space-2);
 }
+/* === Launch checklist (post-burst viral UX) === */
+.burst-pack-done {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.burst-pack-done-hero {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 10px;
+  background: color-mix(in oklch, var(--accent) 12%, var(--surface-2));
+  border: 1px solid color-mix(in oklch, var(--accent) 35%, var(--border));
+}
+
+.burst-pack-done-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.burst-pack-done-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.burst-pack-done-sub {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.burst-pack-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.burst-pack-checklist li {
+  margin: 0;
+}
+
+.burst-pack-check-btn {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 8px;
+  text-align: left;
+}

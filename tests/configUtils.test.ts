@@ -175,10 +175,10 @@ describe('configUtils', () => {
       chromeTheme: 'dark' as const,
       blurDensity: 40,
       watermarkEnabled: false,
-      watermarkText: 'Made using achu.app',
+      watermarkText: 'Made with achu · achu.app',
       watermarkSize: 20,
-      watermarkPosition: 'middle',
-      watermarkOpacity: 0.45,
+      watermarkPosition: 'right',
+      watermarkOpacity: 0.38,
       watermarkFont: 'sans-serif',
       watermarkBold: false,
       watermarkItalic: false,
@@ -223,10 +223,10 @@ describe('configUtils', () => {
       expect(config.chromeTheme).toBe('dark');
       expect(config.blurDensity).toBe(40);
       expect(config.watermarkEnabled).toBe(false);
-      expect(config.watermarkText).toBe('Made using achu.app');
+      expect(config.watermarkText).toBe('Made with achu · achu.app');
       expect(config.watermarkSize).toBe(20);
-      expect(config.watermarkPosition).toBe('middle');
-      expect(config.watermarkOpacity).toBe(0.45);
+      expect(config.watermarkPosition).toBe('right');
+      expect(config.watermarkOpacity).toBe(0.38);
       expect(config.position).toBe('Middle center');
       expect(config.annotations).toEqual([]);
       expect(config.meshPoints).toEqual(minimalState.meshPoints);
@@ -497,10 +497,10 @@ describe('configUtils', () => {
         chromeTheme: 'dark',
         blurDensity: 40,
         watermarkEnabled: false,
-        watermarkText: 'Made using achu.app',
+        watermarkText: 'Made with achu · achu.app',
         watermarkSize: 20,
-        watermarkPosition: 'middle',
-        watermarkOpacity: 0.45,
+        watermarkPosition: 'right',
+        watermarkOpacity: 0.38,
         position: 'Middle center',
         annotations: [],
         meshPoints: DEFAULT_MESH_POINTS,

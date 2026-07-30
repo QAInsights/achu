@@ -1,3 +1,10 @@
+import {
+  ACHU_BRAND_WATERMARK,
+  ACHU_DEFAULT_WATERMARK_ENABLED,
+  ACHU_DEFAULT_WATERMARK_OPACITY,
+  ACHU_DEFAULT_WATERMARK_POSITION,
+} from '../../shared/branding';
+
 export function getUserDefault<T>(key: string, fallback: T): T {
   try {
     const saved = localStorage.getItem('snapframe-user-defaults');
@@ -28,11 +35,11 @@ export const DEFAULT_SETTINGS = {
   padding: 38,
   rounded: 20,
   shadow: 30,
-  watermarkEnabled: false,
-  watermarkText: 'Made using achu.app',
+  watermarkEnabled: ACHU_DEFAULT_WATERMARK_ENABLED,
+  watermarkText: ACHU_BRAND_WATERMARK,
   watermarkSize: 20,
-  watermarkPosition: 'middle',
-  watermarkOpacity: 0.45,
+  watermarkPosition: ACHU_DEFAULT_WATERMARK_POSITION,
+  watermarkOpacity: ACHU_DEFAULT_WATERMARK_OPACITY,
   watermarkFont: 'sans-serif',
   watermarkBold: false,
   watermarkItalic: false,

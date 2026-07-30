@@ -29,10 +29,10 @@ export function createGalleryImportConfig(imageSrc: string | null): RenderConfig
     chromeTheme: 'dark',
     blurDensity: 40,
     watermarkEnabled: false,
-    watermarkText: 'Made using achu.app',
+    watermarkText: 'Made with achu · achu.app',
     watermarkSize: 20,
-    watermarkPosition: 'middle',
-    watermarkOpacity: 0.45,
+    watermarkPosition: 'right',
+    watermarkOpacity: 0.38,
     watermarkFont: 'sans-serif',
     watermarkBold: false,
     watermarkItalic: false,
@@ -269,10 +269,10 @@ export function applyConfig(
   setters.setChromeTheme(config.chromeTheme ?? 'dark');
   setters.setBlurDensity(config.blurDensity ?? 40);
   setters.setWatermarkEnabled(config.watermarkEnabled ?? false);
-  setters.setWatermarkText(config.watermarkText ?? 'Made using achu.app');
+  setters.setWatermarkText(config.watermarkText ?? 'Made with achu · achu.app');
   setters.setWatermarkSize(config.watermarkSize ?? 20);
-  setters.setWatermarkPosition(config.watermarkPosition ?? 'middle');
-  setters.setWatermarkOpacity(config.watermarkOpacity ?? 0.45);
+  setters.setWatermarkPosition(config.watermarkPosition ?? 'right');
+  setters.setWatermarkOpacity(config.watermarkOpacity ?? 0.38);
   setters.setWatermarkFont(config.watermarkFont ?? 'sans-serif');
   setters.setWatermarkBold(config.watermarkBold ?? false);
   setters.setWatermarkItalic(config.watermarkItalic ?? false);

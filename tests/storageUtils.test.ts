@@ -140,11 +140,11 @@ describe('storageUtils', () => {
       expect(DEFAULT_SETTINGS).toHaveProperty('padding', 38);
       expect(DEFAULT_SETTINGS).toHaveProperty('rounded', 20);
       expect(DEFAULT_SETTINGS).toHaveProperty('shadow', 30);
-      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkEnabled', false);
-      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkText', 'Made using achu.app');
+      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkEnabled', true);
+      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkText', 'Made with achu · achu.app');
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkSize', 20);
-      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkPosition', 'middle');
-      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkOpacity', 0.45);
+      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkPosition', 'right');
+      expect(DEFAULT_SETTINGS).toHaveProperty('watermarkOpacity', 0.38);
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkFont', 'sans-serif');
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkBold', false);
       expect(DEFAULT_SETTINGS).toHaveProperty('watermarkItalic', false);

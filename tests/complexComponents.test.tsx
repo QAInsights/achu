@@ -120,15 +120,15 @@ beforeEach(() => {
     setRounded: vi.fn(),
     shadow: 30,
     setShadow: vi.fn(),
-    watermarkEnabled: false,
+    watermarkEnabled: true,
     setWatermarkEnabled: vi.fn(),
-    watermarkText: 'Made using achu.app',
+    watermarkText: 'Made with achu · achu.app',
     setWatermarkText: vi.fn(),
     watermarkSize: 20,
     setWatermarkSize: vi.fn(),
-    watermarkPosition: 'middle',
+    watermarkPosition: 'right',
     setWatermarkPosition: vi.fn(),
-    watermarkOpacity: 0.45,
+    watermarkOpacity: 0.38,
     setWatermarkOpacity: vi.fn(),
     watermarkFont: 'sans-serif',
     setWatermarkFont: vi.fn(),
@@ -488,7 +488,7 @@ describe('SettingsModal', () => {
     
     render(<SettingsModal />);
     
-    const input = screen.getByDisplayValue('Made using achu.app');
+    const input = screen.getByDisplayValue('Made with achu · achu.app');
     fireEvent.change(input, { target: { value: 'New Watermark' } });
     
     expect(mockContext.setWatermarkText).toHaveBeenCalledWith('New Watermark');
@@ -499,7 +499,7 @@ describe('SettingsModal', () => {
     
     render(<SettingsModal />);
     
-    const select = screen.getByDisplayValue('Bottom Center');
+    const select = screen.getByDisplayValue('Bottom Right');
     fireEvent.change(select, { target: { value: 'left' } });
     
     expect(mockContext.setWatermarkPosition).toHaveBeenCalledWith('left');
@@ -573,10 +573,10 @@ describe('SettingsModal', () => {
     expect(mockContext.setPadding).toHaveBeenCalledWith(38);
     expect(mockContext.setRounded).toHaveBeenCalledWith(20);
     expect(mockContext.setShadow).toHaveBeenCalledWith(30);
-    expect(mockContext.setWatermarkEnabled).toHaveBeenCalledWith(false);
-    expect(mockContext.setWatermarkText).toHaveBeenCalledWith('Made using achu.app');
-    expect(mockContext.setWatermarkPosition).toHaveBeenCalledWith('middle');
-    expect(mockContext.setWatermarkOpacity).toHaveBeenCalledWith(0.45);
+    expect(mockContext.setWatermarkEnabled).toHaveBeenCalledWith(true);
+    expect(mockContext.setWatermarkText).toHaveBeenCalledWith('Made with achu · achu.app');
+    expect(mockContext.setWatermarkPosition).toHaveBeenCalledWith('right');
+    expect(mockContext.setWatermarkOpacity).toHaveBeenCalledWith(0.38);
     expect(mockContext.setExportFormat).toHaveBeenCalledWith('png');
     expect(mockContext.setJpegQuality).toHaveBeenCalledWith(90);
   });
