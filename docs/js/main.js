@@ -5,15 +5,16 @@ document.addEventListener('DOMContentLoaded', () => {
   initLinks();
   initFeatures();
   initGallery();
+  initComparison();
   initMobileMenu();
   initLightbox();
   initDownloadButton();
 });
 
 // Initialize site-wide branding text
+// Note: leave document.title to the static SEO <title> in index.html
+// (initBranding used to overwrite it and fight SEO-optimized titles).
 function initBranding() {
-  document.title = `${config.branding.name} - ${config.branding.tagline}`;
-
   const heroTitle = document.getElementById('hero-title');
   if (heroTitle) heroTitle.textContent = config.branding.name;
 
@@ -36,6 +37,17 @@ function initLinks() {
 
   const heroExplore = document.getElementById('hero-explore-link');
   if (heroExplore) heroExplore.href = '#gallery';
+
+  const compareDownload = document.getElementById('compare-download-link');
+  if (compareDownload) compareDownload.href = config.links.releases || 'https://github.com/QAInsights/achu/releases';
+
+  // Optional: pull comparison headline/subhead from config when present
+  if (config.comparison) {
+    const title = document.getElementById('compare-title');
+    if (title && config.comparison.headline) title.textContent = config.comparison.headline;
+    const sub = document.getElementById('compare-subhead');
+    if (sub && config.comparison.subhead) sub.textContent = config.comparison.subhead;
+  }
 
   // Footer Links
   const footerGithub = document.getElementById('footer-github-link');
@@ -93,6 +105,76 @@ function initGallery() {
       </div>
     </div>
   `).join('');
+}
+
+/** Format a comparison cell: booleans become check/cross, strings pass through. */
+function formatComparisonCell(value, isHighlightCol) {
+  if (value === true) {
+    return `<span class="cmp-yes${isHighlightCol ? ' cmp-yes-highlight' : ''}" title="Yes" aria-label="Yes">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+    </span>`;
+  }
+  if (value === false) {
+    return `<span class="cmp-no" title="No" aria-label="No">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </span>`;
+  }
+  const text = String(value ?? '-');
+  return `<span class="cmp-text${isHighlightCol ? ' cmp-text-highlight' : ''}">${text}</span>`;
+}
+
+// Render comparison stats + table from config.comparison
+function initComparison() {
+  const data = config.comparison;
+  if (!data) return;
+
+  const statsEl = document.getElementById('comparison-stats');
+  if (statsEl && Array.isArray(data.stats)) {
+    statsEl.innerHTML = data.stats.map((s, i) => `
+      <div class="cmp-stat glass-panel" id="cmp-stat-${i}">
+        <div class="cmp-stat-value">${s.value}</div>
+        <div class="cmp-stat-label">${s.label}</div>
+        ${s.hint ? `<div class="cmp-stat-hint">${s.hint}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  const tableHost = document.getElementById('comparison-table-host');
+  if (!tableHost || !Array.isArray(data.tools) || !Array.isArray(data.rows)) return;
+
+  const tools = data.tools;
+  const headCells = tools.map((t) =>
+    `<th scope="col" class="${t.highlight ? 'cmp-col-achu' : ''}">${t.name}</th>`
+  ).join('');
+
+  const bodyRows = data.rows.map((row) => {
+    const cells = tools.map((t) => {
+      const val = row.values ? row.values[t.id] : undefined;
+      return `<td class="${t.highlight ? 'cmp-col-achu' : ''}">${formatComparisonCell(val, !!t.highlight)}</td>`;
+    }).join('');
+    return `<tr><th scope="row">${row.label}</th>${cells}</tr>`;
+  }).join('');
+
+  tableHost.innerHTML = `
+    <div class="cmp-table-scroll" role="region" aria-label="Feature comparison table" tabindex="0">
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th scope="col">Capability</th>
+            ${headCells}
+          </tr>
+        </thead>
+        <tbody>
+          ${bodyRows}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const disclaimer = document.getElementById('comparison-disclaimer');
+  if (disclaimer && data.disclaimer) {
+    disclaimer.textContent = data.disclaimer;
+  }
 }
 
 

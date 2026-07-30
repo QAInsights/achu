@@ -1,8 +1,8 @@
 window.config = {
   branding: {
     name: "achu",
-    tagline: "AI-Enhanced Screenshots: From Raw Captures to Stunning Assets & Bug Tickets",
-    subtagline: "A lightweight, gorgeous desktop utility for Windows, macOS, and Linux that turns raw captures into polished visual graphics, with a <span class=\"gradient-text\">local screenshot gallery</span>, an integrated <span class=\"gradient-text\">AI Issue Agent</span>, a <span class=\"gradient-text\">Code Studio</span> for beautiful code screenshots, and fully local, <span class=\"gradient-text\">offline OCR</span> text extraction.",
+    tagline: "Free Open-Source Screenshot Beautifier for Windows, macOS & Linux",
+    subtagline: "A lightweight, gorgeous desktop utility for Windows, macOS, and Linux that turns raw captures into polished visual graphics, with a <span class=\"gradient-text\">local screenshot gallery</span>, an integrated <span class=\"gradient-text\">AI Issue Agent</span>, a <span class=\"gradient-text\">Code Studio</span> for beautiful code screenshots, fully local <span class=\"gradient-text\">offline OCR</span>, and free forever under MIT.",
     meaning: "achu (அச்சு) means 'print' or 'mold' in Tamil. 🖨️",
     customDomain: "achu.app"
   },
@@ -94,5 +94,82 @@ window.config = {
       image: "assets/code-studio.png",
       tag: "Code Studio"
     }
-  ]
+  ],
+  /**
+   * Homepage comparison (honest, product-level).
+   * Values: true | false | string (shown as text).
+   * Keep claims aligned with the shipping app - no vaporware.
+   */
+  comparison: {
+    headline: "How achu stacks up",
+    subhead: "Built for people who want beautiful, private, free screenshots - without a Mac-only tax or a subscription.",
+    disclaimer: "Feature snapshot for decision-making. Pricing and capabilities of other tools can change; always check their official sites.",
+    tools: [
+      { id: "achu", name: "achu", highlight: true },
+      { id: "cleanshot", name: "CleanShot X" },
+      { id: "shottr", name: "Shottr" },
+      { id: "xnapper", name: "Xnapper" }
+    ],
+    rows: [
+      {
+        label: "Price",
+        values: {
+          achu: "Free (MIT)",
+          cleanshot: "Paid (~$29+)",
+          shottr: "Paid (one-time)",
+          xnapper: "Paid"
+        }
+      },
+      {
+        label: "Open source",
+        values: { achu: true, cleanshot: false, shottr: false, xnapper: false }
+      },
+      {
+        label: "Windows + macOS + Linux",
+        values: { achu: true, cleanshot: false, shottr: false, xnapper: false }
+      },
+      {
+        label: "Beautify / frame / gradients",
+        values: { achu: true, cleanshot: true, shottr: true, xnapper: true }
+      },
+      {
+        label: "Local privacy redact + OCR",
+        values: { achu: true, cleanshot: true, shottr: true, xnapper: "Partial" }
+      },
+      {
+        label: "AI GitHub issue drafts",
+        values: { achu: true, cleanshot: false, shottr: false, xnapper: false }
+      },
+      {
+        label: "Code Studio (code → image)",
+        values: { achu: true, cleanshot: false, shottr: false, xnapper: false }
+      },
+      {
+        label: "Local gallery + soft trash",
+        values: { achu: true, cleanshot: true, shottr: true, xnapper: "Partial" }
+      },
+      {
+        label: "Platform burst packs (OG / social sizes)",
+        values: { achu: true, cleanshot: false, shottr: false, xnapper: "Partial" }
+      },
+      {
+        label: "Scrolling capture",
+        values: { achu: false, cleanshot: true, shottr: true, xnapper: false }
+      },
+      {
+        label: "Screen recording / GIF",
+        values: { achu: false, cleanshot: true, shottr: "Limited", xnapper: false }
+      },
+      {
+        label: "Your images stay local by default",
+        values: { achu: true, cleanshot: true, shottr: true, xnapper: true }
+      }
+    ],
+    stats: [
+      { value: "$0", label: "Forever free", hint: "MIT open source" },
+      { value: "3", label: "Desktop platforms", hint: "Windows, macOS, Linux" },
+      { value: "100%", label: "Local by default", hint: "No forced cloud upload" },
+      { value: "1", label: "Click share loop", hint: "Captions + brand badge" }
+    ]
+  }
 };

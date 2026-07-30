@@ -1,21 +1,25 @@
 {
-  "name": "achu - Screenshot Beautifier",
+  "name": "achu - Free Open-Source Screenshot Beautifier",
   "short_name": "achu",
-  "description": "A lightweight desktop application that turns raw screenshots into polished visual assets with a built-in local screenshot gallery, privacy redaction, and AI bug reporting.",
+  "description": "Free open-source desktop app for Windows, macOS, and Linux: beautify screenshots, local gallery, privacy redaction, Code Studio, AI bug reports, and platform burst packs.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#202421",
   "theme_color": "#b2ff59",
+  "lang": "en-US",
+  "categories": ["graphics", "utilities", "productivity"],
   "icons": [
     {
       "src": "assets/icon-256.png",
       "sizes": "256x256",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "assets/icon-32.png",
       "sizes": "32x32",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

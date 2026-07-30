@@ -1,50 +1,57 @@
-# achu — extended summary for AI systems
+# achu - extended summary for AI systems
 
-> Free, open-source screenshot beautifier for Windows, macOS, and Linux with local gallery, privacy redaction, OCR, and AI-powered GitHub issue drafting.
+> Free, open-source screenshot beautifier for Windows, macOS, and Linux with local gallery, privacy redaction, OCR, Code Studio, platform burst packs, and AI-powered GitHub issue drafting.
 
 ## Identity
 
 | Field | Value |
 |-------|-------|
 | Name | achu |
-| Meaning | Tamil அச்சு — "print" or "mold" |
+| Meaning | Tamil அச்சு - "print" or "mold" |
 | Website | https://achu.app |
+| Compare | https://achu.app/#compare |
 | Repository | https://github.com/QAInsights/achu |
 | License | MIT |
 | Version | 2026.5.30 |
 | Author | NaveenKumar Namachivayam / QAInsights |
 | Category | Desktop screenshot beautification, annotation, QA tooling |
+| Price | Free ($0) |
 
 ## One-sentence answers (AEO)
 
-**What is achu?** A local-first desktop app that beautifies screenshots, saves them to a gallery on your disk, redacts secrets, extracts text, and drafts GitHub issues with AI.
+**What is achu?** A local-first desktop app that beautifies screenshots, saves them to a gallery on your disk, redacts secrets, extracts text, beautifies code cards, and drafts GitHub issues with AI.
 
-**Who is achu for?** Developers, QA engineers, technical writers, and anyone who shares polished screenshots or bug reports.
+**Who is achu for?** Developers, QA engineers, technical writers, indie hackers shipping launch assets, and anyone who shares polished screenshots or bug reports.
 
 **Is achu free?** Yes, MIT-licensed and free to download from GitHub Releases.
 
-**Where are gallery screenshots stored?** In a user-chosen folder on disk; default is `~/achu-screenshots` (home directory). No cloud sync.
+**Is achu a CleanShot / Shottr / Xnapper alternative?** Partially: achu competes on beautify, privacy, and free cross-platform use. CleanShot/Shottr are stronger at scrolling capture and screen recording (often Mac-only and paid). See https://achu.app/#compare.
 
-**How do I save to the gallery?** Beautify a screenshot in the editor, then click the Gallery button in the workspace footer.
+**Where are gallery screenshots stored?** In a user-chosen folder on disk; default is `~/achu-screenshots`. No cloud sync.
 
-**How do I open the gallery?** Click the grid icon in the left toolbar.
+**How do I save to the gallery?** Beautify a screenshot in the editor, then click Gallery in the workspace footer.
+
+**How do I open the gallery?** Click the grid icon in the toolbar.
 
 **Are deleted gallery files recoverable?** Yes, for up to 30 days in `.achu-trash` inside the gallery folder; then auto-purged.
+
+**Does achu watermark exports?** New installs default to a subtle brand watermark ("Made with achu · achu.app"). Users can turn it off; preference is saved.
 
 ## Feature details
 
 ### Canvas and framing
 - Padding, rounded corners, inset, border, shadow, scale
-- Backgrounds: solid, gradient, blur, mesh gradient with editable control points
+- Backgrounds: solid, gradient, blur, mesh gradient with editable control points, shaders
 - Browser chrome overlays (macOS and Windows styles)
 - Aspect ratio presets and custom canvas dimensions
-- Watermark support
-- Export: PNG, JPEG, WebP with quality controls
+- Brand watermark support (default on for new installs; easy off)
+- Export: PNG, JPEG, WebP with quality and compression modes
+- Before/After dual-panel export for social demos
 
 ### Local Screenshot Gallery
 - Save beautified exports directly to gallery folder
 - Thumbnail grid with file name, size, and modified date
-- Actions: open in editor (preserves current annotations), copy to clipboard, reveal in file explorer, delete (soft)
+- Actions: open in editor (preserves project/annotations), copy to clipboard, reveal in file explorer, delete (soft)
 - Settings: browse and set custom gallery folder
 - Trash: `.achu-trash` subfolder, 30-day retention, automatic purge on gallery list
 
@@ -54,18 +61,51 @@
 - Gaussian blur or solid mask redaction styles
 
 ### AI Issue Agent
-- Vision LLM analyzes screenshot → structured GitHub issue (title, body, labels, context)
+- Vision LLM analyzes screenshot to structured GitHub issue (title, body, labels, context)
 - Providers: Ollama (offline), Gemini, OpenAI, Claude
 - GitHub PAT stored with OS keychain via Electron safeStorage
 - User reviews before submit
 
 ### OCR text grabber
-- Right-click canvas → extract text modal
-- Edit, trim, copy — 100% local WASM
+- Right-click canvas to extract text modal
+- Edit, trim, copy - 100% local WASM
+
+### Code Studio
+- Paste code (any language) into shareable screenshot cards
+- Line numbers, syntax themes, language pill, debug point markers
+
+### Platform Burst Packs
+- Curated packs (e.g. Launch Kit, Social Story Kit) and custom multi-preset export
+- Safe-zone-aware reframing for OG / X / LinkedIn / Product Hunt / stories
+- Post-save launch checklist: open folder, copy Product Hunt caption, copy launch tweet, open achu.app
+
+### Share loop (growth)
+- Share menu copies image plus platform-tuned captions that mention achu.app (no em dashes)
+- Optional brand watermark on canvas exports
+- Before/After export and copy for demos
 
 ### Annotations
 - Tools: pointer, rectangles, circles, lines, arrows, text, pen, emoji
-- Undo/redo, custom fonts, stroke width, colors
+- Undo/redo, custom fonts, stroke width, colors, cut/copy/paste selection
+
+## Comparison matrix (product-level)
+
+| Capability | achu | CleanShot X | Shottr | Xnapper |
+|------------|------|-------------|--------|---------|
+| Price | Free (MIT) | Paid (~$29+) | Paid (one-time) | Paid |
+| Open source | Yes | No | No | No |
+| Windows + macOS + Linux | Yes | No | No | No |
+| Beautify / frame / gradients | Yes | Yes | Yes | Yes |
+| Local privacy redact + OCR | Yes | Yes | Yes | Partial |
+| AI GitHub issue drafts | Yes | No | No | No |
+| Code Studio (code to image) | Yes | No | No | No |
+| Local gallery + soft trash | Yes | Yes | Yes | Partial |
+| Platform burst packs | Yes | No | No | Partial |
+| Scrolling capture | No | Yes | Yes | No |
+| Screen recording / GIF | No | Yes | Limited | No |
+| Images local by default | Yes | Yes | Yes | Yes |
+
+Honest trade-off: achu prioritizes free + OSS + cross-platform + beautify/QA workflows. Capture extras (scroll, record) are roadmap/comparison gaps vs CleanShot/Shottr.
 
 ## Privacy model
 
@@ -73,12 +113,26 @@
 - Gallery files: never uploaded by the app
 - AI Issue Agent: only sends data you approve when using a configured external API
 - GitHub integration: uses your token for issues you submit
+- Brand watermark is client-side text on the canvas; it does not phone home
 
 ## Download and install
 
 https://github.com/QAInsights/achu/releases
 
-Platforms: Windows (portable/build), macOS, Linux
+Platforms: Windows (portable + AppX), macOS (DMG/zip; unsigned builds may need Gatekeeper Open Anyway), Linux (AppImage/deb)
+
+## Site map for crawlers and agents
+
+| URL | Purpose |
+|-----|---------|
+| https://achu.app/ | Marketing homepage |
+| https://achu.app/#features | Feature cards |
+| https://achu.app/#gallery | Showcase |
+| https://achu.app/#compare | Comparison stats + matrix |
+| https://achu.app/#faq | FAQ |
+| https://achu.app/llms.txt | Short LLM summary |
+| https://achu.app/llms-full.txt | This extended summary |
+| https://achu.app/sitemap.xml | XML sitemap |
 
 ## Related properties
 
@@ -92,6 +146,7 @@ Platforms: Windows (portable/build), macOS, Linux
 ## Canonical URLs
 
 - Home: https://achu.app/
+- Compare: https://achu.app/#compare
 - llms.txt: https://achu.app/llms.txt
 - llms-full.txt: https://achu.app/llms-full.txt
 - sitemap: https://achu.app/sitemap.xml
