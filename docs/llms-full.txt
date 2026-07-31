@@ -9,6 +9,7 @@
 | Name | achu |
 | Meaning | Tamil அச்சு - "print" or "mold" |
 | Website | https://achu.app |
+| Install guide | https://achu.app/#install |
 | Compare | https://achu.app/#compare |
 | Repository | https://github.com/QAInsights/achu |
 | License | MIT |
@@ -24,6 +25,8 @@
 **Who is achu for?** Developers, QA engineers, technical writers, indie hackers shipping launch assets, and anyone who shares polished screenshots or bug reports.
 
 **Is achu free?** Yes, MIT-licensed and free to download from GitHub Releases.
+
+**How do I install achu?** Download the OS binary from https://achu.app or GitHub Releases. Windows: portable EXE; if SmartScreen appears use More info → Run anyway. macOS: DMG, then System Settings → Privacy & Security → Open Anyway (unsigned/not notarized yet). Linux: chmod +x AppImage or install .deb. Full steps: https://achu.app/#install
 
 **Is achu a CleanShot / Shottr / Xnapper alternative?** Partially: achu competes on beautify, privacy, and free cross-platform use. CleanShot/Shottr are stronger at scrolling capture and screen recording (often Mac-only and paid). See https://achu.app/#compare.
 

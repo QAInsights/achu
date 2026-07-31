@@ -46,6 +46,7 @@ Full matrix on the site: https://achu.app/#compare
 ## Important links
 
 - Website: https://achu.app
+- Install (Windows SmartScreen / macOS Gatekeeper / Linux): https://achu.app/#install
 - Compare: https://achu.app/#compare
 - GitHub: https://github.com/QAInsights/achu
 - Releases / download: https://github.com/QAInsights/achu/releases
@@ -65,6 +66,9 @@ Full matrix on the site: https://achu.app/#compare
 
 ### What is achu?
 achu is a lightweight screenshot beautifier and workflow tool for developers and QA teams. It frames screenshots, annotates them, stores them in a local gallery, redacts sensitive data, beautifies code cards, and can generate GitHub bug reports from images.
+
+### How do I install achu?
+Download from https://achu.app or GitHub Releases. Windows portable EXE may show SmartScreen (More info → Run anyway). macOS DMG may need System Settings → Privacy & Security → Open Anyway until notarization ships. Linux: AppImage (`chmod +x`) or `.deb`. Walkthrough: https://achu.app/#install
 
 ### Does achu upload my screenshots to the cloud?
 No. Beautification, gallery storage, privacy scanning, and OCR run locally. External APIs are only used if you configure the AI Issue Agent with a cloud provider - and only for content you approve.

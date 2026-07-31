@@ -99,6 +99,7 @@
         },
         "inLanguage": "en-US",
         "hasPart": [
+          { "@id": "https://achu.app/#install" },
           { "@id": "https://achu.app/#features" },
           { "@id": "https://achu.app/#compare" },
           { "@id": "https://achu.app/#faq" }
@@ -242,7 +243,23 @@
             "name": "Why does macOS say achu can't be opened because Apple cannot check it for malicious software?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "achu is not yet code-signed with an Apple Developer ID. To open it, try once then use System Settings > Privacy & Security > Open Anyway, or run xattr -cr /Applications/achu.app in Terminal. The app is open source and built from publicly auditable code."
+              "text": "achu is not yet code-signed or notarized with an Apple Developer ID. Open achu once, click Done (not Move to Trash), then System Settings → Privacy & Security → Open Anyway. Authenticate, open achu again, and confirm Open. Full steps: https://achu.app/#install"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Windows SmartScreen says Windows protected your PC when I open achu",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Expected for unsigned portable EXEs. Click More info, then Run anyway. achu is MIT open source from GitHub. Signed builds are on the roadmap. Steps: https://achu.app/#install"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I install achu in 30 seconds?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Download the OS-specific binary from https://achu.app or GitHub Releases. Windows: run the portable EXE (More info → Run anyway if SmartScreen appears). macOS: install from the DMG, then Privacy & Security → Open Anyway. Linux: chmod +x the AppImage or install the .deb. See https://achu.app/#install"
             }
           }
         ]
@@ -281,6 +298,7 @@
       </button>
 
       <nav class="nav-menu" id="nav-menu" role="navigation">
+        <a href="#install" class="nav-link" id="nav-link-install">Install</a>
         <a href="#features" class="nav-link" id="nav-link-features">Features</a>
         <a href="#gallery" class="nav-link" id="nav-link-gallery">Showcase</a>
         <a href="#compare" class="nav-link" id="nav-link-compare">Compare</a>
@@ -316,6 +334,9 @@
           <a href="https://github.com/QAInsights/achu/releases" target="_blank" rel="noopener noreferrer"
             class="btn-primary" id="hero-github-link" role="button">
             Download App
+          </a>
+          <a href="#install" class="btn-secondary" id="hero-install-link" role="button">
+            Install in 30s
           </a>
           <a href="#gallery" class="btn-secondary" id="hero-explore-link" role="button">
             Explore Features
@@ -375,6 +396,222 @@
       </div>
     </section>
 
+    <!-- Install Section: first-run trust + friction -->
+    <section id="install" aria-labelledby="install-title">
+      <span class="section-tag">Get started</span>
+      <h2 class="section-title" id="install-title">Install in 30 seconds</h2>
+      <p class="section-desc">
+        Free on Windows, macOS, and Linux. Download, open once, and you are in.
+        Current builds are <strong>unsigned</strong> (open source MIT). OS warnings are expected and safe to dismiss with the steps below.
+        Signed and notarized builds are on the roadmap and will simplify this further.
+      </p>
+
+      <div class="install-panel glass-panel">
+        <div class="install-tabs" role="tablist" aria-label="Choose your operating system">
+          <button type="button" class="install-tab" role="tab" id="install-tab-windows" data-os="windows"
+            aria-controls="install-panel-windows" aria-selected="false" tabindex="-1">
+            <span class="install-tab-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.5l8-1.1V12H3zm9 0h9V4.3l-9 1.2V12zM3 13h8v6.6l-8-1.1V13zm9 0h9v6.7l-9-1.2V13z"/></svg>
+            </span>
+            Windows
+          </button>
+          <button type="button" class="install-tab" role="tab" id="install-tab-macos" data-os="macos"
+            aria-controls="install-panel-macos" aria-selected="false" tabindex="-1">
+            <span class="install-tab-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            </span>
+            macOS
+          </button>
+          <button type="button" class="install-tab" role="tab" id="install-tab-linux" data-os="linux"
+            aria-controls="install-panel-linux" aria-selected="false" tabindex="-1">
+            <span class="install-tab-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 2c.4 1.3.1 2.5-.7 3.4-.9.9-2.1 1.3-3.3 1.1C7.7 5.1 7 3.9 7.1 2.6 8.1 1.3 10.5.7 12.5 2zm-3.9 7.1c.6-.7 1.5-1.1 2.4-1.1.5 0 1 .1 1.4.4l.3.2.3-.2c.5-.3 1.1-.4 1.7-.4.9 0 1.8.4 2.4 1.1 1.3 1.5 1.1 4.1.3 6.3-.5 1.4-1.2 2.5-1.9 2.5-.4 0-.7-.2-1.1-.5l-.4-.3h-1.6l-.4.3c-.4.3-.7.5-1.1.5-.7 0-1.4-1.1-1.9-2.5-.8-2.2-1-4.8.3-6.3zm8.7 4.4c.1-.5.2-1 .2-1.5 0-1.5-.4-2.9-1.1-4 .8.2 1.5.6 2.1 1.2 1.3 1.3 1.9 3.2 1.6 5.1-.2 1.3-.8 2.5-1.7 3.4-.3-.1-.5-.3-.7-.5.3-1.1.5-2.4.6-3.7zM4.9 12c0 .5.1 1 .2 1.5.1 1.3.3 2.6.6 3.7-.2.2-.4.4-.7.5-.9-.9-1.5-2.1-1.7-3.4-.3-1.9.3-3.8 1.6-5.1.6-.6 1.3-1 2.1-1.2-.7 1.1-1.1 2.5-1.1 4zM9.2 20.2c.3.6.8 1 1.4 1.2.3.1.6.1.9.1.4 0 .8-.1 1.1-.3.4-.2.7-.5.9-.9.2.4.5.7.9.9.3.2.7.3 1.1.3.3 0 .6 0 .9-.1.6-.2 1.1-.6 1.4-1.2.1-.2.1-.3 0-.4-.4-.5-1-.8-1.6-1h-5.4c-.6.2-1.2.5-1.6 1-.1.1-.1.2 0 .4z"/></svg>
+            </span>
+            Linux
+          </button>
+        </div>
+
+        <!-- Windows panel -->
+        <div class="install-tabpanel" role="tabpanel" id="install-panel-windows" data-os="windows"
+          aria-labelledby="install-tab-windows" hidden>
+          <div class="install-layout">
+            <div class="install-steps">
+              <ol class="install-step-list">
+                <li>
+                  <span class="install-step-num" aria-hidden="true">1</span>
+                  <div>
+                    <strong>Download the portable EXE</strong>
+                    <p>Use the green download button above, or grab <code>achu-x64-*.exe</code> from
+                      <a href="https://github.com/QAInsights/achu/releases" target="_blank" rel="noopener noreferrer" id="install-dl-windows">GitHub Releases</a>.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span class="install-step-num" aria-hidden="true">2</span>
+                  <div>
+                    <strong>If SmartScreen appears, continue</strong>
+                    <p>Windows may say the app is unrecognized because builds are not yet Authenticode-signed. Click
+                      <strong>More info</strong>, then <strong>Run anyway</strong>.</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="install-step-num" aria-hidden="true">3</span>
+                  <div>
+                    <strong>Launch and paste a screenshot</strong>
+                    <p>achu opens as a portable app; no installer required. Press <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste an image and start beautifying.</p>
+                  </div>
+                </li>
+              </ol>
+              <aside class="install-callout install-callout-warn" aria-label="Windows SmartScreen note">
+                <div class="install-callout-title">Windows protected your PC</div>
+                <p>This is normal for unsigned portable EXEs. The binary is open source and published from
+                  <a href="https://github.com/QAInsights/achu" target="_blank" rel="noopener noreferrer">QAInsights/achu</a>.
+                  Path: <strong>More info → Run anyway</strong>.</p>
+              </aside>
+            </div>
+            <div class="install-visual" aria-hidden="true">
+              <div class="os-dialog os-dialog-win">
+                <div class="os-dialog-titlebar">
+                  <span class="os-dialog-shield">🛡</span>
+                  <span>Windows protected your PC</span>
+                </div>
+                <div class="os-dialog-body">
+                  <p class="os-dialog-lead">Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p>
+                  <p class="os-dialog-app">App: <strong>achu-x64.exe</strong></p>
+                  <p class="os-dialog-publisher">Publisher: Unknown</p>
+                  <button type="button" class="os-dialog-link" tabindex="-1">More info</button>
+                  <div class="os-dialog-actions">
+                    <span class="os-dialog-btn os-dialog-btn-ghost">Don't run</span>
+                    <span class="os-dialog-btn os-dialog-btn-accent">Run anyway</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- macOS panel -->
+        <div class="install-tabpanel" role="tabpanel" id="install-panel-macos" data-os="macos"
+          aria-labelledby="install-tab-macos" hidden>
+          <div class="install-layout">
+            <div class="install-steps">
+              <ol class="install-step-list">
+                <li>
+                  <span class="install-step-num" aria-hidden="true">1</span>
+                  <div>
+                    <strong>Download the DMG</strong>
+                    <p>Use the green download button above, or grab the universal <code>.dmg</code> from
+                      <a href="https://github.com/QAInsights/achu/releases" target="_blank" rel="noopener noreferrer" id="install-dl-macos">GitHub Releases</a>.
+                      Open it and drag <strong>achu</strong> into Applications.</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="install-step-num" aria-hidden="true">2</span>
+                  <div>
+                    <strong>Open once, then choose Done</strong>
+                    <p>Gatekeeper may show <em>&quot;achu&quot; Not Opened</em> because the app is not yet notarized.
+                      Click <strong>Done</strong>; do not choose Move to Trash.</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="install-step-num" aria-hidden="true">3</span>
+                  <div>
+                    <strong>System Settings → Open Anyway</strong>
+                    <p>Go to <strong>System Settings → Privacy &amp; Security</strong>, scroll to Security, and click
+                      <strong>Open Anyway</strong> next to the achu message. Authenticate, then open achu again and confirm <strong>Open</strong>.</p>
+                  </div>
+                </li>
+              </ol>
+              <aside class="install-callout install-callout-info" aria-label="macOS Gatekeeper note">
+                <div class="install-callout-title">Why macOS blocks first launch</div>
+                <p>achu is not yet signed with an Apple Developer ID. This is the lasting fix on the roadmap.
+                  Until then, <strong>Open Anyway</strong> is the reliable path on Sequoia 15+ (right-click → Open alone is often not enough).</p>
+              </aside>
+            </div>
+            <div class="install-visual" aria-hidden="true">
+              <div class="os-dialog os-dialog-mac">
+                <div class="os-dialog-mac-chrome">
+                  <span class="chrome-dot dot-close"></span>
+                  <span class="chrome-dot dot-minimize"></span>
+                  <span class="chrome-dot dot-maximize"></span>
+                  <span class="os-dialog-mac-title">Privacy &amp; Security</span>
+                </div>
+                <div class="os-dialog-body os-dialog-mac-body">
+                  <div class="mac-sec-section">Security</div>
+                  <p class="mac-sec-msg">
+                    <span class="mac-sec-app">&quot;achu&quot;</span> was blocked to protect your Mac.
+                  </p>
+                  <div class="mac-sec-actions">
+                    <span class="os-dialog-btn os-dialog-btn-accent">Open Anyway</span>
+                  </div>
+                  <p class="mac-sec-hint">After authenticating, open achu again and click <strong>Open</strong>.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Linux panel -->
+        <div class="install-tabpanel" role="tabpanel" id="install-panel-linux" data-os="linux"
+          aria-labelledby="install-tab-linux" hidden>
+          <div class="install-layout">
+            <div class="install-steps">
+              <ol class="install-step-list">
+                <li>
+                  <span class="install-step-num" aria-hidden="true">1</span>
+                  <div>
+                    <strong>Download AppImage or .deb</strong>
+                    <p>Prefer <code>.AppImage</code> for a portable binary, or <code>.deb</code> on Debian/Ubuntu.
+                      Grab the matching arch from
+                      <a href="https://github.com/QAInsights/achu/releases" target="_blank" rel="noopener noreferrer" id="install-dl-linux">GitHub Releases</a>.</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="install-step-num" aria-hidden="true">2</span>
+                  <div>
+                    <strong>Make it executable (AppImage)</strong>
+                    <p>In a terminal:</p>
+                    <pre class="install-code" tabindex="0"><code>chmod +x achu-*.AppImage
+./achu-*.AppImage</code></pre>
+                  </div>
+                </li>
+                <li>
+                  <span class="install-step-num" aria-hidden="true">3</span>
+                  <div>
+                    <strong>Or install the .deb</strong>
+                    <p><code>sudo dpkg -i achu_*_amd64.deb</code> (or <code>arm64</code>). Then launch <strong>achu</strong> from your app menu.</p>
+                  </div>
+                </li>
+              </ol>
+              <aside class="install-callout install-callout-info" aria-label="Linux note">
+                <div class="install-callout-title">No SmartScreen-style wall</div>
+                <p>Linux typically runs unsigned AppImages without a Gatekeeper dialog. If your distro warns about an untrusted binary, that is expected for open-source downloads from GitHub.</p>
+              </aside>
+            </div>
+            <div class="install-visual" aria-hidden="true">
+              <div class="os-dialog os-dialog-linux">
+                <div class="os-dialog-titlebar os-dialog-linux-bar">
+                  <span class="os-dialog-linux-prompt">$</span>
+                  <span>terminal</span>
+                </div>
+                <div class="os-dialog-body os-dialog-linux-body">
+                  <pre class="linux-term"><code><span class="term-prompt">$</span> chmod +x achu-x64.AppImage
+<span class="term-prompt">$</span> ./achu-x64.AppImage
+<span class="term-ok">✓ achu ready; paste a screenshot</span></code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="install-footnote">
+          Signed Windows (Authenticode) and macOS (Developer ID + notarization) builds will replace these trust steps when ready.
+          Until then, the steps above are the supported first-run path.
+          <a href="https://github.com/QAInsights/achu#macos-gatekeeper-unsigned-builds" target="_blank" rel="noopener noreferrer">Full README notes</a>
+        </p>
+      </div>
+    </section>
+
     <!-- Features Section -->
     <section id="features" aria-labelledby="features-title">
       <span class="section-tag">Powerful Engine</span>
@@ -426,7 +663,7 @@
     <section id="faq" aria-labelledby="faq-title">
       <span class="section-tag">Questions</span>
       <h2 class="section-title" id="faq-title">Frequently Asked Questions</h2>
-      <p class="section-desc">Quick answers about achu, privacy, and the local screenshot gallery.</p>
+      <p class="section-desc">Quick answers about achu, install (SmartScreen / Gatekeeper), privacy, and the local screenshot gallery.</p>
 
       <div class="faq-list">
         <details class="faq-item">
@@ -483,7 +720,21 @@
             <span>macOS says "Can't be opened because Apple cannot check it for malicious software"</span>
             <svg class="faq-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
           </summary>
-          <p class="faq-answer">achu is not yet code-signed with an Apple Developer ID. To open it, run <code>xattr -cr /Applications/achu.app</code> in Terminal, or right-click the app in Finder, select <strong>Open</strong>, then click <strong>Open</strong> in the confirmation dialog. This is safe; the app is open source and built from <a href="https://github.com/QAInsights/achu" target="_blank" rel="noopener noreferrer">publicly auditable code</a>.</p>
+          <p class="faq-answer">achu is not yet code-signed or notarized with an Apple Developer ID. <strong>Recommended:</strong> open achu once, click <strong>Done</strong> (not Move to Trash), then go to <strong>System Settings → Privacy &amp; Security</strong>, click <strong>Open Anyway</strong>, authenticate, and open achu again. Optional Terminal: <code>xattr -cr /Applications/achu.app</code>. Full walkthrough with visuals: <a href="#install">Install in 30 seconds</a>.</p>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Windows SmartScreen says &quot;Windows protected your PC&quot;</span>
+            <svg class="faq-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <p class="faq-answer">Expected for unsigned portable EXEs. Click <strong>More info</strong>, then <strong>Run anyway</strong>. achu is MIT open source from GitHub; Authenticode signing is on the roadmap. See <a href="#install">Install in 30 seconds</a>.</p>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>How do I install achu quickly?</span>
+            <svg class="faq-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <p class="faq-answer">Use the OS tabs on the homepage <a href="#install">Install</a> section: download for your platform, clear the expected OS warning (SmartScreen / Gatekeeper), then paste a screenshot with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>V</kbd>.</p>
         </details>
       </div>
     </section>

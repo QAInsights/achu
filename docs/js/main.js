@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
   initLightbox();
   initDownloadButton();
+  initInstallTabs();
 });
 
 // Initialize site-wide branding text
@@ -38,8 +39,17 @@ function initLinks() {
   const heroExplore = document.getElementById('hero-explore-link');
   if (heroExplore) heroExplore.href = '#gallery';
 
+  const heroInstall = document.getElementById('hero-install-link');
+  if (heroInstall) heroInstall.href = '#install';
+
   const compareDownload = document.getElementById('compare-download-link');
   if (compareDownload) compareDownload.href = config.links.releases || 'https://github.com/QAInsights/achu/releases';
+
+  // Install-section deep links → releases (asset URLs filled by initDownloadButton / initInstallTabs)
+  ['install-dl-windows', 'install-dl-macos', 'install-dl-linux'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.href = config.links.releases || 'https://github.com/QAInsights/achu/releases';
+  });
 
   // Optional: pull comparison headline/subhead from config when present
   if (config.comparison) {
@@ -267,6 +277,84 @@ function initLightbox() {
   });
 }
 
+/** Detect visitor OS from user agent. Returns 'windows' | 'macos' | 'linux' | 'unknown'. */
+function detectVisitorOS() {
+  const ua = navigator.userAgent.toLowerCase();
+  if (ua.includes('win')) return 'windows';
+  if (ua.includes('mac') || ua.includes('macintosh') || ua.includes('mac os')) return 'macos';
+  if (ua.includes('linux') || ua.includes('x11')) return 'linux';
+  return 'unknown';
+}
+
+/**
+ * Pick the best download URL for an OS from a GitHub release assets list.
+ * @param {'windows'|'macos'|'linux'|string} os
+ * @param {Array<{name: string, browser_download_url: string}>} assets
+ * @param {boolean} isArm64
+ */
+function pickReleaseAssetUrl(os, assets, isArm64) {
+  if (!assets || !assets.length) return null;
+  let downloadUrl = null;
+
+  if (os === 'windows') {
+    const exeAssets = assets.filter(a => a.name.toLowerCase().endsWith('.exe'));
+    if (isArm64) {
+      downloadUrl = exeAssets.find(a => a.name.toLowerCase().includes('arm64'))?.browser_download_url;
+    } else {
+      downloadUrl = exeAssets.find(a => a.name.toLowerCase().includes('-x64-'))?.browser_download_url
+        || exeAssets.find(a => !a.name.toLowerCase().includes('arm64'))?.browser_download_url;
+    }
+    if (!downloadUrl && exeAssets.length > 0) downloadUrl = exeAssets[0].browser_download_url;
+  } else if (os === 'macos') {
+    const dmgAssets = assets.filter(a => a.name.toLowerCase().endsWith('.dmg'));
+    const zipAssets = assets.filter(a =>
+      a.name.toLowerCase().endsWith('.zip') || a.name.toLowerCase().endsWith('.pkg')
+    );
+
+    let dmg = null;
+    if (isArm64) {
+      dmg = dmgAssets.find(a => a.name.toLowerCase().includes('arm64'))
+        || dmgAssets.find(a => a.name.toLowerCase().includes('universal'))
+        || dmgAssets[0];
+    } else {
+      dmg = dmgAssets.find(a => a.name.toLowerCase().includes('x64') || a.name.toLowerCase().includes('universal'))
+        || dmgAssets.find(a => !a.name.toLowerCase().includes('arm64'))
+        || dmgAssets[0];
+    }
+
+    let zip = null;
+    if (isArm64) {
+      zip = zipAssets.find(a => a.name.toLowerCase().includes('arm64'))
+        || zipAssets.find(a => a.name.toLowerCase().includes('universal'))
+        || zipAssets[0];
+    } else {
+      zip = zipAssets.find(a => a.name.toLowerCase().includes('x64') || a.name.toLowerCase().includes('universal'))
+        || zipAssets.find(a => !a.name.toLowerCase().includes('arm64'))
+        || zipAssets[0];
+    }
+
+    downloadUrl = (dmg || zip)?.browser_download_url;
+  } else if (os === 'linux') {
+    const appImages = assets.filter(a => a.name.toLowerCase().endsWith('.appimage'));
+    const debs = assets.filter(a => a.name.toLowerCase().endsWith('.deb'));
+
+    if (isArm64) {
+      downloadUrl = appImages.find(a => a.name.toLowerCase().includes('arm64'))?.browser_download_url
+        || debs.find(a => a.name.toLowerCase().includes('arm64'))?.browser_download_url;
+    } else {
+      downloadUrl = appImages.find(a => a.name.toLowerCase().includes('amd64') || !a.name.toLowerCase().includes('arm64'))?.browser_download_url
+        || debs.find(a => a.name.toLowerCase().includes('amd64') || !a.name.toLowerCase().includes('arm64'))?.browser_download_url;
+    }
+    if (!downloadUrl && appImages.length > 0) downloadUrl = appImages[0].browser_download_url;
+    if (!downloadUrl && debs.length > 0) downloadUrl = debs[0].browser_download_url;
+  }
+
+  if (!downloadUrl && assets.length > 0) {
+    downloadUrl = assets[0].browser_download_url;
+  }
+  return downloadUrl || null;
+}
+
 // Detect visitor's OS and update download button with platform-specific installer link
 function initDownloadButton() {
   const heroBtn = document.getElementById('hero-github-link');
@@ -279,23 +367,13 @@ function initDownloadButton() {
   // Ensure initial fallback href points to releases page, not the GitHub repo homepage
   heroBtn.href = fallbackReleaseUrl;
 
-  // Detect OS from user agent
+  const os = detectVisitorOS();
+  const osLabel = os === 'windows' ? 'Download for Windows'
+    : os === 'macos' ? 'Download for macOS'
+    : os === 'linux' ? 'Download for Linux'
+    : 'Download';
+
   const ua = navigator.userAgent.toLowerCase();
-  let os = 'unknown';
-  let osLabel = 'Download';
-
-  if (ua.includes('win')) {
-    os = 'windows';
-    osLabel = 'Download for Windows';
-  } else if (ua.includes('mac') || ua.includes('macintosh') || ua.includes('mac os')) {
-    os = 'macos';
-    osLabel = 'Download for macOS';
-  } else if (ua.includes('linux')) {
-    os = 'linux';
-    osLabel = 'Download for Linux';
-  }
-
-  // Detect architecture (arm64 vs x64)
   const isArm64 = ua.includes('arm') || ua.includes('aarch64');
 
   // Update button text immediately with OS label
@@ -307,75 +385,94 @@ function initDownloadButton() {
     .then(release => {
       if (!release || !release.assets) return;
 
-      const assets = release.assets;
-      let downloadUrl = null;
-
-      if (os === 'windows') {
-        // Prefer .exe, match arch
-        const exeAssets = assets.filter(a => a.name.toLowerCase().endsWith('.exe'));
-        if (isArm64) {
-          downloadUrl = exeAssets.find(a => a.name.toLowerCase().includes('arm64'))?.browser_download_url;
-        } else {
-          downloadUrl = exeAssets.find(a => a.name.toLowerCase().includes('-x64-'))?.browser_download_url
-            || exeAssets.find(a => !a.name.toLowerCase().includes('arm64'))?.browser_download_url;
-        }
-        if (!downloadUrl && exeAssets.length > 0) downloadUrl = exeAssets[0].browser_download_url;
-      } else if (os === 'macos') {
-        // Prefer .dmg over .zip / .pkg
-        const dmgAssets = assets.filter(a => a.name.toLowerCase().endsWith('.dmg'));
-        const zipAssets = assets.filter(a => a.name.toLowerCase().endsWith('.zip') || a.name.toLowerCase().endsWith('.pkg'));
-
-        let dmg = null;
-        if (isArm64) {
-          dmg = dmgAssets.find(a => a.name.toLowerCase().includes('arm64'))
-             || dmgAssets.find(a => a.name.toLowerCase().includes('universal'))
-             || dmgAssets[0];
-        } else {
-          dmg = dmgAssets.find(a => a.name.toLowerCase().includes('x64') || a.name.toLowerCase().includes('universal'))
-             || dmgAssets.find(a => !a.name.toLowerCase().includes('arm64'))
-             || dmgAssets[0];
-        }
-
-        let zip = null;
-        if (isArm64) {
-          zip = zipAssets.find(a => a.name.toLowerCase().includes('arm64'))
-             || zipAssets.find(a => a.name.toLowerCase().includes('universal'))
-             || zipAssets[0];
-        } else {
-          zip = zipAssets.find(a => a.name.toLowerCase().includes('x64') || a.name.toLowerCase().includes('universal'))
-             || zipAssets.find(a => !a.name.toLowerCase().includes('arm64'))
-             || zipAssets[0];
-        }
-
-        downloadUrl = (dmg || zip)?.browser_download_url;
-      } else if (os === 'linux') {
-        // Prefer .AppImage, fall back to .deb
-        const appImages = assets.filter(a => a.name.toLowerCase().endsWith('.appimage'));
-        const debs = assets.filter(a => a.name.toLowerCase().endsWith('.deb'));
-
-        if (isArm64) {
-          downloadUrl = appImages.find(a => a.name.toLowerCase().includes('arm64'))?.browser_download_url
-            || debs.find(a => a.name.toLowerCase().includes('arm64'))?.browser_download_url;
-        } else {
-          downloadUrl = appImages.find(a => a.name.toLowerCase().includes('amd64') || !a.name.toLowerCase().includes('arm64'))?.browser_download_url
-            || debs.find(a => a.name.toLowerCase().includes('amd64') || !a.name.toLowerCase().includes('arm64'))?.browser_download_url;
-        }
-        if (!downloadUrl && appImages.length > 0) downloadUrl = appImages[0].browser_download_url;
-        if (!downloadUrl && debs.length > 0) downloadUrl = debs[0].browser_download_url;
-      }
-
-      // Fallback to first asset if no match
-      if (!downloadUrl && assets.length > 0) {
-        downloadUrl = assets[0].browser_download_url;
-      }
+      const downloadUrl = pickReleaseAssetUrl(os === 'unknown' ? 'windows' : os, release.assets, isArm64);
 
       if (downloadUrl) {
         heroBtn.href = downloadUrl;
         // Remove target="_blank" so the download happens in the same tab
         heroBtn.removeAttribute('target');
       }
+
+      // Also wire per-OS install-panel download links when assets resolve
+      const map = {
+        windows: 'install-dl-windows',
+        macos: 'install-dl-macos',
+        linux: 'install-dl-linux',
+      };
+      Object.entries(map).forEach(([platform, id]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const url = pickReleaseAssetUrl(platform, release.assets, isArm64 && platform === os);
+        if (url) {
+          el.href = url;
+          // Keep releases page open in new tab for install deep-links (user may want release notes)
+        }
+      });
     })
     .catch(() => {
       heroBtn.href = fallbackReleaseUrl;
     });
+}
+
+/**
+ * Install section: OS tabs with keyboard support + auto-select visitor OS.
+ * Content is static HTML for SEO; this only switches panels.
+ */
+function initInstallTabs() {
+  const root = document.getElementById('install');
+  if (!root) return;
+
+  const tabs = Array.from(root.querySelectorAll('.install-tab[role="tab"]'));
+  const panels = Array.from(root.querySelectorAll('.install-tabpanel[role="tabpanel"]'));
+  if (!tabs.length || !panels.length) return;
+
+  function selectOS(os, { focusTab = false } = {}) {
+    const valid = ['windows', 'macos', 'linux'];
+    const target = valid.includes(os) ? os : 'windows';
+
+    tabs.forEach((tab) => {
+      const selected = tab.dataset.os === target;
+      tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+      tab.tabIndex = selected ? 0 : -1;
+      if (selected && focusTab) tab.focus();
+    });
+
+    panels.forEach((panel) => {
+      const match = panel.dataset.os === target;
+      if (match) {
+        panel.removeAttribute('hidden');
+      } else {
+        panel.setAttribute('hidden', '');
+      }
+    });
+  }
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => selectOS(tab.dataset.os));
+
+    tab.addEventListener('keydown', (e) => {
+      let next = null;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        next = tabs[(index + 1) % tabs.length];
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        next = tabs[(index - 1 + tabs.length) % tabs.length];
+      } else if (e.key === 'Home') {
+        next = tabs[0];
+      } else if (e.key === 'End') {
+        next = tabs[tabs.length - 1];
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectOS(tab.dataset.os);
+        return;
+      }
+      if (next) {
+        e.preventDefault();
+        selectOS(next.dataset.os, { focusTab: true });
+      }
+    });
+  });
+
+  // Prefer visitor OS; fall back to Windows (largest desktop share for portable EXE story)
+  const detected = detectVisitorOS();
+  selectOS(detected === 'unknown' ? 'windows' : detected);
 }
