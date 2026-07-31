@@ -82,10 +82,26 @@ export default function UpdateChecker() {
       if (result && result.simulated) {
         setSimulated(true);
         setUpdateStatus('success');
-      } else if (result && (result.opened || result.success)) {
-        setUpdateStatus('success');
+        setUpdateAvailable(null);
+        return;
       }
-      setUpdateAvailable(null);
+      if (result && result.success) {
+        setSimulated(false);
+        setUpdateStatus('success');
+        setUpdateAvailable(null);
+        return;
+      }
+      // Install failed but may have opened the release page as fallback
+      if (result && result.manualFallback) {
+        setUpdateError(
+          result.error ||
+            'Automatic install could not finish. The release page was opened so you can install manually.'
+        );
+        setUpdateStatus('error');
+        return;
+      }
+      setUpdateError(result?.error || 'Failed to install update');
+      setUpdateStatus('error');
     } catch (err: any) {
       setUpdateError(err.message || 'Failed to download and install update');
       setUpdateStatus('error');
@@ -268,12 +284,12 @@ export default function UpdateChecker() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem', color: '#10b981', fontWeight: 600 }}>
             <CheckCircle className="w-4 h-4" />
-            Update Downloaded!
+            {simulated ? 'Update simulated' : 'Update installing'}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
             {simulated
               ? 'In development mode: auto-restart is simulated.'
-              : 'The update will be applied when you restart achu.'}
+              : 'achu will quit and relaunch with the new version. If it does not reopen, launch it from the same place you usually do.'}
           </div>
           <button
             className="btn btn-secondary"

@@ -141,6 +141,33 @@ export function selectLinuxAsset(assets: ReleaseAsset[], arch: string): ReleaseA
 }
 
 /**
+ * Re-validate a cached update result against the *current* app version.
+ * Prevents stale "update available" after the user already upgraded, and
+ * drops cached "available" if version fields are missing.
+ */
+function revalidateCachedResult(cached: UpdateCheckResult): UpdateCheckResult {
+  if (!cached.available) return { available: false };
+  if (!cached.version) return { available: false };
+  if (!isNewerVersion(app.getVersion(), cached.version)) {
+    return { available: false };
+  }
+  return cached;
+}
+
+/** Clear update-available cache after a successful install attempt. */
+function clearUpdateAvailableCache(): void {
+  try {
+    const settings = loadSettings();
+    settings.lastUpdateResult = { available: false };
+    settings.lastUpdateCheck = Date.now();
+    // Keep ETag so the next check can still 304 cheaply; result is revalidated.
+    saveSettings(settings);
+  } catch (err) {
+    console.warn('[Updater] Failed to clear update cache:', err);
+  }
+}
+
+/**
  * Core logic for checking updates against GitHub releases API.
  * Uses ETag-based conditional requests to avoid hitting the 60 req/hr
  * unauthenticated rate limit. 304 responses don't count against the limit.
@@ -150,15 +177,15 @@ export async function performUpdateCheck(useCache: boolean): Promise<UpdateCheck
   const settings = loadSettings();
   const ttl = useCache ? CACHE_TTL_MS : MANUAL_CACHE_TTL_MS;
 
-  // Use cached result if within TTL
+  // Use cached result if within TTL (always re-check vs current app version)
   if (settings.lastUpdateCheck && settings.lastUpdateResult) {
     const age = Date.now() - settings.lastUpdateCheck;
     if (age < ttl) {
-      return settings.lastUpdateResult;
+      return revalidateCachedResult(settings.lastUpdateResult);
     }
   }
 
-  // Build headers — include ETag for conditional request if we have one
+  // Build headers - include ETag for conditional request if we have one
   const headers: Record<string, string> = { 'User-Agent': 'achu-updater' };
   if (settings.lastUpdateETag) {
     headers['If-None-Match'] = settings.lastUpdateETag;
@@ -166,13 +193,14 @@ export async function performUpdateCheck(useCache: boolean): Promise<UpdateCheck
 
   const response = await fetch(GITHUB_LATEST_URL, { headers });
 
-  // 304 Not Modified — release hasn't changed, use cached result
+  // 304 Not Modified - release hasn't changed, use cached result
   if (response.status === 304) {
     if (settings.lastUpdateResult) {
-      persistUpdateCache(settings, settings.lastUpdateResult, settings.lastUpdateETag || null);
-      return settings.lastUpdateResult;
+      const revalidated = revalidateCachedResult(settings.lastUpdateResult);
+      persistUpdateCache(settings, revalidated, settings.lastUpdateETag || null);
+      return revalidated;
     }
-    // Stale ETag without a cached result — clear it so the next check is fresh
+    // Stale ETag without a cached result - clear it so the next check is fresh
     console.warn('[Updater] Got 304 without cached result; clearing stale ETag');
     settings.lastUpdateETag = null;
     saveSettings(settings);
@@ -299,38 +327,75 @@ async function downloadWithProgress(
 
 // ─── Windows: replace running exe via batch script ───
 
+/**
+ * Resolve the on-disk path of the portable EXE the user actually launches.
+ * electron-builder portable sets PORTABLE_EXECUTABLE_FILE to the original
+ * download path; process.execPath alone often points at a temp extract
+ * that is discarded on exit (so "updates" appear to work then vanish).
+ */
+export function resolveWindowsUpdateTarget(): string {
+  const portable = process.env.PORTABLE_EXECUTABLE_FILE;
+  if (portable && typeof portable === 'string' && portable.trim()) {
+    return portable;
+  }
+  // Fallback: process.execPath (unpacked / non-portable runs)
+  return process.execPath;
+}
+
 function performWindowsUpdate(tempPath: string): void {
-  const execPath = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
+  const execPath = resolveWindowsUpdateTarget();
   const batPath = path.join(app.getPath('temp'), 'achu-update.bat');
   const logPath = path.join(app.getPath('temp'), 'achu-update.log');
 
+  // Escape for embedding inside a double-quoted batch string
+  const q = (p: string) => p.replace(/"/g, '""');
+  const tempQ = q(tempPath);
+  const execQ = q(execPath);
+  const logQ = q(logPath);
+  const releaseQ = q(RELEASE_PAGE_URL);
+  // PowerShell -LiteralPath uses single quotes; escape embedded single quotes
+  const execPs = execPath.replace(/'/g, "''");
+
+  if (!process.env.PORTABLE_EXECUTABLE_FILE) {
+    console.warn(
+      '[Updater] PORTABLE_EXECUTABLE_FILE is unset; updating process.execPath. ' +
+        'For portable builds this may only patch a temp extract. Target:',
+      execPath
+    );
+  }
+
+  // copy /y then del is more reliable than move when AV briefly locks the file.
+  // Retries after app.quit() releases the running image.
   const batContent = `@echo off
-set LOGFILE=${logPath}
+setlocal EnableExtensions
+set "LOGFILE=${logQ}"
 echo [%DATE% %TIME%] Starting updater >> "%LOGFILE%"
-echo [%DATE% %TIME%] tempPath=${tempPath} >> "%LOGFILE%"
-echo [%DATE% %TIME%] execPath=${execPath} >> "%LOGFILE%"
-set count=0
+echo [%DATE% %TIME%] tempPath=${tempQ} >> "%LOGFILE%"
+echo [%DATE% %TIME%] execPath=${execQ} >> "%LOGFILE%"
+echo [%DATE% %TIME%] pid=%~1 >> "%LOGFILE%"
+set /a count=0
 :wait
 timeout /t 2 /nobreak >nul
-echo [%DATE% %TIME%] Attempt %count%: moving file >> "%LOGFILE%"
-move /y "${tempPath}" "${execPath}"
+echo [%DATE% %TIME%] Attempt %count%: copy file >> "%LOGFILE%"
+copy /y "${tempQ}" "${execQ}" >nul
 if not errorlevel 1 goto success
-echo [%DATE% %TIME%] Move failed (errorlevel=%ERRORLEVEL%), retrying >> "%LOGFILE%"
-set /a count=count+1
-if %count% LSS 20 goto wait
+echo [%DATE% %TIME%] Copy failed (errorlevel=%ERRORLEVEL%), retrying >> "%LOGFILE%"
+set /a count+=1
+if %count% LSS 30 goto wait
 echo [%DATE% %TIME%] All retries exhausted, opening browser fallback >> "%LOGFILE%"
-start "" "${RELEASE_PAGE_URL}"
+start "" "${releaseQ}"
 goto done
 :success
-echo [%DATE% %TIME%] Move succeeded >> "%LOGFILE%"
-powershell -Command "Unblock-File -LiteralPath '${execPath.replace(/'/g, "''")}'"
+echo [%DATE% %TIME%] Copy succeeded >> "%LOGFILE%"
+del /f /q "${tempQ}" >nul 2>&1
+powershell -NoProfile -Command "try { Unblock-File -LiteralPath '${execPs}' } catch { }"
 echo [%DATE% %TIME%] Unblocked file, waiting for security scan >> "%LOGFILE%"
-timeout /t 3 /nobreak >nul
+timeout /t 2 /nobreak >nul
 echo [%DATE% %TIME%] Launching >> "%LOGFILE%"
-powershell -Command "Start-Process -LiteralPath '${execPath.replace(/'/g, "''")}'"
+powershell -NoProfile -Command "Start-Process -LiteralPath '${execPs}'"
 echo [%DATE% %TIME%] Launch command sent >> "%LOGFILE%"
 :done
-del "%~f0"
+del "%~f0" >nul 2>&1
 `;
 
   fs.writeFileSync(batPath, batContent, 'utf-8');
@@ -349,10 +414,80 @@ del "%~f0"
     windowsHide: true,
   });
   child.unref();
-  app.quit();
+  clearUpdateAvailableCache();
+  // Caller should quit after IPC reply is flushed.
 }
 
 // ─── macOS: mount DMG, copy app, relaunch ───
+
+/**
+ * Parse `hdiutil attach` text output and return the first /Volumes/... mount point.
+ *
+ * hdiutil prints lines like:
+ *   /dev/disk4s1        	GUID_partition_scheme
+ *   /dev/disk4s2        	Apple_HFS                      	/Volumes/achu 26.7.6
+ *
+ * Using the whole last line as a path is wrong (it includes the device node).
+ * `-quiet` can also suppress stdout entirely, so callers should not rely on quiet mode.
+ * Exported for unit testing.
+ */
+export function parseHdiutilMountPoint(output: string): string | null {
+  if (!output || !output.trim()) return null;
+
+  const lines = output.split(/\r?\n/);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i];
+    if (!line || !line.trim()) continue;
+
+    // Prefer explicit /Volumes/ path (may contain spaces)
+    const volumesMatch = line.match(/(\/Volumes\/[^\t\r\n]+?)\s*$/);
+    if (volumesMatch) {
+      return volumesMatch[1].replace(/\s+$/, '');
+    }
+
+    // Tab-separated columns: device, type, mount point
+    const tabParts = line.split(/\t+/).map((s) => s.trim()).filter(Boolean);
+    const tabLast = tabParts[tabParts.length - 1];
+    if (tabLast && tabLast.startsWith('/Volumes/')) {
+      return tabLast;
+    }
+
+    // Space-padded columns (2+ spaces)
+    const spaceParts = line.trim().split(/\s{2,}/);
+    const spaceLast = spaceParts[spaceParts.length - 1];
+    if (spaceLast && spaceLast.startsWith('/Volumes/')) {
+      return spaceLast;
+    }
+  }
+  return null;
+}
+
+/**
+ * Find a .app bundle at the root of a directory (DMG/zip extract).
+ */
+function findAppBundle(dir: string): string | null {
+  const entries = fs.readdirSync(dir);
+  const appName = entries.find((f) => f.endsWith('.app'));
+  return appName ? path.join(dir, appName) : null;
+}
+
+/**
+ * Strip quarantine so the replaced app can launch after an in-app update.
+ * Unsigned builds still need Open Anyway on first Gatekeeper encounter, but
+ * a fresh com.apple.quarantine from the DMG often re-blocks immediately.
+ */
+function clearMacQuarantine(appBundle: string): void {
+  const { execSync } = require('child_process');
+  try {
+    execSync(`xattr -dr com.apple.quarantine "${appBundle}"`, { stdio: 'ignore' });
+  } catch {
+    try {
+      execSync(`xattr -cr "${appBundle}"`, { stdio: 'ignore' });
+    } catch {
+      /* best effort */
+    }
+  }
+}
 
 /**
  * Safely replaces the running .app bundle with the new one.
@@ -378,20 +513,33 @@ function replaceAppBundle(srcApp: string, destApp: string, appBundlePath: string
   try {
     // ditto preserves resource forks, extended attributes, and code signatures.
     execSync(`ditto "${srcApp}" "${destApp}"`);
+    clearMacQuarantine(destApp);
   } catch (err) {
-    // Copy failed — restore the old app so the user isn't left with nothing.
+    // Copy failed - restore the old app so the user isn't left with nothing.
     if (backupPath && fs.existsSync(backupPath)) {
       try { fs.renameSync(backupPath, appBundlePath!); } catch { /* best effort */ }
     }
     throw err;
   }
-  // Copy succeeded — remove the old backup asynchronously (best effort).
+  // Copy succeeded - remove the old backup asynchronously (best effort).
   if (backupPath) {
     try { fs.rmSync(backupPath, { recursive: true, force: true }); } catch { /* non-fatal */ }
   }
 }
 
-function performMacUpdate(tempPath: string): void {
+export type PlatformInstallResult = {
+  installed: boolean;
+  relaunching?: boolean;
+  manualFallback?: boolean;
+  error?: string;
+};
+
+/**
+ * Install a downloaded macOS update (DMG preferred, ZIP fallback).
+ * Does not call app.quit() - the IPC handler quits after the reply is flushed.
+ * On failure, opens the release page and returns manualFallback.
+ */
+function performMacUpdate(tempPath: string): PlatformInstallResult {
   const { execSync, spawn } = require('child_process');
   const appPath = process.execPath;
   // Navigate from the binary inside the .app bundle to the .app root
@@ -403,97 +551,108 @@ function performMacUpdate(tempPath: string): void {
   let mountPoint: string | null = null;
 
   try {
-    if (tempPath.endsWith('.dmg')) {
-      // Mount the DMG
-      const mountOutput = execSync(`hdiutil attach "${tempPath}" -nobrowse -quiet`, { encoding: 'utf-8' });
-      // Extract mount point from hdiutil output (last volume path)
-      const lines = mountOutput.trim().split('\n');
-      const mp = lines[lines.length - 1].trim();
-      mountPoint = mp; // tracked for detach in finally
-      // Find the .app inside the mounted volume
-      const volumes = fs.readdirSync(mp);
-      const appName = volumes.find((f: string) => f.endsWith('.app'));
-      if (!appName) {
-        throw new Error('No .app found in DMG');
-      }
-      const srcApp = path.join(mp, appName);
+    const lower = tempPath.toLowerCase();
 
-      // Copy to /Applications (or wherever the current app lives)
-      const destDir = appBundlePath
-        ? path.dirname(appBundlePath)
-        : '/Applications';
+    if (lower.endsWith('.dmg')) {
+      // Do NOT use -quiet: it can suppress the mount table we need to parse.
+      // -nobrowse avoids Finder windows popping during update.
+      const mountOutput = execSync(`hdiutil attach "${tempPath}" -nobrowse`, {
+        encoding: 'utf-8',
+        maxBuffer: 2 * 1024 * 1024,
+      });
+      const mp = parseHdiutilMountPoint(mountOutput);
+      if (!mp) {
+        throw new Error(
+          `Could not parse DMG mount point from hdiutil output: ${mountOutput.slice(0, 400)}`
+        );
+      }
+      mountPoint = mp;
+
+      const srcApp = findAppBundle(mp);
+      if (!srcApp) {
+        throw new Error(`No .app found in mounted DMG at ${mp}`);
+      }
+      const appName = path.basename(srcApp);
+
+      const destDir = appBundlePath ? path.dirname(appBundlePath) : '/Applications';
       const destApp = path.join(destDir, appName);
 
       replaceAppBundle(srcApp, destApp, appBundlePath);
 
-      // Relaunch
       spawn('open', ['-n', destApp], { detached: true, stdio: 'ignore' }).unref();
-      app.quit();
-      return;
+      clearUpdateAvailableCache();
+      return { installed: true, relaunching: true };
     }
 
-    if (tempPath.endsWith('.zip')) {
-      // Extract the zip. `ditto` is used instead of `unzip` because
-      // electron-builder's universal-build zips use zip64 + extended
-      // attributes that the stock `unzip` (and Archive Utility) mishandle —
-      // the documented "Error 94 - Bad message" failure. ditto is Apple's
-      // native tool and preserves resource forks + code signatures.
+    if (lower.endsWith('.zip')) {
+      // Extract with ditto (not unzip) - electron-builder universal zips use
+      // zip64 + xattrs that stock unzip mishandles ("Error 94 - Bad message").
       const unzipDir = path.join(app.getPath('temp'), 'achu-update-extract');
       if (fs.existsSync(unzipDir)) fs.rmSync(unzipDir, { recursive: true, force: true });
       fs.mkdirSync(unzipDir, { recursive: true });
       execSync(`ditto -x -k "${tempPath}" "${unzipDir}"`);
 
-      // Find the .app
-      const files = fs.readdirSync(unzipDir);
-      const appName = files.find((f: string) => f.endsWith('.app'));
-      if (!appName) {
+      const srcApp = findAppBundle(unzipDir);
+      if (!srcApp) {
         throw new Error('No .app found in ZIP');
       }
-      const srcApp = path.join(unzipDir, appName);
+      const appName = path.basename(srcApp);
 
-      const destDir = appBundlePath
-        ? path.dirname(appBundlePath)
-        : '/Applications';
+      const destDir = appBundlePath ? path.dirname(appBundlePath) : '/Applications';
       const destApp = path.join(destDir, appName);
 
       replaceAppBundle(srcApp, destApp, appBundlePath);
 
       spawn('open', ['-n', destApp], { detached: true, stdio: 'ignore' }).unref();
-      app.quit();
-      return;
+      clearUpdateAvailableCache();
+      return { installed: true, relaunching: true };
     }
 
-    // Unknown format — open the release page so the user can install manually.
+    // Unknown format - open the release page so the user can install manually.
     shell.openExternal(RELEASE_PAGE_URL);
-  } catch (err) {
+    return { installed: false, manualFallback: true, error: 'Unsupported macOS update package format' };
+  } catch (err: any) {
     console.error('[Updater] macOS auto-install failed, opening release page:', err);
-    // Fallback: open the release page in the browser so the user can
-    // download/install manually. Do NOT shell.openPath() the raw archive —
-    // that invokes Archive Utility, which fails with "Error 94 - Bad message"
-    // on electron-builder universal zips.
+    // Fallback: open the release page. Do NOT shell.openPath() the raw archive.
     shell.openExternal(RELEASE_PAGE_URL);
+    return {
+      installed: false,
+      manualFallback: true,
+      error: err?.message || 'macOS auto-install failed',
+    };
   } finally {
     // Always detach the DMG if we mounted one, even on failure.
     if (mountPoint) {
-      try { execSync(`hdiutil detach "${mountPoint}" -quiet`); } catch { /* best effort */ }
+      try {
+        execSync(`hdiutil detach "${mountPoint}" -quiet`, { stdio: 'ignore' });
+      } catch {
+        try {
+          execSync(`hdiutil detach "${mountPoint}" -force`, { stdio: 'ignore' });
+        } catch { /* best effort */ }
+      }
     }
   }
 }
 
 // ─── Linux: replace AppImage or install DEB ───
 
-function performLinuxUpdate(tempPath: string): void {
+/**
+ * Install a downloaded Linux update. Does not call app.quit() - the IPC
+ * handler quits after the reply is flushed when install succeeds.
+ */
+function performLinuxUpdate(tempPath: string): PlatformInstallResult {
   const { execSync, spawn } = require('child_process');
   const execPath = process.execPath;
+  const lower = tempPath.toLowerCase();
 
   try {
-    if (tempPath.endsWith('.AppImage')) {
+    if (lower.endsWith('.appimage')) {
       // Make executable
       fs.chmodSync(tempPath, 0o755);
 
       // Try to replace the current AppImage.
       // Linux doesn't lock running executables, so we can replace the
-      // current one — but we rename it aside first so a failed copy
+      // current one - but we rename it aside first so a failed copy
       // never leaves the user with a corrupted AppImage.
       if (execPath && fs.existsSync(execPath)) {
         let backupPath: string | null = null;
@@ -504,13 +663,13 @@ function performLinuxUpdate(tempPath: string): void {
           fs.copyFileSync(tempPath, execPath);
           fs.chmodSync(execPath, 0o755);
         } catch (err) {
-          // Copy failed — restore the old AppImage so the user isn't left with nothing.
+          // Copy failed - restore the old AppImage so the user isn't left with nothing.
           if (backupPath && fs.existsSync(backupPath)) {
             try { fs.renameSync(backupPath, execPath); } catch { /* best effort */ }
           }
           throw err;
         }
-        // Copy succeeded — clean up
+        // Copy succeeded - clean up
         try { fs.unlinkSync(tempPath); } catch { /* non-fatal */ }
         if (backupPath) {
           try { fs.unlinkSync(backupPath); } catch { /* non-fatal */ }
@@ -518,34 +677,40 @@ function performLinuxUpdate(tempPath: string): void {
 
         // Relaunch
         spawn(execPath, [], { detached: true, stdio: 'ignore' }).unref();
-        app.quit();
-        return;
+        clearUpdateAvailableCache();
+        return { installed: true, relaunching: true };
       }
 
-      // Can't determine exec path — just open the new AppImage
+      // Can't determine exec path - just open the new AppImage
       shell.openPath(tempPath);
-      return;
+      return { installed: false, manualFallback: true, error: 'Could not locate current AppImage path' };
     }
 
-    if (tempPath.endsWith('.deb')) {
+    if (lower.endsWith('.deb')) {
       // Try installing via pkexec (polkit prompt for sudo)
       try {
         execSync(`pkexec dpkg -i "${tempPath}"`, { stdio: 'ignore' });
         // Relaunch
         spawn('sh', ['-c', `which achu && achu &`], { detached: true, stdio: 'ignore' }).unref();
-        app.quit();
-        return;
+        clearUpdateAvailableCache();
+        return { installed: true, relaunching: true };
       } catch {
-        // pkexec failed or cancelled — fall back to opening with xdg-open
+        // pkexec failed or cancelled - fall back to opening with xdg-open
         shell.openPath(tempPath);
+        return { installed: false, manualFallback: true, error: 'deb install requires admin approval' };
       }
-      return;
     }
 
     shell.openPath(tempPath);
-  } catch (err) {
+    return { installed: false, manualFallback: true, error: 'Unsupported Linux update package format' };
+  } catch (err: any) {
     console.error('[Updater] Linux auto-install failed, falling back to opening file:', err);
     shell.openPath(tempPath);
+    return {
+      installed: false,
+      manualFallback: true,
+      error: err?.message || 'Linux auto-install failed',
+    };
   }
 }
 
@@ -583,29 +748,44 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
         }
       });
 
-      // Rollout phase — platform specific
+      // Rollout phase - platform specific
       if (isDev) {
         console.log('[Updater] Dev mode: simulation completed successfully');
-        return { success: true, simulated: true };
+        return { success: true, simulated: true, relaunching: false };
       }
 
       if (process.platform === 'win32') {
-        // performWindowsUpdate spawns a detached batch script then calls app.quit().
-        // We must return the IPC reply FIRST, then delay the quit so the renderer
-        // actually receives { success: true } before the IPC channel is destroyed.
-        // The batch script handles the actual exe replacement and relaunch.
-        setTimeout(() => performWindowsUpdate(tempPath), 500);
-        return { success: true };
-      } else if (process.platform === 'darwin') {
-        // performMacUpdate is synchronous (ditto copy + spawn relaunch + app.quit()).
-        // Same IPC race as Windows — delay so the reply reaches the renderer first.
-        setTimeout(() => performMacUpdate(tempPath), 500);
-        return { success: true, opened: true };
-      } else {
-        // performLinuxUpdate is synchronous (rename + copy + spawn relaunch + app.quit()).
-        setTimeout(() => performLinuxUpdate(tempPath), 500);
-        return { success: true, opened: true };
+        // Spawn detached batch script (needs app to exit so the exe unlocks),
+        // return IPC reply, then quit so the reply is not dropped.
+        performWindowsUpdate(tempPath);
+        setTimeout(() => app.quit(), 500);
+        return { success: true, relaunching: true };
       }
+
+      if (process.platform === 'darwin') {
+        const result = performMacUpdate(tempPath);
+        if (!result.installed) {
+          return {
+            success: false,
+            manualFallback: true,
+            error: result.error || 'macOS auto-install failed. Opened the release page.',
+          };
+        }
+        setTimeout(() => app.quit(), 500);
+        return { success: true, relaunching: true };
+      }
+
+      // Linux
+      const result = performLinuxUpdate(tempPath);
+      if (!result.installed) {
+        return {
+          success: false,
+          manualFallback: true,
+          error: result.error || 'Linux auto-install failed. Opened the package/file.',
+        };
+      }
+      setTimeout(() => app.quit(), 500);
+      return { success: true, relaunching: true };
     } catch (error: any) {
       console.error('[Updater] Update installation failed:', error);
       const friendly = friendlyUpdateError(error.message || 'Failed to install update');

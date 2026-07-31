@@ -61,7 +61,7 @@ export default function WorkspaceToolbar() {
     appTheme, setAppTheme,
     settingsVisible, setSettingsVisible,
     helpVisible, setHelpVisible,
-    updateAvailable, setUpdateAvailable,
+    updateAvailable,
     setImageSrc,
     clearWorkspace,
     codeStudioActive,
@@ -560,11 +560,11 @@ export default function WorkspaceToolbar() {
           <button
             className={`tool-btn ${helpVisible ? 'active' : ''}`}
             onClick={() => {
+              // Keep updateAvailable set so UpdateChecker auto-runs when Help opens
               setHelpVisible(prev => !prev);
-              if (updateAvailable) setUpdateAvailable(null);
             }}
-            title="Help"
-            aria-label="Help"
+            title={updateAvailable ? `Help (update v${updateAvailable.version} available)` : 'Help'}
+            aria-label={updateAvailable ? 'Help - update available' : 'Help'}
             aria-pressed={helpVisible}
             style={{ position: 'relative' }}
           >

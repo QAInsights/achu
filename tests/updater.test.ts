@@ -13,7 +13,15 @@ vi.mock('electron', () => ({
   BrowserWindow: class {},
 }));
 
-import { isNewerVersion, registerUpdaterHandlers, selectMacAsset, selectWindowsAsset, selectLinuxAsset } from '../src/main/updater';
+import {
+  isNewerVersion,
+  registerUpdaterHandlers,
+  selectMacAsset,
+  selectWindowsAsset,
+  selectLinuxAsset,
+  parseHdiutilMountPoint,
+  resolveWindowsUpdateTarget,
+} from '../src/main/updater';
 
 describe('Updater isNewerVersion helper', () => {
   it('correctly compares version segments', () => {
@@ -153,6 +161,58 @@ describe('selectWindowsAsset', () => {
       { name: 'achu-26.6.19.appx', browser_download_url: 'https://dl/app.appx' },
     ];
     expect(selectWindowsAsset(assets, 'x64')).toBeUndefined();
+  });
+});
+
+describe('parseHdiutilMountPoint (macOS DMG mount table)', () => {
+  it('extracts /Volumes path from typical hdiutil attach output', () => {
+    const output = [
+      '/dev/disk4s1        	GUID_partition_scheme          	',
+      '/dev/disk4s2        	Apple_HFS                      	/Volumes/achu 26.7.6',
+    ].join('\n');
+    expect(parseHdiutilMountPoint(output)).toBe('/Volumes/achu 26.7.6');
+  });
+
+  it('handles space-padded columns without tabs', () => {
+    const output = '/dev/disk2s1            Apple_HFS                       /Volumes/achu';
+    expect(parseHdiutilMountPoint(output)).toBe('/Volumes/achu');
+  });
+
+  it('returns null for empty or device-only lines (the old bug)', () => {
+    // Old code used the whole last line as a path - that is never valid
+    expect(parseHdiutilMountPoint('')).toBeNull();
+    expect(parseHdiutilMountPoint('/dev/disk4s1        	GUID_partition_scheme')).toBeNull();
+  });
+
+  it('finds /Volumes even when not on the last line', () => {
+    const output = [
+      '/dev/disk4s2        	Apple_HFS                      	/Volumes/achu',
+      'extra trailing noise',
+    ].join('\n');
+    expect(parseHdiutilMountPoint(output)).toBe('/Volumes/achu');
+  });
+});
+
+describe('resolveWindowsUpdateTarget', () => {
+  it('prefers PORTABLE_EXECUTABLE_FILE when set', () => {
+    const prev = process.env.PORTABLE_EXECUTABLE_FILE;
+    process.env.PORTABLE_EXECUTABLE_FILE = 'C:\\Users\\me\\Downloads\\achu-x64-26.7.5.exe';
+    try {
+      expect(resolveWindowsUpdateTarget()).toBe('C:\\Users\\me\\Downloads\\achu-x64-26.7.5.exe');
+    } finally {
+      if (prev === undefined) delete process.env.PORTABLE_EXECUTABLE_FILE;
+      else process.env.PORTABLE_EXECUTABLE_FILE = prev;
+    }
+  });
+
+  it('falls back to process.execPath when portable env is unset', () => {
+    const prev = process.env.PORTABLE_EXECUTABLE_FILE;
+    delete process.env.PORTABLE_EXECUTABLE_FILE;
+    try {
+      expect(resolveWindowsUpdateTarget()).toBe(process.execPath);
+    } finally {
+      if (prev !== undefined) process.env.PORTABLE_EXECUTABLE_FILE = prev;
+    }
   });
 });
 

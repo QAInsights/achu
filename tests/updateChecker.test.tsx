@@ -114,7 +114,35 @@ describe('UpdateChecker component', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByText('Update Downloaded!')).toBeInTheDocument();
+    expect(screen.getByText('Update simulated')).toBeInTheDocument();
+  });
+
+  it('shows error when install returns manualFallback', async () => {
+    const checkForUpdates = vi.fn().mockResolvedValue({
+      available: true,
+      version: '2026.6.01',
+      downloadUrl: 'https://example.com/achu.dmg',
+    });
+    const startUpdate = vi.fn().mockResolvedValue({
+      success: false,
+      manualFallback: true,
+      error: 'Could not parse DMG mount point',
+    });
+    vi.stubGlobal('snapFrameAPI', {
+      ...window.snapFrameAPI,
+      checkForUpdates,
+      startUpdate,
+      onUpdateProgress: vi.fn(() => () => {}),
+    });
+
+    render(<UpdateChecker />);
+    fireEvent.click(screen.getByText('Check for Updates'));
+    await act(async () => { await Promise.resolve(); });
+    fireEvent.click(screen.getByText('Upgrade Now'));
+    await act(async () => { await Promise.resolve(); });
+
+    expect(screen.getByText('Update Error')).toBeInTheDocument();
+    expect(screen.getByText('Could not parse DMG mount point')).toBeInTheDocument();
   });
 
   it('handles errors gracefully during update check', async () => {
