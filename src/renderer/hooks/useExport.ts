@@ -10,7 +10,9 @@ export function useExport(
   noImageMode: boolean,
   getCurrentConfig: () => RenderConfig,
   ensureDocumentName: () => string,
-  setDocumentName: (name: string) => void
+  setDocumentName: (name: string) => void,
+  /** Fired after a successful copy / file export / gallery save (privacy-first growth counter). */
+  onExportSuccess?: () => void
 ) {
   const [exportFormat, setExportFormat] = useState<'png' | 'jpeg' | 'webp'>(() => {
     try {
@@ -156,6 +158,7 @@ export function useExport(
               await navigator.clipboard.write([new ClipboardItem(clipboardItems)]);
             }
           }
+          onExportSuccess?.();
           resolve();
         } catch (err) {
           reject(err);
@@ -246,6 +249,7 @@ export function useExport(
               if (result.data.documentName) {
                 setDocumentName(result.data.documentName);
               }
+              onExportSuccess?.();
               resolve({ success: true, path: result.data.path, name: result.data.name });
             } else {
               resolve({ success: false, error: result.error });
@@ -279,6 +283,7 @@ export function useExport(
 
       if (window.snapFrameAPI) {
         window.snapFrameAPI.saveFile(base64Data, exportFormat, jpegQuality, compressionMode);
+        onExportSuccess?.();
         if (suffix) alert(suffix);
       } else {
         const link = document.createElement('a');
@@ -286,6 +291,7 @@ export function useExport(
         link.download = `snapframe-export.${ext}`;
         link.href = base64Data;
         link.click();
+        onExportSuccess?.();
         if (suffix) alert(suffix);
       }
     });

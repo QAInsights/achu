@@ -444,6 +444,10 @@ export function makeFullMockContext(overrides: Record<string, any> = {}) {
     setCheckForUpdatesOnStartup: noop,
     captureShortcut: 'PrintScreen',
     setCaptureShortcut: noop,
+    shareAchuPromptOpen: false,
+    setShareAchuPromptOpen: noop,
+    showToast: noop,
+    galleryToast: null,
     ...overrides,
   };
 }

@@ -7,6 +7,7 @@ import { useConnectionPoll } from './hooks/useConnectionPoll';
 import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { getZoomStyle as getZoomStyleUtil } from './utils/layoutUtils';
 import { getUserDefault, updateUserDefault } from './utils/storageUtils';
+import { recordExportSuccess } from './utils/growthUtils';
 import { createWorker } from 'tesseract.js';
 import { processOcrResults, downsampleImageForOcr } from './utils/privacyGuardUtils';
 import { VibePalette, extractPalette } from './utils/colorExtractor';
@@ -177,6 +178,8 @@ interface AppContextType {
   handleSaveToGallery: () => Promise<void>;
   galleryToast: string | null;
   showToast: (message: string, duration?: number) => void;
+  shareAchuPromptOpen: boolean;
+  setShareAchuPromptOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectBackgroundPreset: (preset: any) => void;
   handleSliderRelease: () => void;
   getZoomStyle: () => React.CSSProperties;
@@ -745,16 +748,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return name;
   }, [documentName]);
 
+  // Stable ref so useExport always calls the latest growth handler without re-binding hooks.
+  const onExportSuccessRef = useRef<() => void>(() => {});
+  onExportSuccessRef.current = () => {
+    try {
+      const { shouldShowSharePrompt } = recordExportSuccess();
+      if (shouldShowSharePrompt) {
+        setShareAchuPromptOpen(true);
+      }
+    } catch {
+      /* ignore growth counter failures */
+    }
+  };
+
   // 3. Export Hook
   const {
     exportFormat, setExportFormat,
     jpegQuality, setJpegQuality,
     compressionMode, setCompressionMode,
     copyBeautifiedImage, triggerExport, saveToGallery, exportBeforeAfter, copyBeforeAfter
-  } = useExport(imageSrc, noImageMode, getCurrentConfig, ensureDocumentName, setDocumentName);
+  } = useExport(
+    imageSrc,
+    noImageMode,
+    getCurrentConfig,
+    ensureDocumentName,
+    setDocumentName,
+    () => onExportSuccessRef.current()
+  );
 
   const [galleryToast, setGalleryToast] = useState<string | null>(null);
   const galleryToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [shareAchuPromptOpen, setShareAchuPromptOpen] = useState(false);
 
   const showGalleryToast = useCallback((message: string, duration = 2500) => {
     if (galleryToastTimerRef.current) {
@@ -1902,6 +1926,7 @@ Severity rules:
       getCurrentConfig, pushHistory, applyConfig, handleUndo, handleRedo, selectFile, handleHTMLFileInput,
       pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport, exportBeforeAfter, copyBeforeAfter, saveToGallery, handleSaveToGallery, galleryToast,
       showToast: showGalleryToast,
+      shareAchuPromptOpen, setShareAchuPromptOpen,
       selectBackgroundPreset, handleSliderRelease, getZoomStyle, applyMeshPalette, generateRandomPalette,
       handleDragOver, handleDragLeave, handleDrop, customPrompt, handlePointerDown, handlePointerMove, handlePointerUp,
       resetStyles,
