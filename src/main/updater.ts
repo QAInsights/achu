@@ -342,31 +342,19 @@ export function resolveWindowsUpdateTarget(): string {
   return process.execPath;
 }
 
-function performWindowsUpdate(tempPath: string): void {
-  const execPath = resolveWindowsUpdateTarget();
-  const batPath = path.join(app.getPath('temp'), 'achu-update.bat');
-  const logPath = path.join(app.getPath('temp'), 'achu-update.log');
-
+export function buildWindowsUpdateScript(tempPath: string, execPath: string, logPath: string): string {
   // Escape for embedding inside a double-quoted batch string
   const q = (p: string) => p.replace(/"/g, '""');
   const tempQ = q(tempPath);
   const execQ = q(execPath);
   const logQ = q(logPath);
   const releaseQ = q(RELEASE_PAGE_URL);
-  // PowerShell -LiteralPath uses single quotes; escape embedded single quotes
+  // PowerShell path arguments use single quotes; escape embedded single quotes
   const execPs = execPath.replace(/'/g, "''");
-
-  if (!process.env.PORTABLE_EXECUTABLE_FILE) {
-    console.warn(
-      '[Updater] PORTABLE_EXECUTABLE_FILE is unset; updating process.execPath. ' +
-        'For portable builds this may only patch a temp extract. Target:',
-      execPath
-    );
-  }
 
   // copy /y then del is more reliable than move when AV briefly locks the file.
   // Retries after app.quit() releases the running image.
-  const batContent = `@echo off
+  return `@echo off
 setlocal EnableExtensions
 set "LOGFILE=${logQ}"
 echo [%DATE% %TIME%] Starting updater >> "%LOGFILE%"
@@ -375,7 +363,7 @@ echo [%DATE% %TIME%] execPath=${execQ} >> "%LOGFILE%"
 echo [%DATE% %TIME%] pid=%~1 >> "%LOGFILE%"
 set /a count=0
 :wait
-timeout /t 2 /nobreak >nul
+powershell -NoProfile -Command "Start-Sleep -Seconds 2"
 echo [%DATE% %TIME%] Attempt %count%: copy file >> "%LOGFILE%"
 copy /y "${tempQ}" "${execQ}" >nul
 if not errorlevel 1 goto success
@@ -390,15 +378,34 @@ echo [%DATE% %TIME%] Copy succeeded >> "%LOGFILE%"
 del /f /q "${tempQ}" >nul 2>&1
 powershell -NoProfile -Command "try { Unblock-File -LiteralPath '${execPs}' } catch { }"
 echo [%DATE% %TIME%] Unblocked file, waiting for security scan >> "%LOGFILE%"
-timeout /t 2 /nobreak >nul
+powershell -NoProfile -Command "Start-Sleep -Seconds 2"
 echo [%DATE% %TIME%] Launching >> "%LOGFILE%"
-powershell -NoProfile -Command "Start-Process -LiteralPath '${execPs}'"
+powershell -NoProfile -Command "Start-Process -FilePath '${execPs}'"
+if errorlevel 1 goto launchfailed
 echo [%DATE% %TIME%] Launch command sent >> "%LOGFILE%"
+goto done
+:launchfailed
+echo [%DATE% %TIME%] Launch failed (errorlevel=%ERRORLEVEL%), opening browser fallback >> "%LOGFILE%"
+start "" "${releaseQ}"
 :done
 del "%~f0" >nul 2>&1
 `;
+}
 
-  fs.writeFileSync(batPath, batContent, 'utf-8');
+function performWindowsUpdate(tempPath: string): void {
+  const execPath = resolveWindowsUpdateTarget();
+  const batPath = path.join(app.getPath('temp'), 'achu-update.bat');
+  const logPath = path.join(app.getPath('temp'), 'achu-update.log');
+
+  if (!process.env.PORTABLE_EXECUTABLE_FILE) {
+    console.warn(
+      '[Updater] PORTABLE_EXECUTABLE_FILE is unset; updating process.execPath. ' +
+        'For portable builds this may only patch a temp extract. Target:',
+      execPath
+    );
+  }
+
+  fs.writeFileSync(batPath, buildWindowsUpdateScript(tempPath, execPath, logPath), 'utf-8');
 
   // Use VBS to run the batch script hidden (no console window)
   const vbsPath = path.join(app.getPath('temp'), 'achu-launcher.vbs');

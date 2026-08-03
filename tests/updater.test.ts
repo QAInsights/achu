@@ -21,6 +21,7 @@ import {
   selectLinuxAsset,
   parseHdiutilMountPoint,
   resolveWindowsUpdateTarget,
+  buildWindowsUpdateScript,
 } from '../src/main/updater';
 
 describe('Updater isNewerVersion helper', () => {
@@ -213,6 +214,31 @@ describe('resolveWindowsUpdateTarget', () => {
     } finally {
       if (prev !== undefined) process.env.PORTABLE_EXECUTABLE_FILE = prev;
     }
+  });
+});
+
+describe('buildWindowsUpdateScript', () => {
+  it('uses console-independent waits and a valid PowerShell relaunch parameter', () => {
+    const script = buildWindowsUpdateScript(
+      'C:\\Temp\\achu update.exe',
+      'C:\\Users\\me\\Downloads\\achu.exe',
+      'C:\\Temp\\achu-update.log'
+    );
+
+    expect(script).toContain('Start-Sleep -Seconds 2');
+    expect(script).toContain("Start-Process -FilePath 'C:\\Users\\me\\Downloads\\achu.exe'");
+    expect(script).not.toContain('timeout /t');
+    expect(script).not.toContain('Start-Process -LiteralPath');
+  });
+
+  it('escapes apostrophes in paths passed to PowerShell', () => {
+    const script = buildWindowsUpdateScript(
+      "C:\\Users\\O'Brien\\achu update.exe",
+      "C:\\Users\\O'Brien\\achu.exe",
+      "C:\\Users\\O'Brien\\achu-update.log"
+    );
+
+    expect(script).toContain("Start-Process -FilePath 'C:\\Users\\O''Brien\\achu.exe'");
   });
 });
 
