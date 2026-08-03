@@ -720,7 +720,7 @@ describe('useAnnotationEvents', () => {
     });
 
     it('Ctrl/Cmd+V is a no-op when clipboard is empty', () => {
-      const { result, getAnnotations } = setup();
+      const { getAnnotations } = setup();
       act(() => {
         window.dispatchEvent(
           new KeyboardEvent('keydown', { key: 'v', ctrlKey: true, bubbles: true })

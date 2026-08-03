@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import PrivacyGuardOverlays from '../src/renderer/components/PrivacyGuardOverlays';
+import type { RedactionItem } from '../src/renderer/canvasRenderer';
 
-const baseRedactions = [
-  { id: 'r1', x: 0.1, y: 0.2, w: 0.3, h: 0.1, text: 'secret', status: 'redacted' as const },
-  { id: 'r2', x: 0.5, y: 0.6, w: 0.2, h: 0.15, text: 'visible', status: 'visible' as const },
+const baseRedactions: RedactionItem[] = [
+  { id: 'r1', x: 0.1, y: 0.2, w: 0.3, h: 0.1, text: 'secret', type: 'email', status: 'redacted' },
+  { id: 'r2', x: 0.5, y: 0.6, w: 0.2, h: 0.15, text: 'visible', type: 'email', status: 'visible' },
 ];
 
 describe('PrivacyGuardOverlays', () => {
@@ -23,8 +24,8 @@ describe('PrivacyGuardOverlays', () => {
   });
 
   it('returns null when no redactions have status "redacted"', () => {
-    const allVisible = [
-      { id: 'r1', x: 0.1, y: 0.2, w: 0.3, h: 0.1, text: 'a', status: 'visible' as const },
+    const allVisible: RedactionItem[] = [
+      { id: 'r1', x: 0.1, y: 0.2, w: 0.3, h: 0.1, text: 'a', type: 'email', status: 'visible' },
     ];
     const { container } = render(
       <PrivacyGuardOverlays

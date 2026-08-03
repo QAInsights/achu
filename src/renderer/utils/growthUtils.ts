@@ -11,7 +11,7 @@ export const GROWTH_KEYS = {
 export const SHARE_ACHU_EXPORT_THRESHOLD = 3;
 
 export function isOnboardingTourCompleted(): boolean {
-  return getUserDefault(GROWTH_KEYS.onboardingTourCompleted, false) === true;
+  return getUserDefault<boolean>(GROWTH_KEYS.onboardingTourCompleted, false) === true;
 }
 
 export function markOnboardingTourCompleted(): void {
@@ -24,7 +24,7 @@ export function getExportSuccessCount(): number {
 }
 
 export function isShareAchuPromptDismissed(): boolean {
-  return getUserDefault(GROWTH_KEYS.shareAchuPromptDismissed, false) === true;
+  return getUserDefault<boolean>(GROWTH_KEYS.shareAchuPromptDismissed, false) === true;
 }
 
 export function dismissShareAchuPrompt(): void {

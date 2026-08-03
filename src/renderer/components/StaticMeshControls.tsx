@@ -1,6 +1,5 @@
 import { useAppContext } from '../AppContext';
 import {
-  DEFAULT_STATIC_MESH_PARAMS,
   type StaticMeshGradientParams,
 } from '../shaders/shaderPresets';
 

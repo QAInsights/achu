@@ -64,7 +64,7 @@ vi.mock('fs', () => ({
 import { registerGalleryIpcHandlers } from '../src/main/gallery/galleryIpc';
 
 function getHandler(channel: string) {
-  const call = mockHandle.mock.calls.find(([ch]: [string]) => ch === channel);
+  const call = mockHandle.mock.calls.find((args) => args[0] === channel);
   return call ? call[1] : null;
 }
 
@@ -77,7 +77,7 @@ beforeEach(() => {
 
 describe('registerGalleryIpcHandlers', () => {
   it('registers all gallery IPC channels', () => {
-    const channels = mockHandle.mock.calls.map(([ch]: [string]) => ch);
+    const channels = mockHandle.mock.calls.map((args) => args[0]);
     expect(channels).toContain('gallery:ensure-dir');
     expect(channels).toContain('gallery:get-folder');
     expect(channels).toContain('gallery:set-folder');
@@ -136,7 +136,7 @@ describe('registerGalleryIpcHandlers', () => {
     it('delegates to saveGalleryItem for valid payload', async () => {
       mockSaveGalleryItem.mockResolvedValue({ success: true });
       const handler = getHandler('gallery:save');
-      const result = await handler({}, {
+      await handler({}, {
         base64Data: 'data:image/png;base64,abc',
         type: 'png',
         quality: 90,
@@ -176,7 +176,7 @@ describe('registerGalleryIpcHandlers', () => {
     it('calls generateThumbnail with width', async () => {
       mockGenerateThumbnail.mockResolvedValue({ success: true, data: 'thumb-data' });
       const handler = getHandler('gallery:thumbnail');
-      const result = await handler({}, '/mock/gallery/test.png', 300);
+      await handler({}, '/mock/gallery/test.png', 300);
       expect(mockGenerateThumbnail).toHaveBeenCalledWith('/mock/gallery', '/mock/gallery/test.png', 300);
     });
   });

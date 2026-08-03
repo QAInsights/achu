@@ -102,11 +102,11 @@ describe('storageUtils - Extended', () => {
       expect(DEFAULT_SETTINGS.padding).toBe(38);
       expect(DEFAULT_SETTINGS.rounded).toBe(20);
       expect(DEFAULT_SETTINGS.shadow).toBe(30);
-      expect(DEFAULT_SETTINGS.watermarkEnabled).toBe(false);
-      expect(DEFAULT_SETTINGS.watermarkText).toBe('Made using achu.app');
+      expect(DEFAULT_SETTINGS.watermarkEnabled).toBe(true);
+      expect(DEFAULT_SETTINGS.watermarkText).toBe('Made with achu · achu.app');
       expect(DEFAULT_SETTINGS.watermarkSize).toBe(20);
-      expect(DEFAULT_SETTINGS.watermarkPosition).toBe('middle');
-      expect(DEFAULT_SETTINGS.watermarkOpacity).toBe(0.45);
+      expect(DEFAULT_SETTINGS.watermarkPosition).toBe('right');
+      expect(DEFAULT_SETTINGS.watermarkOpacity).toBe(0.38);
       expect(DEFAULT_SETTINGS.exportFormat).toBe('png');
       expect(DEFAULT_SETTINGS.jpegQuality).toBe(90);
       expect(DEFAULT_SETTINGS.sidebarPosition).toBe('right');

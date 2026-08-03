@@ -7,10 +7,7 @@ vi.mock('../src/renderer/AppContext', () => ({
   useAppContext: () => mockContext,
 }));
 
-let mockContext: ReturnType<typeof makeFullMockContext> & {
-  helpVisible: boolean;
-  setHelpVisible: ReturnType<typeof vi.fn>;
-};
+let mockContext: ReturnType<typeof makeFullMockContext>;
 
 beforeEach(() => {
   mockContext = {

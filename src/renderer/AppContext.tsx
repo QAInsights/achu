@@ -60,8 +60,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
   const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>(() => getUserDefault('sidebarPosition', 'right'));
   const [secondarySidebarPosition, setSecondarySidebarPosition] = useState<'left' | 'right'>(() => {
-    const primary = getUserDefault('sidebarPosition', 'right');
-    const saved = getUserDefault('secondarySidebarPosition', 'left');
+    const primary = getUserDefault<'left' | 'right'>('sidebarPosition', 'right');
+    const saved = getUserDefault<'left' | 'right'>('secondarySidebarPosition', 'left');
     return saved === primary ? (primary === 'left' ? 'right' : 'left') : saved;
   });
   const [vibePalette, setVibePalette] = useState<VibePalette | null>(null);

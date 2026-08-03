@@ -85,7 +85,7 @@ describe('ContextMenu', () => {
   });
 
   it('positions menu at given coordinates', () => {
-    const { container } = render(<ContextMenu x={200} y={300} {...defaultProps} x={200} y={300} />);
+    const { container } = render(<ContextMenu {...defaultProps} x={200} y={300} />);
     const menu = container.querySelector('.custom-context-menu') as HTMLElement;
     expect(menu).toBeTruthy();
   });

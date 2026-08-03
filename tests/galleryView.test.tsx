@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import GalleryView from '../src/renderer/components/GalleryView';
 
 const mockGalleryCtx = {
   closeGallery: vi.fn(),
-  galleryFolder: '/mock/gallery',
+  galleryFolder: '/mock/gallery' as string | null,
   galleryItems: [] as any[],
   galleryLoading: false,
   galleryError: null as any,
@@ -274,7 +274,7 @@ describe('GalleryView', () => {
       getGalleryThumbnail: vi.fn().mockRejectedValue(new Error('fail')),
     };
     mockGalleryCtx.galleryItems = [makeItem()];
-    const { container } = render(<GalleryView />);
+    render(<GalleryView />);
     await waitFor(() => {
       expect((window as any).snapFrameAPI.getGalleryThumbnail).toHaveBeenCalled();
     });

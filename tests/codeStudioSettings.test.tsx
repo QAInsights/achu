@@ -1,13 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import CodeStudioSettings from '../src/renderer/components/CodeStudioSettings';
+import type { AppContextType } from '../src/renderer/types/appContextTypes';
 import { makeFullMockContext } from './shared';
 
 vi.mock('../src/renderer/AppContext', () => ({
   useAppContext: () => mockContext,
 }));
 
-let mockContext: ReturnType<typeof makeFullMockContext>;
+let mockContext: ReturnType<typeof makeFullMockContext> & Pick<
+  AppContextType,
+  | 'codeStudioLanguage'
+  | 'setCodeStudioLanguage'
+  | 'codeStudioTheme'
+  | 'setCodeStudioTheme'
+  | 'codeStudioFontSize'
+  | 'setCodeStudioFontSize'
+  | 'codeStudioLineNumbers'
+  | 'setCodeStudioLineNumbers'
+  | 'codeStudioShowLanguage'
+  | 'setCodeStudioShowLanguage'
+  | 'codeStudioBreakpoints'
+  | 'setCodeStudioBreakpoints'
+  | 'codeStudioShowBreakpoints'
+  | 'setCodeStudioShowBreakpoints'
+>;
 
 beforeEach(() => {
   mockContext = {

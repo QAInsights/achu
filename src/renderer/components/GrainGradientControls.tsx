@@ -1,6 +1,5 @@
 import { useAppContext } from '../AppContext';
 import {
-  DEFAULT_GRAIN_GRADIENT_PARAMS,
   SHAPE_LABELS,
   SHAPE_OPTIONS,
   type GrainGradientParams,

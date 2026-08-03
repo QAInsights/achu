@@ -79,12 +79,12 @@ vi.mock('../src/main/aiService', () => ({
 import { registerIpcHandlers } from '../src/main/ipc';
 
 function getHandler(channel: string) {
-  const handleCall = mockHandle.mock.calls.find(([ch]: [string]) => ch === channel);
+  const handleCall = mockHandle.mock.calls.find((args) => args[0] === channel);
   return handleCall ? handleCall[1] : null;
 }
 
 function getOnHandler(channel: string) {
-  const onCall = mockOn.mock.calls.find(([ch]: [string]) => ch === channel);
+  const onCall = mockOn.mock.calls.find((args) => args[0] === channel);
   return onCall ? onCall[1] : null;
 }
 
@@ -100,7 +100,7 @@ beforeEach(() => {
 
 describe('registerIpcHandlers', () => {
   it('registers all expected IPC channels', () => {
-    const channels = mockHandle.mock.calls.map(([ch]: [string]) => ch);
+    const channels = mockHandle.mock.calls.map((args) => args[0]);
     expect(channels).toContain('settings:get');
     expect(channels).toContain('settings:set');
     expect(channels).toContain('set-github-token');
@@ -115,7 +115,7 @@ describe('registerIpcHandlers', () => {
     expect(channels).toContain('clipboard:read-image');
     expect(channels).toContain('clipboard:copy-text');
 
-    const onChannels = mockOn.mock.calls.map(([ch]: [string]) => ch);
+    const onChannels = mockOn.mock.calls.map((args) => args[0]);
     expect(onChannels).toContain('theme:changed');
     expect(onChannels).toContain('url:open');
     expect(onChannels).toContain('capture:trigger');

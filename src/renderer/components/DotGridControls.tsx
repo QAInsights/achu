@@ -1,6 +1,5 @@
 import { useAppContext } from '../AppContext';
 import {
-  DEFAULT_DOT_GRID_PARAMS,
   DOT_GRID_SHAPE_LABELS,
   DOT_GRID_SHAPE_OPTIONS,
   type DotGridParams,

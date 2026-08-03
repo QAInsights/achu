@@ -1,6 +1,5 @@
 import { useAppContext } from '../AppContext';
 import {
-  DEFAULT_PULSING_BORDER_PARAMS,
   PULSING_BORDER_ASPECT_RATIO_LABELS,
   PULSING_BORDER_ASPECT_RATIO_OPTIONS,
   type PulsingBorderParams,
