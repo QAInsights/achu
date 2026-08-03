@@ -189,7 +189,7 @@
   flex-shrink: 0;
 }
 
-.install-step-list strong {
+.install-step-list > li > div > strong {
   display: block;
   font-size: 1.02rem;
   margin-bottom: 4px;

@@ -425,7 +425,7 @@
           <button type="button" class="install-tab" role="tab" id="install-tab-linux" data-os="linux"
             aria-controls="install-panel-linux" aria-selected="false" tabindex="-1">
             <span class="install-tab-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 2c.4 1.3.1 2.5-.7 3.4-.9.9-2.1 1.3-3.3 1.1C7.7 5.1 7 3.9 7.1 2.6 8.1 1.3 10.5.7 12.5 2zm-3.9 7.1c.6-.7 1.5-1.1 2.4-1.1.5 0 1 .1 1.4.4l.3.2.3-.2c.5-.3 1.1-.4 1.7-.4.9 0 1.8.4 2.4 1.1 1.3 1.5 1.1 4.1.3 6.3-.5 1.4-1.2 2.5-1.9 2.5-.4 0-.7-.2-1.1-.5l-.4-.3h-1.6l-.4.3c-.4.3-.7.5-1.1.5-.7 0-1.4-1.1-1.9-2.5-.8-2.2-1-4.8.3-6.3zm8.7 4.4c.1-.5.2-1 .2-1.5 0-1.5-.4-2.9-1.1-4 .8.2 1.5.6 2.1 1.2 1.3 1.3 1.9 3.2 1.6 5.1-.2 1.3-.8 2.5-1.7 3.4-.3-.1-.5-.3-.7-.5.3-1.1.5-2.4.6-3.7zM4.9 12c0 .5.1 1 .2 1.5.1 1.3.3 2.6.6 3.7-.2.2-.4.4-.7.5-.9-.9-1.5-2.1-1.7-3.4-.3-1.9.3-3.8 1.6-5.1.6-.6 1.3-1 2.1-1.2-.7 1.1-1.1 2.5-1.1 4zM9.2 20.2c.3.6.8 1 1.4 1.2.3.1.6.1.9.1.4 0 .8-.1 1.1-.3.4-.2.7-.5.9-.9.2.4.5.7.9.9.3.2.7.3 1.1.3.3 0 .6 0 .9-.1.6-.2 1.1-.6 1.4-1.2.1-.2.1-.3 0-.4-.4-.5-1-.8-1.6-1h-5.4c-.6.2-1.2.5-1.6 1-.1.1-.1.2 0 .4z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C10.3 2 9 3.3 9 5c0 .9.4 1.7 1 2.2C8.4 8.4 7 10.8 7 13.5c0 2.2.9 4.2 2.5 5.5.8.6 1.6 1 2.5 1s1.7-.4 2.5-1C16 17.7 17 15.7 17 13.5c0-2.7-1.4-5.1-3-6.3.6-.5 1-1.3 1-2.2 0-1.7-1.3-3-3-3zm-1 3.5c.3 0 .5.2.5.5s-.2.5-.5.5-.5-.2-.5-.5.2-.5.5-.5zm2 0c.3 0 .5.2.5.5s-.2.5-.5.5-.5-.2-.5-.5.2-.5.5-.5z"/></svg>
             </span>
             Linux
           </button>
@@ -449,9 +449,8 @@
                 <li>
                   <span class="install-step-num" aria-hidden="true">2</span>
                   <div>
-                    <strong>If SmartScreen appears, continue</strong>
-                    <p>Windows may say the app is unrecognized because builds are not yet Authenticode-signed. Click
-                      <strong>More info</strong>, then <strong>Run anyway</strong>.</p>
+                    <strong>Bypass SmartScreen</strong>
+                    <p>Windows may say the app is unrecognized because builds are not yet Authenticode-signed. Click <strong>More info</strong>, then <strong>Run anyway</strong>.</p>
                   </div>
                 </li>
                 <li>
@@ -508,21 +507,21 @@
                 <li>
                   <span class="install-step-num" aria-hidden="true">2</span>
                   <div>
-                    <strong>Open once, then choose Done</strong>
+                    <strong>Dismiss the Gatekeeper alert</strong>
                     <p>Gatekeeper may show <em>&quot;achu&quot; Not Opened</em> because the app is not yet notarized.
-                      Click <strong>Done</strong>; do not choose Move to Trash.</p>
+                      Click <strong>Done</strong>, not Move to Trash.</p>
                   </div>
                 </li>
                 <li>
                   <span class="install-step-num" aria-hidden="true">3</span>
                   <div>
-                    <strong>System Settings → Open Anyway</strong>
+                    <strong>Allow achu in System Settings</strong>
                     <p>Go to <strong>System Settings → Privacy &amp; Security</strong>, scroll to Security, and click
                       <strong>Open Anyway</strong> next to the achu message. Authenticate, then open achu again and confirm <strong>Open</strong>.</p>
                   </div>
                 </li>
               </ol>
-              <aside class="install-callout install-callout-info" aria-label="macOS Gatekeeper note">
+              <aside class="install-callout install-callout-warn" aria-label="macOS Gatekeeper note">
                 <div class="install-callout-title">Why macOS blocks first launch</div>
                 <p>achu is not yet signed with an Apple Developer ID. This is the lasting fix on the roadmap.
                   Until then, <strong>Open Anyway</strong> is the reliable path on Sequoia 15+ (right-click → Open alone is often not enough).</p>
@@ -583,7 +582,7 @@
                   </div>
                 </li>
               </ol>
-              <aside class="install-callout install-callout-info" aria-label="Linux note">
+              <aside class="install-callout install-callout-warn" aria-label="Linux note">
                 <div class="install-callout-title">No SmartScreen-style wall</div>
                 <p>Linux typically runs unsigned AppImages without a Gatekeeper dialog. If your distro warns about an untrusted binary, that is expected for open-source downloads from GitHub.</p>
               </aside>

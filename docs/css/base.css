@@ -92,13 +92,14 @@ button {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--surface-2);
+  background: var(--accent);
   border-radius: 4px;
   border: 2px solid var(--bg);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--surface-3);
+  background: var(--accent);
+  filter: brightness(1.1);
 }
 
 /* === BACKGROUND GLOW ORBS === */
