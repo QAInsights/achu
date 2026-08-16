@@ -203,7 +203,13 @@ describe('Preload Script', () => {
   it('startUpdate calls ipcRenderer.invoke with downloadUrl', () => {
     const api = getApi();
     api.startUpdate('https://example.com/update');
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('update:start', 'https://example.com/update');
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('update:start', 'https://example.com/update', undefined);
+  });
+
+  it('startUpdate forwards the expected size for download verification', () => {
+    const api = getApi();
+    api.startUpdate('https://example.com/update', 123456);
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('update:start', 'https://example.com/update', 123456);
   });
 
   it('onUpdateProgress subscribes and returns unsubscribe', () => {

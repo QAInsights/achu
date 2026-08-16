@@ -102,7 +102,7 @@ describe('UpdateChecker component', () => {
 
     fireEvent.click(screen.getByText('Upgrade Now'));
 
-    expect(startUpdate).toHaveBeenCalledWith('https://example.com/achu.exe');
+    expect(startUpdate).toHaveBeenCalledWith('https://example.com/achu.exe', undefined);
     expect(screen.getByText('Downloading update...')).toBeInTheDocument();
 
     act(() => {

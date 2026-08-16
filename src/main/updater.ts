@@ -1,10 +1,98 @@
 import { app, shell, BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as crypto from 'crypto';
 import { Readable } from 'stream';
 import { loadSettings, saveSettings, AppSettings } from './settings';
 
 const isDev = !app.isPackaged;
+
+/**
+ * True when the running build is an NSIS-installed Windows app — the only
+ * Windows distribution electron-updater can service (portable exes and
+ * APPX/Store packages are explicitly excluded).
+ */
+export function isNsisInstall(): boolean {
+  return (
+    process.platform === 'win32' &&
+    !isDev &&
+    !process.env.PORTABLE_EXECUTABLE_FILE &&
+    !(process as any).windowsStore
+  );
+}
+
+// electron-updater is imported lazily: touching autoUpdater in dev/tests
+// (unpackaged app) throws, and the module must never load on other platforms.
+let autoUpdaterInstance: any = null;
+async function getAutoUpdater(): Promise<any> {
+  if (!autoUpdaterInstance) {
+    const { autoUpdater } = await import('electron-updater');
+    autoUpdater.autoDownload = false;
+    autoUpdater.autoInstallOnAppQuit = false;
+    autoUpdaterInstance = autoUpdater;
+  }
+  return autoUpdaterInstance;
+}
+
+let nsisProgressWired = false;
+function wireNsisProgress(autoUpdater: any, getMainWindow: () => BrowserWindow | null): void {
+  if (nsisProgressWired) return;
+  nsisProgressWired = true;
+  autoUpdater.on('download-progress', (p: any) => {
+    const win = getMainWindow();
+    if (win) win.webContents.send('update:progress', Math.round(p?.percent || 0));
+  });
+}
+
+/**
+ * Update check for NSIS installs via electron-updater. electron-updater
+ * verifies sha512 from latest.yml and handles the install natively, so no
+ * custom cache/ETag logic is needed here.
+ */
+async function performNsisUpdateCheck(): Promise<UpdateCheckResult> {
+  const autoUpdater = await getAutoUpdater();
+  const result = await autoUpdater.checkForUpdates();
+  const info = result?.updateInfo;
+  if (!info || !info.version || !isNewerVersion(app.getVersion(), info.version)) {
+    return { available: false };
+  }
+  const notes = typeof info.releaseNotes === 'string' ? info.releaseNotes : '';
+  const size = Array.isArray(info.files) && info.files.length > 0 ? info.files[0].size || 0 : 0;
+  return {
+    available: true,
+    version: info.version,
+    releaseNotes: notes,
+    releaseUrl: RELEASE_PAGE_URL,
+    downloadSize: size,
+  };
+}
+
+/**
+ * Downloads and installs the update for NSIS installs. Returns after the
+ * download completes; quitAndInstall is scheduled by the caller after the
+ * IPC reply is flushed.
+ */
+async function performNsisInstall(getMainWindow: () => BrowserWindow | null): Promise<void> {
+  const autoUpdater = await getAutoUpdater();
+  wireNsisProgress(autoUpdater, getMainWindow);
+  await autoUpdater.downloadUpdate();
+}
+
+function quitAndInstallNsis(): void {
+  try {
+    // isSilent + isForceRunAfter: one-click per-user NSIS installs support
+    // fully silent in-place updates. The instance is always initialized by
+    // performNsisInstall before this is scheduled.
+    if (autoUpdaterInstance) {
+      autoUpdaterInstance.quitAndInstall(true, true);
+      return;
+    }
+    app.quit();
+  } catch (err) {
+    console.error('[Updater] quitAndInstall failed, quitting:', err);
+    app.quit();
+  }
+}
 
 const GITHUB_LATEST_URL = 'https://api.github.com/repos/QAInsights/achu/releases/latest';
 const RELEASE_PAGE_URL = 'https://github.com/QAInsights/achu/releases/latest';
@@ -53,8 +141,8 @@ export function friendlyUpdateError(error: string): string {
   if (/status 5\d\d/.test(error)) {
     return 'The update server is temporarily unavailable. Please try again later.';
   }
-  if (/missing or empty/i.test(error)) {
-    return 'The downloaded update file is incomplete. Please try again or download from the releases page.';
+  if (/missing or empty|incomplete|checksum|corrupt/i.test(error)) {
+    return 'The update download was incomplete or corrupted. Please try again — if it keeps failing, download the update from the releases page.';
   }
   return error || 'An unexpected error occurred during the update.';
 }
@@ -93,13 +181,17 @@ export function selectMacAsset(assets: ReleaseAsset[]): ReleaseAsset | undefined
 
 /**
  * Selects the best Windows release asset from a GitHub release.
- * Filters to .exe (portable) assets and picks the one matching the
- * current architecture. The updater can only replace a portable exe,
- * not an .appx (Store package), so .appx is deliberately excluded.
- * Exported for unit testing.
+ * Filters to portable .exe assets and picks the one matching the current
+ * architecture. NSIS installers (`-Setup-`) are excluded: NSIS installs are
+ * serviced by electron-updater, and this custom path can only replace the
+ * portable exe a user is actually running. .appx (Store packages) are
+ * excluded as well. Exported for unit testing.
  */
 export function selectWindowsAsset(assets: ReleaseAsset[], arch: string): ReleaseAsset | undefined {
-  const exeAssets = assets.filter((a) => a.name.toLowerCase().endsWith('.exe'));
+  const exeAssets = assets.filter((a) => {
+    const name = a.name.toLowerCase();
+    return name.endsWith('.exe') && !name.includes('-setup-');
+  });
   if (exeAssets.length === 0) return undefined;
   // Prefer an exact `-${arch}-` match (e.g. achu-x64-26.6.19.exe)
   let asset = exeAssets.find((a) => a.name.toLowerCase().includes(`-${arch}-`));
@@ -174,6 +266,12 @@ function clearUpdateAvailableCache(): void {
  * Exported so it can be called from both IPC handler and startup auto-check.
  */
 export async function performUpdateCheck(useCache: boolean): Promise<UpdateCheckResult> {
+  // NSIS-installed Windows builds use electron-updater (sha512-verified
+  // downloads, native NSIS install) instead of the custom GitHub flow.
+  if (isNsisInstall()) {
+    return performNsisUpdateCheck();
+  }
+
   const settings = loadSettings();
   const ttl = useCache ? CACHE_TTL_MS : MANUAL_CACHE_TTL_MS;
 
@@ -286,6 +384,7 @@ function persistUpdateCache(settings: AppSettings, result: UpdateCheckResult, et
 
 /**
  * Downloads a file from the given URL to a temp path, reporting progress.
+ * Throws if the connection drops mid-body (received bytes < Content-Length).
  */
 async function downloadWithProgress(
   downloadUrl: string,
@@ -308,21 +407,177 @@ async function downloadWithProgress(
   nodeStream.on('data', (chunk: any) => {
     receivedBytes += chunk.length;
     if (totalBytes > 0) {
-      onProgress(Math.round((receivedBytes / totalBytes) * 100));
+      onProgress(Math.min(100, Math.round((receivedBytes / totalBytes) * 100)));
     }
   });
 
   await new Promise<void>((resolve, reject) => {
     nodeStream.pipe(fileStream);
-    fileStream.on('finish', () => resolve());
+    fileStream.on('close', () => resolve());
     nodeStream.on('error', (err: Error) => reject(err));
     fileStream.on('error', (err: Error) => reject(err));
   });
 
-  // Verify file was written and is non-empty
   if (!fs.existsSync(tempPath) || fs.statSync(tempPath).size === 0) {
     throw new Error('Downloaded update file is missing or empty.');
   }
+  // A silently truncated body (CDN reset, proxy cut-off) must not pass:
+  // it previously reached the installer and corrupted the update.
+  if (totalBytes > 0 && receivedBytes !== totalBytes) {
+    throw new Error(
+      `Downloaded update is incomplete (${receivedBytes} of ${totalBytes} bytes).`
+    );
+  }
+}
+
+/**
+ * Streams a file through SHA-512 and returns the base64 digest — the same
+ * format electron-builder publishes in latest-mac.yml / latest.yml.
+ */
+function sha512FileBase64(filePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('sha512');
+    const stream = fs.createReadStream(filePath);
+    stream.on('error', reject);
+    hash.on('error', reject);
+    stream.pipe(hash);
+    hash.on('finish', () => resolve(hash.digest('base64')));
+  });
+}
+
+/**
+ * Verifies a downloaded update artifact before it is allowed anywhere near
+ * the install step. Checks, in order: non-empty, exact byte size (when the
+ * expected size is known), PE magic for Windows executables, and SHA-512
+ * (when a checksum was published with the release).
+ */
+export async function verifyDownloadedFile(
+  tempPath: string,
+  expectedSize?: number,
+  expectedSha512?: string
+): Promise<void> {
+  if (!fs.existsSync(tempPath)) {
+    throw new Error('Downloaded update file is missing.');
+  }
+  const size = fs.statSync(tempPath).size;
+  if (size === 0) {
+    throw new Error('Downloaded update file is empty.');
+  }
+  if (expectedSize && expectedSize > 0 && size !== expectedSize) {
+    throw new Error(
+      `Downloaded update is incomplete (${size} of ${expectedSize} bytes).`
+    );
+  }
+  if (tempPath.toLowerCase().endsWith('.exe')) {
+    const fd = fs.openSync(tempPath, 'r');
+    try {
+      const header = Buffer.alloc(2);
+      fs.readSync(fd, header, 0, 2, 0);
+      if (header.toString('latin1') !== 'MZ') {
+        throw new Error('Downloaded update is corrupt (not a valid executable).');
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
+  }
+  if (expectedSha512) {
+    const actual = await sha512FileBase64(tempPath);
+    if (actual !== expectedSha512) {
+      throw new Error('Downloaded update failed checksum verification.');
+    }
+  }
+}
+
+/**
+ * Extracts the sha512 (base64) and size for a given artifact filename from
+ * an electron-builder update manifest (latest-mac.yml / latest.yml).
+ * The manifest is a small flat YAML doc; a full parser would be overkill.
+ * Exported for unit testing.
+ */
+export function parseSha512FromUpdateYml(
+  yml: string,
+  filename: string
+): { sha512?: string; size?: number } {
+  if (!yml || !filename) return {};
+  const lines = yml.split(/\r?\n/);
+  let inEntry = false;
+  let sha512: string | undefined;
+  let size: number | undefined;
+
+  const consider = (key: string, value: string) => {
+    if (key === 'url' || key === 'path') {
+      inEntry = value === filename;
+    } else if (inEntry && key === 'sha512') {
+      sha512 = value;
+    } else if (inEntry && key === 'size') {
+      const n = Number(value);
+      if (Number.isFinite(n)) size = n;
+    }
+  };
+
+  for (const line of lines) {
+    const m = line.match(/^\s*-?\s*(url|path|sha512|size):\s*('?)(.+?)\2\s*$/);
+    if (m) consider(m[1], m[3]);
+  }
+  return { sha512, size };
+}
+
+/**
+ * Best-effort lookup of the published SHA-512 for a release asset, from the
+ * electron-builder manifest sitting next to it on the same release
+ * (latest-mac.yml for macOS, latest.yml for Windows). Returns undefined
+ * when no manifest or no matching entry exists — callers then fall back to
+ * strict size verification only.
+ */
+async function fetchPublishedSha512(downloadUrl: string): Promise<string | undefined> {
+  try {
+    const manifestName = process.platform === 'darwin' ? 'latest-mac.yml' : 'latest.yml';
+    const manifestUrl = downloadUrl.replace(/[^/]+$/, manifestName);
+    const response = await fetch(manifestUrl, { headers: { 'User-Agent': 'achu-updater' } });
+    if (!response.ok) return undefined;
+    const yml = await response.text();
+    const filename = decodeURIComponent(downloadUrl.split('/').pop() || '');
+    return parseSha512FromUpdateYml(yml, filename).sha512;
+  } catch (err) {
+    console.warn('[Updater] Could not fetch published checksum:', err);
+    return undefined;
+  }
+}
+
+const MAX_DOWNLOAD_ATTEMPTS = 3;
+
+/**
+ * Downloads an update artifact with integrity verification and retries.
+ * A failed verification deletes the partial file and retries from scratch;
+ * a corrupt download must never reach the install step (previously a
+ * truncated DMG failed hdiutil with "image data corrupted", and a truncated
+ * Windows portable exe was copied over the working installation).
+ */
+async function downloadVerified(
+  downloadUrl: string,
+  tempPath: string,
+  expectedSize: number | undefined,
+  onProgress: (percent: number) => void
+): Promise<void> {
+  const expectedSha512 = await fetchPublishedSha512(downloadUrl);
+
+  let lastError: Error | undefined;
+  for (let attempt = 1; attempt <= MAX_DOWNLOAD_ATTEMPTS; attempt++) {
+    try {
+      await downloadWithProgress(downloadUrl, tempPath, onProgress);
+      await verifyDownloadedFile(tempPath, expectedSize, expectedSha512);
+      return;
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[Updater] Download attempt ${attempt}/${MAX_DOWNLOAD_ATTEMPTS} failed:`, err?.message || err);
+      try { fs.unlinkSync(tempPath); } catch { /* may not exist */ }
+      if (attempt < MAX_DOWNLOAD_ATTEMPTS) {
+        onProgress(0);
+        await new Promise((r) => setTimeout(r, 1500 * attempt));
+      }
+    }
+  }
+  throw lastError || new Error('Update download failed.');
 }
 
 // ─── Windows: replace running exe via batch script ───
@@ -353,29 +608,45 @@ export function buildWindowsUpdateScript(tempPath: string, execPath: string, log
   const execPs = execPath.replace(/'/g, "''");
 
   // copy /y then del is more reliable than move when AV briefly locks the file.
-  // Retries after app.quit() releases the running image.
+  // Retries after app.quit() releases the running image. The original exe is
+  // backed up first and restored if the new copy fails or comes out with the
+  // wrong size, so a failed update can never leave the user without a
+  // working app.
   return `@echo off
 setlocal EnableExtensions
 set "LOGFILE=${logQ}"
+set "BAKFILE=${execQ}.bak"
 echo [%DATE% %TIME%] Starting updater >> "%LOGFILE%"
 echo [%DATE% %TIME%] tempPath=${tempQ} >> "%LOGFILE%"
 echo [%DATE% %TIME%] execPath=${execQ} >> "%LOGFILE%"
 echo [%DATE% %TIME%] pid=%~1 >> "%LOGFILE%"
+if exist "%BAKFILE%" del /f /q "%BAKFILE%" >nul 2>&1
+copy /y "${execQ}" "%BAKFILE%" >nul 2>&1
 set /a count=0
 :wait
 powershell -NoProfile -Command "Start-Sleep -Seconds 2"
 echo [%DATE% %TIME%] Attempt %count%: copy file >> "%LOGFILE%"
 copy /y "${tempQ}" "${execQ}" >nul
-if not errorlevel 1 goto success
+if errorlevel 1 goto copyfailed
+for %%I in ("${tempQ}") do set "NEWSZ=%%~zI"
+for %%I in ("${execQ}") do set "OLDSZ=%%~zI"
+if "%NEWSZ%"=="%OLDSZ%" goto success
+echo [%DATE% %TIME%] Size mismatch after copy (%OLDSZ% != %NEWSZ%), retrying >> "%LOGFILE%"
+goto retry
+:copyfailed
 echo [%DATE% %TIME%] Copy failed (errorlevel=%ERRORLEVEL%), retrying >> "%LOGFILE%"
+:retry
 set /a count+=1
 if %count% LSS 30 goto wait
-echo [%DATE% %TIME%] All retries exhausted, opening browser fallback >> "%LOGFILE%"
+echo [%DATE% %TIME%] All retries exhausted, restoring backup >> "%LOGFILE%"
+if exist "%BAKFILE%" copy /y "%BAKFILE%" "${execQ}" >nul 2>&1
+echo [%DATE% %TIME%] Opening browser fallback >> "%LOGFILE%"
 start "" "${releaseQ}"
 goto done
 :success
 echo [%DATE% %TIME%] Copy succeeded >> "%LOGFILE%"
 del /f /q "${tempQ}" >nul 2>&1
+if exist "%BAKFILE%" del /f /q "%BAKFILE%" >nul 2>&1
 powershell -NoProfile -Command "try { Unblock-File -LiteralPath '${execPs}' } catch { }"
 echo [%DATE% %TIME%] Unblocked file, waiting for security scan >> "%LOGFILE%"
 powershell -NoProfile -Command "Start-Sleep -Seconds 2"
@@ -739,8 +1010,33 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
   });
 
   // Start download and rollout update
-  ipcMain.handle('update:start', async (_event: any, downloadUrl: string) => {
+  ipcMain.handle('update:start', async (_event: any, downloadUrl?: string | null, expectedSize?: number) => {
     try {
+      // Rollout phase - platform specific
+      if (isDev) {
+        console.log('[Updater] Dev mode: simulation completed successfully');
+        return { success: true, simulated: true, relaunching: false };
+      }
+
+      // NSIS-installed Windows builds: electron-updater downloads (sha512
+      // verified against latest.yml) and installs natively.
+      if (isNsisInstall()) {
+        await performNsisInstall(getMainWindow);
+        setTimeout(() => quitAndInstallNsis(), 800);
+        return { success: true, relaunching: true };
+      }
+
+      // Microsoft Store (APPX) builds cannot replace files in-place; the
+      // Store manages their updates. Point the user at the release page.
+      if (process.platform === 'win32' && (process as any).windowsStore) {
+        shell.openExternal(RELEASE_PAGE_URL);
+        return {
+          success: false,
+          manualFallback: true,
+          error: 'This build was installed from the Microsoft Store. Updates are delivered through the Store; the release page was opened as a fallback.',
+        };
+      }
+
       if (!downloadUrl) {
         throw new Error('No download URL provided');
       }
@@ -749,17 +1045,11 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
       const tempPath = path.join(app.getPath('temp'), filename || 'achu-update');
 
       const mainWindow = getMainWindow();
-      await downloadWithProgress(downloadUrl, tempPath, (progress: number) => {
+      await downloadVerified(downloadUrl, tempPath, expectedSize, (progress: number) => {
         if (mainWindow) {
           mainWindow.webContents.send('update:progress', progress);
         }
       });
-
-      // Rollout phase - platform specific
-      if (isDev) {
-        console.log('[Updater] Dev mode: simulation completed successfully');
-        return { success: true, simulated: true, relaunching: false };
-      }
 
       if (process.platform === 'win32') {
         // Spawn detached batch script (needs app to exit so the exe unlocks),

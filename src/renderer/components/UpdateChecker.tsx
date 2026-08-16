@@ -74,11 +74,12 @@ export default function UpdateChecker() {
   };
 
   const handleStartUpdate = async () => {
-    if (!downloadUrl) return;
+    // downloadUrl may be null for NSIS-installed Windows builds, where the
+    // main process' electron-updater fetches the package itself.
     setUpdateStatus('downloading');
     setDownloadProgress(0);
     try {
-      const result = await window.snapFrameAPI.startUpdate(downloadUrl);
+      const result = await window.snapFrameAPI.startUpdate(downloadUrl, downloadSize || undefined);
       if (result && result.simulated) {
         setSimulated(true);
         setUpdateStatus('success');

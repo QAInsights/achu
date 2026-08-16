@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockHandle = vi.fn();
 vi.mock('electron', () => ({
@@ -37,6 +37,17 @@ vi.mock('../src/main/settings', () => ({
   getDefaultGalleryFolder: () => '/mocked/home/achu-screenshots',
 }));
 
+// electron-updater is only exercised by the NSIS-install code path
+const mockAutoUpdater = {
+  autoDownload: true,
+  autoInstallOnAppQuit: true,
+  on: vi.fn(),
+  checkForUpdates: vi.fn(),
+  downloadUpdate: vi.fn(),
+  quitAndInstall: vi.fn(),
+};
+vi.mock('electron-updater', () => ({ autoUpdater: mockAutoUpdater }));
+
 import { registerUpdaterHandlers, isNewerVersion, friendlyUpdateError } from '../src/main/updater';
 
 function getHandler(channel: string) {
@@ -61,7 +72,14 @@ const mockMainWindow = { webContents: { send: vi.fn() } };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Force the custom (portable) update path on win32: these tests exercise
+  // the GitHub-API flow, not the NSIS electron-updater path.
+  process.env.PORTABLE_EXECUTABLE_FILE = 'C:\\mocked\\achu.exe';
   registerUpdaterHandlers({ handle: mockHandle } as any, () => mockMainWindow as any);
+});
+
+afterEach(() => {
+  delete process.env.PORTABLE_EXECUTABLE_FILE;
 });
 
 describe('Updater handlers (update:check)', () => {
@@ -359,6 +377,59 @@ describe('Updater handlers (update:start)', () => {
   it('throws when no download URL provided', async () => {
     const handler = getHandler('update:start');
     await expect(handler({}, '')).rejects.toThrow('No download URL provided');
+  });
+});
+
+describe('NSIS install path (electron-updater)', () => {
+  const asNsisInstall = () => {
+    // NSIS installs are packaged, not portable, not Store — so remove the
+    // portable env marker set in beforeEach and pretend to be win32.
+    delete process.env.PORTABLE_EXECUTABLE_FILE;
+    const origPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+    return () => Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
+  };
+
+  it('update:check uses electron-updater and reports a newer version', async () => {
+    const restore = asNsisInstall();
+    try {
+      mockAutoUpdater.checkForUpdates.mockResolvedValue({
+        updateInfo: { version: '26.9.0', releaseNotes: 'notes', files: [{ size: 123 }] },
+      });
+      const handler = getHandler('update:check');
+      const result = await handler({}, true);
+      expect(mockAutoUpdater.checkForUpdates).toHaveBeenCalled();
+      expect(result.available).toBe(true);
+      expect(result.version).toBe('26.9.0');
+      expect(result.downloadSize).toBe(123);
+    } finally {
+      restore();
+    }
+  });
+
+  it('update:check returns available:false when electron-updater finds nothing newer', async () => {
+    const restore = asNsisInstall();
+    try {
+      mockAutoUpdater.checkForUpdates.mockResolvedValue(null);
+      const handler = getHandler('update:check');
+      const result = await handler({}, true);
+      expect(result.available).toBe(false);
+    } finally {
+      restore();
+    }
+  });
+
+  it('update:start downloads via electron-updater without needing a downloadUrl', async () => {
+    const restore = asNsisInstall();
+    try {
+      mockAutoUpdater.downloadUpdate.mockResolvedValue([]);
+      const handler = getHandler('update:start');
+      const result = await handler({}, null);
+      expect(mockAutoUpdater.downloadUpdate).toHaveBeenCalled();
+      expect(result).toEqual({ success: true, relaunching: true });
+    } finally {
+      restore();
+    }
   });
 });
 

@@ -52,7 +52,7 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
 
   // Update check APIs
   checkForUpdates: (force?: boolean) => ipcRenderer.invoke('update:check', force),
-  startUpdate: (downloadUrl: string) => ipcRenderer.invoke('update:start', downloadUrl),
+  startUpdate: (downloadUrl: string | null, expectedSize?: number) => ipcRenderer.invoke('update:start', downloadUrl, expectedSize),
   onUpdateProgress: (callback: (progress: number) => void) => {
     const subscription = (_event: any, progress: number) => callback(progress);
     ipcRenderer.on('update:progress', subscription);

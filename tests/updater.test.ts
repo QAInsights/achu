@@ -13,6 +13,11 @@ vi.mock('electron', () => ({
   BrowserWindow: class {},
 }));
 
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import * as crypto from 'crypto';
+
 import {
   isNewerVersion,
   registerUpdaterHandlers,
@@ -22,6 +27,8 @@ import {
   parseHdiutilMountPoint,
   resolveWindowsUpdateTarget,
   buildWindowsUpdateScript,
+  parseSha512FromUpdateYml,
+  verifyDownloadedFile,
 } from '../src/main/updater';
 
 describe('Updater isNewerVersion helper', () => {
@@ -163,6 +170,24 @@ describe('selectWindowsAsset', () => {
     ];
     expect(selectWindowsAsset(assets, 'x64')).toBeUndefined();
   });
+
+  it('excludes NSIS -Setup- installers (serviced by electron-updater, not the portable replace path)', () => {
+    const assets = [
+      { name: 'achu-Setup-x64-26.8.0.exe', browser_download_url: 'https://dl/setup-x64.exe' },
+      { name: 'achu-Setup-arm64-26.8.0.exe', browser_download_url: 'https://dl/setup-arm64.exe' },
+      { name: 'achu-x64-26.8.0.exe', browser_download_url: 'https://dl/x64.exe' },
+      { name: 'achu-arm64-26.8.0.exe', browser_download_url: 'https://dl/arm64.exe' },
+    ];
+    expect(selectWindowsAsset(assets, 'x64')?.name).toBe('achu-x64-26.8.0.exe');
+    expect(selectWindowsAsset(assets, 'arm64')?.name).toBe('achu-arm64-26.8.0.exe');
+  });
+
+  it('returns undefined when only NSIS setup exes are present', () => {
+    const assets = [
+      { name: 'achu-Setup-x64-26.8.0.exe', browser_download_url: 'https://dl/setup-x64.exe' },
+    ];
+    expect(selectWindowsAsset(assets, 'x64')).toBeUndefined();
+  });
 });
 
 describe('parseHdiutilMountPoint (macOS DMG mount table)', () => {
@@ -239,6 +264,24 @@ describe('buildWindowsUpdateScript', () => {
     );
 
     expect(script).toContain("Start-Process -FilePath 'C:\\Users\\O''Brien\\achu.exe'");
+  });
+
+  it('backs up the original exe and restores it when retries are exhausted', () => {
+    const script = buildWindowsUpdateScript(
+      'C:\\Temp\\achu update.exe',
+      'C:\\Users\\me\\Downloads\\achu.exe',
+      'C:\\Temp\\achu-update.log'
+    );
+
+    // Backup of the running exe before replacing it
+    expect(script).toContain('set "BAKFILE=C:\\Users\\me\\Downloads\\achu.exe.bak"');
+    expect(script).toContain('copy /y "C:\\Users\\me\\Downloads\\achu.exe" "%BAKFILE%"');
+    // Restore on failure so the user is never left without a working app
+    expect(script).toContain('if exist "%BAKFILE%" copy /y "%BAKFILE%" "C:\\Users\\me\\Downloads\\achu.exe"');
+    // Post-copy size verification (guards against partial copies)
+    expect(script).toContain('if "%NEWSZ%"=="%OLDSZ%" goto success');
+    // Backup cleaned up on success
+    expect(script).toContain('if exist "%BAKFILE%" del /f /q "%BAKFILE%"');
   });
 });
 
@@ -341,5 +384,93 @@ describe('issue #8 regression — real v26.6.19 release asset order', () => {
   it('Linux arm64: picks arm64 AppImage, not arm64 deb', () => {
     const picked = selectLinuxAsset(realAssets, 'arm64');
     expect(picked?.name).toBe('achu-26.6.19-arm64.AppImage');
+  });
+});
+
+describe('parseSha512FromUpdateYml', () => {
+  // Matches the structure electron-builder emits for macOS releases
+  const latestMacYml = [
+    'version: 26.8.0',
+    'files:',
+    '  - url: achu-26.8.0-universal-mac.zip',
+    '    sha512: ZmFrZV96aXAtYzI1Ng==',
+    '    size: 111111111',
+    '  - url: achu-26.8.0-universal.dmg',
+    '    sha512: RG1nU2hhNTEyQmFzZTY0',
+    '    size: 222327129',
+    "path: achu-26.8.0-universal-mac.zip",
+    'sha512: ZmFrZV96aXAtYzI1Ng==',
+    "releaseDate: '2026-08-03T03:36:57.000Z'",
+  ].join('\n');
+
+  it('extracts sha512 and size for the matching file entry', () => {
+    const dmg = parseSha512FromUpdateYml(latestMacYml, 'achu-26.8.0-universal.dmg');
+    expect(dmg.sha512).toBe('RG1nU2hhNTEyQmFzZTY0');
+    expect(dmg.size).toBe(222327129);
+
+    const zip = parseSha512FromUpdateYml(latestMacYml, 'achu-26.8.0-universal-mac.zip');
+    expect(zip.sha512).toBe('ZmFrZV96aXAtYzI1Ng==');
+    expect(zip.size).toBe(111111111);
+  });
+
+  it('falls back to top-level path entry when the filename matches it', () => {
+    const minimal = ['version: 26.8.0', 'path: achu-26.8.0.exe', 'sha512: dG9wTGV2ZWxTaGE=', 'size: 42'].join('\n');
+    expect(parseSha512FromUpdateYml(minimal, 'achu-26.8.0.exe').sha512).toBe('dG9wTGV2ZWxTaGE=');
+  });
+
+  it('returns empty when the filename is not in the manifest', () => {
+    expect(parseSha512FromUpdateYml(latestMacYml, 'achu-x64-26.8.0.exe')).toEqual({});
+  });
+
+  it('handles empty input', () => {
+    expect(parseSha512FromUpdateYml('', 'x.dmg')).toEqual({});
+    expect(parseSha512FromUpdateYml(latestMacYml, '')).toEqual({});
+  });
+});
+
+describe('verifyDownloadedFile (issue #11 — truncated downloads must never install)', () => {
+  const tmpFile = (name: string, content: Buffer | string) => {
+    const p = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'achu-test-')), name);
+    fs.writeFileSync(p, content);
+    return p;
+  };
+
+  it('accepts a file whose size matches the expected size', async () => {
+    const p = tmpFile('update.dmg', Buffer.alloc(1024, 1));
+    await expect(verifyDownloadedFile(p, 1024)).resolves.toBeUndefined();
+  });
+
+  it('rejects a truncated file (size mismatch)', async () => {
+    const p = tmpFile('update.dmg', Buffer.alloc(512, 1));
+    await expect(verifyDownloadedFile(p, 1024)).rejects.toThrow(/incomplete/);
+  });
+
+  it('rejects an empty file', async () => {
+    const p = tmpFile('update.dmg', Buffer.alloc(0));
+    await expect(verifyDownloadedFile(p)).rejects.toThrow(/empty/);
+  });
+
+  it('rejects a missing file', async () => {
+    await expect(verifyDownloadedFile(path.join(os.tmpdir(), 'does-not-exist-achu.dmg'))).rejects.toThrow(/missing/);
+  });
+
+  it('rejects a corrupt .exe without the MZ header', async () => {
+    const p = tmpFile('update.exe', Buffer.from('NOT_A_PE_FILE.....'));
+    await expect(verifyDownloadedFile(p)).rejects.toThrow(/corrupt/);
+  });
+
+  it('accepts a valid .exe (MZ header) with matching size', async () => {
+    const p = tmpFile('update.exe', Buffer.concat([Buffer.from('MZ'), Buffer.alloc(998)]));
+    await expect(verifyDownloadedFile(p, 1000)).resolves.toBeUndefined();
+  });
+
+  it('verifies sha512 (base64) when a checksum is published', async () => {
+    const content = Buffer.alloc(2048, 7);
+    const p = tmpFile('update.dmg', content);
+    const good = crypto.createHash('sha512').update(content).digest('base64');
+    await expect(verifyDownloadedFile(p, 2048, good)).resolves.toBeUndefined();
+
+    const bad = crypto.createHash('sha512').update(Buffer.from('tampered')).digest('base64');
+    await expect(verifyDownloadedFile(p, 2048, bad)).rejects.toThrow(/checksum/);
   });
 });
