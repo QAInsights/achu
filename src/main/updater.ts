@@ -606,14 +606,22 @@ export function buildWindowsUpdateScript(tempPath: string, execPath: string, log
   const releaseQ = q(RELEASE_PAGE_URL);
   // PowerShell path arguments use single quotes; escape embedded single quotes
   const execPs = execPath.replace(/'/g, "''");
+  const execDirPs = path.win32.dirname(execPath).replace(/'/g, "''");
 
   // copy /y then del is more reliable than move when AV briefly locks the file.
   // Retries after app.quit() releases the running image. The original exe is
   // backed up first and restored if the new copy fails or comes out with the
   // wrong size, so a failed update can never leave the user without a
   // working app.
+  //
+  // CWD handling matters: the portable wrapper runs the app from a temp
+  // extraction dir and deletes it on exit. If this script kept that deleted
+  // dir as its working directory, the relaunched process would be created
+  // with an invalid CWD and fail to start — so we anchor to %TEMP% and give
+  // Start-Process an explicit -WorkingDirectory.
   return `@echo off
 setlocal EnableExtensions
+cd /d "%TEMP%"
 set "LOGFILE=${logQ}"
 set "BAKFILE=${execQ}.bak"
 echo [%DATE% %TIME%] Starting updater >> "%LOGFILE%"
@@ -651,7 +659,7 @@ powershell -NoProfile -Command "try { Unblock-File -LiteralPath '${execPs}' } ca
 echo [%DATE% %TIME%] Unblocked file, waiting for security scan >> "%LOGFILE%"
 powershell -NoProfile -Command "Start-Sleep -Seconds 2"
 echo [%DATE% %TIME%] Launching >> "%LOGFILE%"
-powershell -NoProfile -Command "Start-Process -FilePath '${execPs}'"
+powershell -NoProfile -Command "Start-Process -FilePath '${execPs}' -WorkingDirectory '${execDirPs}'"
 if errorlevel 1 goto launchfailed
 echo [%DATE% %TIME%] Launch command sent >> "%LOGFILE%"
 goto done
@@ -678,18 +686,17 @@ function performWindowsUpdate(tempPath: string): void {
 
   fs.writeFileSync(batPath, buildWindowsUpdateScript(tempPath, execPath, logPath), 'utf-8');
 
-  // Use VBS to run the batch script hidden (no console window)
-  const vbsPath = path.join(app.getPath('temp'), 'achu-launcher.vbs');
-  const vbsContent =
-    'Set oShell = CreateObject("WScript.Shell")\r\n' +
-    'oShell.Run "cmd.exe /c " & Chr(34) & WScript.arguments(0) & Chr(34), 0, False\r\n';
-  fs.writeFileSync(vbsPath, vbsContent, 'utf-8');
-
+  // Spawn the batch directly (no VBS middleman — script interpreters launched
+  // from %TEMP% by an unsigned process are a classic AV/Defender block
+  // pattern). windowsHide keeps the console hidden. cwd is pinned to the real
+  // temp dir so the script never inherits the portable wrapper's extraction
+  // dir, which is deleted when the app exits.
   const { spawn } = require('child_process');
-  const child = spawn('wscript.exe', ['/nologo', vbsPath, batPath], {
+  const child = spawn('cmd.exe', ['/d', '/c', batPath], {
     detached: true,
     stdio: 'ignore',
     windowsHide: true,
+    cwd: app.getPath('temp'),
   });
   child.unref();
   clearUpdateAvailableCache();

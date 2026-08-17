@@ -256,6 +256,19 @@ describe('buildWindowsUpdateScript', () => {
     expect(script).not.toContain('Start-Process -LiteralPath');
   });
 
+  it('anchors CWD to %TEMP% and relaunches with an explicit working directory (portable wrapper deletes its extraction dir on exit)', () => {
+    const script = buildWindowsUpdateScript(
+      'C:\\Temp\\achu update.exe',
+      'C:\\Users\\me\\Downloads\\achu.exe',
+      'C:\\Temp\\achu-update.log'
+    );
+
+    expect(script).toContain('cd /d "%TEMP%"');
+    expect(script).toContain(
+      "Start-Process -FilePath 'C:\\Users\\me\\Downloads\\achu.exe' -WorkingDirectory 'C:\\Users\\me\\Downloads'"
+    );
+  });
+
   it('escapes apostrophes in paths passed to PowerShell', () => {
     const script = buildWindowsUpdateScript(
       "C:\\Users\\O'Brien\\achu update.exe",
@@ -264,6 +277,7 @@ describe('buildWindowsUpdateScript', () => {
     );
 
     expect(script).toContain("Start-Process -FilePath 'C:\\Users\\O''Brien\\achu.exe'");
+    expect(script).toContain("-WorkingDirectory 'C:\\Users\\O''Brien'");
   });
 
   it('backs up the original exe and restores it when retries are exhausted', () => {
