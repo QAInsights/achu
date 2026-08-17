@@ -78,7 +78,28 @@ async function performNsisInstall(getMainWindow: () => BrowserWindow | null): Pr
   await autoUpdater.downloadUpdate();
 }
 
+/**
+ * Quits the app for an update install. app.quit() is graceful — and can hang
+ * when native worker threads (OCR, image processing) outlive the window,
+ * leaving a dangling process that keeps the exe locked (blocking the batch
+ * copy) and blocks/confuses the relaunched instance. A hard-exit backstop
+ * guarantees the process dies shortly after the IPC reply is flushed.
+ */
+function quitForUpdate(): void {
+  setTimeout(() => {
+    app.quit();
+    setTimeout(() => {
+      try { app.exit(0); } catch { /* process already gone */ }
+    }, 2000);
+  }, 500);
+}
+
 function quitAndInstallNsis(): void {
+  // Backstop: if quitAndInstall's internal app.quit() hangs on a dangling
+  // worker, force the process down so the NSIS installer can proceed.
+  setTimeout(() => {
+    try { app.exit(0); } catch { /* process already gone */ }
+  }, 5000);
   try {
     // isSilent + isForceRunAfter: one-click per-user NSIS installs support
     // fully silent in-place updates. The instance is always initialized by
@@ -630,9 +651,14 @@ echo [%DATE% %TIME%] execPath=${execQ} >> "%LOGFILE%"
 echo [%DATE% %TIME%] pid=%~1 >> "%LOGFILE%"
 if exist "%BAKFILE%" del /f /q "%BAKFILE%" >nul 2>&1
 copy /y "${execQ}" "%BAKFILE%" >nul 2>&1
+for %%F in ("${execQ}") do set "EXENAME=%%~nxF"
 set /a count=0
 :wait
 powershell -NoProfile -Command "Start-Sleep -Seconds 2"
+rem Kill dangling achu processes: a graceful quit can hang on native worker
+rem threads, and the wrapper process then keeps the exe locked forever.
+taskkill /f /im "achu.exe" >nul 2>&1
+taskkill /f /im "%EXENAME%" >nul 2>&1
 echo [%DATE% %TIME%] Attempt %count%: copy file >> "%LOGFILE%"
 copy /y "${tempQ}" "${execQ}" >nul
 if errorlevel 1 goto copyfailed
@@ -1062,7 +1088,7 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
         // Spawn detached batch script (needs app to exit so the exe unlocks),
         // return IPC reply, then quit so the reply is not dropped.
         performWindowsUpdate(tempPath);
-        setTimeout(() => app.quit(), 500);
+        quitForUpdate();
         return { success: true, relaunching: true };
       }
 
@@ -1075,7 +1101,7 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
             error: result.error || 'macOS auto-install failed. Opened the release page.',
           };
         }
-        setTimeout(() => app.quit(), 500);
+        quitForUpdate();
         return { success: true, relaunching: true };
       }
 
@@ -1088,7 +1114,7 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
           error: result.error || 'Linux auto-install failed. Opened the package/file.',
         };
       }
-      setTimeout(() => app.quit(), 500);
+      quitForUpdate();
       return { success: true, relaunching: true };
     } catch (error: any) {
       console.error('[Updater] Update installation failed:', error);

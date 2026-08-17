@@ -297,6 +297,21 @@ describe('buildWindowsUpdateScript', () => {
     // Backup cleaned up on success
     expect(script).toContain('if exist "%BAKFILE%" del /f /q "%BAKFILE%"');
   });
+
+  it('kills dangling achu processes before copying (graceful quit can hang on native workers)', () => {
+    const script = buildWindowsUpdateScript(
+      'C:\\Temp\\achu update.exe',
+      'C:\\Users\\me\\Downloads\\achu-x64-26.8.1.exe',
+      'C:\\Temp\\achu-update.log'
+    );
+
+    // Inner extracted process name + the wrapper image name derived from the exe path
+    expect(script).toContain('taskkill /f /im "achu.exe"');
+    expect(script).toContain('for %%F in ("C:\\Users\\me\\Downloads\\achu-x64-26.8.1.exe") do set "EXENAME=%%~nxF"');
+    expect(script).toContain('taskkill /f /im "%EXENAME%"');
+    // Kills happen before the copy attempt, never after (would kill the relaunched app)
+    expect(script.indexOf('taskkill /f /im "%EXENAME%"')).toBeLessThan(script.indexOf(':success'));
+  });
 });
 
 describe('selectLinuxAsset', () => {
