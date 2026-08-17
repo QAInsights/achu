@@ -56,7 +56,7 @@ async function performNsisUpdateCheck(): Promise<UpdateCheckResult> {
   if (!info || !info.version || !isNewerVersion(app.getVersion(), info.version)) {
     return { available: false };
   }
-  const notes = typeof info.releaseNotes === 'string' ? info.releaseNotes : '';
+  const notes = typeof info.releaseNotes === 'string' ? sanitizeReleaseNotes(info.releaseNotes) : '';
   const size = Array.isArray(info.files) && info.files.length > 0 ? info.files[0].size || 0 : 0;
   return {
     available: true,
@@ -144,6 +144,35 @@ export function isNewerVersion(current: string, latest: string): boolean {
     if (l < c) return false;
   }
   return false;
+}
+
+/**
+ * Converts release notes to plain text for the update dialog. GitHub's
+ * auto-generated release notes can contain HTML (e.g. the Full Changelog
+ * footer), which would otherwise render as literal tags in the UI.
+ * Exported for unit testing.
+ */
+export function sanitizeReleaseNotes(input: string): string {
+  if (!input) return '';
+  let text = input;
+  // Links: keep the label, drop the markup
+  text = text.replace(/<a\b[^>]*>(.*?)<\/a>/gis, '$1');
+  // List items and block-level tags become line breaks
+  text = text.replace(/<li\b[^>]*>/gi, '• ');
+  text = text.replace(/<\/(p|div|li|h[1-6]|ul|ol|blockquote|pre)>/gi, '\n');
+  text = text.replace(/<(br|hr)\b[^>]*\/?>/gi, '\n');
+  // Strip any remaining tags
+  text = text.replace(/<[^>]+>/g, '');
+  // Decode common HTML entities
+  text = text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'");
+  // Tidy whitespace
+  text = text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n');
+  return text.trim();
 }
 
 /**
@@ -378,7 +407,7 @@ export async function performUpdateCheck(useCache: boolean): Promise<UpdateCheck
   const result: UpdateCheckResult = {
     available: true,
     version: latestVersion.replace(/^v/, ''),
-    releaseNotes: data.body || '',
+    releaseNotes: sanitizeReleaseNotes(data.body || ''),
     downloadUrl,
     releaseUrl: data.html_url || RELEASE_PAGE_URL,
     downloadSize,

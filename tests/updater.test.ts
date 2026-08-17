@@ -29,6 +29,7 @@ import {
   buildWindowsUpdateScript,
   parseSha512FromUpdateYml,
   verifyDownloadedFile,
+  sanitizeReleaseNotes,
 } from '../src/main/updater';
 
 describe('Updater isNewerVersion helper', () => {
@@ -454,6 +455,40 @@ describe('parseSha512FromUpdateYml', () => {
   it('handles empty input', () => {
     expect(parseSha512FromUpdateYml('', 'x.dmg')).toEqual({});
     expect(parseSha512FromUpdateYml(latestMacYml, '')).toEqual({});
+  });
+});
+
+describe('sanitizeReleaseNotes', () => {
+  it('strips GitHub auto-generated Full Changelog HTML footer (the reported UI bug)', () => {
+    const html = '<p><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/QAInsights/achu/compare/v26.08.03...v26.08.06"><tt>v26.08.03...v26.08.06</tt></a></p>';
+    const out = sanitizeReleaseNotes(html);
+    expect(out).not.toContain('<');
+    expect(out).not.toContain('href');
+    expect(out).toContain('Full Changelog');
+    expect(out).toContain('v26.08.03...v26.08.06');
+  });
+
+  it('converts block tags and list items to readable plain text', () => {
+    const html = '<h2>What\'s Changed</h2><ul><li>Fix one</li><li>Fix two</li></ul><p>Done</p>';
+    const out = sanitizeReleaseNotes(html);
+    expect(out).toContain("What's Changed");
+    expect(out).toContain('• Fix one');
+    expect(out).toContain('• Fix two');
+    expect(out).toContain('Done');
+    expect(out).not.toMatch(/<\w+/);
+  });
+
+  it('decodes common HTML entities', () => {
+    expect(sanitizeReleaseNotes('a &amp; b &lt;ok&gt; &quot;q&quot;')).toBe('a & b <ok> "q"');
+  });
+
+  it('passes plain markdown through unchanged', () => {
+    const md = '## What\'s Changed\n\n* fix: something by @user in #123';
+    expect(sanitizeReleaseNotes(md)).toBe(md);
+  });
+
+  it('handles empty input', () => {
+    expect(sanitizeReleaseNotes('')).toBe('');
   });
 });
 
