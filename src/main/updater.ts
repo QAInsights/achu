@@ -215,18 +215,19 @@ interface ReleaseAsset {
 
 /**
  * Selects the best macOS release asset from a GitHub release.
- * Strongly prefers .dmg (the native macOS installer format, handled
- * robustly via hdiutil) over .zip. Falls back to .zip only when no
- * DMG is present — the zip path is fragile because electron-builder's
- * universal zips use zip64 + extended attributes that stock `unzip`
- * and Archive Utility mishandle (the "Error 94 - Bad message" failure).
+ * Prefers electron-builder's .zip update payload. It is the primary artifact
+ * in latest-mac.yml and our install path extracts it with macOS `ditto`, which
+ * supports zip64 and preserves the bundle metadata that stock `unzip` and
+ * Archive Utility mishandle. This also avoids routing automatic updates
+ * through hdiutil, which has rejected otherwise published DMGs as corrupted
+ * (issue #11). The DMG remains a fallback for releases without a ZIP.
  * Exported for unit testing.
  */
 export function selectMacAsset(assets: ReleaseAsset[]): ReleaseAsset | undefined {
-  const dmg = assets.find((a) => a.name.toLowerCase().endsWith('.dmg'));
-  if (dmg) return dmg;
   const zip = assets.find((a) => a.name.toLowerCase().endsWith('.zip'));
-  return zip;
+  if (zip) return zip;
+  const dmg = assets.find((a) => a.name.toLowerCase().endsWith('.dmg'));
+  return dmg;
 }
 
 /**
