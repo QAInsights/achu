@@ -96,22 +96,22 @@ describe('registerUpdaterHandlers', () => {
   });
 });
 
-describe('selectMacAsset (issue #8 — macOS upgrade picks zip that fails to expand)', () => {
-  it('prefers .dmg over .zip even when zip is listed first', () => {
+describe('selectMacAsset (macOS automatic update package)', () => {
+  it('prefers .zip over .dmg because the automatic installer uses ditto', () => {
     const assets = [
       { name: 'achu-26.6.19-universal-mac.zip', browser_download_url: 'https://dl/app.zip' },
       { name: 'achu-26.6.19-universal.dmg', browser_download_url: 'https://dl/app.dmg' },
     ];
     const picked = selectMacAsset(assets);
-    expect(picked?.name).toBe('achu-26.6.19-universal.dmg');
+    expect(picked?.name).toBe('achu-26.6.19-universal-mac.zip');
   });
 
-  it('falls back to .zip when no .dmg is present', () => {
+  it('falls back to .dmg when no .zip is present', () => {
     const assets = [
-      { name: 'achu-26.6.19-universal-mac.zip', browser_download_url: 'https://dl/app.zip' },
+      { name: 'achu-26.6.19-universal.dmg', browser_download_url: 'https://dl/app.dmg' },
     ];
     const picked = selectMacAsset(assets);
-    expect(picked?.name).toBe('achu-26.6.19-universal-mac.zip');
+    expect(picked?.name).toBe('achu-26.6.19-universal.dmg');
   });
 
   it('returns undefined when neither dmg nor zip present', () => {
@@ -357,10 +357,10 @@ describe('selectLinuxAsset', () => {
 });
 
 /**
- * Regression test for issue #8 — uses the ACTUAL asset order from the
- * v26.6.19 GitHub release to prove the fix works against real-world data.
- * Before the fix, macOS picked the .zip (listed before .dmg) which
- * triggered "Error 94 - Bad message" in Archive Utility.
+ * Uses the actual asset order from v26.6.19. The ZIP is safe here because
+ * the in-app updater extracts it with `ditto`; it is never handed to Archive
+ * Utility (issue #8), and avoiding the DMG prevents the hdiutil corruption
+ * failure reported in issue #11.
  */
 describe('issue #8 regression — real v26.6.19 release asset order', () => {
   // Exact asset order returned by GitHub API for v26.06.19
@@ -384,10 +384,10 @@ describe('issue #8 regression — real v26.6.19 release asset order', () => {
     { name: 'latest-mac.yml', browser_download_url: 'https://dl/latest-mac.yml' },
   ];
 
-  it('macOS: picks .dmg, NOT .zip (the bug was picking .zip first)', () => {
+  it('macOS: picks the .zip payload consumed by the ditto install path', () => {
     const picked = selectMacAsset(realAssets);
-    expect(picked?.name).toBe('achu-26.6.19-universal.dmg');
-    expect(picked?.name).not.toContain('.zip');
+    expect(picked?.name).toBe('achu-26.6.19-universal-mac.zip');
+    expect(picked?.name).not.toContain('.dmg');
   });
 
   it('macOS: does not pick .blockmap or .yml metadata files', () => {

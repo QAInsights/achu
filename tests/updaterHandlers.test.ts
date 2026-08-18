@@ -199,12 +199,12 @@ describe('Updater handlers (update:check)', () => {
     Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
   });
 
-  it('prefers dmg over zip on darwin even when zip is listed first (issue #8)', async () => {
+  it('prefers zip over dmg on darwin for the ditto install path (issue #11)', async () => {
     const origPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
 
     // Both assets present (electron-builder ships both for universal builds).
-    // The zip appears FIRST to prove we don't just pick the first match.
+    // Both formats are present in electron-builder macOS releases.
     global.fetch = vi.fn().mockResolvedValue(mockResponse({
       tag_name: 'v26.6.19',
       body: '',
@@ -218,14 +218,15 @@ describe('Updater handlers (update:check)', () => {
     const handler = getHandler('update:check');
     const result = await handler();
     expect(result.available).toBe(true);
-    // Must select the DMG — the zip path triggers "Error 94 - Bad message".
-    expect(result.downloadUrl).toContain('.dmg');
-    expect(result.downloadUrl).not.toContain('.zip');
+    // The in-app ZIP path uses ditto, avoiding both Archive Utility's old
+    // "Error 94" and hdiutil's "image data corrupted" failure.
+    expect(result.downloadUrl).toContain('.zip');
+    expect(result.downloadUrl).not.toContain('.dmg');
 
     Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
   });
 
-  it('falls back to zip on darwin when no dmg is present', async () => {
+  it('falls back to dmg on darwin when no zip is present', async () => {
     const origPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
 
@@ -234,14 +235,14 @@ describe('Updater handlers (update:check)', () => {
       body: '',
       html_url: 'https://github.com/releases/1',
       assets: [
-        { name: 'achu-26.6.19-universal-mac.zip', browser_download_url: 'https://dl/app.zip', size: 90000000 },
+        { name: 'achu-26.6.19-universal.dmg', browser_download_url: 'https://dl/app.dmg', size: 95000000 },
       ],
     })) as any;
 
     const handler = getHandler('update:check');
     const result = await handler();
     expect(result.available).toBe(true);
-    expect(result.downloadUrl).toContain('.zip');
+    expect(result.downloadUrl).toContain('.dmg');
 
     Object.defineProperty(process, 'platform', { value: origPlatform, configurable: true });
   });
