@@ -20,7 +20,7 @@ export function triggerOSScreenCapture() {
   // Capture current clipboard image buffer BEFORE screenshot starts to compare with later
   const currentImage = clipboard.readImage();
   if (!currentImage.isEmpty()) {
-    lastCapturedBuffer = currentImage.getBitmap();
+    lastCapturedBuffer = currentImage.toBitmap();
   } else {
     lastCapturedBuffer = null;
   }
@@ -58,7 +58,7 @@ export function checkClipboardAndImport(window: BrowserWindow) {
     return;
   }
 
-  const currentBuffer = image.getBitmap();
+  const currentBuffer = image.toBitmap();
 
   // If this matches the ignoreBuffer (copied by Achu), skip it and clear ignoreBuffer
   if (ignoreBuffer && currentBuffer.equals(ignoreBuffer)) {

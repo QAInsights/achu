@@ -314,6 +314,18 @@ describe('registerIpcHandlers', () => {
   });
 
   describe('clipboard:copy-image', () => {
+    it('stores the OS-converted bitmap after copying', async () => {
+      const bitmap = Buffer.from('bitmap');
+      mockClipboard.readImage.mockReturnValue({
+        isEmpty: () => false,
+        toBitmap: () => bitmap,
+      });
+      const handler = getHandler('clipboard:copy-image');
+      const result = await handler({}, 'data:image/png;base64,abc');
+      expect(result).toBe(true);
+      expect(mockSetIgnoreNext).toHaveBeenCalledWith(bitmap);
+    });
+
     it('returns false on error', async () => {
       mockClipboard.writeImage.mockImplementation(() => { throw new Error('fail'); });
       const handler = getHandler('clipboard:copy-image');

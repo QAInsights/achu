@@ -5,7 +5,7 @@ import { shell, clipboard, globalShortcut } from 'electron';
 vi.mock('electron', () => {
   const mockImage = {
     isEmpty: vi.fn().mockReturnValue(false),
-    getBitmap: vi.fn().mockReturnValue(Buffer.from('mock-bitmap')),
+    toBitmap: vi.fn().mockReturnValue(Buffer.from('mock-bitmap')),
     toDataURL: vi.fn().mockReturnValue('data:image/png;base64,mock-data'),
   };
   return {
@@ -58,7 +58,7 @@ describe('Capture Main Module', () => {
     cleanupCaptureModule();
     mockImage = clipboard.readImage();
     mockImage.isEmpty.mockReturnValue(false);
-    mockImage.getBitmap.mockReturnValue(Buffer.from('mock-bitmap'));
+    mockImage.toBitmap.mockReturnValue(Buffer.from('mock-bitmap'));
     mockImage.toDataURL.mockReturnValue('data:image/png;base64,mock-data');
 
     mockWindow = {
@@ -118,7 +118,7 @@ describe('Capture Main Module', () => {
 
   it('ignores self-copied image to prevent infinite loop', () => {
     const selfBuffer = Buffer.from('self-copied-buffer');
-    mockImage.getBitmap.mockReturnValue(selfBuffer);
+    mockImage.toBitmap.mockReturnValue(selfBuffer);
 
     // Tell capture module to ignore this buffer
     setIgnoreNextClipboardImage(selfBuffer);
@@ -208,7 +208,7 @@ describe('Capture Main Module', () => {
   it('imports even if clipboard contains text/HTML formats if capture was explicitly initiated', () => {
     (clipboard.availableFormats as any).mockReturnValue(['text/html', 'image/png']);
     triggerOSScreenCapture();
-    mockImage.getBitmap.mockReturnValue(Buffer.from('new-captured-bitmap'));
+    mockImage.toBitmap.mockReturnValue(Buffer.from('new-captured-bitmap'));
     checkClipboardAndImport(mockWindow);
     expect(mockWindow.webContents.send).toHaveBeenCalled();
   });

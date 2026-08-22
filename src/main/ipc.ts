@@ -1,4 +1,4 @@
-import { ipcMain, dialog, safeStorage, clipboard, shell, BrowserWindow } from 'electron';
+import { ipcMain, dialog, safeStorage, clipboard, shell, BrowserWindow, nativeImage } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { loadSettings, saveSettings } from './settings';
@@ -220,20 +220,20 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
       const base64Content = base64Data.replace(/^data:image\/\w+;base64,/, '');
       const buffer = Buffer.from(base64Content, 'base64');
       
-      const nativeImage = require('electron').nativeImage.createFromBuffer(buffer);
+      const image = nativeImage.createFromBuffer(buffer);
       if (text) {
         clipboard.write({
-          image: nativeImage,
+          image,
           text: text
         });
       } else {
-        clipboard.writeImage(nativeImage);
+        clipboard.writeImage(image);
       }
 
       // Read back immediately to get the exact OS-converted bitmap bytes
       const readBackImage = clipboard.readImage();
       if (!readBackImage.isEmpty()) {
-        setIgnoreNextClipboardImage(readBackImage.getBitmap());
+        setIgnoreNextClipboardImage(readBackImage.toBitmap());
       }
       
       return true;

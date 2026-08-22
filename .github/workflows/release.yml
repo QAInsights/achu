@@ -55,11 +55,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+        env:
+          SHARP_IGNORE_GLOBAL_LIBVIPS: '1'
 
       - name: Update package.json version
         run: npm version ${{ needs.version.outputs.version }} --no-git-tag-version
