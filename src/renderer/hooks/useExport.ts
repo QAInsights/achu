@@ -239,7 +239,7 @@ export function useExport(
           const base64Data = canvas.toDataURL(mime, jpegQuality / 100);
           const payload = base64Data?.split(',')[1] || '';
 
-          if (!base64Data || !base64Data.startsWith('data:image/') || payload.length < 100) {
+          if (!base64Data || !base64Data.startsWith('data:image/') || payload.length === 0) {
             resolve({
               success: false,
               error: {
