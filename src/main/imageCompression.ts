@@ -1,5 +1,3 @@
-import sharp from 'sharp';
-
 export type ExportImageType = 'png' | 'jpeg' | 'webp';
 export type CompressionMode = 'original' | 'balanced' | 'small';
 
@@ -21,10 +19,31 @@ const PNG_COMPRESSION_BY_MODE: Record<CompressionMode, number> = {
   small: 9,
 };
 
+let sharpModule: typeof import('sharp') | null | undefined;
+
+export function loadSharp(): typeof import('sharp') | null {
+  if (sharpModule !== undefined) return sharpModule;
+
+  try {
+    sharpModule = require('sharp') as typeof import('sharp');
+  } catch (err) {
+    console.error(
+      '[imageCompression] sharp unavailable; falling back to uncompressed output:',
+      err
+    );
+    sharpModule = null;
+  }
+
+  return sharpModule;
+}
+
 export async function compressImageBuffer(
   buffer: Buffer,
   options: ImageCompressionOptions
 ): Promise<Buffer> {
+  const sharp = loadSharp();
+  if (!sharp) return buffer;
+
   const mode = options.compressionMode || 'balanced';
   const pipeline = sharp(buffer).rotate();
 

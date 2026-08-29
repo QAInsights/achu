@@ -364,7 +364,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (result.success) {
         showGalleryToast(`Saved as ${result.name}`, 2500);
       } else {
-        const msg = result.error?.message || 'Failed to save';
+        const msg = result.error
+          ? `Failed to save (${result.error.code}): ${result.error.message}`
+          : 'Failed to save';
         showGalleryToast(msg, 4000);
       }
     } catch (err) {

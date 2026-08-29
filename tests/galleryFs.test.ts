@@ -53,6 +53,11 @@ vi.mock('../src/main/gallery/galleryProject', async (importOriginal) => {
 vi.mock('../src/main/imageCompression', () => ({
   compressImageBuffer: vi.fn().mockImplementation(async (buf: Buffer) => buf),
   decodeImageDataUrl: vi.fn().mockReturnValue(Buffer.from('decoded-image')),
+  loadSharp: vi.fn().mockReturnValue(vi.fn().mockReturnValue({
+    resize: vi.fn().mockReturnThis(),
+    jpeg: vi.fn().mockReturnThis(),
+    toBuffer: vi.fn().mockResolvedValue(Buffer.from('thumbnail-data')),
+  })),
 }));
 
 vi.mock('sharp', () => {
@@ -238,6 +243,23 @@ describe('galleryFs', () => {
 
       const result = await saveGalleryItem(GALLERY_DIR, base64, 'webp');
       expect(result.data?.name).toMatch(/\.webp$/);
+    });
+
+    it('returns EMPTY_IMAGE when the decoded image is empty', async () => {
+      vi.mocked(mockFs.mkdirSync).mockReturnValue(undefined);
+      vi.mocked(mockFs.statfsSync).mockReturnValue({ bavail: 1000000, bsize: 4096 } as any);
+      vi.mocked(decodeImageDataUrl).mockReturnValueOnce(Buffer.alloc(0));
+
+      const result = await saveGalleryItem(GALLERY_DIR, base64, 'png');
+
+      expect(result).toEqual({
+        success: false,
+        error: {
+          code: 'EMPTY_IMAGE',
+          message: 'Rendered image was empty (0 bytes); the canvas may have failed to render.',
+        },
+      });
+      expect(compressImageBuffer).not.toHaveBeenCalled();
     });
 
     it('returns DISK_FULL error when checkDiskSpace fails', async () => {

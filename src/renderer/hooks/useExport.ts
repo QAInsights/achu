@@ -224,7 +224,12 @@ export function useExport(
   };
 
   const saveToGallery = (): Promise<{ success: boolean; path?: string; name?: string; error?: { code: string; message: string } }> => {
-    if (!noImageMode && !imageSrc) return Promise.resolve({ success: false });
+    if (!noImageMode && !imageSrc) {
+      return Promise.resolve({
+        success: false,
+        error: { code: 'NO_IMAGE', message: 'Nothing to save yet.' },
+      });
+    }
     return new Promise((resolve) => {
       loadImages(imageSrc, getCurrentConfig().backgroundValue, async (img) => {
         try {
@@ -232,6 +237,18 @@ export function useExport(
           renderCanvas(canvas, img, getCurrentConfig());
           const mime = exportFormat === 'jpeg' ? 'image/jpeg' : exportFormat === 'webp' ? 'image/webp' : 'image/png';
           const base64Data = canvas.toDataURL(mime, jpegQuality / 100);
+          const payload = base64Data?.split(',')[1] || '';
+
+          if (!base64Data || !base64Data.startsWith('data:image/') || payload.length < 100) {
+            resolve({
+              success: false,
+              error: {
+                code: 'RENDER_FAILED',
+                message: 'Canvas produced no image data (the canvas may exceed GPU limits or the renderer ran out of memory).',
+              },
+            });
+            return;
+          }
 
           if (window.snapFrameAPI) {
             const docName = ensureDocumentName();
@@ -255,11 +272,20 @@ export function useExport(
               resolve({ success: false, error: result.error });
             }
           } else {
-            resolve({ success: false });
+            resolve({
+              success: false,
+              error: { code: 'NO_BRIDGE', message: 'Desktop bridge unavailable.' },
+            });
           }
         } catch (err) {
           console.error('Failed to save to gallery:', err);
-          resolve({ success: false });
+          resolve({
+            success: false,
+            error: {
+              code: 'RENDER_FAILED',
+              message: err instanceof Error ? err.message : String(err),
+            },
+          });
         }
       });
     });
