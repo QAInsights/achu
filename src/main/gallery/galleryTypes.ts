@@ -1,5 +1,6 @@
 export type GalleryErrorCode =
   | 'DISK_FULL'
+  | 'EMPTY_IMAGE'
   | 'PERMISSION_DENIED'
   | 'PATH_TRAVERSAL'
   | 'NOT_FOUND'

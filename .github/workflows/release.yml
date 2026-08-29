@@ -43,10 +43,13 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux
+            npm-os: linux
           - os: windows-latest
             platform: win
+            npm-os: win32
           - os: macos-latest
             platform: mac
+            npm-os: darwin
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
@@ -60,6 +63,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          SHARP_IGNORE_GLOBAL_LIBVIPS: '1'
+
+      - name: Install platform Sharp binaries
+        run: |
+          npm install --no-save --package-lock=false --include=optional --os=${{ matrix.npm-os }} --cpu=x64 sharp
+          npm install --no-save --package-lock=false --include=optional --os=${{ matrix.npm-os }} --cpu=arm64 sharp
         env:
           SHARP_IGNORE_GLOBAL_LIBVIPS: '1'
 

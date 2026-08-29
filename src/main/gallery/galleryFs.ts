@@ -1,8 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { shell, clipboard, nativeImage, BrowserWindow, dialog } from 'electron';
-import sharp from 'sharp';
-import { compressImageBuffer, decodeImageDataUrl, CompressionMode, ExportImageType } from '../imageCompression';
+import { compressImageBuffer, decodeImageDataUrl, loadSharp, CompressionMode, ExportImageType } from '../imageCompression';
 import { loadSettings, getDefaultGalleryFolder } from '../settings';
 import { isGallerySourceFile } from '../../shared/galleryNaming';
 import { moveProjectBundleToTrash, readGalleryProject, resolveGalleryOutputPath, writeGalleryProject } from './galleryProject';
@@ -118,6 +117,13 @@ export async function saveGalleryItem(
     );
 
     const buffer = decodeImageDataUrl(base64Data);
+    if (buffer.length === 0) {
+      throw new GalleryError(
+        'EMPTY_IMAGE',
+        'Rendered image was empty (0 bytes); the canvas may have failed to render.'
+      );
+    }
+
     const outputBuffer = await compressImageBuffer(buffer, {
       type,
       quality,
@@ -228,6 +234,15 @@ export async function generateThumbnail(galleryDir: string, filePath: string, wi
   try {
     validateGalleryPath(galleryDir, filePath);
     const buffer = fs.readFileSync(filePath);
+    const sharp = loadSharp();
+    if (!sharp) {
+      const ext = path.extname(filePath).toLowerCase();
+      let mimeType = 'image/png';
+      if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
+      else if (ext === '.webp') mimeType = 'image/webp';
+      return { success: true, data: `data:${mimeType};base64,${buffer.toString('base64')}` };
+    }
+
     const thumbBuffer = await sharp(buffer)
       .resize(width, null, { withoutEnlargement: true, fit: 'inside' })
       .jpeg({ quality: 70, mozjpeg: true })

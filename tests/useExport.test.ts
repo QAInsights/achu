@@ -678,6 +678,28 @@ describe('useExport', () => {
       expect(res.success).toBe(false);
     });
 
+    it('returns RENDER_FAILED when the canvas produces no usable image data', async () => {
+      mockRenderCanvas.mockImplementation((canvas: HTMLCanvasElement) => {
+        canvas.toDataURL = () => '';
+      });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
+      );
+
+      const res = await act(async () => {
+        return await result.current.saveToGallery();
+      });
+
+      expect(res).toEqual({
+        success: false,
+        error: {
+          code: 'RENDER_FAILED',
+          message: 'Canvas produced no image data (the canvas may exceed GPU limits or the renderer ran out of memory).',
+        },
+      });
+    });
+
     it('saves successfully in Code Studio mode when imageSrc is null', async () => {
       stubCanvas('small');
       const saveToGallerySpy = vi.fn().mockResolvedValue({
