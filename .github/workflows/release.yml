@@ -66,10 +66,20 @@ jobs:
         env:
           SHARP_IGNORE_GLOBAL_LIBVIPS: '1'
 
-      - name: Install platform Sharp binaries
+      - name: Install cross-arch Sharp binaries
+        shell: bash
         run: |
-          npm install --no-save --package-lock=false --include=optional --os=${{ matrix.npm-os }} --cpu=x64 sharp
-          npm install --no-save --package-lock=false --include=optional --os=${{ matrix.npm-os }} --cpu=arm64 sharp
+          SHARP_VERSION=$(node -p "require('./node_modules/sharp/package.json').version")
+          mkdir -p node_modules/@img
+          for CPU in x64 arm64; do
+            rm -rf "./.sharp-stage/$CPU"
+            mkdir -p "./.sharp-stage/$CPU"
+            npm install --prefix "./.sharp-stage/$CPU" --no-save --no-package-lock \
+              --include=optional --os=${{ matrix.npm-os }} --cpu="$CPU" "sharp@$SHARP_VERSION"
+            cp -R "./.sharp-stage/$CPU/node_modules/@img/." node_modules/@img/
+          done
+          rm -rf ./.sharp-stage
+          ls node_modules/@img
         env:
           SHARP_IGNORE_GLOBAL_LIBVIPS: '1'
 
