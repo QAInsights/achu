@@ -818,15 +818,11 @@ function findAppBundle(dir: string): string | null {
  * a fresh com.apple.quarantine from the DMG often re-blocks immediately.
  */
 function clearMacQuarantine(appBundle: string): void {
-  const { execSync } = require('child_process');
+  const { execFileSync } = require('child_process');
   try {
-    execSync(`xattr -dr com.apple.quarantine "${appBundle}"`, { stdio: 'ignore' });
+    execFileSync('xattr', ['-dr', 'com.apple.quarantine', appBundle], { stdio: 'ignore' });
   } catch {
-    try {
-      execSync(`xattr -cr "${appBundle}"`, { stdio: 'ignore' });
-    } catch {
-      /* best effort */
-    }
+    /* best effort; preserve unrelated extended attributes */
   }
 }
 
@@ -837,35 +833,55 @@ function clearMacQuarantine(appBundle: string): void {
  * because (unlike `cp -R`) it preserves resource forks, extended
  * attributes, and code signatures that Gatekeeper requires.
  */
-function replaceAppBundle(srcApp: string, destApp: string, appBundlePath: string | null): void {
-  const { execSync } = require('child_process');
+export function replaceAppBundle(srcApp: string, destApp: string): void {
+  const { execFileSync } = require('child_process');
+  // Prepare the complete bundle before touching the installed app. Keeping
+  // staging beside the destination also makes the final rename atomic.
+  const stagingDir = fs.mkdtempSync(path.join(path.dirname(destApp), '.achu-update-'));
+  const stagedApp = path.join(stagingDir, path.basename(destApp));
+  try {
+    execFileSync('ditto', [srcApp, stagedApp]);
+    clearMacQuarantine(stagedApp);
+  } catch (err) {
+    fs.rmSync(stagingDir, { recursive: true, force: true });
+    throw err;
+  }
   // Move the old app aside first so a failed copy is recoverable.
   // A running app's binary is memory-mapped, but renaming the bundle
   // directory is safe on macOS (the running process keeps its file handles).
   let backupPath: string | null = null;
-  if (appBundlePath && fs.existsSync(appBundlePath)) {
-    backupPath = `${appBundlePath}.old`;
-    // Clean up any stale backup from a previous attempt
-    if (fs.existsSync(backupPath)) {
-      fs.rmSync(backupPath, { recursive: true, force: true });
-    }
-    fs.renameSync(appBundlePath, backupPath);
-  }
   try {
-    // ditto preserves resource forks, extended attributes, and code signatures.
-    execSync(`ditto "${srcApp}" "${destApp}"`);
-    clearMacQuarantine(destApp);
+    if (fs.existsSync(destApp)) {
+      backupPath = path.join(stagingDir, 'previous.app');
+      fs.renameSync(destApp, backupPath);
+    }
+    fs.renameSync(stagedApp, destApp);
   } catch (err) {
     // Copy failed - restore the old app so the user isn't left with nothing.
     if (backupPath && fs.existsSync(backupPath)) {
-      try { fs.renameSync(backupPath, appBundlePath!); } catch { /* best effort */ }
+      try { fs.renameSync(backupPath, destApp); } catch { /* retain backup for recovery */ }
     }
     throw err;
   }
-  // Copy succeeded - remove the old backup asynchronously (best effort).
-  if (backupPath) {
-    try { fs.rmSync(backupPath, { recursive: true, force: true }); } catch { /* non-fatal */ }
+  // Replacement succeeded - remove staging and the old backup (best effort).
+  try { fs.rmSync(stagingDir, { recursive: true, force: true }); } catch { /* non-fatal */ }
+}
+
+export function resolveMacUpdateTarget(execPath: string): string {
+  const match = execPath.match(/^(.*\.app)\/Contents\/MacOS\/[^/]+$/);
+  if (!match || execPath.startsWith('/Volumes/') || execPath.includes('/AppTranslocation/')) {
+    throw new Error('Move achu to Applications, launch it from there, and try updating again.');
   }
+  return match[1];
+}
+
+export function resolveLinuxUpdateTarget(): string {
+  const target = process.env.APPIMAGE;
+  if (!target || !path.isAbsolute(target) || target.includes('/.mount_') ||
+      (process.env.APPDIR && target.startsWith(`${process.env.APPDIR}/`))) {
+    throw new Error('Could not locate the original AppImage. Download the update from the releases page and replace your AppImage manually.');
+  }
+  return fs.realpathSync(target);
 }
 
 export type PlatformInstallResult = {
@@ -876,28 +892,23 @@ export type PlatformInstallResult = {
 };
 
 /**
- * Install a downloaded macOS update (DMG preferred, ZIP fallback).
+ * Install a downloaded macOS update (ZIP preferred, DMG fallback).
  * Does not call app.quit() - the IPC handler quits after the reply is flushed.
  * On failure, opens the release page and returns manualFallback.
  */
 function performMacUpdate(tempPath: string): PlatformInstallResult {
-  const { execSync, spawn } = require('child_process');
-  const appPath = process.execPath;
-  // Navigate from the binary inside the .app bundle to the .app root
-  // e.g. /Applications/achu.app/Contents/MacOS/achu → /Applications/achu.app
-  const appBundlePath = appPath.includes('.app')
-    ? appPath.split('.app')[0] + '.app'
-    : null;
+  const { execFileSync } = require('child_process');
 
   let mountPoint: string | null = null;
 
   try {
+    const appBundlePath = resolveMacUpdateTarget(process.execPath);
     const lower = tempPath.toLowerCase();
 
     if (lower.endsWith('.dmg')) {
       // Do NOT use -quiet: it can suppress the mount table we need to parse.
       // -nobrowse avoids Finder windows popping during update.
-      const mountOutput = execSync(`hdiutil attach "${tempPath}" -nobrowse`, {
+      const mountOutput = execFileSync('hdiutil', ['attach', tempPath, '-nobrowse'], {
         encoding: 'utf-8',
         maxBuffer: 2 * 1024 * 1024,
       });
@@ -913,14 +924,11 @@ function performMacUpdate(tempPath: string): PlatformInstallResult {
       if (!srcApp) {
         throw new Error(`No .app found in mounted DMG at ${mp}`);
       }
-      const appName = path.basename(srcApp);
+      const destApp = appBundlePath;
 
-      const destDir = appBundlePath ? path.dirname(appBundlePath) : '/Applications';
-      const destApp = path.join(destDir, appName);
+      replaceAppBundle(srcApp, destApp);
 
-      replaceAppBundle(srcApp, destApp, appBundlePath);
-
-      spawn('open', ['-n', destApp], { detached: true, stdio: 'ignore' }).unref();
+      app.relaunch();
       clearUpdateAvailableCache();
       return { installed: true, relaunching: true };
     }
@@ -931,20 +939,17 @@ function performMacUpdate(tempPath: string): PlatformInstallResult {
       const unzipDir = path.join(app.getPath('temp'), 'achu-update-extract');
       if (fs.existsSync(unzipDir)) fs.rmSync(unzipDir, { recursive: true, force: true });
       fs.mkdirSync(unzipDir, { recursive: true });
-      execSync(`ditto -x -k "${tempPath}" "${unzipDir}"`);
+      execFileSync('ditto', ['-x', '-k', tempPath, unzipDir]);
 
       const srcApp = findAppBundle(unzipDir);
       if (!srcApp) {
         throw new Error('No .app found in ZIP');
       }
-      const appName = path.basename(srcApp);
+      const destApp = appBundlePath;
 
-      const destDir = appBundlePath ? path.dirname(appBundlePath) : '/Applications';
-      const destApp = path.join(destDir, appName);
+      replaceAppBundle(srcApp, destApp);
 
-      replaceAppBundle(srcApp, destApp, appBundlePath);
-
-      spawn('open', ['-n', destApp], { detached: true, stdio: 'ignore' }).unref();
+      app.relaunch();
       clearUpdateAvailableCache();
       return { installed: true, relaunching: true };
     }
@@ -965,10 +970,10 @@ function performMacUpdate(tempPath: string): PlatformInstallResult {
     // Always detach the DMG if we mounted one, even on failure.
     if (mountPoint) {
       try {
-        execSync(`hdiutil detach "${mountPoint}" -quiet`, { stdio: 'ignore' });
+        execFileSync('hdiutil', ['detach', mountPoint, '-quiet'], { stdio: 'ignore' });
       } catch {
         try {
-          execSync(`hdiutil detach "${mountPoint}" -force`, { stdio: 'ignore' });
+          execFileSync('hdiutil', ['detach', mountPoint, '-force'], { stdio: 'ignore' });
         } catch { /* best effort */ }
       }
     }
@@ -981,13 +986,13 @@ function performMacUpdate(tempPath: string): PlatformInstallResult {
  * Install a downloaded Linux update. Does not call app.quit() - the IPC
  * handler quits after the reply is flushed when install succeeds.
  */
-function performLinuxUpdate(tempPath: string): PlatformInstallResult {
+export function performLinuxUpdate(tempPath: string): PlatformInstallResult {
   const { execSync, spawn } = require('child_process');
-  const execPath = process.execPath;
   const lower = tempPath.toLowerCase();
 
   try {
     if (lower.endsWith('.appimage')) {
+      const execPath = resolveLinuxUpdateTarget();
       // Make executable
       fs.chmodSync(tempPath, 0o755);
 
@@ -1017,7 +1022,7 @@ function performLinuxUpdate(tempPath: string): PlatformInstallResult {
         }
 
         // Relaunch
-        spawn(execPath, [], { detached: true, stdio: 'ignore' }).unref();
+        app.relaunch({ execPath, args: process.argv.slice(1) });
         clearUpdateAvailableCache();
         return { installed: true, relaunching: true };
       }
