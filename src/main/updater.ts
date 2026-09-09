@@ -884,6 +884,50 @@ export function resolveLinuxUpdateTarget(): string {
   return fs.realpathSync(target);
 }
 
+const LINUX_RELAUNCH_SCRIPT = [
+  'pid="$1"',
+  'shift',
+  'attempt=0',
+  'while kill -0 "$pid" 2>/dev/null && [ "$attempt" -lt 300 ]; do',
+  '  sleep 0.1',
+  '  attempt=$((attempt + 1))',
+  'done',
+  'exec "$@"',
+].join('\n');
+
+/**
+ * Start an external helper before quitting. Electron's app.relaunch() does
+ * not reliably restart Linux apps launched from an AppImage or .desktop file
+ * (electron/electron#48280). The helper survives this process, waits for its
+ * PID to disappear, then starts the updated AppImage with the original args.
+ */
+export function scheduleLinuxRelaunch(
+  execPath: string,
+  args: string[] = process.argv.slice(1),
+  pid: number = process.pid
+): void {
+  const { spawn } = require('child_process');
+  const env = { ...process.env };
+  // These values refer to the currently mounted image. The new AppImage
+  // runtime will populate fresh values for its own mount.
+  delete env.APPIMAGE;
+  delete env.APPDIR;
+  delete env.APPIMAGE_SILENT_INSTALL;
+  delete env.APPIMAGE_EXIT_AFTER_INSTALL;
+
+  const helper = spawn(
+    '/bin/sh',
+    ['-c', LINUX_RELAUNCH_SCRIPT, 'achu-update-relaunch', String(pid), execPath, ...args],
+    {
+      detached: true,
+      stdio: 'ignore',
+      cwd: path.dirname(execPath),
+      env,
+    }
+  );
+  helper.unref();
+}
+
 export type PlatformInstallResult = {
   installed: boolean;
   relaunching?: boolean;
@@ -1008,6 +1052,9 @@ export function performLinuxUpdate(tempPath: string): PlatformInstallResult {
           fs.renameSync(execPath, backupPath);
           fs.copyFileSync(tempPath, execPath);
           fs.chmodSync(execPath, 0o755);
+          // Schedule the restart while the backup is still available. If
+          // spawning the helper fails, the catch below restores the old app.
+          scheduleLinuxRelaunch(execPath);
         } catch (err) {
           // Copy failed - restore the old AppImage so the user isn't left with nothing.
           if (backupPath && fs.existsSync(backupPath)) {
@@ -1021,8 +1068,6 @@ export function performLinuxUpdate(tempPath: string): PlatformInstallResult {
           try { fs.unlinkSync(backupPath); } catch { /* non-fatal */ }
         }
 
-        // Relaunch
-        app.relaunch({ execPath, args: process.argv.slice(1) });
         clearUpdateAvailableCache();
         return { installed: true, relaunching: true };
       }
