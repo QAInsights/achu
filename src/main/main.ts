@@ -13,6 +13,13 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
 
+// XWayland avoids startup failures observed on some hybrid-GPU systems.
+// Respect explicit backend choices and native-Wayland-only sessions.
+if (process.platform === 'linux' && process.env.DISPLAY &&
+    !app.commandLine.hasSwitch('ozone-platform')) {
+  app.commandLine.appendSwitch('ozone-platform', 'x11');
+}
+
 function createWindow(settings: any) {
   const { width, height, x, y } = settings.windowBounds;
 
@@ -51,16 +58,35 @@ function createWindow(settings: any) {
   mainWindow.setAutoHideMenuBar(true);
   mainWindow.setMenuBarVisibility(false);
 
+  const win = mainWindow;
+  let startupFinished = false;
+  let showTimer: ReturnType<typeof setTimeout> | undefined;
+  const finishStartup = () => {
+    startupFinished = true;
+    clearTimeout(showTimer);
+  };
+  const showOnce = () => {
+    if (startupFinished || win.isDestroyed()) return;
+    finishStartup();
+    win.show();
+  };
+  win.once('ready-to-show', showOnce);
+  // Never let a timeout or delayed ready event undo a user's tray action.
+  win.once('show', finishStartup);
+  win.once('hide', finishStartup);
+  win.once('minimize', finishStartup);
+  win.once('close', finishStartup);
+  win.once('closed', finishStartup);
+  // Some Linux/GPU setups never emit ready-to-show. This exposes the window
+  // but does not claim to recover a crashed renderer or GPU process.
+  if (process.platform === 'linux') showTimer = setTimeout(showOnce, 3000);
+
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, 'renderer/index.html'));
   }
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
-  });
 
   // Save window dimensions on close or resize
   const saveWindowBounds = () => {
