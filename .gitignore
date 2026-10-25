@@ -36,6 +36,7 @@ Thumbs.db
 
 *.md
 !README.md
+!telemetry-worker/README.md
 !PRIVACY.md
 .aider*
 .qwen/settings.json
