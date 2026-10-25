@@ -118,4 +118,31 @@ describe('OnboardingTour', () => {
     expect(mockTrackFeature).toHaveBeenCalledWith('onboarding_done');
     expect(mockTrackFeature).not.toHaveBeenCalledWith('onboarding_skip');
   });
+
+  it('does not complete or record done when copying fails', async () => {
+    mockCtx.value = makeFullMockContext({
+      imageSrc: 'data:image/png;base64,abc',
+      noImageMode: false,
+      copyBeautifiedImage: vi.fn().mockRejectedValue(new Error('Copy failed')),
+      showToast: vi.fn(),
+    });
+    render(<OnboardingTour />);
+    act(() => {
+      vi.advanceTimersByTime(450);
+    });
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Next'));
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('onboarding-copy-shot'));
+      await Promise.resolve();
+    });
+
+    expect(mockCtx.value.showToast).toHaveBeenCalledWith(
+      'Could not copy. Try pasting an image first.',
+      4000
+    );
+    expect(screen.getByTestId('onboarding-tour')).toBeInTheDocument();
+    expect(mockTrackFeature).not.toHaveBeenCalledWith('onboarding_done');
+  });
 });

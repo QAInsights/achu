@@ -18,7 +18,6 @@ const annotationFeatureByType: Partial<Record<Annotation['type'], TelemetryFeatu
   'filled-circle': 'annot_filled_circle',
   line: 'annot_line',
   arrow: 'annot_arrow',
-  text: 'annot_text',
   pen: 'annot_pen',
   emoji: 'annot_emoji',
 };
@@ -623,8 +622,6 @@ export function useAnnotationEvents({
     setAnnotations(prev => [...prev, finalAnn]);
     setEditingTextId(finalAnn.id);
     setEditingTextValue('');
-    const feature = annotationFeatureByType[finalAnn.type];
-    if (feature) trackFeature(feature);
   };
 
   const saveEmojiDrawing = async (drawingAnn: Annotation) => {

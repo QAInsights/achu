@@ -1132,13 +1132,12 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
         return { success: true, simulated: true, relaunching: false };
       }
 
-      recordFeature('update_install');
-
       // NSIS-installed Windows builds: electron-updater downloads (sha512
       // verified against latest.yml) and installs natively.
       if (isNsisInstall()) {
         await performNsisInstall(getMainWindow);
         setTimeout(() => quitAndInstallNsis(), 800);
+        recordFeature('update_install');
         return { success: true, relaunching: true };
       }
 
@@ -1172,6 +1171,7 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
         // return IPC reply, then quit so the reply is not dropped.
         performWindowsUpdate(tempPath);
         quitForUpdate();
+        recordFeature('update_install');
         return { success: true, relaunching: true };
       }
 
@@ -1185,6 +1185,7 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
           };
         }
         quitForUpdate();
+        recordFeature('update_install');
         return { success: true, relaunching: true };
       }
 
@@ -1198,6 +1199,7 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
         };
       }
       quitForUpdate();
+      recordFeature('update_install');
       return { success: true, relaunching: true };
     } catch (error: any) {
       console.error('[Updater] Update installation failed:', error);

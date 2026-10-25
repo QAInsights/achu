@@ -154,7 +154,11 @@ export function useExport(
           const clipboardText = caption ?? codeText;
 
           if (window.snapFrameAPI) {
-            await window.snapFrameAPI.copyImageToClipboard(base64Data, clipboardText);
+            const copied = await window.snapFrameAPI.copyImageToClipboard(base64Data, clipboardText);
+            if (copied === false) {
+              reject(new Error('Copy failed'));
+              return;
+            }
           } else {
             const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
             if (blob) {

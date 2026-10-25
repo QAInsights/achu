@@ -653,6 +653,25 @@ describe('useExport', () => {
       expect(mockTrackFeature).toHaveBeenCalledWith('export_copy');
     });
 
+    it('rejects a failed bridge copy without recording success', async () => {
+      stubCanvas('small');
+      const copyImageToClipboard = vi.fn().mockResolvedValue(false);
+      const onExportSuccess = vi.fn();
+      vi.stubGlobal('snapFrameAPI', { copyImageToClipboard });
+
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName, onExportSuccess)
+      );
+
+      await act(async () => {
+        await expect(result.current.copyBeautifiedImage()).rejects.toThrow('Copy failed');
+      });
+
+      expect(copyImageToClipboard).toHaveBeenCalled();
+      expect(onExportSuccess).not.toHaveBeenCalled();
+      expect(mockTrackFeature).not.toHaveBeenCalledWith('export_copy');
+    });
+
     it('aborts clipboard write when OG size limit check returns false', async () => {
       stubCanvas('large');
       const mockConfirm = vi.fn().mockReturnValue(false);

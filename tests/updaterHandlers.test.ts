@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockHandle = vi.fn();
+const mockRecordFeature = vi.hoisted(() => vi.fn());
 vi.mock('electron', () => ({
   app: {
     isPackaged: true,
@@ -10,6 +11,10 @@ vi.mock('electron', () => ({
   },
   shell: { openPath: vi.fn(), openExternal: vi.fn() },
   BrowserWindow: class {},
+}));
+
+vi.mock('../src/main/telemetry', () => ({
+  recordFeature: mockRecordFeature,
 }));
 
 vi.mock('fs', () => ({
@@ -378,6 +383,24 @@ describe('Updater handlers (update:start)', () => {
   it('throws when no download URL provided', async () => {
     const handler = getHandler('update:start');
     await expect(handler({}, '')).rejects.toThrow('No download URL provided');
+    expect(mockRecordFeature).not.toHaveBeenCalledWith('update_install');
+  });
+
+  it('does not record a Store fallback', async () => {
+    const originalPlatform = process.platform;
+    const originalStore = (process as any).windowsStore;
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+    (process as any).windowsStore = true;
+    try {
+      const handler = getHandler('update:start');
+      const result = await handler({}, null);
+      expect(result.manualFallback).toBe(true);
+      expect(mockRecordFeature).not.toHaveBeenCalledWith('update_install');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      if (originalStore === undefined) delete (process as any).windowsStore;
+      else (process as any).windowsStore = originalStore;
+    }
   });
 });
 
@@ -428,6 +451,7 @@ describe('NSIS install path (electron-updater)', () => {
       const result = await handler({}, null);
       expect(mockAutoUpdater.downloadUpdate).toHaveBeenCalled();
       expect(result).toEqual({ success: true, relaunching: true });
+      expect(mockRecordFeature).toHaveBeenCalledWith('update_install');
     } finally {
       restore();
     }
