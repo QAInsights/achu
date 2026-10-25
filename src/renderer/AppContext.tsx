@@ -394,6 +394,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     lightRaysCount: style.lightRaysCount, lightRaysSourceX: style.lightRaysSourceX,
     lightRaysSourceY: style.lightRaysSourceY,
     getCurrentConfig, customPresets, checkForUpdatesOnStartup: style.checkForUpdatesOnStartup,
+    telemetryEnabled: style.telemetryEnabled,
     setCustomPresets, applyConfig,
     syncDeps: [
       style.padding, style.rounded, style.shadow, style.shadowColor, style.shadowEnabled, style.inset, style.insetColor, style.border,
@@ -404,7 +405,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       style.meshSpread, style.noImageMode, redaction.redactions, redaction.redactionStyle, exportFormat, jpegQuality, sidebarPosition,
       style.shaderType, style.shaderColors, style.shaderParams,
       style.bgGrain, style.lightRaysStyle, style.lightRaysOpacity, style.lightRaysAngle, style.lightRaysCount, style.lightRaysSourceX, style.lightRaysSourceY,
-      style.autoImportCaptured, style.captureShortcut, style.checkForUpdatesOnStartup
+      style.autoImportCaptured, style.captureShortcut, style.checkForUpdatesOnStartup, style.telemetryEnabled
     ],
   });
 

@@ -30,6 +30,7 @@ describe('Settings Main Module', () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
     const settings = loadSettings();
     expect(settings).toEqual(defaultSettings);
+    expect(defaultSettings.telemetryEnabled).toBe(true);
   });
 
   it('loads and parses saved settings from disk', () => {
@@ -46,6 +47,7 @@ describe('Settings Main Module', () => {
     expect(settings.lastConfig.padding).toBe(40);
     // Should fallback to default autoImportCaptured
     expect(settings.lastConfig.autoImportCaptured).toBe(true);
+    expect(settings.telemetryEnabled).toBe(true);
   });
 
   it('saves settings to disk correctly', () => {

@@ -215,6 +215,29 @@ The lasting fix is **Developer ID signing + Apple notarization** in the release 
 
 * **Local OCR & Secrets Scanning:** Tesseract WASM scans and extracts your screenshot text strictly locally inside the Electron sandbox. No images or text are sent to third parties during OCR or Privacy Guard runs.
 * **Secure Token Storage:** All external AI keys and GitHub API tokens are stored using Electron's native [safeStorage API](https://www.electronjs.org/docs/latest/api/safe-storage), which encrypts credentials on disk using operating-system-level cryptography (Keychain on macOS, DPAPI on Windows, and Secret Service/KWallet on Linux).
+* **Anonymous Usage Stats:** Daily usage telemetry is on by default and can be turned off in Settings > General. It includes app and Electron versions, OS, CPU architecture, distribution channel, UI locale, a random install ID, a first-run flag, and aggregate feature counts. Images, text, paths, names, keys, and tokens are never sent.
+
+Example telemetry payload:
+
+```json
+{
+  "installId": "123e4567-e89b-12d3-a456-426614174000",
+  "event": "daily",
+  "appVersion": "2026.5.30",
+  "electronVersion": "43.4.0",
+  "os": "win32",
+  "arch": "x64",
+  "channel": "nsis",
+  "locale": "en-US",
+  "firstRun": false,
+  "features": {
+    "export_png": 3,
+    "privacy_scan": 1
+  }
+}
+```
+
+See [PRIVACY.md](./PRIVACY.md) for the full details and opt-out options.
 
 ---
 

@@ -4,6 +4,7 @@ import * as path from 'path';
 import { loadSettings, saveSettings } from './settings';
 import { triggerOSScreenCapture, setIgnoreNextClipboardImage, updateCaptureConfigurations } from './capture';
 import { compressImageBuffer, decodeImageDataUrl, CompressionMode } from './imageCompression';
+import { recordFeature, setTelemetryEnabled } from './telemetry';
 
 export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
   // Theme Changed
@@ -20,6 +21,8 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
     }
   });
 
+  ipcMain.on('telemetry:record', (_event, name) => recordFeature(name));
+
   // Settings API
   ipcMain.handle('settings:get', () => {
     return loadSettings();
@@ -34,6 +37,7 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
       secureKeys: (current as any).secureKeys
     };
     saveSettings(merged);
+    setTelemetryEnabled(merged.telemetryEnabled !== false);
     
     // Update capture configurations dynamically
     updateCaptureConfigurations(merged, getMainWindow());

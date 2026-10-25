@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('snapFrameAPI', {
   // Settings API
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (settings: any) => ipcRenderer.invoke('settings:set', settings),
+  recordFeature: (name: string) => ipcRenderer.send('telemetry:record', name),
 
   // File API
   openFile: () => ipcRenderer.invoke('file:open-dialog'),

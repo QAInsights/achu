@@ -46,6 +46,7 @@ describe('Preload Script', () => {
     expect(api).toHaveProperty('onUpdateProgress');
     expect(api).toHaveProperty('onUpdateAvailable');
     expect(api).toHaveProperty('openReleasePage');
+    expect(api).toHaveProperty('recordFeature');
 
     expect(typeof api.getSettings).toBe('function');
     expect(typeof api.saveSettings).toBe('function');
@@ -61,6 +62,7 @@ describe('Preload Script', () => {
     expect(typeof api.onUpdateProgress).toBe('function');
     expect(typeof api.onUpdateAvailable).toBe('function');
     expect(typeof api.openReleasePage).toBe('function');
+    expect(typeof api.recordFeature).toBe('function');
   });
 
   it('getSettings calls ipcRenderer.invoke with correct channel', () => {
@@ -74,6 +76,11 @@ describe('Preload Script', () => {
     const settings = { scale: 90, padding: 50 };
     api.saveSettings(settings);
     expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('settings:set', settings);
+  });
+
+  it('recordFeature sends a telemetry event to the main process', () => {
+    getApi().recordFeature('app_open');
+    expect(mockIpcRenderer.send).toHaveBeenCalledWith('telemetry:record', 'app_open');
   });
 
   it('openFile calls ipcRenderer.invoke for file dialog', () => {

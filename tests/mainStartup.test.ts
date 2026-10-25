@@ -24,11 +24,13 @@ vi.mock('electron', () => ({
   session: { defaultSession: { setPermissionRequestHandler: vi.fn() } },
   ipcMain: {}, shell: {},
 }));
-vi.mock('fs', () => ({ mkdirSync: vi.fn() }));
+vi.mock('fs', () => ({ existsSync: vi.fn().mockReturnValue(false), mkdirSync: vi.fn() }));
 vi.mock('../src/main/settings', () => ({
   loadSettings: () => ({ windowBounds: {}, galleryFolder: '/mock/gallery' }),
   saveSettings: vi.fn(), getDefaultGalleryFolder: () => '/mock/gallery',
+  getSettingsPath: () => '/mock/settings.json',
 }));
+vi.mock('../src/main/telemetry', () => ({ initTelemetry: vi.fn() }));
 vi.mock('../src/main/ipc', () => ({ registerIpcHandlers: vi.fn() }));
 vi.mock('../src/main/gallery', () => ({ registerGalleryIpcHandlers: vi.fn() }));
 vi.mock('../src/main/burst', () => ({ registerBurstIpcHandlers: vi.fn() }));

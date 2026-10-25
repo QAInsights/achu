@@ -100,6 +100,7 @@ export interface AppContextType {
   compressionMode: CompressionMode; setCompressionMode: React.Dispatch<React.SetStateAction<CompressionMode>>;
   autoImportCaptured: boolean; setAutoImportCaptured: (val: boolean) => void;
   checkForUpdatesOnStartup: boolean; setCheckForUpdatesOnStartup: (val: boolean) => void;
+  telemetryEnabled: boolean; setTelemetryEnabled: (val: boolean) => void;
   captureShortcut: string; setCaptureShortcut: (val: string) => void;
   zoomLevel: string; setZoomLevel: React.Dispatch<React.SetStateAction<string>>;
   history: any[]; setHistory: React.Dispatch<React.SetStateAction<any[]>>;

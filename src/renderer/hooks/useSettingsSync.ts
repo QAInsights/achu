@@ -20,6 +20,7 @@ interface UseSettingsSyncDeps {
   getCurrentConfig: () => RenderConfig;
   customPresets: any[];
   checkForUpdatesOnStartup: boolean;
+  telemetryEnabled: boolean;
   setCustomPresets: React.Dispatch<React.SetStateAction<any[]>>;
   applyConfig: (config: RenderConfig) => void;
   // Deps for the settings sync effect dependency array
@@ -111,7 +112,7 @@ export function useSettingsSync(deps: UseSettingsSyncDeps) {
     const saveSettingsToMain = async () => {
       if (window.snapFrameAPI) {
         const config = deps.getCurrentConfig();
-        const settings = { windowBounds: {}, lastConfig: { ...config, annotations: [], redactions: [] }, presets: deps.customPresets, checkForUpdatesOnStartup: deps.checkForUpdatesOnStartup };
+        const settings = { windowBounds: {}, lastConfig: { ...config, annotations: [], redactions: [] }, presets: deps.customPresets, checkForUpdatesOnStartup: deps.checkForUpdatesOnStartup, telemetryEnabled: deps.telemetryEnabled };
         await window.snapFrameAPI.saveSettings(settings);
       }
     };
