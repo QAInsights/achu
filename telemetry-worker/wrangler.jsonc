@@ -6,12 +6,15 @@
 		{
 			"binding": "DB",
 			"database_name": "achu-telemetry",
-			"database_id": "00000000-0000-0000-0000-000000000000",
+			"database_id": "dd00661e-6571-4583-918a-b28a6fddbb44",
 			"migrations_dir": "migrations"
 		}
 	],
 	"routes": [
-		{ "pattern": "telemetry.achu.app", "custom_domain": true }
+		{
+			"pattern": "telemetry.achu.app",
+			"custom_domain": true
+		}
 	],
 	"ratelimits": [
 		{
