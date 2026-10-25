@@ -11,6 +11,9 @@ let enabledCache = false;
 let memCounts: Record<string, number> = {};
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 let inFlight = false;
+let settingsExistedAtLaunch = false;
+let initCalled = false;
+let started = false;
 
 export function isTelemetrySuppressed(): boolean {
   return !app.isPackaged
@@ -82,9 +85,32 @@ export function persistCounts(): void {
   memCounts = {};
 }
 
+function startTelemetry(isLaunch: boolean): void {
+  if (started || !enabledCache || isTelemetrySuppressed()) return;
+  started = true;
+
+  const settings = { ...loadSettings() };
+  if (!settings.telemetryInstallId) {
+    settings.telemetryInstallId = randomUUID();
+    settings.telemetryPendingFirstRun = isLaunch && !settingsExistedAtLaunch;
+    saveSettings(settings);
+  }
+
+  setTimeout(() => {
+    void maybeSendDailyPing();
+    setInterval(() => {
+      void maybeSendDailyPing();
+    }, 60 * 60 * 1_000);
+  }, 30 * 1_000);
+  app.on('before-quit', persistCounts);
+}
+
 export function setTelemetryEnabled(enabled: boolean): void {
   enabledCache = enabled;
-  if (enabled) return;
+  if (enabled) {
+    if (initCalled && !isTelemetrySuppressed()) startTelemetry(false);
+    return;
+  }
 
   memCounts = {};
   if (persistTimer) {
@@ -100,24 +126,12 @@ export function setTelemetryEnabled(enabled: boolean): void {
   }
 }
 
-export function initTelemetry({ settingsExistedAtLaunch }: { settingsExistedAtLaunch: boolean }): void {
-  const settings = { ...loadSettings() };
+export function initTelemetry(options: { settingsExistedAtLaunch: boolean }): void {
+  initCalled = true;
+  settingsExistedAtLaunch = options.settingsExistedAtLaunch;
+  const settings = loadSettings();
   enabledCache = settings.telemetryEnabled !== false;
-  if (isTelemetrySuppressed() || !enabledCache) return;
-
-  if (!settings.telemetryInstallId) {
-    settings.telemetryInstallId = randomUUID();
-    settings.telemetryPendingFirstRun = !settingsExistedAtLaunch;
-    saveSettings(settings);
-  }
-
-  setTimeout(() => {
-    void maybeSendDailyPing();
-    setInterval(() => {
-      void maybeSendDailyPing();
-    }, 60 * 60 * 1_000);
-  }, 30 * 1_000);
-  app.on('before-quit', persistCounts);
+  if (!isTelemetrySuppressed() && enabledCache) startTelemetry(true);
 }
 
 function utcDay(date: Date): string {

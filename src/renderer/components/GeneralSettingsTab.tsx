@@ -125,7 +125,7 @@ export default function GeneralSettingsTab({ searchQuery = '' }: { searchQuery?:
               <span className="slider-switch" />
             </label>
           </div>
-          <div className="switch-container">
+          <div className="switch-container" style={{ marginTop: '0.75rem' }}>
             <span className="control-label">Share Anonymous Usage Stats</span>
             <label className="switch">
               <input

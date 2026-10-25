@@ -109,6 +109,32 @@ describe('telemetry initialization', () => {
     expect(storedSettings.telemetryInstallId).toMatch(/^[0-9a-f-]{36}$/);
     expect(storedSettings.telemetryPendingFirstRun).toBe(false);
   });
+
+  it('starts once when telemetry is enabled mid-session', async () => {
+    storedSettings.telemetryEnabled = false;
+    vi.setSystemTime(new Date('2026-10-08T12:00:00.000Z'));
+    const telemetry = await loadTelemetry();
+    telemetry.initTelemetry({ settingsExistedAtLaunch: false });
+
+    expect(storedSettings.telemetryInstallId).toBeUndefined();
+    expect(mocks.fetch).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+
+    storedSettings.telemetryEnabled = true;
+    telemetry.setTelemetryEnabled(true);
+    expect(storedSettings.telemetryInstallId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(storedSettings.telemetryPendingFirstRun).toBe(false);
+    telemetry.setTelemetryEnabled(true);
+
+    expect(vi.getTimerCount()).toBe(1);
+    expect(mocks.app.on).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(mocks.fetch).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('daily telemetry pings', () => {

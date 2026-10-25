@@ -223,16 +223,16 @@ Example telemetry payload:
 {
   "installId": "123e4567-e89b-12d3-a456-426614174000",
   "event": "daily",
-  "appVersion": "1.2.3",
-  "electronVersion": "31.0.0",
-  "os": "linux",
+  "appVersion": "2026.5.30",
+  "electronVersion": "43.4.0",
+  "os": "win32",
   "arch": "x64",
-  "channel": "appimage",
+  "channel": "nsis",
   "locale": "en-US",
   "firstRun": false,
   "features": {
-    "app_open": 1,
-    "export": 2
+    "export_png": 3,
+    "privacy_scan": 1
   }
 }
 ```
