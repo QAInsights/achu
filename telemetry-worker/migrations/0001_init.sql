@@ -1,0 +1,26 @@
+CREATE TABLE IF NOT EXISTS pings (
+    install_id TEXT NOT NULL,
+    day TEXT NOT NULL,
+    ts INTEGER NOT NULL,
+    request_id TEXT,
+    event TEXT,
+    app_version TEXT,
+    electron_version TEXT,
+    os TEXT,
+    arch TEXT,
+    channel TEXT,
+    locale TEXT,
+    first_run INTEGER,
+    country TEXT,
+    UNIQUE(install_id, day)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pings_day ON pings(day);
+
+CREATE TABLE IF NOT EXISTS feature_counts (
+    install_id TEXT NOT NULL,
+    day TEXT NOT NULL,
+    feature TEXT NOT NULL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (install_id, day, feature)
+);
