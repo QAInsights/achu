@@ -8,6 +8,20 @@ import {
   hasAnnotationClipboard,
   setAnnotationClipboard,
 } from '../utils/annotationClipboardUtils';
+import { trackFeature } from '../utils/telemetry';
+import type { TelemetryFeature } from '../../shared/telemetryFeatures';
+
+const annotationFeatureByType: Partial<Record<Annotation['type'], TelemetryFeature>> = {
+  rect: 'annot_rect',
+  'filled-rect': 'annot_filled_rect',
+  circle: 'annot_circle',
+  'filled-circle': 'annot_filled_circle',
+  line: 'annot_line',
+  arrow: 'annot_arrow',
+  text: 'annot_text',
+  pen: 'annot_pen',
+  emoji: 'annot_emoji',
+};
 
 interface UseAnnotationEventsProps {
   annotations: Annotation[];
@@ -589,6 +603,8 @@ export function useAnnotationEvents({
     const updated = [...annotations, newAnn];
     setAnnotations(updated);
     onSaveHistory(updated);
+    const feature = annotationFeatureByType[newAnn.type];
+    if (feature) trackFeature(feature);
   };
 
   const saveTextDrawing = (drawingAnn: Annotation) => {
@@ -607,6 +623,8 @@ export function useAnnotationEvents({
     setAnnotations(prev => [...prev, finalAnn]);
     setEditingTextId(finalAnn.id);
     setEditingTextValue('');
+    const feature = annotationFeatureByType[finalAnn.type];
+    if (feature) trackFeature(feature);
   };
 
   const saveEmojiDrawing = async (drawingAnn: Annotation) => {
@@ -625,6 +643,8 @@ export function useAnnotationEvents({
       const updated = [...annotations, newAnn];
       setAnnotations(updated);
       onSaveHistory(updated);
+      const feature = annotationFeatureByType[newAnn.type];
+      if (feature) trackFeature(feature);
     }
   };
 
@@ -645,6 +665,8 @@ export function useAnnotationEvents({
       const updated = [...annotations, finalAnn];
       setAnnotations(updated);
       onSaveHistory(updated);
+      const feature = annotationFeatureByType[finalAnn.type];
+      if (feature) trackFeature(feature);
     }
   };
 

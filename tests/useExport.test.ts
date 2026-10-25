@@ -5,8 +5,14 @@ const { mockRenderCanvas } = vi.hoisted(() => ({
   mockRenderCanvas: vi.fn(),
 }));
 
+const mockTrackFeature = vi.hoisted(() => vi.fn());
+
 vi.mock('../src/renderer/canvasRenderer', () => ({
   renderCanvas: mockRenderCanvas,
+}));
+
+vi.mock('../src/renderer/utils/telemetry', () => ({
+  trackFeature: mockTrackFeature,
 }));
 
 import { useExport } from '../src/renderer/hooks/useExport';
@@ -31,6 +37,7 @@ describe('useExport', () => {
     vi.restoreAllMocks();
     localStorage.clear();
     mockRenderCanvas.mockReset();
+    mockTrackFeature.mockClear();
 
     mockGetCurrentConfig = vi.fn<() => RenderConfig>().mockReturnValue({
       padding: 38,
@@ -350,6 +357,18 @@ describe('useExport', () => {
       }).not.toThrow();
     });
 
+    it('records the successful PNG export', () => {
+      stubCanvas('small');
+      vi.stubGlobal('snapFrameAPI', { saveFile: vi.fn() });
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
+      );
+
+      act(() => result.current.triggerExport());
+
+      expect(mockTrackFeature).toHaveBeenCalledWith('export_png');
+    });
+
     it('uses browser download fallback when snapFrameAPI is unavailable', () => {
       stubCanvas('small');
       vi.stubGlobal('snapFrameAPI', undefined);
@@ -631,6 +650,7 @@ describe('useExport', () => {
       });
 
       expect(writeSpy).toHaveBeenCalled();
+      expect(mockTrackFeature).toHaveBeenCalledWith('export_copy');
     });
 
     it('aborts clipboard write when OG size limit check returns false', async () => {
@@ -676,6 +696,7 @@ describe('useExport', () => {
       });
 
       expect(res.success).toBe(false);
+      expect(mockTrackFeature).not.toHaveBeenCalled();
     });
 
     it('returns RENDER_FAILED when the canvas produces no usable image data', async () => {
@@ -698,6 +719,7 @@ describe('useExport', () => {
           message: 'Canvas produced no image data (the canvas may exceed GPU limits or the renderer ran out of memory).',
         },
       });
+      expect(mockTrackFeature).toHaveBeenCalledWith('err_gallery_save');
     });
 
     it('saves successfully in Code Studio mode when imageSrc is null', async () => {
@@ -725,6 +747,7 @@ describe('useExport', () => {
       expect(saveToGallerySpy).toHaveBeenCalled();
       expect(res.success).toBe(true);
       expect(res.name).toBe('test.png');
+      expect(mockTrackFeature).toHaveBeenCalledWith('gallery_save');
     });
 
     it('saves successfully in Code Studio mode when imageSrc is not null (preserved)', async () => {

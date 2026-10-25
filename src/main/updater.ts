@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import { Readable } from 'stream';
 import { loadSettings, saveSettings, AppSettings } from './settings';
+import { recordFeature } from './telemetry';
 
 const isDev = !app.isPackaged;
 
@@ -1130,6 +1131,8 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
         console.log('[Updater] Dev mode: simulation completed successfully');
         return { success: true, simulated: true, relaunching: false };
       }
+
+      recordFeature('update_install');
 
       // NSIS-installed Windows builds: electron-updater downloads (sha512
       // verified against latest.yml) and installs natively.

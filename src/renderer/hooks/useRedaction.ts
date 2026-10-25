@@ -4,6 +4,7 @@ import { createWorker } from 'tesseract.js';
 import { processOcrResults, downsampleImageForOcr } from '../utils/privacyGuardUtils';
 import { getUserDefault } from '../utils/storageUtils';
 import type { WordBoundingBox } from '../utils/githubAgentUtils';
+import { trackFeature } from '../utils/telemetry';
 
 export function useRedaction(
   imageSrc: string | null,
@@ -77,7 +78,9 @@ export function useRedaction(
         redactions: detected,
       };
       pushHistory(newConfig);
+      trackFeature('privacy_scan');
     } catch (e) {
+      trackFeature('err_privacy_scan');
       console.error('OCR Scanning failed:', e);
       alert('Failed to scan screenshot: ' + (e as Error).message);
     } finally {
@@ -97,6 +100,7 @@ export function useRedaction(
     const updated: RedactionItem[] = redactions.map((r) => ({ ...r, status: 'redacted' }));
     setRedactions(updated);
     pushHistory({ ...getCurrentConfig(), redactions: updated });
+    trackFeature('redact_all');
   };
 
   const revealAll = () => {

@@ -4,8 +4,14 @@ import React from 'react';
 import BackgroundSettings from '../src/renderer/components/BackgroundSettings';
 import { makeFullMockContext } from './shared';
 
+const mockTrackFeature = vi.hoisted(() => vi.fn());
+
 vi.mock('../src/renderer/AppContext', () => ({
   useAppContext: () => mockContext,
+}));
+
+vi.mock('../src/renderer/utils/telemetry', () => ({
+  trackFeature: mockTrackFeature,
 }));
 
 let mockContext: ReturnType<typeof makeFullMockContext>;
@@ -54,6 +60,7 @@ beforeEach(() => {
     setShowAdvancedShadow: vi.fn(),
     setShowAdvancedBorder: vi.fn(),
   };
+  mockTrackFeature.mockClear();
 });
 
 describe('BackgroundSettings', () => {
@@ -78,6 +85,7 @@ describe('BackgroundSettings', () => {
     fireEvent.click(screen.getByText('Solid'));
     expect(mockContext.setBackgroundType).toHaveBeenCalledWith('color');
     expect(mockContext.pushHistory).toHaveBeenCalled();
+    expect(mockTrackFeature).toHaveBeenCalledWith('bg_color');
   });
 
   it('switches to gradient mode', () => {

@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
+const mockRecordFeature = vi.hoisted(() => vi.fn());
+
 vi.mock('electron', () => ({
   app: {
     isPackaged: false,
@@ -11,6 +13,10 @@ vi.mock('electron', () => ({
     openPath: vi.fn(),
   },
   BrowserWindow: class {},
+}));
+
+vi.mock('../src/main/telemetry', () => ({
+  recordFeature: mockRecordFeature,
 }));
 
 import * as fs from 'fs';

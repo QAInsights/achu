@@ -7,7 +7,7 @@ import { registerGalleryIpcHandlers } from './gallery';
 import { registerBurstIpcHandlers } from './burst';
 import { setupFocusCheck, updateCaptureConfigurations, cleanupCaptureModule, triggerOSScreenCapture } from './capture';
 import { registerUpdaterHandlers, performStartupUpdateCheck } from './updater';
-import { initTelemetry } from './telemetry';
+import { initTelemetry, recordFeature } from './telemetry';
 
 const isDev = process.env.NODE_ENV === 'development';
 let mainWindow: BrowserWindow | null = null;
@@ -139,6 +139,7 @@ function createTray() {
     {
       label: 'Capture Screenshot',
       click: () => {
+        recordFeature('capture_tray');
         triggerOSScreenCapture();
       },
     },

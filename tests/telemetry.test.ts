@@ -73,7 +73,7 @@ describe('telemetry suppression', () => {
     const telemetry = await loadTelemetry();
     suppress();
     telemetry.initTelemetry({ settingsExistedAtLaunch: false });
-    telemetry.recordFeature('app_open');
+    telemetry.recordFeature('export_png');
     await telemetry.maybeSendDailyPing();
     telemetry.persistCounts();
 
@@ -144,8 +144,8 @@ describe('daily telemetry pings', () => {
     mocks.app.getLocale.mockReturnValue('l'.repeat(80));
     const telemetry = await loadTelemetry();
     telemetry.initTelemetry({ settingsExistedAtLaunch: false });
-    telemetry.recordFeature('app_open');
-    telemetry.recordFeature('export');
+    telemetry.recordFeature('export_png');
+    telemetry.recordFeature('export_copy');
 
     await telemetry.maybeSendDailyPing(new Date('2026-10-01T12:00:00.000Z'));
 
@@ -164,7 +164,7 @@ describe('daily telemetry pings', () => {
       channel: process.platform === 'linux' ? 'deb' : telemetry.getChannel(),
       locale: 'l'.repeat(64),
       firstRun: true,
-      features: { app_open: 1, export: 1 },
+      features: { export_png: 1, export_copy: 1 },
     });
   });
 
@@ -188,12 +188,12 @@ describe('daily telemetry pings', () => {
 
     const telemetry = await loadTelemetry();
     telemetry.initTelemetry({ settingsExistedAtLaunch: false });
-    telemetry.recordFeature('sent_feature');
+    telemetry.recordFeature('export_png');
     telemetry.persistCounts();
 
     const ping = telemetry.maybeSendDailyPing(new Date('2026-10-03T12:00:00.000Z'));
     await Promise.resolve();
-    telemetry.recordFeature('during_request');
+    telemetry.recordFeature('export_copy');
     resolveFetch(response(204));
     await ping;
 
@@ -202,22 +202,22 @@ describe('daily telemetry pings', () => {
     expect(storedSettings.telemetryLastPingDay).toBe('2026-10-03');
 
     telemetry.persistCounts();
-    expect(storedSettings.telemetryPendingFeatures).toEqual({ during_request: 1 });
+    expect(storedSettings.telemetryPendingFeatures).toEqual({ export_copy: 1 });
   });
 
   it('keeps pending counts after a network error or 503', async () => {
     const telemetry = await loadTelemetry();
     telemetry.initTelemetry({ settingsExistedAtLaunch: true });
-    telemetry.recordFeature('failed_send');
+    telemetry.recordFeature('err_ai_issue');
     mocks.fetch.mockRejectedValueOnce(new Error('network down'))
       .mockResolvedValueOnce(response(503));
 
     await telemetry.maybeSendDailyPing(new Date('2026-10-04T12:00:00.000Z'));
-    expect(storedSettings.telemetryPendingFeatures).toEqual({ failed_send: 1 });
+    expect(storedSettings.telemetryPendingFeatures).toEqual({ err_ai_issue: 1 });
     expect(storedSettings.telemetryLastPingDay).toBeUndefined();
 
     await telemetry.maybeSendDailyPing(new Date('2026-10-05T12:00:00.000Z'));
-    expect(storedSettings.telemetryPendingFeatures).toEqual({ failed_send: 1 });
+    expect(storedSettings.telemetryPendingFeatures).toEqual({ err_ai_issue: 1 });
     expect(storedSettings.telemetryLastPingDay).toBeUndefined();
   });
 
@@ -233,10 +233,10 @@ describe('daily telemetry pings', () => {
 
     const telemetry = await loadTelemetry();
     telemetry.initTelemetry({ settingsExistedAtLaunch: false });
-    telemetry.recordFeature('pending_feature');
+    telemetry.recordFeature('privacy_scan');
 
     const ping = telemetry.maybeSendDailyPing(new Date('2026-10-05T12:00:00.000Z'));
-    expect(storedSettings.telemetryPendingFeatures).toEqual({ pending_feature: 1 });
+    expect(storedSettings.telemetryPendingFeatures).toEqual({ privacy_scan: 1 });
     expect(requestSignal).toBeInstanceOf(AbortSignal);
 
     telemetry.setTelemetryEnabled(false);
@@ -254,7 +254,7 @@ describe('daily telemetry pings', () => {
     mocks.fetch.mockResolvedValueOnce(response(400));
     const telemetry = await loadTelemetry();
     telemetry.initTelemetry({ settingsExistedAtLaunch: false });
-    telemetry.recordFeature('invalid_payload');
+    telemetry.recordFeature('ocr_grab');
 
     await telemetry.maybeSendDailyPing(new Date('2026-10-06T12:00:00.000Z'));
 
@@ -268,18 +268,20 @@ describe('feature counters and opt-out', () => {
   it('keeps in-memory counts when saving settings fails', async () => {
     const telemetry = await loadTelemetry();
     telemetry.initTelemetry({ settingsExistedAtLaunch: true });
-    telemetry.recordFeature('retry_me');
+    telemetry.recordFeature('github_push');
 
     mocks.saveSettings.mockImplementationOnce(() => false);
     telemetry.persistCounts();
     expect(storedSettings.telemetryPendingFeatures).toBeUndefined();
 
     telemetry.persistCounts();
-    expect(storedSettings.telemetryPendingFeatures).toEqual({ retry_me: 1 });
+    expect(storedSettings.telemetryPendingFeatures).toEqual({ github_push: 1 });
   });
 
   it('ignores invalid names and limits distinct pending features to 50', async () => {
-    storedSettings.telemetryPendingFeatures = { existing_feature: 1 };
+    storedSettings.telemetryPendingFeatures = Object.fromEntries(
+      Array.from({ length: 50 }, (_, index) => [`persisted_${index}`, 1])
+    );
     const telemetry = await loadTelemetry();
     telemetry.initTelemetry({ settingsExistedAtLaunch: true });
 
@@ -287,21 +289,30 @@ describe('feature counters and opt-out', () => {
     telemetry.recordFeature('');
     telemetry.recordFeature('a'.repeat(41));
     telemetry.recordFeature(42);
-    for (let i = 0; i < 60; i++) telemetry.recordFeature(`feature_${i}`);
+    telemetry.recordFeature('export_png');
     telemetry.persistCounts();
 
     expect(Object.keys(storedSettings.telemetryPendingFeatures)).toHaveLength(50);
-    expect(storedSettings.telemetryPendingFeatures.feature_48).toBe(1);
-    expect(storedSettings.telemetryPendingFeatures.feature_49).toBeUndefined();
+    expect(storedSettings.telemetryPendingFeatures.export_png).toBeUndefined();
+  });
+
+  it('ignores regex-valid feature names outside the catalog', async () => {
+    const telemetry = await loadTelemetry();
+    telemetry.initTelemetry({ settingsExistedAtLaunch: true });
+
+    telemetry.recordFeature('foo_bar');
+    telemetry.persistCounts();
+
+    expect(storedSettings.telemetryPendingFeatures).toBeUndefined();
   });
 
   it('clears pending and in-memory data when telemetry is disabled', async () => {
     const telemetry = await loadTelemetry();
     telemetry.initTelemetry({ settingsExistedAtLaunch: false });
     storedSettings.telemetryPendingFeatures = { previously_saved: 2 };
-    telemetry.recordFeature('unsaved_feature');
+    telemetry.recordFeature('export_webp');
     telemetry.setTelemetryEnabled(false);
-    telemetry.recordFeature('after_opt_out');
+    telemetry.recordFeature('export_jpeg');
     telemetry.persistCounts();
     await telemetry.maybeSendDailyPing(new Date('2026-10-07T12:00:00.000Z'));
 

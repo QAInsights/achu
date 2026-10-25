@@ -45,6 +45,8 @@ Anonymous usage statistics are on by default. Once per day, achu sends a ping co
 
 The ping is sent to `telemetry.achu.app`, which uses Cloudflare Workers and D1 and is operated by QAInsights.
 
+Feature counts use only a fixed list of action names, including exports by format, gallery and burst pack saves, privacy scan, OCR, AI issue generation by provider, GitHub pushes, background modes, presets, annotation tools, capture sources, onboarding actions, and update installs. These are aggregate counts only.
+
 The telemetry ping never contains screenshots or images, OCR text, AI prompts, file paths, gallery names, API keys, GitHub tokens, or repository names.
 
 Turn telemetry off with the **Share Anonymous Usage Stats** toggle in **Settings > General**, or set `DO_NOT_TRACK=1` or `ACHU_TELEMETRY=0`. Turning it off deletes unsent feature counters. Development builds never send telemetry.

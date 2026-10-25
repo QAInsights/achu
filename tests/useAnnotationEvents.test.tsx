@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+
+const mockTrackFeature = vi.hoisted(() => vi.fn());
+
+vi.mock('../src/renderer/utils/telemetry', () => ({
+  trackFeature: mockTrackFeature,
+}));
+
 import { useAnnotationEvents } from '../src/renderer/hooks/useAnnotationEvents';
 import { Annotation } from '../src/renderer/canvasRenderer';
 import { clearAnnotationClipboard } from '../src/renderer/utils/annotationClipboardUtils';
@@ -18,6 +25,7 @@ describe('useAnnotationEvents', () => {
     });
     onSaveHistory = vi.fn<(newAnns?: Annotation[]) => void>();
     customPrompt = vi.fn<(message: string, defaultValue?: string) => Promise<string | null>>().mockResolvedValue('😀');
+    mockTrackFeature.mockClear();
   });
 
   it('initializes with default state', () => {
@@ -141,6 +149,66 @@ describe('useAnnotationEvents', () => {
     });
 
     expect(result.current.drawingAnnotation?.type).toBe('pen');
+  });
+
+  it('records a filled rectangle after it is committed', async () => {
+    const mockDiv = document.createElement('div');
+    mockDiv.getBoundingClientRect = () => ({ left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600, x: 0, y: 0, toJSON: () => {} });
+    containerRef.current = mockDiv;
+    const { result } = renderHook(() =>
+      useAnnotationEvents({
+        annotations: [],
+        setAnnotations,
+        activeTool: 'filled-rect',
+        color: '#00ff00',
+        strokeWidth: 4,
+        onSaveHistory,
+        customPrompt,
+        containerRef,
+      })
+    );
+
+    act(() => result.current.handlePointerDown({
+      clientX: 100, clientY: 100, pointerId: 1, target: mockDiv, currentTarget: mockDiv,
+    } as any));
+    act(() => result.current.handlePointerMove({
+      clientX: 250, clientY: 200, pointerId: 1,
+    } as any));
+    await act(async () => {
+      await result.current.handlePointerUp({ pointerId: 1 } as any);
+    });
+
+    expect(mockTrackFeature).toHaveBeenCalledWith('annot_filled_rect');
+  });
+
+  it('records a pen annotation after it is committed', async () => {
+    const mockDiv = document.createElement('div');
+    mockDiv.getBoundingClientRect = () => ({ left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600, x: 0, y: 0, toJSON: () => {} });
+    containerRef.current = mockDiv;
+    const { result } = renderHook(() =>
+      useAnnotationEvents({
+        annotations: [],
+        setAnnotations,
+        activeTool: 'pen',
+        color: '#00ff00',
+        strokeWidth: 4,
+        onSaveHistory,
+        customPrompt,
+        containerRef,
+      })
+    );
+
+    act(() => result.current.handlePointerDown({
+      clientX: 100, clientY: 100, pointerId: 1, target: mockDiv, currentTarget: mockDiv,
+    } as any));
+    act(() => result.current.handlePointerMove({
+      clientX: 200, clientY: 200, pointerId: 1,
+    } as any));
+    await act(async () => {
+      await result.current.handlePointerUp({ pointerId: 1 } as any);
+    });
+
+    expect(mockTrackFeature).toHaveBeenCalledWith('annot_pen');
   });
 
   it('deselects when clicking background with pointer tool', () => {
