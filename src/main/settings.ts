@@ -177,11 +177,13 @@ export function loadSettings(): AppSettings {
   return defaultSettings;
 }
 
-export function saveSettings(settings: AppSettings) {
+export function saveSettings(settings: AppSettings): boolean {
   try {
     const settingsPath = getSettingsPath();
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+    return true;
   } catch (error) {
     console.error('Failed to save settings:', error);
+    return false;
   }
 }

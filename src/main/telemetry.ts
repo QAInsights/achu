@@ -11,6 +11,7 @@ let enabledCache = false;
 let memCounts: Record<string, number> = {};
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 let inFlight = false;
+let inFlightController: AbortController | null = null;
 let settingsExistedAtLaunch = false;
 let initCalled = false;
 let started = false;
@@ -81,8 +82,7 @@ export function persistCounts(): void {
     pending[name] = Math.min(MAX_COUNT, (pending[name] ?? 0) + count);
   }
   settings.telemetryPendingFeatures = pending;
-  saveSettings(settings);
-  memCounts = {};
+  if (saveSettings(settings)) memCounts = {};
 }
 
 function startTelemetry(isLaunch: boolean): void {
@@ -112,6 +112,7 @@ export function setTelemetryEnabled(enabled: boolean): void {
     return;
   }
 
+  inFlightController?.abort();
   memCounts = {};
   if (persistTimer) {
     clearTimeout(persistTimer);
@@ -170,13 +171,18 @@ export async function maybeSendDailyPing(now = new Date()): Promise<void> {
       features,
     };
 
+    inFlightController = new AbortController();
     const response = await net.fetch(TELEMETRY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.any([
+        inFlightController.signal,
+        AbortSignal.timeout(10_000),
+      ]),
     });
 
+    if (!enabledCache) return;
     if (!response.ok && response.status !== 400) return;
 
     const latest = { ...loadSettings() };
@@ -198,5 +204,6 @@ export async function maybeSendDailyPing(now = new Date()): Promise<void> {
     console.warn('Telemetry request failed');
   } finally {
     inFlight = false;
+    inFlightController = null;
   }
 }

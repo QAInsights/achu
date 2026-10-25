@@ -54,6 +54,7 @@ beforeEach(() => {
   mocks.loadSettings.mockImplementation(() => clone(storedSettings));
   mocks.saveSettings.mockImplementation((settings: Record<string, any>) => {
     storedSettings = clone(settings);
+    return true;
   });
 });
 
@@ -220,6 +221,35 @@ describe('daily telemetry pings', () => {
     expect(storedSettings.telemetryLastPingDay).toBeUndefined();
   });
 
+  it('aborts an in-flight request and does not restore data after opt-out', async () => {
+    let resolveFetch!: (res: Response) => void;
+    let requestSignal!: AbortSignal;
+    mocks.fetch.mockImplementationOnce((_url, init) => {
+      requestSignal = init.signal;
+      return new Promise<Response>((resolve) => {
+        resolveFetch = resolve;
+      });
+    });
+
+    const telemetry = await loadTelemetry();
+    telemetry.initTelemetry({ settingsExistedAtLaunch: false });
+    telemetry.recordFeature('pending_feature');
+
+    const ping = telemetry.maybeSendDailyPing(new Date('2026-10-05T12:00:00.000Z'));
+    expect(storedSettings.telemetryPendingFeatures).toEqual({ pending_feature: 1 });
+    expect(requestSignal).toBeInstanceOf(AbortSignal);
+
+    telemetry.setTelemetryEnabled(false);
+    expect(requestSignal.aborted).toBe(true);
+    expect(storedSettings.telemetryPendingFeatures).toBeUndefined();
+
+    resolveFetch(response(204));
+    await ping;
+
+    expect(storedSettings.telemetryLastPingDay).toBeUndefined();
+    expect(storedSettings.telemetryPendingFeatures).toBeUndefined();
+  });
+
   it('drops pending counts after a 400 response', async () => {
     mocks.fetch.mockResolvedValueOnce(response(400));
     const telemetry = await loadTelemetry();
@@ -235,6 +265,19 @@ describe('daily telemetry pings', () => {
 });
 
 describe('feature counters and opt-out', () => {
+  it('keeps in-memory counts when saving settings fails', async () => {
+    const telemetry = await loadTelemetry();
+    telemetry.initTelemetry({ settingsExistedAtLaunch: true });
+    telemetry.recordFeature('retry_me');
+
+    mocks.saveSettings.mockImplementationOnce(() => false);
+    telemetry.persistCounts();
+    expect(storedSettings.telemetryPendingFeatures).toBeUndefined();
+
+    telemetry.persistCounts();
+    expect(storedSettings.telemetryPendingFeatures).toEqual({ retry_me: 1 });
+  });
+
   it('ignores invalid names and limits distinct pending features to 50', async () => {
     storedSettings.telemetryPendingFeatures = { existing_feature: 1 };
     const telemetry = await loadTelemetry();
