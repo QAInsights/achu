@@ -442,6 +442,8 @@ export function makeFullMockContext(overrides: Record<string, any> = {}) {
     setAutoImportCaptured: noop,
     checkForUpdatesOnStartup: true,
     setCheckForUpdatesOnStartup: noop,
+    telemetryEnabled: true,
+    setTelemetryEnabled: noop,
     captureShortcut: 'PrintScreen',
     setCaptureShortcut: noop,
     shareAchuPromptOpen: false,

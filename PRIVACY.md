@@ -4,13 +4,13 @@
 **Publisher:** QAInsights (NaveenKumar Namachivayam)  
 **Contact:** catch.nkn@gmail.com  
 **Effective Date:** June 7, 2026  
-**Last Updated:** June 7, 2026
+**Last Updated:** October 25, 2026
 
 ---
 
 ## Overview
 
-achu is a desktop screenshot beautification utility for Windows. This policy explains what data is collected, how it is used, and the choices available to you. achu is designed with a **privacy-first** approach — the core functionality runs entirely on your local machine with no data transmitted externally unless you explicitly configure optional third-party AI integrations.
+achu is a desktop screenshot beautification utility for Windows. This policy explains what data is collected, how it is used, and the choices available to you. The core functionality runs locally. achu also sends anonymous daily usage statistics to QAInsights by default, and you can turn this off in Settings. Optional third-party AI integrations send data only when you configure and use them.
 
 ---
 
@@ -18,17 +18,18 @@ achu is a desktop screenshot beautification utility for Windows. This policy exp
 
 ### We Do Not Collect
 
-achu does **not** collect, store, transmit, or share any of the following:
+Except for the anonymous usage statistics described below and transient IP processing for rate limiting, achu does not persist or share any of the following:
 
 - Screenshots or images you load into the application
 - Text extracted by the OCR feature
 - Personally identifiable information (PII) or sensitive data detected by the Privacy Guard feature
-- Usage analytics, telemetry, or crash reports
+- Crash reports
 - Device identifiers or hardware fingerprints
+- IP addresses (used transiently for rate limiting, never stored)
 
 ### Data Stored Locally on Your Device
 
-The following data is stored **only on your local device** and is never transmitted to QAInsights:
+The following data is stored locally on your device. Telemetry settings and unsent feature counts are stored locally until they are sent or cleared, as described below.
 
 | Data | Storage Location | Purpose |
 |------|-----------------|---------|
@@ -37,6 +38,16 @@ The following data is stored **only on your local device** and is never transmit
 | App preferences and settings | Local app data directory | Restoring your configuration between sessions |
 
 All credentials are encrypted at rest using the operating system's native cryptography (Data Protection API on Windows). They are never written to disk in plaintext and are never sent to QAInsights servers.
+
+### Anonymous Usage Statistics
+
+Anonymous usage statistics are on by default. Once per day, achu sends a ping containing a random install ID, app version, Electron version, operating system, CPU architecture, distribution channel, UI locale, first-run flag, and aggregate feature usage counts. Cloudflare derives the country from request metadata. achu does not send the country itself.
+
+The ping is sent to `telemetry.achu.app`, which uses Cloudflare Workers and D1 and is operated by QAInsights.
+
+The telemetry ping never contains screenshots or images, OCR text, AI prompts, file paths, gallery names, API keys, GitHub tokens, or repository names.
+
+Turn telemetry off with the **Share Anonymous Usage Stats** toggle in **Settings > General**, or set `DO_NOT_TRACK=1` or `ACHU_TELEMETRY=0`. Turning it off deletes unsent feature counters. Development builds never send telemetry.
 
 ---
 

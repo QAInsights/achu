@@ -1,12 +1,13 @@
 import { app, BrowserWindow, shell, Tray, Menu, session } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { loadSettings, saveSettings, getDefaultGalleryFolder } from './settings';
+import { loadSettings, saveSettings, getDefaultGalleryFolder, getSettingsPath } from './settings';
 import { registerIpcHandlers } from './ipc';
 import { registerGalleryIpcHandlers } from './gallery';
 import { registerBurstIpcHandlers } from './burst';
 import { setupFocusCheck, updateCaptureConfigurations, cleanupCaptureModule, triggerOSScreenCapture } from './capture';
 import { registerUpdaterHandlers, performStartupUpdateCheck } from './updater';
+import { initTelemetry } from './telemetry';
 
 const isDev = process.env.NODE_ENV === 'development';
 let mainWindow: BrowserWindow | null = null;
@@ -174,6 +175,7 @@ function createTray() {
 }
 
 app.whenReady().then(() => {
+  const settingsExistedAtLaunch = fs.existsSync(getSettingsPath());
   const settings = loadSettings();
 
   // Ensure gallery folder exists on startup
@@ -199,6 +201,7 @@ app.whenReady().then(() => {
   registerIpcHandlers(() => mainWindow);
   registerGalleryIpcHandlers(() => mainWindow);
   registerBurstIpcHandlers();
+  initTelemetry({ settingsExistedAtLaunch });
 
   // Initialize and register global screenshot shortcuts dynamically
   updateCaptureConfigurations(settings, mainWindow);

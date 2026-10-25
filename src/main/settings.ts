@@ -66,6 +66,11 @@ export interface AppSettings {
   secureKeys?: Record<string, string>;
   galleryFolder?: string;
   checkForUpdatesOnStartup?: boolean;
+  telemetryEnabled?: boolean;
+  telemetryInstallId?: string;
+  telemetryLastPingDay?: string;
+  telemetryPendingFeatures?: Record<string, number>;
+  telemetryPendingFirstRun?: boolean;
   lastUpdateCheck?: number;
   lastUpdateResult?: { available: boolean; version?: string; releaseUrl?: string; downloadUrl?: string; downloadSize?: number; releaseNotes?: string } | null;
   lastUpdateETag?: string | null;
@@ -126,6 +131,7 @@ export const defaultSettings: AppSettings = {
   presets: [],
   galleryFolder: getDefaultGalleryFolder(),
   checkForUpdatesOnStartup: true,
+  telemetryEnabled: true,
   lastUpdateCheck: 0,
   lastUpdateResult: null,
   lastUpdateETag: null,
@@ -150,6 +156,9 @@ export function loadSettings(): AppSettings {
       }
       if (parsed.checkForUpdatesOnStartup === undefined) {
         parsed.checkForUpdatesOnStartup = defaultSettings.checkForUpdatesOnStartup;
+      }
+      if (parsed.telemetryEnabled === undefined) {
+        parsed.telemetryEnabled = defaultSettings.telemetryEnabled;
       }
       if (parsed.lastUpdateCheck === undefined) {
         parsed.lastUpdateCheck = defaultSettings.lastUpdateCheck;

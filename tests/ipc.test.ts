@@ -6,6 +6,7 @@ const {
   mockLoadSettings, mockSaveSettings, mockTriggerCapture,
   mockSetIgnoreNext, mockUpdateCapture, mockCompressBuffer, mockDecodeDataUrl,
   mockReadFileSync, mockWriteFileSync, mockCheckAIHealth, mockGenerateAIResponse,
+  mockRecordFeature, mockSetTelemetryEnabled,
 } = vi.hoisted(() => ({
   mockHandle: vi.fn(),
   mockOn: vi.fn(),
@@ -37,6 +38,8 @@ const {
   mockWriteFileSync: vi.fn(),
   mockCheckAIHealth: vi.fn(),
   mockGenerateAIResponse: vi.fn(),
+  mockRecordFeature: vi.fn(),
+  mockSetTelemetryEnabled: vi.fn(),
 }));
 
 vi.mock('electron', () => ({
@@ -74,6 +77,10 @@ vi.mock('fs', () => ({
 vi.mock('../src/main/aiService', () => ({
   checkAIHealth: (...args: any[]) => mockCheckAIHealth(...args),
   generateAIResponse: (...args: any[]) => mockGenerateAIResponse(...args),
+}));
+vi.mock('../src/main/telemetry', () => ({
+  recordFeature: (...args: any[]) => mockRecordFeature(...args),
+  setTelemetryEnabled: (...args: any[]) => mockSetTelemetryEnabled(...args),
 }));
 
 import { registerIpcHandlers } from '../src/main/ipc';
@@ -119,6 +126,7 @@ describe('registerIpcHandlers', () => {
     expect(onChannels).toContain('theme:changed');
     expect(onChannels).toContain('url:open');
     expect(onChannels).toContain('capture:trigger');
+    expect(onChannels).toContain('telemetry:record');
   });
 
   describe('theme:changed', () => {
@@ -148,6 +156,7 @@ describe('registerIpcHandlers', () => {
       expect(mockSaveSettings).toHaveBeenCalledWith(
         expect.objectContaining({ padding: 50, rounded: 20, githubToken: 'tok' })
       );
+      expect(mockSetTelemetryEnabled).toHaveBeenCalledWith(true);
     });
 
     it('calls updateCaptureConfigurations', () => {
@@ -156,6 +165,19 @@ describe('registerIpcHandlers', () => {
       handler({}, { padding: 50 });
       expect(mockUpdateCapture).toHaveBeenCalled();
     });
+
+    it('disables telemetry when the settings value is false', () => {
+      mockLoadSettings.mockReturnValue({});
+      const handler = getHandler('settings:set');
+      handler({}, { telemetryEnabled: false });
+      expect(mockSetTelemetryEnabled).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it('records telemetry feature events', () => {
+    const handler = getOnHandler('telemetry:record');
+    handler({}, 'app_open');
+    expect(mockRecordFeature).toHaveBeenCalledWith('app_open');
   });
 
   describe('set-github-token', () => {

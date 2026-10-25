@@ -58,6 +58,7 @@ export function useStyleConfig() {
   const [blurDensity, setBlurDensity] = useState<number>(40);
   const [autoImportCaptured, setAutoImportCapturedState] = useState<boolean>(() => getUserDefault('autoImportCaptured', true));
   const [checkForUpdatesOnStartup, setCheckForUpdatesOnStartupState] = useState<boolean>(() => getUserDefault('checkForUpdatesOnStartup', true));
+  const [telemetryEnabled, setTelemetryEnabledState] = useState<boolean>(() => getUserDefault('telemetryEnabled', true));
   const [captureShortcut, setCaptureShortcutState] = useState<string>(() => getUserDefault('captureShortcut', 'PrintScreen'));
 
   const [noImageMode, setNoImageMode] = useState<boolean>(false);
@@ -132,6 +133,10 @@ export function useStyleConfig() {
     setCheckForUpdatesOnStartupState(val);
     updateUserDefault('checkForUpdatesOnStartup', val);
   };
+  const setTelemetryEnabled = (val: boolean) => {
+    setTelemetryEnabledState(val);
+    updateUserDefault('telemetryEnabled', val);
+  };
   const setCaptureShortcut = (val: string) => {
     setCaptureShortcutState(val);
     updateUserDefault('captureShortcut', val);
@@ -171,6 +176,7 @@ export function useStyleConfig() {
     annotationStrokeWidth, setAnnotationStrokeWidth, annotationDisplayWidth, setAnnotationDisplayWidth,
     autoImportCaptured, setAutoImportCaptured,
     checkForUpdatesOnStartup, setCheckForUpdatesOnStartup,
+    telemetryEnabled, setTelemetryEnabled,
     captureShortcut, setCaptureShortcut,
   };
 }

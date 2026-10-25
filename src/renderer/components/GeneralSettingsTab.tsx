@@ -6,7 +6,7 @@ import { updateUserDefault } from '../utils/storageUtils';
 import { registerSettingsSection } from '../utils/settingsRegistry';
 import { getModKeyLabel } from '../utils/shortcutLabels';
 
-registerSettingsSection({ tab: 'general', label: 'General Settings', keywords: 'general sidebar position ai ocr left right updates auto check' });
+registerSettingsSection({ tab: 'general', label: 'General Settings', keywords: 'general sidebar position ai ocr left right updates auto check usage stats telemetry analytics privacy' });
 registerSettingsSection({ tab: 'general', label: 'Screen Capture', keywords: 'screen capture auto import clipboard focus global shortcut printscreen hotkey' });
 registerSettingsSection({ tab: 'general', label: 'Gallery', keywords: 'gallery screenshot folder path browse storage trash' });
 registerSettingsSection({ tab: 'general', label: 'Canvas Defaults', keywords: 'canvas defaults padding border radius shadow blur' });
@@ -42,6 +42,7 @@ export default function GeneralSettingsTab({ searchQuery = '' }: { searchQuery?:
     secondarySidebarPosition, setSecondarySidebarPosition,
     autoImportCaptured, setAutoImportCaptured,
     checkForUpdatesOnStartup, setCheckForUpdatesOnStartup,
+    telemetryEnabled, setTelemetryEnabled,
     captureShortcut, setCaptureShortcut,
   } = useAppContext();
 
@@ -56,7 +57,7 @@ export default function GeneralSettingsTab({ searchQuery = '' }: { searchQuery?:
   const sections: Section[] = [
     {
       label: 'General Settings',
-      keywords: 'general sidebar position ai ocr left right',
+      keywords: 'general sidebar position ai ocr left right usage stats telemetry analytics privacy',
       render: () => (
         <>
           <div className="control-group">
@@ -124,6 +125,20 @@ export default function GeneralSettingsTab({ searchQuery = '' }: { searchQuery?:
               <span className="slider-switch" />
             </label>
           </div>
+          <div className="switch-container">
+            <span className="control-label">Share Anonymous Usage Stats</span>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={telemetryEnabled}
+                onChange={(e) => updateSetting('telemetryEnabled', e.target.checked, setTelemetryEnabled)}
+              />
+              <span className="slider-switch" />
+            </label>
+          </div>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px', display: 'block', lineHeight: 1.45 }}>
+            A daily anonymous ping with app version, OS and feature counts. Never images, text, file paths or keys.
+          </span>
         </>
       ),
     },

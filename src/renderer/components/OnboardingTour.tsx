@@ -79,7 +79,7 @@ export default function OnboardingTour() {
       body: (
         <>
           Drop an image here, or press <kbd>{mod}</kbd>+<kbd>V</kbd>. Beautify, Privacy Guard, and OCR
-          all run on your machine by default.
+          all run on your machine by default. achu sends an anonymous daily usage ping; turn it off in Settings.
         </>
       ),
     },

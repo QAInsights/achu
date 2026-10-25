@@ -114,6 +114,8 @@ beforeEach(() => {
     setUpdateAvailable: vi.fn(),
     checkForUpdatesOnStartup: true,
     setCheckForUpdatesOnStartup: vi.fn(),
+    telemetryEnabled: true,
+    setTelemetryEnabled: vi.fn(),
     padding: 38,
     setPadding: vi.fn(),
     rounded: 20,
