@@ -27,6 +27,7 @@ placeholder until the database is created.
 
 ```bash
 npx wrangler d1 migrations apply achu-telemetry --remote
+# Generate a token with: openssl rand -hex 32
 npx wrangler secret put STATS_TOKEN
 npx wrangler deploy
 ```
@@ -48,6 +49,8 @@ npx wrangler deploy
 - JSON: `curl -H "Authorization: Bearer $STATS_TOKEN" https://telemetry.achu.app/v1/stats`
 - HTML: open `https://telemetry.achu.app/stats` and enter the token once. The secure,
   HttpOnly cookie lasts 30 days.
+
+The stats login form is limited to 5 attempts per minute per IP.
 
 Both stats endpoints require `STATS_TOKEN`. The HTML page is titled "achu telemetry".
 

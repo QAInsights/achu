@@ -1,6 +1,7 @@
 export interface Env {
 	DB: D1Database;
 	PING_LIMITER: RateLimit;
+	LOGIN_LIMITER: RateLimit;
 	STATS_TOKEN?: string;
 }
 
@@ -423,6 +424,14 @@ export default {
 		}
 		if (url.pathname === "/stats" && request.method === "POST") {
 			const headers = { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" };
+			const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+			const { success } = await env.LOGIN_LIMITER.limit({ key: ip });
+			if (!success) {
+				return new Response("Too many login attempts. Try again in a minute.", {
+					status: 429,
+					headers: { ...headers, "Content-Type": "text/plain; charset=utf-8" },
+				});
+			}
 			let token: string | null = null;
 			try {
 				const form = await request.formData();

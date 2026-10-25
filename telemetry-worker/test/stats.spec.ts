@@ -78,7 +78,10 @@ describe("stats auth", () => {
 	it("rejects a wrong token submitted to the HTML login form", async () => {
 		const res = await SELF.fetch("https://example.com/stats", {
 			method: "POST",
-			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded",
+				"CF-Connecting-IP": "203.0.113.10",
+			},
 			body: "token=wrong",
 		});
 		expect(res.status).toBe(401);
@@ -91,7 +94,10 @@ describe("stats auth", () => {
 		const res = await SELF.fetch("https://example.com/stats", {
 			method: "POST",
 			redirect: "manual",
-			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded",
+				"CF-Connecting-IP": "203.0.113.11",
+			},
 			body: `token=${encodeURIComponent(TOKEN)}`,
 		});
 		expect(res.status).toBe(303);
@@ -110,7 +116,10 @@ describe("stats auth", () => {
 		const login = await SELF.fetch("https://example.com/stats", {
 			method: "POST",
 			redirect: "manual",
-			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded",
+				"CF-Connecting-IP": "203.0.113.12",
+			},
 			body: `token=${encodeURIComponent(TOKEN)}`,
 		});
 		const cookie = login.headers.get("Set-Cookie")!.split(";")[0];
@@ -122,6 +131,34 @@ describe("stats auth", () => {
 		expect(await res.text()).toContain("<title>achu telemetry</title>");
 
 		expect((await stats("/stats", TOKEN)).status).toBe(200);
+	});
+
+	it("rate limits wrong stats login attempts by IP", async () => {
+		for (let i = 0; i < 5; i++) {
+			const res = await SELF.fetch("https://example.com/stats", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+					"CF-Connecting-IP": "203.0.113.77",
+				},
+				body: "token=wrong",
+			});
+			expect(res.status).toBe(401);
+		}
+
+		const blocked = await SELF.fetch("https://example.com/stats", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded",
+				"CF-Connecting-IP": "203.0.113.77",
+			},
+			body: "token=wrong",
+		});
+		expect(blocked.status).toBe(429);
+		expect(blocked.headers.get("Cache-Control")).toBe("no-store");
+		expect(blocked.headers.get("Referrer-Policy")).toBe("no-referrer");
+		expect(blocked.headers.get("Content-Type")).toBe("text/plain; charset=utf-8");
+		expect(await blocked.text()).toBe("Too many login attempts. Try again in a minute.");
 	});
 });
 
