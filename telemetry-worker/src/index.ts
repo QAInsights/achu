@@ -18,10 +18,10 @@ const STRING_FIELDS = [
 	"locale",
 ] as const;
 
-function json(body: unknown, status = 200): Response {
+function json(body: unknown, status = 200, headers: HeadersInit = {}): Response {
 	return new Response(JSON.stringify(body), {
 		status,
-		headers: { "Content-Type": "application/json" },
+		headers: { "Content-Type": "application/json", ...headers },
 	});
 }
 
@@ -37,12 +37,7 @@ function dateOffset(daysBack: number): string {
 	return new Date(Date.now() - daysBack * 86400_000).toISOString().slice(0, 10);
 }
 
-async function tokenOk(request: Request, env: Env): Promise<boolean> {
-	const url = new URL(request.url);
-	const header = request.headers.get("Authorization");
-	const provided = header && header.startsWith("Bearer ")
-		? header.slice("Bearer ".length)
-		: url.searchParams.get("token");
+async function tokenOk(provided: string | null | undefined, env: Env): Promise<boolean> {
 	const expected = env.STATS_TOKEN ?? "";
 	// Compare SHA-256 digests so the check does not depend on token length or content.
 	const enc = new TextEncoder();
@@ -122,14 +117,37 @@ async function handlePing(request: Request, env: Env): Promise<Response> {
 	if (contentLength > MAX_BODY_BYTES) {
 		return badRequest("body too large");
 	}
-	let raw: string;
+	let raw = "";
 	try {
-		raw = await request.text();
+		if (request.body) {
+			const reader = request.body.getReader();
+			const chunks: Uint8Array[] = [];
+			let total = 0;
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+				if (!value) continue;
+				total += value.byteLength;
+				if (total > MAX_BODY_BYTES) {
+					try {
+						await reader.cancel();
+					} catch {
+						// The request is already being rejected.
+					}
+					return badRequest("body too large");
+				}
+				chunks.push(value);
+			}
+			const bytes = new Uint8Array(total);
+			let offset = 0;
+			for (const chunk of chunks) {
+				bytes.set(chunk, offset);
+				offset += chunk.byteLength;
+			}
+			raw = new TextDecoder().decode(bytes);
+		}
 	} catch {
 		return badRequest("unreadable body");
-	}
-	if (new TextEncoder().encode(raw).length > MAX_BODY_BYTES) {
-		return badRequest("body too large");
 	}
 	let parsed: unknown;
 	try {
@@ -144,32 +162,34 @@ async function handlePing(request: Request, env: Env): Promise<Response> {
 	const day = todayUTC();
 	const ts = Date.now();
 	const country = (request.cf?.country as string | undefined) ?? null;
+	const requestId = crypto.randomUUID();
 
-	const ins = await env.DB.prepare(
+	const statements = [
+		env.DB.prepare(
 		`INSERT OR IGNORE INTO pings
-		 (install_id, day, ts, event, app_version, electron_version, os, arch,
+		 (install_id, day, ts, request_id, event, app_version, electron_version, os, arch,
 		  channel, locale, first_run, country)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	).bind(
-		p.installId, day, ts, p.event,
-		p.appVersion ?? null, p.electronVersion ?? null, p.os ?? null, p.arch ?? null,
-		p.channel ?? null, p.locale ?? null,
-		p.firstRun === undefined ? null : p.firstRun ? 1 : 0,
-		country
-	).run();
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).bind(
+			p.installId, day, ts, requestId, p.event,
+			p.appVersion ?? null, p.electronVersion ?? null, p.os ?? null, p.arch ?? null,
+			p.channel ?? null, p.locale ?? null,
+			p.firstRun === undefined ? null : p.firstRun ? 1 : 0,
+			country
+		),
+	];
 
-	if (ins.meta.changes === 1 && p.features) {
-		const stmts = Object.entries(p.features)
-			.filter(([, count]) => count > 0)
-			.map(([feature, count]) =>
-				env.DB.prepare(
-					`INSERT INTO feature_counts (install_id, day, feature, count) VALUES (?, ?, ?, ?)`
-				).bind(p.installId, day, feature, count)
-			);
-		if (stmts.length > 0) {
-			await env.DB.batch(stmts);
-		}
+	for (const [feature, count] of Object.entries(p.features ?? {}).filter(([, count]) => count > 0)) {
+		statements.push(
+			env.DB.prepare(
+				`INSERT INTO feature_counts (install_id, day, feature, count)
+				 SELECT ?, ?, ?, ? WHERE EXISTS (
+					SELECT 1 FROM pings WHERE install_id = ? AND day = ? AND request_id = ?
+				 )`
+			).bind(p.installId, day, feature, count, p.installId, day, requestId)
+		);
 	}
+	await env.DB.batch(statements);
 	return new Response(null, { status: 204 });
 }
 
@@ -272,6 +292,14 @@ function esc(s: unknown): string {
 		.replaceAll('"', "&quot;");
 }
 
+function loginPage(): string {
+	return `<!doctype html><html><head><meta charset="utf-8"><title>achu telemetry login</title></head><body>
+<form method="post" action="/stats">
+<label>Stats token <input type="password" name="token" required autocomplete="current-password"></label>
+<button type="submit">View stats</button>
+</form></body></html>`;
+}
+
 function table(title: string, headers: string[], rows: unknown[][]): string {
 	const head = headers.map(h => `<th>${esc(h)}</th>`).join("");
 	const body = rows.length === 0
@@ -361,17 +389,65 @@ export default {
 			return handlePing(request, env);
 		}
 		if (url.pathname === "/v1/stats" && request.method === "GET") {
-			if (!(await tokenOk(request, env))) {
-				return json({ error: "unauthorized" }, 401);
+			const header = request.headers.get("Authorization");
+			const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : null;
+			const headers = { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" };
+			if (!(await tokenOk(token, env))) {
+				return json({ error: "unauthorized" }, 401, headers);
 			}
-			return json(await gatherStats(env));
+			return json(await gatherStats(env), 200, headers);
 		}
 		if (url.pathname === "/stats" && request.method === "GET") {
-			if (!(await tokenOk(request, env))) {
-				return json({ error: "unauthorized" }, 401);
+			const header = request.headers.get("Authorization");
+			const bearer = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : null;
+			const cookieValue = request.headers.get("Cookie")?.split(";")
+				.map(value => value.trim())
+				.find(value => value.startsWith("achu_stats="))
+				?.slice("achu_stats=".length);
+			let cookie: string | null = null;
+			try {
+				cookie = cookieValue === undefined ? null : decodeURIComponent(cookieValue);
+			} catch {
+				cookie = null;
+			}
+			const headers = { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" };
+			if (!(await tokenOk(bearer, env)) && !(await tokenOk(cookie, env))) {
+				return new Response(loginPage(), {
+					status: 401,
+					headers: { ...headers, "Content-Type": "text/html; charset=utf-8" },
+				});
 			}
 			return new Response(statsPage(await gatherStats(env)), {
-				headers: { "Content-Type": "text/html; charset=utf-8" },
+				headers: { ...headers, "Content-Type": "text/html; charset=utf-8" },
+			});
+		}
+		if (url.pathname === "/stats" && request.method === "POST") {
+			const headers = { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" };
+			let token: string | null = null;
+			try {
+				const form = await request.formData();
+				const value = form.get("token");
+				token = typeof value === "string" ? value : null;
+			} catch {
+				return new Response(loginPage(), {
+					status: 401,
+					headers: { ...headers, "Content-Type": "text/html; charset=utf-8" },
+				});
+			}
+			const submittedToken = token ?? "";
+			if (!(await tokenOk(submittedToken, env))) {
+				return new Response(loginPage(), {
+					status: 401,
+					headers: { ...headers, "Content-Type": "text/html; charset=utf-8" },
+				});
+			}
+			return new Response(null, {
+				status: 303,
+				headers: {
+					...headers,
+					Location: "/stats",
+					"Set-Cookie": `achu_stats=${encodeURIComponent(submittedToken)}; HttpOnly; Secure; SameSite=Strict; Path=/stats; Max-Age=2592000`,
+				},
 			});
 		}
 		return json({ error: "not found" }, 404);

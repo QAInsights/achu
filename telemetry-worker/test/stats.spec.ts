@@ -54,16 +54,74 @@ describe("stats auth", () => {
 		expect((await stats("/v1/stats", "wrong")).status).toBe(401);
 	});
 
-	it("accepts the token via a Bearer header or query parameter", async () => {
-		expect((await stats("/v1/stats", TOKEN)).status).toBe(200);
-		expect((await stats(`/v1/stats?token=${TOKEN}`)).status).toBe(200);
+	it("requires a bearer header for JSON stats and sets no-store headers", async () => {
+		const authorized = await stats("/v1/stats", TOKEN);
+		expect(authorized.status).toBe(200);
+		expect(authorized.headers.get("Cache-Control")).toBe("no-store");
+		expect(authorized.headers.get("Referrer-Policy")).toBe("no-referrer");
+		const unauthorized = await stats(`/v1/stats?token=${TOKEN}`);
+		expect(unauthorized.status).toBe(401);
+		expect(unauthorized.headers.get("Cache-Control")).toBe("no-store");
+		expect(unauthorized.headers.get("Referrer-Policy")).toBe("no-referrer");
 	});
 
-	it("serves the HTML stats page with a token", async () => {
+	it("does not authenticate HTML stats from a query token", async () => {
 		const res = await stats(`/stats?token=${TOKEN}`);
+		expect(res.status).toBe(401);
+		expect(res.headers.get("Cache-Control")).toBe("no-store");
+		expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
+		const html = await res.text();
+		expect(html).toContain('<form method="post" action="/stats">');
+		expect(html).toContain('name="token"');
+	});
+
+	it("rejects a wrong token submitted to the HTML login form", async () => {
+		const res = await SELF.fetch("https://example.com/stats", {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: "token=wrong",
+		});
+		expect(res.status).toBe(401);
+		expect(res.headers.get("Cache-Control")).toBe("no-store");
+		expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
+		expect(await res.text()).toContain('name="token"');
+	});
+
+	it("sets a secure stats cookie after a valid form login", async () => {
+		const res = await SELF.fetch("https://example.com/stats", {
+			method: "POST",
+			redirect: "manual",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: `token=${encodeURIComponent(TOKEN)}`,
+		});
+		expect(res.status).toBe(303);
+		expect(res.headers.get("Location")).toBe("/stats");
+		expect(res.headers.get("Cache-Control")).toBe("no-store");
+		expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
+		expect(res.headers.get("Set-Cookie")).toContain(`achu_stats=${TOKEN};`);
+		expect(res.headers.get("Set-Cookie")).toContain("HttpOnly");
+		expect(res.headers.get("Set-Cookie")).toContain("Secure");
+		expect(res.headers.get("Set-Cookie")).toContain("SameSite=Strict");
+		expect(res.headers.get("Set-Cookie")).toContain("Path=/stats");
+		expect(res.headers.get("Set-Cookie")).toContain("Max-Age=2592000");
+	});
+
+	it("accepts the stats cookie and bearer header for the HTML page", async () => {
+		const login = await SELF.fetch("https://example.com/stats", {
+			method: "POST",
+			redirect: "manual",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: `token=${encodeURIComponent(TOKEN)}`,
+		});
+		const cookie = login.headers.get("Set-Cookie")!.split(";")[0];
+		const res = await SELF.fetch("https://example.com/stats", { headers: { Cookie: cookie } });
 		expect(res.status).toBe(200);
 		expect(res.headers.get("Content-Type")).toContain("text/html");
+		expect(res.headers.get("Cache-Control")).toBe("no-store");
+		expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
 		expect(await res.text()).toContain("<title>achu telemetry</title>");
+
+		expect((await stats("/stats", TOKEN)).status).toBe(200);
 	});
 });
 
@@ -80,7 +138,7 @@ describe("stats numbers", () => {
 			"INSERT INTO feature_counts (install_id, day, feature, count) VALUES ('a', ?, 'chat_open', 10), ('a', ?, 'chat_open', 5), ('b', ?, 'export', 2), ('b', ?, 'old_feature', 7)"
 		).bind(day(0), day(1), day(5), day(60)).run();
 
-		const res = await stats(`/v1/stats?token=${TOKEN}`);
+		const res = await stats("/v1/stats", TOKEN);
 		expect(res.status).toBe(200);
 		const result = await res.json() as any;
 
@@ -121,7 +179,7 @@ describe("stats numbers", () => {
 		await insertPing("y", day(3));
 		await insertPing("z", day(0));
 
-		const result = await (await stats(`/v1/stats?token=${TOKEN}`)).json() as any;
+		const result = await (await stats("/v1/stats", TOKEN)).json() as any;
 		expect(result.retention).toEqual([
 			{ days: 1, cohort: 2, retained: 1 },
 			{ days: 7, cohort: 1, retained: 1 },
@@ -143,7 +201,7 @@ describe("stats numbers", () => {
 			"INSERT INTO feature_counts (install_id, day, feature, count) VALUES ('malicious', ?, '<script>alert(1)</script>', 3)"
 		).bind(day(0)).run();
 
-		const html = await (await stats(`/stats?token=${TOKEN}`)).text();
+		const html = await (await stats("/stats", TOKEN)).text();
 		expect(html).toContain("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
 		expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
 		expect(html).not.toContain(`<img src=x onerror="alert(1)">`);

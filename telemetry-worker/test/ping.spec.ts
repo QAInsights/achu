@@ -56,6 +56,7 @@ describe("POST /v1/ping", () => {
 		});
 		expect(String(ping!.day)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 		expect(typeof ping!.ts).toBe("number");
+		expect(String(ping!.request_id)).toMatch(/^[0-9a-f-]{36}$/);
 
 		const features = await env.DB.prepare(
 			"SELECT feature, count FROM feature_counts ORDER BY feature"
@@ -66,17 +67,20 @@ describe("POST /v1/ping", () => {
 		]);
 	});
 
-	it("ignores a second ping on the same day, including its feature counts", async () => {
+	it("ignores a second ping on the same day, including new feature counts", async () => {
 		expect((await postPing(pingBody())).status).toBe(204);
-		const res = await postPing(pingBody({ appVersion: "9.9.9", features: { chat_open: 99 } }));
+		const res = await postPing(pingBody({ appVersion: "9.9.9", features: { duplicate_only: 99 } }));
 		expect(res.status).toBe(204);
 
 		const pings = await env.DB.prepare("SELECT COUNT(*) AS n FROM pings").first<{ n: number }>();
 		expect(pings!.n).toBe(1);
 		const features = await env.DB.prepare(
-			"SELECT SUM(count) AS n FROM feature_counts"
-		).first<{ n: number }>();
-		expect(features!.n).toBe(3);
+			"SELECT feature, count FROM feature_counts ORDER BY feature"
+		).all<{ feature: string; count: number }>();
+		expect(features.results).toEqual([
+			{ feature: "chat_open", count: 2 },
+			{ feature: "export", count: 1 },
+		]);
 	});
 
 	it("skips zero-count features", async () => {
@@ -144,6 +148,23 @@ describe("POST /v1/ping", () => {
 			headers: { "Content-Type": "application/json", "Content-Length": "9999" },
 			body: JSON.stringify(pingBody()),
 		});
+		expect(res.status).toBe(400);
+	});
+
+	it("rejects oversized streamed bodies without a Content-Length header", async () => {
+		const body = new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(new TextEncoder().encode("x".repeat(5000)));
+				controller.close();
+			},
+		});
+		const init = {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body,
+			duplex: "half",
+		} as RequestInit;
+		const res = await SELF.fetch("https://example.com/v1/ping", init);
 		expect(res.status).toBe(400);
 	});
 

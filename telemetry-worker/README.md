@@ -46,7 +46,8 @@ npx wrangler deploy
 ## Viewing stats
 
 - JSON: `curl -H "Authorization: Bearer $STATS_TOKEN" https://telemetry.achu.app/v1/stats`
-- HTML: open `https://telemetry.achu.app/stats?token=$STATS_TOKEN` in a browser.
+- HTML: open `https://telemetry.achu.app/stats` and enter the token once. The secure,
+  HttpOnly cookie lasts 30 days.
 
 Both stats endpoints require `STATS_TOKEN`. The HTML page is titled "achu telemetry".
 

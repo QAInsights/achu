@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS pings (
     install_id TEXT NOT NULL,
     day TEXT NOT NULL,
     ts INTEGER NOT NULL,
+    request_id TEXT,
     event TEXT,
     app_version TEXT,
     electron_version TEXT,
