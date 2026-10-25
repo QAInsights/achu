@@ -3,6 +3,12 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import OnboardingTour from '../src/renderer/components/OnboardingTour';
 import { makeFullMockContext } from './shared';
 
+const mockTrackFeature = vi.hoisted(() => vi.fn());
+
+vi.mock('../src/renderer/utils/telemetry', () => ({
+  trackFeature: mockTrackFeature,
+}));
+
 const mockCtx = vi.hoisted(() => ({
   value: null as any,
 }));
@@ -15,6 +21,7 @@ describe('OnboardingTour', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.useFakeTimers();
+    mockTrackFeature.mockClear();
     mockCtx.value = makeFullMockContext({
       imageSrc: null,
       noImageMode: false,
@@ -60,6 +67,7 @@ describe('OnboardingTour', () => {
     expect(screen.getByText('Paste a screenshot')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Skip'));
     expect(screen.queryByTestId('onboarding-tour')).not.toBeInTheDocument();
+    expect(mockTrackFeature).toHaveBeenCalledWith('onboarding_skip');
     const parsed = JSON.parse(localStorage.getItem('snapframe-user-defaults') || '{}');
     expect(parsed.onboardingTourCompleted).toBe(true);
   });
@@ -107,5 +115,34 @@ describe('OnboardingTour', () => {
     expect(mockCtx.value.copyBeautifiedImage).toHaveBeenCalled();
     expect(mockCtx.value.showToast).toHaveBeenCalledWith('Beautified shot copied', 2500);
     expect(screen.queryByTestId('onboarding-tour')).not.toBeInTheDocument();
+    expect(mockTrackFeature).toHaveBeenCalledWith('onboarding_done');
+    expect(mockTrackFeature).not.toHaveBeenCalledWith('onboarding_skip');
+  });
+
+  it('does not complete or record done when copying fails', async () => {
+    mockCtx.value = makeFullMockContext({
+      imageSrc: 'data:image/png;base64,abc',
+      noImageMode: false,
+      copyBeautifiedImage: vi.fn().mockRejectedValue(new Error('Copy failed')),
+      showToast: vi.fn(),
+    });
+    render(<OnboardingTour />);
+    act(() => {
+      vi.advanceTimersByTime(450);
+    });
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Next'));
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('onboarding-copy-shot'));
+      await Promise.resolve();
+    });
+
+    expect(mockCtx.value.showToast).toHaveBeenCalledWith(
+      'Could not copy. Try pasting an image first.',
+      4000
+    );
+    expect(screen.getByTestId('onboarding-tour')).toBeInTheDocument();
+    expect(mockTrackFeature).not.toHaveBeenCalledWith('onboarding_done');
   });
 });

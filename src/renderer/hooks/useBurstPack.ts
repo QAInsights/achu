@@ -10,6 +10,7 @@ import { buildBurstVariantFilename } from '../../shared/burstVariantFilename';
 import type { BurstPackSaveResult, BurstVariantPayload } from '../../shared/burstTypes';
 import { loadBurstImages } from '../utils/burstImageLoader';
 import { findPresetByKey } from '../utils/burstPresetLookup';
+import { trackFeature } from '../utils/telemetry';
 import type { CompressionMode } from './useExport';
 
 export type BurstPackPhase = 'idle' | 'rendering' | 'saving' | 'done' | 'error';
@@ -132,6 +133,7 @@ export function useBurstPack(
             if (variants.length === 0) {
               setPhase('error');
               showToast('No valid platform presets selected');
+              trackFeature('err_burst_pack');
               resolve({ success: false, error: 'No variants rendered' });
               return;
             }
@@ -156,17 +158,20 @@ export function useBurstPack(
             if (result.success && result.data) {
               setLastResult(result.data);
               setPhase('done');
+              trackFeature('burst_pack_save');
               // Keep modal open with launch checklist (viral post-export UX)
               showToast(`Burst Pack saved (${result.data.variantCount} variants)`);
               resolve({ success: true, variantCount: result.data.variantCount });
             } else {
               setPhase('error');
+              trackFeature('err_burst_pack');
               const msg = result.error?.message || 'Failed to save burst pack';
               showToast(msg, 4000);
               resolve({ success: false, error: msg });
             }
           } catch (err) {
             setPhase('error');
+            trackFeature('err_burst_pack');
             const msg = err instanceof Error ? err.message : 'Burst pack failed';
             showToast(msg, 4000);
             resolve({ success: false, error: msg });

@@ -2,8 +2,15 @@ import { useState } from 'react';
 import { renderCanvas, RenderConfig, preloadBgImage } from '../canvasRenderer';
 import { onNoiseReady } from '../shaders/shaderWebGL';
 import { composeBeforeAfter, renderRawBeforePanel } from '../utils/beforeAfterExport';
+import { trackFeature } from '../utils/telemetry';
 
 export type CompressionMode = 'original' | 'balanced' | 'small';
+
+const exportFeatureByFormat = {
+  png: 'export_png',
+  jpeg: 'export_jpeg',
+  webp: 'export_webp',
+} as const;
 
 export function useExport(
   imageSrc: string | null,
@@ -147,7 +154,11 @@ export function useExport(
           const clipboardText = caption ?? codeText;
 
           if (window.snapFrameAPI) {
-            await window.snapFrameAPI.copyImageToClipboard(base64Data, clipboardText);
+            const copied = await window.snapFrameAPI.copyImageToClipboard(base64Data, clipboardText);
+            if (copied === false) {
+              reject(new Error('Copy failed'));
+              return;
+            }
           } else {
             const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
             if (blob) {
@@ -159,6 +170,7 @@ export function useExport(
             }
           }
           onExportSuccess?.();
+          trackFeature('export_copy');
           resolve();
         } catch (err) {
           reject(err);
@@ -184,17 +196,19 @@ export function useExport(
 
   const exportBeforeAfter = () => {
     if (!imageSrc || noImageMode) return;
-    loadImages(imageSrc, getCurrentConfig().backgroundValue, (img) => {
+    loadImages(imageSrc, getCurrentConfig().backgroundValue, async (img) => {
       const composed = buildBeforeAfterCanvas(img, () => undefined);
       if (!composed) return;
       const base64Data = composed.toDataURL('image/png');
       if (window.snapFrameAPI) {
-        window.snapFrameAPI.saveFile(base64Data, 'png', 100, 'original');
+        const saved = await window.snapFrameAPI.saveFile(base64Data, 'png', 100, 'original');
+        if (saved) trackFeature('export_before_after');
       } else {
         const link = document.createElement('a');
         link.download = 'achu-before-after.png';
         link.href = base64Data;
         link.click();
+        trackFeature('export_before_after');
       }
     });
   };
@@ -208,11 +222,13 @@ export function useExport(
           if (!composed) return;
           const base64Data = composed.toDataURL('image/png');
           if (window.snapFrameAPI) {
-            await window.snapFrameAPI.copyImageToClipboard(base64Data);
+            const copied = await window.snapFrameAPI.copyImageToClipboard(base64Data);
+            if (copied) trackFeature('export_before_after');
           } else {
             const blob = await new Promise<Blob | null>((res) => composed.toBlob(res, 'image/png'));
             if (blob) {
               await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+              trackFeature('export_before_after');
             }
           }
           resolve();
@@ -240,6 +256,7 @@ export function useExport(
           const payload = base64Data?.split(',')[1] || '';
 
           if (!base64Data || !base64Data.startsWith('data:image/') || payload.length === 0) {
+            trackFeature('err_gallery_save');
             resolve({
               success: false,
               error: {
@@ -267,8 +284,10 @@ export function useExport(
                 setDocumentName(result.data.documentName);
               }
               onExportSuccess?.();
+              trackFeature('gallery_save');
               resolve({ success: true, path: result.data.path, name: result.data.name });
             } else {
+              trackFeature('err_gallery_save');
               resolve({ success: false, error: result.error });
             }
           } else {
@@ -279,6 +298,7 @@ export function useExport(
           }
         } catch (err) {
           console.error('Failed to save to gallery:', err);
+          trackFeature('err_gallery_save');
           resolve({
             success: false,
             error: {
@@ -310,6 +330,7 @@ export function useExport(
       if (window.snapFrameAPI) {
         window.snapFrameAPI.saveFile(base64Data, exportFormat, jpegQuality, compressionMode);
         onExportSuccess?.();
+        trackFeature(exportFeatureByFormat[exportFormat]);
         if (suffix) alert(suffix);
       } else {
         const link = document.createElement('a');
@@ -318,6 +339,7 @@ export function useExport(
         link.href = base64Data;
         link.click();
         onExportSuccess?.();
+        trackFeature(exportFeatureByFormat[exportFormat]);
         if (suffix) alert(suffix);
       }
     });

@@ -176,8 +176,8 @@ describe('registerIpcHandlers', () => {
 
   it('records telemetry feature events', () => {
     const handler = getOnHandler('telemetry:record');
-    handler({}, 'app_open');
-    expect(mockRecordFeature).toHaveBeenCalledWith('app_open');
+    handler({}, 'export_png');
+    expect(mockRecordFeature).toHaveBeenCalledWith('export_png');
   });
 
   describe('set-github-token', () => {
@@ -430,6 +430,7 @@ describe('registerIpcHandlers', () => {
       const handler = getOnHandler('capture:trigger');
       handler();
       expect(mockTriggerCapture).toHaveBeenCalled();
+      expect(mockRecordFeature).toHaveBeenCalledWith('capture_button');
     });
   });
 });

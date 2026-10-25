@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { shell, clipboard, globalShortcut } from 'electron';
 
+const mockRecordFeature = vi.hoisted(() => vi.fn());
+
 // Mock electron
 vi.mock('electron', () => {
   const mockImage = {
@@ -25,6 +27,10 @@ vi.mock('electron', () => {
     BrowserWindow: class {},
   };
 });
+
+vi.mock('../src/main/telemetry', () => ({
+  recordFeature: mockRecordFeature,
+}));
 
 const mockExec = vi.hoisted(() => vi.fn());
 
@@ -98,6 +104,7 @@ describe('Capture Main Module', () => {
       'data:image/png;base64,mock-data',
       false
     );
+    expect(mockRecordFeature).toHaveBeenCalledWith('capture_import');
   });
 
   it('does not import if clipboard image is empty', () => {
@@ -150,6 +157,9 @@ describe('Capture Main Module', () => {
     expect(getAutoImportEnabled()).toBe(false);
     expect(globalShortcut.register).toHaveBeenCalledWith('PrintScreen', expect.any(Function));
     expect(getRegisteredShortcut()).toBe('PrintScreen');
+    const registerCall = (globalShortcut.register as any).mock.calls[0];
+    registerCall[1]();
+    expect(mockRecordFeature).toHaveBeenCalledWith('capture_hotkey');
   });
 
   it('disables auto-import on focus if global shortcut is Disabled', () => {

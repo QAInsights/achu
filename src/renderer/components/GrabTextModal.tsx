@@ -3,6 +3,7 @@ import { useAppContext } from '../AppContext';
 import { X, Sparkles, Copy, Check, RefreshCw } from 'lucide-react';
 import { createWorker } from 'tesseract.js';
 import { downsampleImageForOcr } from '../utils/privacyGuardUtils';
+import { trackFeature } from '../utils/telemetry';
 import './GrabTextModal.css';
 
 interface GrabTextModalProps {
@@ -71,8 +72,10 @@ export default function GrabTextModal({ onClose }: GrabTextModalProps) {
         if (isMounted) {
           setText(data.text || '');
           setLoading(false);
+          trackFeature('ocr_grab');
         }
       } catch (err: any) {
+        trackFeature('err_ocr');
         console.error('OCR processing error:', err);
         if (isMounted) {
           setError(err.message || 'Failed to extract text from the screenshot.');

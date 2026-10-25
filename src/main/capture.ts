@@ -1,6 +1,7 @@
 import { shell, clipboard, BrowserWindow, globalShortcut } from 'electron';
 import { exec } from 'child_process';
 import { AppSettings } from './settings';
+import { recordFeature } from './telemetry';
 
 let lastCapturedBuffer: Buffer | null = null;
 let ignoreBuffer: Buffer | null = null;
@@ -74,6 +75,7 @@ export function checkClipboardAndImport(window: BrowserWindow) {
 
     // Send to renderer
     window.webContents.send('hotkey:triggered', dataUrl, isCaptureInitiated);
+    recordFeature('capture_import');
 
     // Focus and restore window
     if (!window.isVisible()) window.show();
@@ -118,6 +120,7 @@ export function updateCaptureConfigurations(settings: AppSettings, window: Brows
     if (newShortcut && newShortcut !== 'Disabled') {
       try {
         const success = globalShortcut.register(newShortcut, () => {
+          recordFeature('capture_hotkey');
           triggerOSScreenCapture();
         });
         if (success) {

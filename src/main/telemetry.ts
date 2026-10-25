@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { app, net } from 'electron';
+import { isTelemetryFeature } from '../shared/telemetryFeatures';
 import { loadSettings, saveSettings } from './settings';
 
 export const TELEMETRY_URL = 'https://telemetry.achu.app/v1/ping';
@@ -46,7 +47,7 @@ function schedulePersist(): void {
 }
 
 export function recordFeature(name: unknown): void {
-  if (isTelemetrySuppressed() || !enabledCache || typeof name !== 'string' || !FEATURE_RE.test(name)) {
+  if (isTelemetrySuppressed() || !enabledCache || !isTelemetryFeature(name) || !FEATURE_RE.test(name)) {
     return;
   }
 

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { RenderConfig } from '../canvasRenderer';
+import { trackFeature } from '../utils/telemetry';
 
 interface MeshPoint {
   id: string; color: string; x: number; y: number; radius: number;
@@ -59,6 +60,7 @@ export function useCodeStudio(deps: UseCodeStudioDeps) {
   const [codeStudioBgConfig, setCodeStudioBgConfig] = useState<any>(null);
 
   const toggleCodeStudio = useCallback((active: boolean, codeText?: string, codeLang?: string) => {
+    if (active && !codeStudioActive) trackFeature('code_studio_open');
     setCodeStudioActive(active);
 
     if (active) {

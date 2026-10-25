@@ -8,6 +8,14 @@ import { buildMarkdown, safeParseJSON } from '../utils/githubAgentUtils';
 import { pushToGitHub } from '../utils/githubApiUtils';
 import { fetchAndParseModels, DEFAULT_OPENAI_MODELS, DEFAULT_GEMINI_MODELS, DEFAULT_CLAUDE_MODELS } from '../utils/modelsDevUtils';
 import { downsampleImageForOcr } from '../utils/privacyGuardUtils';
+import { trackFeature } from '../utils/telemetry';
+
+const issueFeatureByProvider = {
+  ollama: 'ai_issue_ollama',
+  openai: 'ai_issue_openai',
+  google: 'ai_issue_google',
+  claude: 'ai_issue_claude',
+} as const;
 
 export function useIssueAgent(
   imageSrc: string | null,
@@ -205,9 +213,12 @@ Severity rules:
 
       payload.markdownBody = buildMarkdown(payload) + markdownSuffix;
       setIssuePayload(payload);
+      const issueFeature = issueFeatureByProvider[aiProvider as keyof typeof issueFeatureByProvider];
+      if (issueFeature) trackFeature(issueFeature);
       setHighlightedComponents(payload.components);
       pushHistory({ ...getCurrentConfig(), issuePayload: payload });
     } catch (err: any) {
+      trackFeature('err_ai_issue');
       console.error('Issue generation failed:', err);
       setIssueError(err.message || 'Generation failed.');
       setLocalFallbackAvailable(true);
@@ -242,6 +253,7 @@ Severity rules:
     setIssuePayload(payload);
     setHighlightedComponents([]);
     setLocalFallbackAvailable(false);
+    trackFeature('ai_issue_offline');
   };
 
   const exportBeautifiedScreenshot = async (burn = false): Promise<string> => {
@@ -330,6 +342,7 @@ Severity rules:
       const screenshotBase64 = await exportBeautifiedScreenshot(burnHighlights);
       const [owner, repo] = githubRepo.split('/');
       const issueUrl = await pushToGitHub(token, owner, repo, issuePayload, screenshotBase64);
+      trackFeature('github_push');
 
       if (window.snapFrameAPI) {
         window.snapFrameAPI.openURL(issueUrl);
@@ -337,6 +350,7 @@ Severity rules:
         window.open(issueUrl, '_blank');
       }
     } catch (err: any) {
+      trackFeature('err_github_push');
       console.error('Push to GitHub failed:', err);
       alert('GitHub Publish Failed: ' + err.message);
     }

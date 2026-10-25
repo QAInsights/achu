@@ -162,6 +162,7 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null) {
 
   // Screen capture trigger from renderer
   ipcMain.on('capture:trigger', () => {
+    recordFeature('capture_button');
     triggerOSScreenCapture();
   });
 

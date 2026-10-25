@@ -4,6 +4,7 @@ import { useAppContext } from '../AppContext';
 import { isOnboardingTourCompleted, markOnboardingTourCompleted } from '../utils/growthUtils';
 import { getModKeyLabel } from '../utils/shortcutLabels';
 import { buildShareIntentUrl, getShareCaption } from '../utils/shareCaptions';
+import { trackFeature } from '../utils/telemetry';
 import './OnboardingTour.css';
 
 const TOTAL_STEPS = 3;
@@ -33,17 +34,22 @@ export default function OnboardingTour() {
     setVisible(false);
   }, []);
 
+  const skip = useCallback(() => {
+    trackFeature('onboarding_skip');
+    complete();
+  }, [complete]);
+
   useEffect(() => {
     if (!visible) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        complete();
+        skip();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [visible, complete]);
+  }, [visible, skip]);
 
   const handleCopyBeautified = async () => {
     // Option A: empty canvas → toast and stay on step 3
@@ -55,6 +61,7 @@ export default function OnboardingTour() {
     try {
       await copyBeautifiedImage();
       showToast?.('Beautified shot copied', 2500);
+      trackFeature('onboarding_done');
       complete();
     } catch {
       showToast?.('Could not copy. Try pasting an image first.', 4000);
@@ -125,7 +132,7 @@ export default function OnboardingTour() {
           <button
             type="button"
             className="onboarding-tour-close"
-            onClick={complete}
+            onClick={skip}
             aria-label="Skip tour"
           >
             <X className="w-4 h-4" />
@@ -142,7 +149,7 @@ export default function OnboardingTour() {
 
         <div className="onboarding-tour-actions">
           {step === 0 ? (
-            <button type="button" className="btn btn-ghost onboarding-tour-actions-left" onClick={complete}>
+            <button type="button" className="btn btn-ghost onboarding-tour-actions-left" onClick={skip}>
               Skip
             </button>
           ) : (

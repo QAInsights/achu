@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
+const mockTrackFeature = vi.hoisted(() => vi.fn());
+
+vi.mock('../src/renderer/utils/telemetry', () => ({
+  trackFeature: mockTrackFeature,
+}));
+
 import { usePresets } from '../src/renderer/hooks/usePresets';
 import { Annotation } from '../src/renderer/canvasRenderer';
 
@@ -54,6 +60,7 @@ describe('usePresets', () => {
     mockSetLightRaysSourceX = vi.fn<React.Dispatch<React.SetStateAction<number>>>();
     mockSetLightRaysSourceY = vi.fn<React.Dispatch<React.SetStateAction<number>>>();
     vi.restoreAllMocks();
+    mockTrackFeature.mockClear();
   });
 
   const render = (overrides?: {
@@ -295,6 +302,7 @@ describe('usePresets', () => {
       });
       expect(mockSetBackgroundType).toHaveBeenCalledWith('color');
       expect(mockSetBackgroundValue).toHaveBeenCalledWith('#00ff00');
+      expect(mockTrackFeature).toHaveBeenCalledWith('preset_apply');
     });
 
     it('pushes history with the preset config', () => {

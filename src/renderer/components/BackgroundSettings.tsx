@@ -7,11 +7,21 @@ import PresetSelector from './PresetSelector';
 import MeshGradientControls from './MeshGradientControls';
 import ShaderControls from './ShaderControls';
 import { formatModShortcut } from '../utils/shortcutLabels';
+import { trackFeature } from '../utils/telemetry';
+import type { TelemetryFeature } from '../../shared/telemetryFeatures';
 import {
   disneyHollywoodGradients,
   defaultGradients,
   solidPresets
 } from '../presetsData';
+
+const backgroundFeatureByType: Record<'color' | 'gradient' | 'blur' | 'mesh' | 'shader', TelemetryFeature> = {
+  color: 'bg_color',
+  gradient: 'bg_gradient',
+  blur: 'bg_blur',
+  mesh: 'bg_mesh',
+  shader: 'bg_shader',
+};
 
 export default function BackgroundSettings() {
   const {
@@ -115,6 +125,7 @@ export default function BackgroundSettings() {
               onClick={() => {
                 setBackgroundType(type);
                 pushHistory({ ...getCurrentConfig(), backgroundType: type });
+                trackFeature(backgroundFeatureByType[type]);
               }}
             >
               {type === 'color' ? 'Solid' : type === 'gradient' ? 'Preset' : type === 'blur' ? 'Blurred' : type === 'mesh' ? 'Mesh' : 'Shader'}

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { detectLanguage } from '../utils/codeTokenizer';
+import { trackFeature } from '../utils/telemetry';
 
 /**
  * System clipboard paste: images and auto-detected code.
@@ -32,6 +33,7 @@ export function useClipboardPaste(
         const dataUrl = await window.snapFrameAPI.readImageFromClipboard();
         if (dataUrl) {
           handlePasteImage(dataUrl);
+          trackFeature('paste_clipboard');
           pastedImage = true;
         }
       }
@@ -47,6 +49,7 @@ export function useClipboardPaste(
                 reader.onload = (event) => {
                   if (event.target?.result) {
                     handlePasteImage(event.target.result as string);
+                    trackFeature('paste_clipboard');
                   }
                 };
                 reader.readAsDataURL(blob);

@@ -6,6 +6,7 @@ const { mockRenderCanvas, mockLoadBurstImages } = vi.hoisted(() => ({
   mockRenderCanvas: vi.fn(),
   mockLoadBurstImages: vi.fn(),
 }));
+const mockTrackFeature = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/renderer/canvasRenderer', () => ({
   renderCanvas: mockRenderCanvas,
@@ -13,6 +14,10 @@ vi.mock('../src/renderer/canvasRenderer', () => ({
 
 vi.mock('../src/renderer/utils/burstImageLoader', () => ({
   loadBurstImages: mockLoadBurstImages,
+}));
+
+vi.mock('../src/renderer/utils/telemetry', () => ({
+  trackFeature: mockTrackFeature,
 }));
 
 import { useBurstPack } from '../src/renderer/hooks/useBurstPack';
@@ -165,6 +170,7 @@ describe('useBurstPack', () => {
     expect(result.current.phase).toBe('done');
     expect(result.current.lastResult?.variantCount).toBe(4);
     expect(result.current.toast).toContain('Burst Pack saved');
+    expect(mockTrackFeature).toHaveBeenCalledWith('burst_pack_save');
   });
 
   it('shows error toast when IPC save fails', async () => {
@@ -185,6 +191,7 @@ describe('useBurstPack', () => {
     expect(saveResult!.success).toBe(false);
     expect(saveResult!.error).toBe('No space left');
     expect(result.current.toast).toBe('No space left');
+    expect(mockTrackFeature).toHaveBeenCalledWith('err_burst_pack');
   });
 
   it('handles render exceptions gracefully', async () => {

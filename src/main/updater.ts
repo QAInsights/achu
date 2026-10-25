@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import { Readable } from 'stream';
 import { loadSettings, saveSettings, AppSettings } from './settings';
+import { recordFeature } from './telemetry';
 
 const isDev = !app.isPackaged;
 
@@ -1136,6 +1137,7 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
       if (isNsisInstall()) {
         await performNsisInstall(getMainWindow);
         setTimeout(() => quitAndInstallNsis(), 800);
+        recordFeature('update_install');
         return { success: true, relaunching: true };
       }
 
@@ -1169,6 +1171,7 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
         // return IPC reply, then quit so the reply is not dropped.
         performWindowsUpdate(tempPath);
         quitForUpdate();
+        recordFeature('update_install');
         return { success: true, relaunching: true };
       }
 
@@ -1182,6 +1185,7 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
           };
         }
         quitForUpdate();
+        recordFeature('update_install');
         return { success: true, relaunching: true };
       }
 
@@ -1195,6 +1199,7 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
         };
       }
       quitForUpdate();
+      recordFeature('update_install');
       return { success: true, relaunching: true };
     } catch (error: any) {
       console.error('[Updater] Update installation failed:', error);

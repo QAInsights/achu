@@ -21,6 +21,7 @@ import { useCodeStudio } from './hooks/useCodeStudio';
 import { useRedaction } from './hooks/useRedaction';
 import { useMeshControls } from './hooks/useMeshControls';
 import { useSettingsSync } from './hooks/useSettingsSync';
+import { trackFeature } from './utils/telemetry';
 
 
 // TypeScript declarations for secure Electron IPC bridge
@@ -322,6 +323,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const { shouldShowSharePrompt } = recordExportSuccess();
       if (shouldShowSharePrompt) {
         setShareAchuPromptOpen(true);
+        trackFeature('share_prompt_shown');
       }
     } catch {
       /* ignore growth counter failures */
@@ -441,7 +443,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (event) => {
-          if (event.target?.result) onImageLoaded(event.target.result as string);
+          if (event.target?.result) {
+            onImageLoaded(event.target.result as string);
+            trackFeature('image_open');
+          }
         };
         reader.readAsDataURL(file);
       }

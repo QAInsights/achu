@@ -7,6 +7,7 @@ import SelectionBox from './components/annotations/SelectionBox';
 import TextEditor from './components/annotations/TextEditor';
 import SnapGuides from './components/annotations/SnapGuides';
 import AnnotationContextMenu, { LayerOrderAction } from './components/AnnotationContextMenu';
+import { trackFeature } from './utils/telemetry';
 import { transformCoordinates, getDeleteButtonPosition } from './utils/layoutUtils';
 import {
   bringToFront,
@@ -323,13 +324,14 @@ export default function AnnotationsLayer({
         const ann = annotations.find(a => a.id === editingTextId);
         if (!ann) return null;
 
-        const handleBlur = () => {
+        const commitText = () => {
           const trimmed = editingTextValue.trim();
           let updated = annotations;
           if (!trimmed) {
             updated = annotations.filter(a => a.id !== ann.id);
           } else {
             updated = annotations.map(a => (a.id === ann.id ? { ...a, text: trimmed } : a));
+            if (!ann.text) trackFeature('annot_text');
           }
           setAnnotations(updated);
           setEditingTextId(null);
@@ -337,20 +339,12 @@ export default function AnnotationsLayer({
           onSaveHistory(updated);
         };
 
+        const handleBlur = () => commitText();
+
         const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            const trimmed = editingTextValue.trim();
-            let updated = annotations;
-            if (!trimmed) {
-              updated = annotations.filter(a => a.id !== ann.id);
-            } else {
-              updated = annotations.map(a => (a.id === ann.id ? { ...a, text: trimmed } : a));
-            }
-            setAnnotations(updated);
-            setEditingTextId(null);
-            setEditingTextValue('');
-            onSaveHistory(updated);
+            commitText();
           } else if (e.key === 'Escape') {
             if (!ann.text) {
               const updated = annotations.filter(a => a.id !== ann.id);

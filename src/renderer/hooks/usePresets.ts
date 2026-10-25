@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { RenderConfig, Annotation, RedactionItem, preloadBgImage } from '../canvasRenderer';
+import { trackFeature } from '../utils/telemetry';
 
 export function usePresets(
   setImageSrc: React.Dispatch<React.SetStateAction<string | null>>,
@@ -41,7 +42,10 @@ export function usePresets(
   const selectFile = async () => {
     if (window.snapFrameAPI) {
       const imgData = await window.snapFrameAPI.openFile();
-      if (imgData) onImageLoaded(imgData);
+      if (imgData) {
+        onImageLoaded(imgData);
+        trackFeature('image_open');
+      }
     } else {
       fileInputRef.current?.click();
     }
@@ -52,7 +56,10 @@ export function usePresets(
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onload = (event) => {
-        if (event.target?.result) onImageLoaded(event.target.result as string);
+        if (event.target?.result) {
+          onImageLoaded(event.target.result as string);
+          trackFeature('image_open');
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -67,6 +74,7 @@ export function usePresets(
         } else {
           onImageLoaded(dataUrl);
         }
+        trackFeature('paste_clipboard');
       } else {
         alert('No image found in clipboard.');
       }
@@ -134,6 +142,7 @@ export function usePresets(
       lightRaysSourceX: sourceX,
       lightRaysSourceY: sourceY,
     });
+    trackFeature('preset_apply');
   };
 
   return {
