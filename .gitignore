@@ -42,3 +42,7 @@ Thumbs.db
 .qwen/settings.json
 .qwen/settings.json.orig
 .commandcode/**/taste.md
+
+# Wrangler local state and secrets
+telemetry-worker/.wrangler/
+telemetry-worker/.dev.vars
