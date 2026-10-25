@@ -260,4 +260,25 @@ describe("stats numbers", () => {
 		expect(html).toContain("custom_thing");
 		expect(html).not.toContain(`err_ocr</span>`);
 	});
+
+	it("ranks version adoption using only the newest 14 days", async () => {
+		for (const version of ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5"]) {
+			for (let i = 0; i < 20; i++) {
+				await insertPing(`old-${version}-${i}`, day(25), { app_version: version });
+			}
+		}
+		for (let offset = 0; offset < 14; offset++) {
+			await insertPing(`recent-${offset}`, day(offset), { app_version: "1.9" });
+		}
+		await insertPing("current-2.0", day(1), { app_version: "2.0" });
+
+		const html = await (await stats("/stats", TOKEN)).text();
+		expect(html).toContain(`<th class="n">2.0</th>`);
+	});
+
+	it("shows a dash when both weeks have zero installs", async () => {
+		const html = await (await stats("/stats", TOKEN)).text();
+		expect(html).toContain(`<span class="delta flat">-</span>`);
+		expect(html).not.toContain(`<span class="delta flat">new</span>`);
+	});
 });

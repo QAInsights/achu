@@ -472,7 +472,7 @@ const RELIABILITY: { label: string; error: string; success: string[] }[] = [
 ];
 
 function deltaBadge(now: number, prev: number): string {
-	if (prev <= 0) return `<span class="delta flat">new</span>`;
+	if (prev <= 0) return `<span class="delta flat">${now > 0 ? "new" : "-"}</span>`;
 	const p = Math.round(((now - prev) / prev) * 100);
 	const cls = p > 0 ? "up" : p < 0 ? "down" : "flat";
 	return `<span class="delta ${cls}">${p > 0 ? "+" : ""}${p}%</span>`;
@@ -529,12 +529,6 @@ function retentionCard(r: { days: number; cohort: number; retained: number }): s
 
 /** Pivot of installs per day (rows) and app version (columns, the 6 most common). */
 function adoptionTable(rows: StatsRow[]): string {
-	const totals = new Map<string, number>();
-	for (const r of rows) {
-		const v = String(r.version ?? "(none)");
-		totals.set(v, (totals.get(v) ?? 0) + Number(r.installs));
-	}
-	const versions = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(e => e[0]);
 	const byDay = new Map<string, Map<string, number>>();
 	for (const r of rows) {
 		const d = String(r.day);
@@ -542,6 +536,13 @@ function adoptionTable(rows: StatsRow[]): string {
 		byDay.get(d)!.set(String(r.version ?? "(none)"), Number(r.installs));
 	}
 	const days = [...byDay.keys()].sort().reverse().slice(0, 14);
+	const totals = new Map<string, number>();
+	for (const day of days) {
+		for (const [version, installs] of byDay.get(day)!) {
+			totals.set(version, (totals.get(version) ?? 0) + installs);
+		}
+	}
+	const versions = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(e => e[0]);
 	const head = `<tr><th>Day</th>${versions.map(v => `<th class="n">${esc(v)}</th>`).join("")}</tr>`;
 	const body = days.length === 0
 		? `<tr><td class="empty">No data yet</td></tr>`

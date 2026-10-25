@@ -311,45 +311,51 @@ export function useExport(
     });
   };
 
-  const triggerExport = () => {
-    if (!noImageMode && !imageSrc) return;
-    loadImages(imageSrc, getCurrentConfig().backgroundValue, async (img) => {
-      const canvas = document.createElement('canvas');
-      renderCanvas(canvas, img, getCurrentConfig());
-      const mime = exportFormat === 'jpeg' ? 'image/jpeg' : exportFormat === 'webp' ? 'image/webp' : 'image/png';
-      const base64Data = canvas.toDataURL(mime, jpegQuality / 100);
-      
-      if (!checkOgSizeLimit(base64Data)) return;
-
-      const sizeInKb = base64Data ? (base64Data.length * 0.75) / 1024 : 0;
-      const config = getCurrentConfig();
-      const selectedPreset = config.selectedPreset || '';
-      const isOgPreset = selectedPreset && (selectedPreset.includes('OG') || selectedPreset.includes('Link'));
-      const suffix = (isOgPreset && sizeInKb > 300) ? 'Tip: Keep Open Graph images under 300KB for best link preview performance.' : '';
-
-      if (window.snapFrameAPI) {
-        let saved: boolean;
+  const triggerExport = (): Promise<'saved' | 'cancelled'> => {
+    if (!noImageMode && !imageSrc) return Promise.resolve<'cancelled'>('cancelled');
+    return new Promise<'saved' | 'cancelled'>((resolve, reject) => {
+      loadImages(imageSrc, getCurrentConfig().backgroundValue, async (img) => {
         try {
-          saved = await window.snapFrameAPI.saveFile(base64Data, exportFormat, jpegQuality, compressionMode);
+          const canvas = document.createElement('canvas');
+          renderCanvas(canvas, img, getCurrentConfig());
+          const mime = exportFormat === 'jpeg' ? 'image/jpeg' : exportFormat === 'webp' ? 'image/webp' : 'image/png';
+          const base64Data = canvas.toDataURL(mime, jpegQuality / 100);
+
+          if (!checkOgSizeLimit(base64Data)) {
+            resolve('cancelled');
+            return;
+          }
+
+          const sizeInKb = base64Data ? (base64Data.length * 0.75) / 1024 : 0;
+          const config = getCurrentConfig();
+          const selectedPreset = config.selectedPreset || '';
+          const isOgPreset = selectedPreset && (selectedPreset.includes('OG') || selectedPreset.includes('Link'));
+          const suffix = (isOgPreset && sizeInKb > 300) ? 'Tip: Keep Open Graph images under 300KB for best link preview performance.' : '';
+
+          if (window.snapFrameAPI) {
+            const saved = await window.snapFrameAPI.saveFile(base64Data, exportFormat, jpegQuality, compressionMode);
+            if (!saved) {
+              resolve('cancelled');
+              return;
+            }
+          } else {
+            const link = document.createElement('a');
+            const ext = exportFormat === 'jpeg' ? 'jpg' : exportFormat === 'webp' ? 'webp' : 'png';
+            link.download = `snapframe-export.${ext}`;
+            link.href = base64Data;
+            link.click();
+          }
+
+          onExportSuccess?.();
+          trackFeature(exportFeatureByFormat[exportFormat]);
+          if (suffix) alert(suffix);
+          resolve('saved');
         } catch (err) {
           console.error('Export failed:', err);
           trackFeature('err_export');
-          return;
+          reject(err);
         }
-        if (!saved) return;
-        onExportSuccess?.();
-        trackFeature(exportFeatureByFormat[exportFormat]);
-        if (suffix) alert(suffix);
-      } else {
-        const link = document.createElement('a');
-        const ext = exportFormat === 'jpeg' ? 'jpg' : exportFormat === 'webp' ? 'webp' : 'png';
-        link.download = `snapframe-export.${ext}`;
-        link.href = base64Data;
-        link.click();
-        onExportSuccess?.();
-        trackFeature(exportFeatureByFormat[exportFormat]);
-        if (suffix) alert(suffix);
-      }
+      });
     });
   };
 

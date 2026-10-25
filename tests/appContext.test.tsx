@@ -62,7 +62,7 @@ beforeEach(() => {
     exportFormat: 'png', setExportFormat: vi.fn(),
     jpegQuality: 90, setJpegQuality: vi.fn(),
     compressionMode: 'balanced', setCompressionMode: vi.fn(),
-    copyBeautifiedImage: vi.fn(), triggerExport: vi.fn(),
+    copyBeautifiedImage: vi.fn(), triggerExport: vi.fn().mockResolvedValue('saved'),
     saveToGallery: vi.fn().mockResolvedValue({ success: true, name: 'test.achu.png' }),
   };
 
@@ -1305,4 +1305,3 @@ describe('AppContext', () => {
     });
   });
 });
-

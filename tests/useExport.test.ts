@@ -202,10 +202,11 @@ describe('useExport', () => {
   // checkOgSizeLimit (exercised via triggerExport)
   // -----------------------------------------------------------------------
   describe('checkOgSizeLimit', () => {
-    it('does NOT call confirm for OG preset with small file', () => {
+    it('does NOT call confirm for OG preset with small file', async () => {
       stubCanvas('small');
       const mockConfirm = vi.fn();
       vi.stubGlobal('confirm', mockConfirm);
+      vi.stubGlobal('snapFrameAPI', { saveFile: vi.fn().mockResolvedValue(true) });
       mockGetCurrentConfig.mockReturnValue({
         ...mockGetCurrentConfig(),
         selectedPreset: 'OG Image',
@@ -215,14 +216,12 @@ describe('useExport', () => {
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await expect(result.current.triggerExport()).resolves.toBe('saved');
 
       expect(mockConfirm).not.toHaveBeenCalled();
     });
 
-    it('calls confirm for OG preset with large file', () => {
+    it('calls confirm for OG preset with large file', async () => {
       stubCanvas('large');
       const mockConfirm = vi.fn().mockReturnValue(false);
       vi.stubGlobal('confirm', mockConfirm);
@@ -236,19 +235,17 @@ describe('useExport', () => {
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await expect(result.current.triggerExport()).resolves.toBe('cancelled');
 
       expect(mockConfirm).toHaveBeenCalled();
     });
 
-    it('does NOT call confirm for non-OG preset with large file', () => {
+    it('does NOT call confirm for non-OG preset with large file', async () => {
       stubCanvas('large');
       const mockConfirm = vi.fn();
       vi.stubGlobal('confirm', mockConfirm);
       // Provide snapFrameAPI so link.click() is avoided in jsdom
-      vi.stubGlobal('snapFrameAPI', { saveFile: vi.fn() });
+      vi.stubGlobal('snapFrameAPI', { saveFile: vi.fn().mockResolvedValue(true) });
 
       mockGetCurrentConfig.mockReturnValue({
         ...mockGetCurrentConfig(),
@@ -259,14 +256,12 @@ describe('useExport', () => {
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await result.current.triggerExport();
 
       expect(mockConfirm).not.toHaveBeenCalled();
     });
 
-    it("treats 'LinkedIn Post' as OG preset", () => {
+    it("treats 'LinkedIn Post' as OG preset", async () => {
       stubCanvas('large');
       const mockConfirm = vi.fn();
       vi.stubGlobal('confirm', mockConfirm);
@@ -280,14 +275,12 @@ describe('useExport', () => {
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await result.current.triggerExport();
 
       expect(mockConfirm).toHaveBeenCalled();
     });
 
-    it("treats 'Facebook Cover' as OG preset", () => {
+    it("treats 'Facebook Cover' as OG preset", async () => {
       stubCanvas('large');
       const mockConfirm = vi.fn();
       vi.stubGlobal('confirm', mockConfirm);
@@ -301,14 +294,12 @@ describe('useExport', () => {
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await result.current.triggerExport();
 
       expect(mockConfirm).toHaveBeenCalled();
     });
 
-    it("treats 'Ad Banner' as OG preset", () => {
+    it("treats 'Ad Banner' as OG preset", async () => {
       stubCanvas('large');
       const mockConfirm = vi.fn();
       vi.stubGlobal('confirm', mockConfirm);
@@ -322,9 +313,7 @@ describe('useExport', () => {
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await result.current.triggerExport();
 
       expect(mockConfirm).toHaveBeenCalled();
     });
@@ -334,27 +323,20 @@ describe('useExport', () => {
   // triggerExport
   // -----------------------------------------------------------------------
   describe('triggerExport', () => {
-    it('is a no-op when no image and not in noImageMode', () => {
+    it('resolves cancelled when no image and not in noImageMode', async () => {
       const { result } = renderHook(() =>
         useExport(null, false, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
-      expect(() => {
-        act(() => {
-          result.current.triggerExport();
-        });
-      }).not.toThrow();
+      await expect(result.current.triggerExport()).resolves.toBe('cancelled');
     });
 
-    it('works in noImageMode without image', () => {
+    it('works in noImageMode without image', async () => {
       stubCanvas('small');
+      vi.stubGlobal('snapFrameAPI', { saveFile: vi.fn().mockResolvedValue(true) });
       const { result } = renderHook(() =>
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
-      expect(() => {
-        act(() => {
-          result.current.triggerExport();
-        });
-      }).not.toThrow();
+      await expect(result.current.triggerExport()).resolves.toBe('saved');
     });
 
     it('records a successful PNG export after saveFile resolves true', async () => {
@@ -366,10 +348,7 @@ describe('useExport', () => {
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName, onExportSuccess)
       );
 
-      await act(async () => {
-        result.current.triggerExport();
-        await Promise.resolve();
-      });
+      await expect(result.current.triggerExport()).resolves.toBe('saved');
 
       expect(saveFile).toHaveBeenCalledTimes(1);
       expect(onExportSuccess).toHaveBeenCalledTimes(1);
@@ -385,10 +364,7 @@ describe('useExport', () => {
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName, onExportSuccess)
       );
 
-      await act(async () => {
-        result.current.triggerExport();
-        await Promise.resolve();
-      });
+      await expect(result.current.triggerExport()).resolves.toBe('cancelled');
 
       expect(saveFile).toHaveBeenCalledTimes(1);
       expect(onExportSuccess).not.toHaveBeenCalled();
@@ -406,10 +382,7 @@ describe('useExport', () => {
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName, onExportSuccess)
       );
 
-      await act(async () => {
-        result.current.triggerExport();
-        await Promise.resolve();
-      });
+      await expect(result.current.triggerExport()).rejects.toThrow('Write failed');
 
       expect(saveFile).toHaveBeenCalledTimes(1);
       expect(onExportSuccess).not.toHaveBeenCalled();
@@ -417,7 +390,26 @@ describe('useExport', () => {
       expect(errorSpy).toHaveBeenCalledWith('Export failed:', expect.any(Error));
     });
 
-    it('uses browser download fallback when snapFrameAPI is unavailable', () => {
+    it('rejects render failures and records err_export without success', async () => {
+      const renderError = new Error('Render failed');
+      mockRenderCanvas.mockImplementation(() => {
+        throw renderError;
+      });
+      const onExportSuccess = vi.fn();
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { result } = renderHook(() =>
+        useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName, onExportSuccess)
+      );
+
+      await expect(result.current.triggerExport()).rejects.toBe(renderError);
+
+      expect(onExportSuccess).not.toHaveBeenCalled();
+      expect(mockTrackFeature).toHaveBeenCalledWith('err_export');
+      expect(mockTrackFeature).not.toHaveBeenCalledWith('export_png');
+      expect(errorSpy).toHaveBeenCalledWith('Export failed:', renderError);
+    });
+
+    it('uses browser download fallback when snapFrameAPI is unavailable', async () => {
       stubCanvas('small');
       vi.stubGlobal('snapFrameAPI', undefined);
 
@@ -433,15 +425,13 @@ describe('useExport', () => {
         return origCreateElement(tag, opts);
       }) as typeof document.createElement);
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await expect(result.current.triggerExport()).resolves.toBe('saved');
 
       expect(clickSpy).toHaveBeenCalled();
       expect(mockLink.download).toContain('snapframe-export');
     });
 
-    it('uses JPEG mime type when exportFormat is jpeg', () => {
+    it('uses JPEG mime type when exportFormat is jpeg', async () => {
       stubCanvas('small');
       vi.stubGlobal('snapFrameAPI', undefined);
 
@@ -471,15 +461,13 @@ describe('useExport', () => {
       // Override renderCanvas to not interfere with the canvas's toDataURL
       mockRenderCanvas.mockImplementation(() => {});
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await result.current.triggerExport();
 
       // Verify the canvas was used — the link was clicked with correct extension
       expect(mockLink.download).toContain('.jpg');
     });
 
-    it('uses .jpg extension for JPEG export via browser download', () => {
+    it('uses .jpg extension for JPEG export via browser download', async () => {
       stubCanvas('small');
       vi.stubGlobal('snapFrameAPI', undefined);
 
@@ -499,16 +487,14 @@ describe('useExport', () => {
         result.current.setExportFormat('jpeg');
       });
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await result.current.triggerExport();
 
       expect(mockLink.download).toContain('.jpg');
     });
 
-    it('calls snapFrameAPI.saveFile with correct args for JPEG path', () => {
+    it('calls snapFrameAPI.saveFile with correct args for JPEG path', async () => {
       stubCanvas('small');
-      const saveFileSpy = vi.fn();
+      const saveFileSpy = vi.fn().mockResolvedValue(true);
       vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
 
       const { result } = renderHook(() =>
@@ -519,18 +505,16 @@ describe('useExport', () => {
         result.current.setExportFormat('jpeg');
       });
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await result.current.triggerExport();
 
       expect(saveFileSpy).toHaveBeenCalled();
       const call = saveFileSpy.mock.calls[0];
       expect(call[1]).toBe('jpeg');
     });
 
-    it('calls snapFrameAPI.saveFile with correct args for WebP path', () => {
+    it('calls snapFrameAPI.saveFile with correct args for WebP path', async () => {
       stubCanvas('small');
-      const saveFileSpy = vi.fn();
+      const saveFileSpy = vi.fn().mockResolvedValue(true);
       vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
 
       const { result } = renderHook(() =>
@@ -541,18 +525,16 @@ describe('useExport', () => {
         result.current.setExportFormat('webp');
       });
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await result.current.triggerExport();
 
       expect(saveFileSpy).toHaveBeenCalled();
       const call = saveFileSpy.mock.calls[0];
       expect(call[1]).toBe('webp');
     });
 
-    it('passes selected compression mode to snapFrameAPI.saveFile', () => {
+    it('passes selected compression mode to snapFrameAPI.saveFile', async () => {
       stubCanvas('small');
-      const saveFileSpy = vi.fn();
+      const saveFileSpy = vi.fn().mockResolvedValue(true);
       vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
 
       const { result } = renderHook(() =>
@@ -563,9 +545,7 @@ describe('useExport', () => {
         result.current.setCompressionMode('small');
       });
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await result.current.triggerExport();
 
       expect(saveFileSpy).toHaveBeenCalledWith(expect.any(String), 'png', 90, 'small');
     });
@@ -592,21 +572,18 @@ describe('useExport', () => {
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
-      await act(async () => {
-        result.current.triggerExport();
-        await Promise.resolve();
-      });
+      await expect(result.current.triggerExport()).resolves.toBe('saved');
 
       expect(mockAlert).toHaveBeenCalledWith(
         expect.stringContaining('Tip: Keep Open Graph images under 300KB')
       );
     });
 
-    it('does NOT call alert with tip for non-OG preset', () => {
+    it('does NOT call alert with tip for non-OG preset', async () => {
       stubCanvas('small');
       const mockAlert = vi.fn();
       vi.stubGlobal('alert', mockAlert);
-      const saveFileSpy = vi.fn();
+      const saveFileSpy = vi.fn().mockResolvedValue(true);
       vi.stubGlobal('snapFrameAPI', { saveFile: saveFileSpy });
 
       mockGetCurrentConfig.mockReturnValue({
@@ -623,14 +600,12 @@ describe('useExport', () => {
         useExport(null, true, mockGetCurrentConfig, mockEnsureDocumentName, mockSetDocumentName)
       );
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await result.current.triggerExport();
 
       expect(mockAlert).not.toHaveBeenCalled();
     });
 
-    it('uses .webp extension for browser download when format is webp', () => {
+    it('uses .webp extension for browser download when format is webp', async () => {
       vi.stubGlobal('snapFrameAPI', undefined);
 
       const mockLink = { download: '', href: '', click: vi.fn() };
@@ -653,9 +628,7 @@ describe('useExport', () => {
         result.current.setExportFormat('webp');
       });
 
-      act(() => {
-        result.current.triggerExport();
-      });
+      await result.current.triggerExport();
 
       expect(mockLink.download).toBe('snapframe-export.webp');
       expect(mockLink.href).toBe('data:image/webp;base64,fake');

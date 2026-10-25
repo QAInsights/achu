@@ -80,7 +80,7 @@ export default function ContextMenu({ x, y, onClose, onGrabText, hasImage }: Con
         disabled={!hasImage}
         onClick={() => {
           onClose();
-          triggerExport();
+          void triggerExport().catch(() => {});
         }}
       >
         <Download className="w-4 h-4" />
