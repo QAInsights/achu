@@ -49,12 +49,12 @@ export default function WorkspaceFooter() {
 
   const canBeforeAfter = Boolean(imageSrc) && !noImageMode;
 
-  const handleExportClick = () => {
+  const handleExportClick = async () => {
     if (busyAction) return;
     setBusyAction('export');
     try {
-      triggerExport();
-      showToast?.('Exported successfully');
+      const result = await triggerExport();
+      if (result === 'saved') showToast?.('Exported successfully');
     } catch {
       showToast?.('Export failed', 4000);
     } finally {

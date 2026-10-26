@@ -244,4 +244,41 @@ describe("stats numbers", () => {
 		expect(html).not.toContain(`<img src=x onerror="alert(1)">`);
 		expect(html).not.toContain("<script>alert(1)</script>");
 	});
+
+	it("groups features with labels and computes failure rates on the HTML page", async () => {
+		await insertPing("a", day(0));
+		await env.DB.prepare(
+			"INSERT INTO feature_counts (install_id, day, feature, count) VALUES ('a', ?, 'ocr_grab', 9), ('a', ?, 'err_ocr', 1), ('a', ?, 'custom_thing', 2)"
+		).bind(day(0), day(0), day(0)).run();
+
+		const html = await (await stats("/stats", TOKEN)).text();
+		expect(html).toContain("Privacy and OCR");
+		expect(html).toContain("Grab text (OCR)");
+		expect(html).toContain(`<span class="badge bad">10%</span>`);
+		expect(html).toContain(`<span class="badge none">no data</span>`);
+		expect(html).toContain(`<tr class="group"><td colspan="5">Other</td></tr>`);
+		expect(html).toContain("custom_thing");
+		expect(html).not.toContain(`err_ocr</span>`);
+	});
+
+	it("ranks version adoption using only the newest 14 days", async () => {
+		for (const version of ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5"]) {
+			for (let i = 0; i < 20; i++) {
+				await insertPing(`old-${version}-${i}`, day(25), { app_version: version });
+			}
+		}
+		for (let offset = 0; offset < 14; offset++) {
+			await insertPing(`recent-${offset}`, day(offset), { app_version: "1.9" });
+		}
+		await insertPing("current-2.0", day(1), { app_version: "2.0" });
+
+		const html = await (await stats("/stats", TOKEN)).text();
+		expect(html).toContain(`<th class="n">2.0</th>`);
+	});
+
+	it("shows a dash when both weeks have zero installs", async () => {
+		const html = await (await stats("/stats", TOKEN)).text();
+		expect(html).toContain(`<span class="delta flat">-</span>`);
+		expect(html).not.toContain(`<span class="delta flat">new</span>`);
+	});
 });

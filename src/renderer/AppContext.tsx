@@ -693,7 +693,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (isExport) {
         e.preventDefault();
-        triggerExport();
+        void triggerExport().catch(() => {});
         return;
       }
 

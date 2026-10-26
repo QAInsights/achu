@@ -13,7 +13,7 @@ beforeEach(() => {
   mockContext = {
     ...makeFullMockContext(),
     copyBeautifiedImage: vi.fn().mockResolvedValue(undefined),
-    triggerExport: vi.fn(),
+    triggerExport: vi.fn().mockResolvedValue('saved'),
     resetStyles: vi.fn(),
   };
 });

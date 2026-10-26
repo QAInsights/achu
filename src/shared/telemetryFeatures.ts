@@ -1,5 +1,5 @@
 export const TELEMETRY_FEATURES = [
-  'export_png', 'export_jpeg', 'export_webp', 'export_copy', 'export_before_after',
+  'export_png', 'export_jpeg', 'export_webp', 'export_copy', 'export_before_after', 'err_export',
   'gallery_save', 'err_gallery_save', 'burst_pack_save', 'err_burst_pack',
   'privacy_scan', 'err_privacy_scan', 'redact_all', 'ocr_grab', 'err_ocr',
   'ai_issue_ollama', 'ai_issue_openai', 'ai_issue_google', 'ai_issue_claude', 'ai_issue_offline', 'err_ai_issue',

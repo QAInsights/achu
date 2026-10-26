@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import React from 'react';
 import WorkspaceFooter from '../src/renderer/components/WorkspaceFooter';
 
@@ -25,7 +25,7 @@ describe('WorkspaceFooter & ShareMenu', () => {
       noImageMode: false,
       exportFormat: 'png',
       jpegQuality: 90,
-      triggerExport: vi.fn(),
+      triggerExport: vi.fn().mockResolvedValue('saved'),
       copyBeautifiedImage: vi.fn().mockResolvedValue(undefined),
       exportBeforeAfter: vi.fn(),
       copyBeforeAfter: vi.fn().mockResolvedValue(undefined),
@@ -78,11 +78,14 @@ describe('WorkspaceFooter & ShareMenu', () => {
     expect(mockContext.copyBeautifiedImage).toHaveBeenCalled();
   });
 
-  it('triggers triggerExport when Export is clicked', () => {
+  it('triggers triggerExport when Export is clicked', async () => {
     render(<WorkspaceFooter />);
-    fireEvent.click(screen.getByText('Export'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('Export'));
+      await Promise.resolve();
+    });
 
-    expect(mockContext.triggerExport).toHaveBeenCalled();
+    await waitFor(() => expect(mockContext.triggerExport).toHaveBeenCalled());
   });
 
   it('copies image with caption and opens X/Twitter intent URL when Copy & post on X is clicked', async () => {
@@ -164,11 +167,32 @@ describe('WorkspaceFooter & ShareMenu', () => {
     });
   });
 
-  it('shows a success toast after Export is triggered', () => {
+  it('shows a success toast after Export is saved', async () => {
     render(<WorkspaceFooter />);
     fireEvent.click(screen.getByText('Export'));
-    expect(mockContext.triggerExport).toHaveBeenCalled();
-    expect(mockContext.showToast).toHaveBeenCalledWith('Exported successfully');
+    await waitFor(() => {
+      expect(mockContext.triggerExport).toHaveBeenCalled();
+      expect(mockContext.showToast).toHaveBeenCalledWith('Exported successfully');
+    });
+  });
+
+  it('shows a failure toast when export rejects', async () => {
+    mockContext.triggerExport = vi.fn().mockRejectedValue(new Error('render failed'));
+    render(<WorkspaceFooter />);
+    fireEvent.click(screen.getByText('Export'));
+
+    await waitFor(() => expect(mockContext.showToast).toHaveBeenCalledWith('Export failed', 4000));
+  });
+
+  it('does not show a toast when export is cancelled', async () => {
+    mockContext.triggerExport = vi.fn().mockResolvedValue('cancelled');
+    render(<WorkspaceFooter />);
+    fireEvent.click(screen.getByText('Export'));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(mockContext.showToast).not.toHaveBeenCalled();
   });
 
   it('shows an error toast when Copy fails', async () => {

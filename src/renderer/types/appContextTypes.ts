@@ -146,7 +146,7 @@ export interface AppContextType {
   saveCustomPreset: () => void;
   deleteCustomPreset: (id: string, e: React.MouseEvent) => void;
   copyBeautifiedImage: (caption?: string) => Promise<void>;
-  triggerExport: () => void;
+  triggerExport: () => Promise<'saved' | 'cancelled'>;
   exportBeforeAfter: () => void;
   copyBeforeAfter: () => Promise<void>;
   saveToGallery: () => Promise<{ success: boolean; path?: string; name?: string; error?: { code: string; message: string } }>;
