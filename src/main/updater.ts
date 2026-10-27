@@ -965,11 +965,24 @@ export function scheduleLinuxRelaunch(
   helper.unref();
 }
 
-export function scheduleMacRelaunch(appBundle: string, pid: number = process.pid): void {
+export function scheduleMacRelaunch(
+  appBundle: string,
+  pid: number = process.pid,
+  args: string[] = process.argv.slice(1)
+): void {
   const { spawn } = require('child_process');
   const helper = spawn(
     '/bin/sh',
-    ['-c', RELAUNCH_AFTER_EXIT_SCRIPT, 'achu-update-relaunch', String(pid), '/usr/bin/open', '-n', appBundle],
+    [
+      '-c',
+      RELAUNCH_AFTER_EXIT_SCRIPT,
+      'achu-update-relaunch',
+      String(pid),
+      '/usr/bin/open',
+      '-n',
+      appBundle,
+      ...(args.length ? ['--args', ...args] : []),
+    ],
     { detached: true, stdio: 'ignore' }
   );
   helper.unref();

@@ -144,7 +144,7 @@ describe('macOS update installation', () => {
   it('schedules a detached LaunchServices relaunch for the replaced bundle', () => {
     const unref = vi.fn();
     const spawn = vi.spyOn(childProcess, 'spawn').mockReturnValue({ unref } as any);
-    scheduleMacRelaunch('/Applications/My Achu.app', 4321);
+    scheduleMacRelaunch('/Applications/My Achu.app', 4321, []);
 
     expect(spawn).toHaveBeenCalledOnce();
     const [command, rawArgs, options] = spawn.mock.calls[0];
@@ -168,6 +168,25 @@ describe('macOS update installation', () => {
       '/Applications/My Achu.app',
     ]);
     expect(options).toEqual({ detached: true, stdio: 'ignore' });
+    expect(unref).toHaveBeenCalledOnce();
+  });
+  it('preserves the original arguments in the LaunchServices relaunch', () => {
+    const unref = vi.fn();
+    const spawn = vi.spyOn(childProcess, 'spawn').mockReturnValue({ unref } as any);
+    scheduleMacRelaunch('/Applications/My Achu.app', 4321, [
+      '--user-data-dir=/Users/ana/achu work',
+      '--foo',
+    ]);
+
+    const args = spawn.mock.calls[0][1] as string[];
+    expect(args.slice(-6)).toEqual([
+      '/usr/bin/open',
+      '-n',
+      '/Applications/My Achu.app',
+      '--args',
+      '--user-data-dir=/Users/ana/achu work',
+      '--foo',
+    ]);
     expect(unref).toHaveBeenCalledOnce();
   });
   it('leaves the installed bundle intact when ditto fails halfway through', () => {
