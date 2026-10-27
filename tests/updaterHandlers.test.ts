@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { shell } from 'electron';
 
 const mockHandle = vi.fn();
 const mockRecordFeature = vi.hoisted(() => vi.fn());
@@ -384,6 +385,31 @@ describe('Updater handlers (update:start)', () => {
     const handler = getHandler('update:start');
     await expect(handler({}, '')).rejects.toThrow('No download URL provided');
     expect(mockRecordFeature).not.toHaveBeenCalledWith('update_install');
+  });
+
+  it('opens the release page before downloading from a DMG launch path on darwin', async () => {
+    const originalPlatform = process.platform;
+    const originalExecPath = process.execPath;
+    Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+    Object.defineProperty(process, 'execPath', {
+      value: '/Volumes/achu/achu.app/Contents/MacOS/achu',
+      configurable: true,
+    });
+    global.fetch = vi.fn() as any;
+    try {
+      const handler = getHandler('update:start');
+      const result = await handler({}, 'https://example.com/achu.zip', 123);
+      expect(result).toEqual({
+        success: false,
+        manualFallback: true,
+        error: 'Move achu to Applications, launch it from there, and try updating again.',
+      });
+      expect(fetch).not.toHaveBeenCalled();
+      expect(shell.openExternal).toHaveBeenCalledWith('https://github.com/QAInsights/achu/releases/latest');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      Object.defineProperty(process, 'execPath', { value: originalExecPath, configurable: true });
+    }
   });
 
   it('does not record a Store fallback', async () => {
