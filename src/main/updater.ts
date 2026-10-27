@@ -868,9 +868,45 @@ export function replaceAppBundle(srcApp: string, destApp: string): void {
   try { fs.rmSync(stagingDir, { recursive: true, force: true }); } catch { /* non-fatal */ }
 }
 
-export function resolveMacUpdateTarget(execPath: string): string {
+export function parseTranslocationOriginal(mountOutput: string, execPath: string): string | null {
+  for (const line of mountOutput.split(/\r?\n/)) {
+    const match = line.match(/^(.+) on (.+) \(([^()]*)\)$/);
+    if (!match) continue;
+    const [, source, mountPoint, details] = match;
+    const fileSystem = details.split(',')[0].trim();
+    if (
+      fileSystem === 'nullfs' &&
+      mountPoint.includes('/AppTranslocation/') &&
+      execPath.startsWith(`${mountPoint}/`) &&
+      source.endsWith('.app')
+    ) {
+      return source;
+    }
+  }
+  return null;
+}
+
+export function resolveMacUpdateTarget(
+  execPath: string,
+  readMounts: () => string = () => require('child_process').execFileSync('/sbin/mount', { encoding: 'utf-8' })
+): string {
   const match = execPath.match(/^(.*\.app)\/Contents\/MacOS\/[^/]+$/);
-  if (!match || execPath.startsWith('/Volumes/') || execPath.includes('/AppTranslocation/')) {
+  if (execPath.startsWith('/Volumes/')) {
+    throw new Error('Move achu to Applications, launch it from there, and try updating again.');
+  }
+  if (execPath.includes('/AppTranslocation/')) {
+    let original: string | null = null;
+    try {
+      original = parseTranslocationOriginal(readMounts(), execPath);
+    } catch {
+      /* use the same installation guidance when mount information is unavailable */
+    }
+    if (!original || original.startsWith('/Volumes/')) {
+      throw new Error('Move achu to Applications, launch it from there, and try updating again.');
+    }
+    return original;
+  }
+  if (!match) {
     throw new Error('Move achu to Applications, launch it from there, and try updating again.');
   }
   return match[1];
@@ -885,7 +921,7 @@ export function resolveLinuxUpdateTarget(): string {
   return fs.realpathSync(target);
 }
 
-const LINUX_RELAUNCH_SCRIPT = [
+const RELAUNCH_AFTER_EXIT_SCRIPT = [
   'pid="$1"',
   'shift',
   'attempt=0',
@@ -918,13 +954,23 @@ export function scheduleLinuxRelaunch(
 
   const helper = spawn(
     '/bin/sh',
-    ['-c', LINUX_RELAUNCH_SCRIPT, 'achu-update-relaunch', String(pid), execPath, ...args],
+    ['-c', RELAUNCH_AFTER_EXIT_SCRIPT, 'achu-update-relaunch', String(pid), execPath, ...args],
     {
       detached: true,
       stdio: 'ignore',
       cwd: path.dirname(execPath),
       env,
     }
+  );
+  helper.unref();
+}
+
+export function scheduleMacRelaunch(appBundle: string, pid: number = process.pid): void {
+  const { spawn } = require('child_process');
+  const helper = spawn(
+    '/bin/sh',
+    ['-c', RELAUNCH_AFTER_EXIT_SCRIPT, 'achu-update-relaunch', String(pid), '/usr/bin/open', '-n', appBundle],
+    { detached: true, stdio: 'ignore' }
   );
   helper.unref();
 }
@@ -945,9 +991,10 @@ function performMacUpdate(tempPath: string): PlatformInstallResult {
   const { execFileSync } = require('child_process');
 
   let mountPoint: string | null = null;
+  let appBundlePath: string | null = null;
 
   try {
-    const appBundlePath = resolveMacUpdateTarget(process.execPath);
+    appBundlePath = resolveMacUpdateTarget(process.execPath);
     const lower = tempPath.toLowerCase();
 
     if (lower.endsWith('.dmg')) {
@@ -973,7 +1020,11 @@ function performMacUpdate(tempPath: string): PlatformInstallResult {
 
       replaceAppBundle(srcApp, destApp);
 
-      app.relaunch();
+      if (process.execPath.includes('/AppTranslocation/')) {
+        scheduleMacRelaunch(appBundlePath);
+      } else {
+        app.relaunch();
+      }
       clearUpdateAvailableCache();
       return { installed: true, relaunching: true };
     }
@@ -994,7 +1045,11 @@ function performMacUpdate(tempPath: string): PlatformInstallResult {
 
       replaceAppBundle(srcApp, destApp);
 
-      app.relaunch();
+      if (process.execPath.includes('/AppTranslocation/')) {
+        scheduleMacRelaunch(appBundlePath);
+      } else {
+        app.relaunch();
+      }
       clearUpdateAvailableCache();
       return { installed: true, relaunching: true };
     }
@@ -1006,10 +1061,16 @@ function performMacUpdate(tempPath: string): PlatformInstallResult {
     console.error('[Updater] macOS auto-install failed, opening release page:', err);
     // Fallback: open the release page. Do NOT shell.openPath() the raw archive.
     shell.openExternal(RELEASE_PAGE_URL);
+    let error = err?.message || 'macOS auto-install failed';
+    if (appBundlePath && err?.code === 'EACCES') {
+      error = `achu does not have permission to replace ${appBundlePath}. Install the update from the release page.`;
+    } else if (appBundlePath && err?.code === 'EPERM') {
+      error = 'macOS blocked achu from replacing itself. Allow achu under System Settings > Privacy & Security > App Management, then try again, or install the update from the release page.';
+    }
     return {
       installed: false,
       manualFallback: true,
-      error: err?.message || 'macOS auto-install failed',
+      error,
     };
   } finally {
     // Always detach the DMG if we mounted one, even on failure.
@@ -1158,6 +1219,19 @@ export function registerUpdaterHandlers(ipcMain: any, getMainWindow: () => Brows
 
       const filename = path.basename(new URL(downloadUrl).pathname);
       const tempPath = path.join(app.getPath('temp'), filename || 'achu-update');
+
+      if (process.platform === 'darwin') {
+        try {
+          resolveMacUpdateTarget(process.execPath);
+        } catch (err: any) {
+          shell.openExternal(RELEASE_PAGE_URL);
+          return {
+            success: false,
+            manualFallback: true,
+            error: err?.message || 'macOS auto-install failed',
+          };
+        }
+      }
 
       const mainWindow = getMainWindow();
       await downloadVerified(downloadUrl, tempPath, expectedSize, (progress: number) => {

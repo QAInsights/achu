@@ -6,7 +6,15 @@ import { createRequire } from 'module';
 
 vi.mock('electron', () => ({ app: { isPackaged: false }, shell: { openPath: vi.fn() }, BrowserWindow: class {} }));
 vi.mock('../src/main/settings', () => ({ loadSettings: vi.fn(), saveSettings: vi.fn() }));
-import { replaceAppBundle, resolveLinuxUpdateTarget, resolveMacUpdateTarget, performLinuxUpdate, scheduleLinuxRelaunch } from '../src/main/updater';
+import {
+  parseTranslocationOriginal,
+  replaceAppBundle,
+  resolveLinuxUpdateTarget,
+  resolveMacUpdateTarget,
+  performLinuxUpdate,
+  scheduleLinuxRelaunch,
+  scheduleMacRelaunch,
+} from '../src/main/updater';
 
 const childProcess = createRequire(import.meta.url)('child_process');
 const dirs: string[] = [];
@@ -61,7 +69,7 @@ describe('Linux update target', () => {
     expect(fs.readFileSync(original, 'utf8')).toBe('new');
     expect(fs.statSync(original).mode & 0o777).toBe(0o755);
     expect(spawn).toHaveBeenCalledOnce();
-    expect(spawn.mock.calls[0][1]).toContain(original);
+    expect(spawn.mock.calls[0][1]).toContain(fs.realpathSync(original));
     expect(unref).toHaveBeenCalledOnce();
     expect(fs.existsSync(`${original}.old`)).toBe(false);
   });
@@ -85,7 +93,7 @@ describe('Linux update target', () => {
     const launcher = path.join(dir, 'launcher');
     fs.symlinkSync(original, launcher);
     vi.stubEnv('APPIMAGE', launcher);
-    expect(resolveLinuxUpdateTarget()).toBe(original);
+    expect(resolveLinuxUpdateTarget()).toBe(fs.realpathSync(original));
   });
   it('never falls back to the mounted or package-installed executable', () => {
     vi.stubEnv('APPIMAGE', '');
@@ -100,11 +108,67 @@ describe('macOS update installation', () => {
     expect(resolveMacUpdateTarget('/Users/me/apps.app/My Achu.app/Contents/MacOS/achu'))
       .toBe('/Users/me/apps.app/My Achu.app');
   });
-  it('rejects DMG and translocated launches with installation guidance', () => {
-    for (const executable of ['/Volumes/achu/achu.app/Contents/MacOS/achu',
-      '/private/var/folders/x/AppTranslocation/id/d/achu.app/Contents/MacOS/achu']) {
-      expect(() => resolveMacUpdateTarget(executable)).toThrow('Move achu to Applications');
-    }
+  it('resolves translocated launches to their original nullfs-mounted bundle', () => {
+    const execPath = '/private/var/folders/jj/xxx/T/AppTranslocation/UUID/d/achu.app/Contents/MacOS/achu';
+    const mountOutput = '/Applications/achu.app on /private/var/folders/jj/xxx/T/AppTranslocation/UUID (nullfs, local, nodev, nosuid, read-only, nobrowse, mounted by devin)';
+    expect(resolveMacUpdateTarget(execPath, () => mountOutput)).toBe('/Applications/achu.app');
+    expect(resolveMacUpdateTarget(execPath, () =>
+      '/Users/me/My Apps/achu.app on /private/var/folders/jj/xxx/T/AppTranslocation/UUID (nullfs, local, read-only)'
+    )).toBe('/Users/me/My Apps/achu.app');
+  });
+  it('rejects DMG and unresolved translocated launches with installation guidance', () => {
+    expect(() => resolveMacUpdateTarget('/Volumes/achu/achu.app/Contents/MacOS/achu'))
+      .toThrow('Move achu to Applications');
+    const execPath = '/private/var/folders/jj/xxx/T/AppTranslocation/UUID/d/achu.app/Contents/MacOS/achu';
+    expect(() => resolveMacUpdateTarget(execPath, () => '/Applications/other.app on /elsewhere (nullfs, local)'))
+      .toThrow('Move achu to Applications');
+    expect(() => resolveMacUpdateTarget(execPath, () => { throw new Error('mount unavailable'); }))
+      .toThrow('Move achu to Applications');
+    expect(() => resolveMacUpdateTarget(execPath, () =>
+      '/Volumes/achu/achu.app on /private/var/folders/jj/xxx/T/AppTranslocation/UUID (nullfs, local)'
+    )).toThrow('Move achu to Applications');
+  });
+  it('parses only nullfs mounts with exact translocation path segments and app sources', () => {
+    const execPath = '/private/var/folders/jj/xxx/T/AppTranslocation/ABC/d/achu.app/Contents/MacOS/achu';
+    const mounts = [
+      '/Applications/achu.app on /private/var/folders/jj/xxx/T/AppTranslocation/ABC (apfs, local)',
+      '/Applications/achu.app on /private/var/folders/jj/xxx/T/AppTranslocation/AB (nullfs, local)',
+      '/Applications/achu on /private/var/folders/jj/xxx/T/AppTranslocation/ABC (nullfs, local)',
+    ].join('\n');
+    expect(parseTranslocationOriginal(mounts, execPath)).toBeNull();
+    expect(parseTranslocationOriginal(
+      '/Users/me/My Apps/achu.app on /private/var/folders/jj/xxx/T/AppTranslocation/ABC (nullfs, local, read-only)',
+      execPath
+    )).toBe('/Users/me/My Apps/achu.app');
+  });
+  it('schedules a detached LaunchServices relaunch for the replaced bundle', () => {
+    const unref = vi.fn();
+    const spawn = vi.spyOn(childProcess, 'spawn').mockReturnValue({ unref } as any);
+    scheduleMacRelaunch('/Applications/My Achu.app', 4321);
+
+    expect(spawn).toHaveBeenCalledOnce();
+    const [command, rawArgs, options] = spawn.mock.calls[0];
+    expect(command).toBe('/bin/sh');
+    expect(rawArgs).toEqual([
+      '-c',
+      [
+        'pid="$1"',
+        'shift',
+        'attempt=0',
+        'while kill -0 "$pid" 2>/dev/null && [ "$attempt" -lt 300 ]; do',
+        '  sleep 0.1',
+        '  attempt=$((attempt + 1))',
+        'done',
+        'exec "$@"',
+      ].join('\n'),
+      'achu-update-relaunch',
+      '4321',
+      '/usr/bin/open',
+      '-n',
+      '/Applications/My Achu.app',
+    ]);
+    expect(options).toEqual({ detached: true, stdio: 'ignore' });
+    expect(unref).toHaveBeenCalledOnce();
   });
   it('leaves the installed bundle intact when ditto fails halfway through', () => {
     const dir = fixture();
