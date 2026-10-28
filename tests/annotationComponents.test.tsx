@@ -252,6 +252,20 @@ describe('AnnotationShape', () => {
     expect(text).toHaveAttribute('fill', '#ffffff');
   });
 
+  it('renders explicit centered lines including blank lines with shared styling', () => {
+    const ann = { id: 'multiline', type: 'text' as const, x: 0, y: 0, w: 0.3, h: 0.3,
+      color: '#ffffff', strokeWidth: 4, text: 'First\r\n\r\nLast', fontSize: 20,
+      fontBold: true, fontItalic: true, outlineEnabled: true, outlineColor: '#000000', outlineWidth: 3,
+      gradientEnabled: true, gradientColor1: '#ff0000', gradientColor2: '#0000ff' };
+    const { container } = render(<svg><AnnotationShape ann={ann} {...defaultProps} /></svg>);
+    const lines = Array.from(container.querySelectorAll('tspan'));
+    expect(lines.map(line => line.textContent)).toEqual(['First', '', 'Last']);
+    expect(lines.map(line => line.getAttribute('y'))).toEqual(['-24', '0', '24']);
+    expect(lines.every(line => line.getAttribute('x') === '0')).toBe(true);
+    expect(container.querySelector('text')).toHaveAttribute('fill', 'url(#text-grad-multiline)');
+    expect(container.querySelector('text')).toHaveStyle({ fontWeight: 'bold', fontStyle: 'italic', stroke: '#000000', strokeWidth: '3px' });
+  });
+
   it('does not render text when editing', () => {
     const ann = {
       id: '11',
@@ -572,6 +586,21 @@ describe('TextEditor', () => {
     });
   });
 
+  it('grows the editor for all explicit lines without silently wrapping long lines', () => {
+    render(<TextEditor ann={{ ...ann, fontSize: 20 }} {...defaultProps} editingTextValue={'First\n\nLast'} />);
+    const textarea = screen.getByRole('textbox', { name: 'Annotation text' });
+    expect(textarea).toHaveAttribute('wrap', 'off');
+    expect(textarea).toHaveStyle({ height: '72px', lineHeight: '24px', whiteSpace: 'pre' });
+    expect(textarea.parentElement).toHaveStyle({ height: '72px', outline: '2px dashed #ffffff' });
+    expect(textarea).toHaveAccessibleDescription(/Enter: new line/);
+  });
+
+  it('positions inverted bounds around the same visual center', () => {
+    const inverted = { ...ann, x: 0.6, y: 0.6, w: -0.2, h: -0.1, fontSize: 20 };
+    render(<TextEditor ann={inverted} {...defaultProps} />);
+    expect(screen.getByRole('textbox').parentElement).toHaveStyle({ left: '320px', top: '300px', width: '160px', height: '60px' });
+  });
+
   it('applies rotation transform', () => {
     const rotatedAnn = { ...ann, rotation: 45 };
     
@@ -635,7 +664,6 @@ describe('TextEditor', () => {
     const textarea = screen.getByRole('textbox');
     expect(textarea).toHaveStyle({
       background: 'transparent',
-      border: '2px dashed #ffffff',
       color: '#ffffff',
       fontWeight: 'bold',
       textAlign: 'center',
@@ -658,26 +686,25 @@ describe('TextEditor', () => {
     vi.useRealTimers();
   });
 
-  it('calculates font size based on stroke width', () => {
+  it('matches the preview font-size fallback for legacy text', () => {
     const thickStrokeAnn = { ...ann, strokeWidth: 8 };
     
     render(<TextEditor ann={thickStrokeAnn} {...defaultProps} />);
     
     const textarea = screen.getByRole('textbox');
-    // Font size should be Math.max(12, 14 + strokeWidth)
     expect(textarea).toHaveStyle({
-      fontSize: '22px', // 14 + 8
+      fontSize: '42px',
     });
   });
 
   it('uses minimum font size of 12px', () => {
-    const thinStrokeAnn = { ...ann, strokeWidth: 0 };
+    const thinStrokeAnn = { ...ann, strokeWidth: 0, h: 0.01 };
     
     render(<TextEditor ann={thinStrokeAnn} {...defaultProps} />);
     
     const textarea = screen.getByRole('textbox');
     expect(textarea).toHaveStyle({
-      fontSize: '14px', // 14 + 0
+      fontSize: '12px',
     });
   });
 });

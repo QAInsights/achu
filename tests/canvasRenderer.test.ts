@@ -1143,6 +1143,73 @@ describe('drawBackground url() cover-scale regression', () => {
 // Bug: with a large screenshot, drawn objects looked smaller on export/copy
 // than on the live canvas.
 // ---------------------------------------------------------------------------
+describe('multiline text export', () => {
+  function renderText(text: string, overrides: Partial<Annotation> = {}, scale = 1) {
+    const { canvas, ctx } = makeMockCanvas();
+    const fillText = vi.fn();
+    const strokeText = vi.fn();
+    const createLinearGradient = vi.fn(ctx.createLinearGradient);
+    const tracked = new Proxy(ctx, {
+      get(target, key) {
+        if (key === 'fillText') return fillText;
+        if (key === 'strokeText') return strokeText;
+        if (key === 'createLinearGradient') return createLinearGradient;
+        return Reflect.get(target, key);
+      },
+    });
+    vi.spyOn(canvas, 'getContext').mockReturnValue(tracked);
+    const ann: Annotation = { id: 'multiline', type: 'text', x: 0.1, y: 0.1, w: 0.4, h: 0.3,
+      color: '#ffffff', strokeWidth: 4, text, fontSize: 20, ...overrides };
+    renderCanvas(canvas, makeMockImage(800 * scale, 600 * scale), {
+      ...baseConfig, annotations: [ann], annotationDisplayWidth: 800,
+    });
+    return { ctx, fillText, strokeText, createLinearGradient };
+  }
+
+  it('retains single-line position and default bold parity with the SVG preview', () => {
+    const { ctx, fillText } = renderText('Caption');
+    expect(fillText.mock.calls).toEqual([['Caption', 0, 0]]);
+    expect(ctx._state.font).toBe('normal bold 20px sans-serif');
+  });
+
+  it.each([1, 3])('draws centered lines with blank-line spacing at %sx export scale', scale => {
+    const { fillText } = renderText('First\r\n\r\nLast', {}, scale);
+    expect(fillText.mock.calls).toEqual([['First', 0, -24 * scale], ['', 0, 0], ['Last', 0, 24 * scale]]);
+  });
+
+  it('outlines every line at the same positions as the fill and preserves rotation/font styling', () => {
+    const { ctx, fillText, strokeText } = renderText('First\nLast', {
+      fontBold: false, fontItalic: true, fontFamily: 'Verdana', rotation: 30,
+      outlineEnabled: true, outlineColor: '#ff0000', outlineWidth: 4,
+    });
+    expect(strokeText.mock.calls).toEqual(fillText.mock.calls);
+    expect(strokeText).toHaveBeenCalledTimes(2);
+    expect(ctx._state.font).toBe('italic normal 20px Verdana');
+    expect(ctx._state.strokeStyle).toBe('#ff0000');
+    expect(ctx.calls).toContain(`rotate(${Math.PI / 6})`);
+  });
+
+  it('sizes one gradient over the longest line and entire multiline block', () => {
+    const { ctx, createLinearGradient, fillText } = renderText('Longest line\nShort', {
+      gradientEnabled: true, gradientColor1: '#ff0000', gradientColor2: '#0000ff', gradientAngle: 90,
+    });
+    expect(ctx.calls).toContain('measureText(Longest line)');
+    expect(ctx.calls).toContain('measureText(Short)');
+    expect(ctx.calls).not.toContain('measureText(Longest line\nShort)');
+    expect(createLinearGradient).toHaveBeenLastCalledWith(-30, -0, 30, 0);
+    expect(fillText).toHaveBeenCalledTimes(2);
+  });
+
+  it('uses multiline block height for a vertical gradient rather than one font height', () => {
+    const { createLinearGradient } = renderText('First\nLast', {
+      gradientEnabled: true, gradientColor1: '#ff0000', gradientColor2: '#0000ff', gradientAngle: 180,
+    });
+    const coordinates = createLinearGradient.mock.calls.at(-1)!;
+    expect(coordinates[1]).toBeCloseTo(-22);
+    expect(coordinates[3]).toBeCloseTo(22);
+  });
+});
+
 describe('annotation export scaling parity with live preview', () => {
   it('scales text fontSize by contentWidth / annotationDisplayWidth (large screenshot)', () => {
     const { canvas, ctx } = makeMockCanvas();

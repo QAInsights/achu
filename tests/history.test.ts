@@ -3,6 +3,19 @@ import { renderHook, act } from '@testing-library/react';
 import { useHistory } from '../src/renderer/hooks/useHistory';
 
 describe('useHistory (real hook)', () => {
+  it('restores multiline content and expanded bounds through undo/redo without losing the image', () => {
+    const applyConfig = vi.fn();
+    const { result } = renderHook(() => useHistory(applyConfig));
+    const before = { imageSrc: 'test-image', annotations: [{ id: 'text', type: 'text', text: 'Caption', h: 0.04 }] };
+    const after = { imageSrc: 'test-image', annotations: [{ id: 'text', type: 'text', text: 'First\n\nLast', h: 0.12 }] };
+    act(() => result.current.pushHistory(before));
+    act(() => result.current.pushHistory(after));
+    act(() => result.current.handleUndo());
+    expect(applyConfig).toHaveBeenLastCalledWith(before);
+    act(() => result.current.handleRedo());
+    expect(applyConfig).toHaveBeenLastCalledWith(after);
+  });
+
   it('initializes with empty history and index -1', () => {
     const applyConfig = vi.fn();
     const { result } = renderHook(() => useHistory(applyConfig));

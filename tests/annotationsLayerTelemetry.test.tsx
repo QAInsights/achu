@@ -43,6 +43,7 @@ const contextDefaults = {
 };
 
 function renderLayer(initialAnnotations: Annotation[] = [], activeTool: 'pointer' | 'text' = 'text') {
+  const onSaveHistory = vi.fn();
   function Harness() {
     const [annotations, setAnnotations] = useState(initialAnnotations);
     return (
@@ -54,7 +55,7 @@ function renderLayer(initialAnnotations: Annotation[] = [], activeTool: 'pointer
         color="#ff0000"
         setAnnotationColor={vi.fn()}
         strokeWidth={4}
-        onSaveHistory={vi.fn()}
+        onSaveHistory={onSaveHistory}
         customPrompt={vi.fn().mockResolvedValue(null)}
       />
     );
@@ -62,11 +63,12 @@ function renderLayer(initialAnnotations: Annotation[] = [], activeTool: 'pointer
 
   const rendered = render(<Harness />);
   const layer = rendered.container.querySelector('.annotations-layer') as HTMLDivElement;
+  Object.defineProperties(layer, { offsetWidth: { value: 800 }, offsetHeight: { value: 600 } });
   layer.getBoundingClientRect = () => ({
     left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600, x: 0, y: 0,
     toJSON: () => ({}),
   });
-  return { ...rendered, layer };
+  return { ...rendered, layer, onSaveHistory };
 }
 
 function createTextAnnotation(text?: string): Annotation {
@@ -99,7 +101,7 @@ describe('AnnotationsLayer text telemetry', () => {
     const { layer } = renderLayer();
     const editor = beginTextAnnotation(layer);
     fireEvent.change(editor, { target: { value: '  Caption  ' } });
-    fireEvent.keyDown(editor, { key: 'Enter', shiftKey: false });
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true });
 
     expect(mockTrackFeature).toHaveBeenCalledTimes(1);
     expect(mockTrackFeature).toHaveBeenCalledWith('annot_text');
@@ -134,8 +136,100 @@ describe('AnnotationsLayer text telemetry', () => {
     fireEvent.doubleClick(screen.getByText('Existing caption'));
     const editor = screen.getByRole('textbox');
     fireEvent.change(editor, { target: { value: 'Updated caption' } });
-    fireEvent.keyDown(editor, { key: 'Enter', shiftKey: false });
+    fireEvent.keyDown(editor, { key: 'Enter', metaKey: true });
 
+    expect(mockTrackFeature).not.toHaveBeenCalled();
+  });
+});
+
+describe('AnnotationsLayer multiline editing', () => {
+  it('shrinks saved bounds when lines are removed and preserves the text center', () => {
+    const { layer, onSaveHistory, unmount } = renderLayer();
+    fireEvent.change(beginTextAnnotation(layer), { target: { value: 'One\nTwo\nThree\nFour\nFive' } });
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter', ctrlKey: true });
+    const [grown] = onSaveHistory.mock.calls.at(-1)![0] as Annotation[];
+    unmount();
+    const reopened = renderLayer([grown], 'pointer');
+    fireEvent.doubleClick(screen.getByText('One'));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'One' } });
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter', ctrlKey: true });
+    const [shrunk] = reopened.onSaveHistory.mock.calls.at(-1)![0] as Annotation[];
+    expect(grown.h).toBeCloseTo(0.24);
+    expect(shrunk.h).toBeCloseTo(0.048);
+    expect(shrunk.textMinHeight).toBeCloseTo(0.04);
+    expect(shrunk.y + shrunk.h / 2).toBeCloseTo(grown.y + grown.h / 2);
+  });
+
+  it('does not shift an inverted text annotation on save', () => {
+    const original = { ...createTextAnnotation('Caption'), y: 0.6, h: -0.1, fontSize: 24 };
+    const { onSaveHistory } = renderLayer([original], 'pointer');
+    fireEvent.doubleClick(screen.getByText('Caption'));
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter', ctrlKey: true });
+    const [saved] = onSaveHistory.mock.calls.at(-1)![0] as Annotation[];
+    expect(saved.h).toBe(-0.1);
+    expect(saved.y).toBe(0.6);
+  });
+
+  it.each([{}, { shiftKey: true }])('leaves Enter available for newlines (%j)', modifiers => {
+    const { layer, onSaveHistory } = renderLayer();
+    const editor = beginTextAnnotation(layer);
+    fireEvent.change(editor, { target: { value: 'First' } });
+    expect(fireEvent.keyDown(editor, { key: 'Enter', ...modifiers })).toBe(true);
+    expect(screen.getByRole('textbox')).toHaveValue('First');
+    expect(onSaveHistory).not.toHaveBeenCalled();
+    expect(mockTrackFeature).not.toHaveBeenCalled();
+  });
+
+  it.each([{ ctrlKey: true }, { metaKey: true }])('commits multiline text once with the primary modifier (%j)', modifiers => {
+    const { layer, onSaveHistory, container } = renderLayer();
+    const editor = beginTextAnnotation(layer);
+    fireEvent.change(editor, { target: { value: 'First\n\nLast' } });
+    fireEvent.keyDown(editor, { key: 'Enter', ...modifiers });
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(onSaveHistory).toHaveBeenCalledTimes(1);
+    const [annotation] = onSaveHistory.mock.calls[0][0] as Annotation[];
+    expect(annotation.text).toBe('First\n\nLast');
+    expect(annotation.h * 600).toBeGreaterThanOrEqual(24 * 1.2 * 3);
+    expect(container.querySelectorAll('tspan')).toHaveLength(3);
+    expect(mockTrackFeature).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves intentional leading/trailing blank lines and indentation on blur', () => {
+    const { layer, onSaveHistory } = renderLayer();
+    const editor = beginTextAnnotation(layer);
+    fireEvent.change(editor, { target: { value: '\n  First\nSecond\n' } });
+    fireEvent.blur(editor);
+    expect(onSaveHistory).toHaveBeenLastCalledWith([expect.objectContaining({ text: '\n  First\nSecond\n' })]);
+  });
+
+  it('reopens existing multiline text and cancels changes without saving them', () => {
+    const { onSaveHistory } = renderLayer([createTextAnnotation('First\nSecond')], 'pointer');
+    fireEvent.doubleClick(screen.getByText('First'));
+    expect(screen.getByRole('textbox')).toHaveValue('First\nSecond');
+    onSaveHistory.mockClear();
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Changed\nCaption' } });
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('First')).toBeInTheDocument();
+    expect(screen.getByText('Second')).toBeInTheDocument();
+    expect(onSaveHistory).not.toHaveBeenCalled();
+  });
+
+  it.each([{ isComposing: true }, { keyCode: 229 }])('does not commit during IME composition (%j)', composition => {
+    const { layer, onSaveHistory } = renderLayer();
+    const editor = beginTextAnnotation(layer);
+    fireEvent.change(editor, { target: { value: 'Caption' } });
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true, ...composition });
+    expect(screen.getByRole('textbox')).toHaveValue('Caption');
+    expect(onSaveHistory).not.toHaveBeenCalled();
+  });
+
+  it('removes whitespace-only multiline text rather than storing a blank annotation', () => {
+    const { layer, onSaveHistory } = renderLayer();
+    const editor = beginTextAnnotation(layer);
+    fireEvent.change(editor, { target: { value: ' \n \n ' } });
+    fireEvent.blur(editor);
+    expect(onSaveHistory).toHaveBeenLastCalledWith([]);
     expect(mockTrackFeature).not.toHaveBeenCalled();
   });
 });

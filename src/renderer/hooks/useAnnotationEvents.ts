@@ -484,7 +484,12 @@ export function useAnnotationEvents({
     setAnnotations(prev =>
       prev.map(a =>
         a.id === selectedId
-          ? { ...a, x: snappedX, y: snappedY, w: snappedW, h: snappedH }
+          ? {
+              ...a, x: snappedX, y: snappedY, w: snappedW, h: snappedH,
+              ...(a.type === 'text' && (resizeHandle.includes('t') || resizeHandle.includes('b'))
+                ? { textMinHeight: Math.abs(snappedH) }
+                : {}),
+            }
           : a,
       ),
     );

@@ -1,3 +1,5 @@
+import { getAnnotationTextLayout } from './utils/annotationUtils';
+
 export interface Annotation {
   id: string;
   type: 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji' | 'image';
@@ -13,6 +15,7 @@ export interface Annotation {
   arrowStyle?: 'classic' | 'dashed' | 'tapered' | 'curved';
   fontFamily?: string;
   fontSize?: number;
+  textMinHeight?: number; // Height fraction set by drawing/resizing, excluding automatic growth.
   fontBold?: boolean;
   fontItalic?: boolean;
   outlineEnabled?: boolean;
@@ -1356,8 +1359,9 @@ function drawAnnotationsOnCanvas(
       drawArrowOnCanvas(ctx, ann, halfW, halfH, strokeW);
     } else if (ann.type === 'text' && ann.text) {
       const fontSize = ann.fontSize ? ann.fontSize * pxScale : Math.max(12, Math.abs(h) * 0.7);
+      const { lines, height } = getAnnotationTextLayout(ann.text, fontSize);
       const style = ann.fontItalic ? 'italic' : 'normal';
-      const weight = ann.fontBold ? 'bold' : 'normal';
+      const weight = ann.fontBold !== false ? 'bold' : 'normal';
       ctx.font = `${style} ${weight} ${fontSize}px ${ann.fontFamily || 'sans-serif'}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -1371,15 +1375,14 @@ function drawAnnotationsOnCanvas(
         ctx.strokeStyle = outlineColor;
         ctx.lineWidth = outlineW;
         ctx.lineJoin = 'round';
-        ctx.strokeText(ann.text, 0, 0);
+        lines.forEach(line => ctx.strokeText(line.text, 0, line.y));
         ctx.restore();
       }
 
       if (ann.gradientEnabled && ann.gradientColor1 && ann.gradientColor2) {
         const angleRad = (((ann.gradientAngle ?? 135) - 90) * Math.PI) / 180;
-        const metrics = ctx.measureText(ann.text);
-        const textW = metrics.width;
-        const textH = fontSize;
+        const textW = lines.reduce((width, line) => Math.max(width, ctx.measureText(line.text).width), 0);
+        const textH = height;
         const ghw = textW / 2;
         const ghh = textH / 2;
         const dx = Math.cos(angleRad) * ghw;
@@ -1390,7 +1393,7 @@ function drawAnnotationsOnCanvas(
         ctx.fillStyle = grad;
       }
 
-      ctx.fillText(ann.text, 0, 0);
+      lines.forEach(line => ctx.fillText(line.text, 0, line.y));
     } else if (ann.type === 'emoji' && ann.text) {
       const fontSize = Math.min(Math.abs(w), Math.abs(h));
       ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif`;

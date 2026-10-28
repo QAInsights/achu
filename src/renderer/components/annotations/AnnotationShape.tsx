@@ -1,5 +1,6 @@
 import { Annotation } from '../../canvasRenderer';
 import { getCurvedArrowPoints, getTaperedCurvedArrowPoints } from '../../arrowUtils';
+import { getAnnotationTextLayout } from '../../utils/annotationUtils';
 
 interface AnnotationShapeProps {
   ann: Annotation;
@@ -157,6 +158,7 @@ export default function AnnotationShape({
 
   if (ann.type === 'text' && ann.text && ann.id !== editingTextId) {
     const fSize = ann.fontSize || Math.max(12, rectH * 0.7);
+    const { lines } = getAnnotationTextLayout(ann.text, fSize);
     const style = ann.fontItalic ? 'italic' : 'normal';
     const weight = ann.fontBold !== false ? 'bold' : 'normal';
     const outlineEnabled = ann.outlineEnabled === true;
@@ -175,6 +177,7 @@ export default function AnnotationShape({
         fontSize={`${fSize}px`}
         textAnchor="middle"
         dominantBaseline="middle"
+        xmlSpace="preserve"
         style={{
           fontFamily: previewFont || ann.fontFamily || 'var(--font-sans)',
           fontWeight: weight,
@@ -185,7 +188,7 @@ export default function AnnotationShape({
           strokeLinejoin: 'round',
         }}
       >
-        {ann.text}
+        {lines.map((line, index) => <tspan key={index} x={0} y={line.y}>{line.text}</tspan>)}
       </text>
     );
 

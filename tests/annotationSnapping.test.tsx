@@ -165,6 +165,30 @@ describe('annotation snapping integration', () => {
   });
 
   describe('resize snapping', () => {
+    it.each([
+      ['bc', 450, 0.55],
+      ['bc', 60, 0.1],
+      ['rc', 240, 0.04],
+    ] as const)('tracks the manual text minimum only on vertical resize (%s, y=%s)', (handle, clientY, expectedMin) => {
+      const div = makeMockDiv();
+      Object.defineProperties(div, { offsetWidth: { value: 800 }, offsetHeight: { value: 600 } });
+      containerRef.current = div;
+      const ann: Annotation = { ...makeRect('text', 0.2, 0.2, 0.3, 0.2), type: 'text', text: 'Caption', fontSize: 24, textMinHeight: 0.04 };
+      let annotations = [ann];
+      const update: React.Dispatch<React.SetStateAction<Annotation[]>> = next => {
+        annotations = typeof next === 'function' ? next(annotations) : next;
+      };
+      const { result } = renderHook(() => useAnnotationEvents({
+        annotations, setAnnotations: update, activeTool: 'pointer', color: '#ff0000',
+        strokeWidth: 4, arrowStyle: 'classic', onSaveHistory, customPrompt, containerRef,
+      }));
+      act(() => result.current.startResize({
+        stopPropagation: vi.fn(), clientX: 280, clientY: 240, pointerId: 1,
+      } as unknown as React.PointerEvent<HTMLDivElement>, ann, handle));
+      act(() => result.current.handlePointerMove({ clientX: 560, clientY, pointerId: 1 } as React.PointerEvent<HTMLDivElement>));
+      expect(annotations[0].textMinHeight).toBeCloseTo(expectedMin);
+    });
+
     it('sets activeGuides during resize', () => {
       const mockDiv = makeMockDiv();
       containerRef.current = mockDiv;

@@ -1,3 +1,24 @@
+import type { Annotation } from '../canvasRenderer';
+
+export function getAnnotationTextLayout(text: string, fontSize: number) {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  const lineHeight = fontSize * 1.2;
+  return {
+    lines: lines.map((text, index) => ({ text, y: (index - (lines.length - 1) / 2) * lineHeight })),
+    height: fontSize + (lines.length - 1) * lineHeight,
+    editorHeight: lines.length * lineHeight,
+    lineHeight,
+  };
+}
+
+export function getTextAnnotationBounds(ann: Annotation, text: string, canvasHeight: number) {
+  const fontSize = ann.fontSize || Math.max(12, Math.abs(ann.h * canvasHeight) * 0.7);
+  const { editorHeight } = getAnnotationTextLayout(text, fontSize);
+  const textMinHeight = ann.textMinHeight ?? Math.abs(ann.h);
+  const h = Math.max(textMinHeight, editorHeight / canvasHeight) * (ann.h < 0 ? -1 : 1);
+  return { fontSize, textMinHeight, h, y: ann.y + (ann.h - h) / 2 };
+}
+
 export function rotatePoint(x: number, y: number, cx: number, cy: number, angleDeg: number) {
   const rad = (-angleDeg * Math.PI) / 180;
   const cos = Math.cos(rad);

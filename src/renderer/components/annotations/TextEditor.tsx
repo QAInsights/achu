@@ -1,5 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useId } from 'react';
 import { Annotation } from '../../canvasRenderer';
+import { getAnnotationTextLayout, getTextAnnotationBounds } from '../../utils/annotationUtils';
+import { getModKeyLabel } from '../../utils/shortcutLabels';
 
 interface TextEditorProps {
   ann: Annotation;
@@ -19,12 +21,16 @@ export default function TextEditor({
   onKeyDown,
 }: TextEditorProps) {
   const x1 = ann.x * dimensions.width;
-  const y1 = ann.y * dimensions.height;
+  const bounds = getTextAnnotationBounds(ann, editingTextValue, dimensions.height);
+  const y1 = bounds.y * dimensions.height;
   const w = ann.w * dimensions.width;
-  const h = ann.h * dimensions.height;
+  const h = bounds.h * dimensions.height;
 
   const rectW = Math.abs(w);
   const rectH = Math.abs(h);
+  const fontSize = bounds.fontSize;
+  const { editorHeight, lineHeight } = getAnnotationTextLayout(editingTextValue, fontSize);
+  const hintId = useId();
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -46,10 +52,12 @@ export default function TextEditor({
       onPointerUp={(e) => e.stopPropagation()}
       style={{
         position: 'absolute',
-        left: `${x1}px`,
-        top: `${y1}px`,
+        left: `${x1 + Math.min(0, w)}px`,
+        top: `${y1 + Math.min(0, h)}px`,
         width: `${rectW}px`,
         height: `${rectH}px`,
+        outline: `2px dashed ${ann.color}`,
+        borderRadius: '4px',
         transform: `rotate(${ann.rotation || 0}deg)`,
         transformOrigin: 'center center',
         zIndex: 100,
@@ -61,32 +69,53 @@ export default function TextEditor({
     >
       <textarea
         ref={textareaRef}
+        aria-label="Annotation text"
+        aria-describedby={hintId}
+        wrap="off"
         value={editingTextValue}
         onChange={(e) => setEditingTextValue(e.target.value)}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
         style={{
           width: '100%',
-          height: '100%',
+          height: `${editorHeight}px`,
           background: 'transparent',
-          border: `2px dashed ${ann.color}`,
+          border: 'none',
           borderRadius: '4px',
           color: ann.color,
           fontFamily: ann.fontFamily || 'var(--font-sans)',
-          fontSize: `${ann.fontSize || Math.max(12, 14 + ann.strokeWidth)}px`,
+          fontSize: `${fontSize}px`,
+          lineHeight: `${lineHeight}px`,
+          whiteSpace: 'pre',
           fontWeight: ann.fontBold !== false ? 'bold' : 'normal',
           fontStyle: ann.fontItalic ? 'italic' : 'normal',
           textAlign: 'center',
           resize: 'none',
           outline: 'none',
-          padding: '4px',
+          padding: 0,
           margin: 0,
-          overflow: 'hidden',
+          overflow: 'auto',
           boxSizing: 'border-box',
           userSelect: 'text',
           WebkitUserSelect: 'text',
         }}
       />
+      <span
+        id={hintId}
+        style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          fontSize: '11px',
+          whiteSpace: 'nowrap',
+          color: 'var(--text-secondary)',
+          background: 'var(--surface-1)',
+          padding: '3px 6px',
+          borderRadius: '4px',
+          pointerEvents: 'none',
+        }}
+      >
+        Enter: new line · {getModKeyLabel()}+Enter: save
+      </span>
     </div>
   );
 }
