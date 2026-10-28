@@ -7,7 +7,28 @@ import {
   hasDragged,
   isDoubleClick,
   calculateRotationAngle,
+  getAnnotationTextLayout,
 } from '../src/renderer/utils/annotationUtils';
+
+describe('getAnnotationTextLayout', () => {
+  it('keeps single-line text at its original center', () => {
+    expect(getAnnotationTextLayout('Caption', 20)).toEqual({
+      lines: [{ text: 'Caption', y: 0 }], height: 20, editorHeight: 24, lineHeight: 24,
+    });
+  });
+
+  it('centers multiple lines with consistent leading', () => {
+    expect(getAnnotationTextLayout('First\nSecond\nThird', 20)).toEqual({
+      lines: [{ text: 'First', y: -24 }, { text: 'Second', y: 0 }, { text: 'Third', y: 24 }],
+      height: 68, editorHeight: 72, lineHeight: 24,
+    });
+  });
+
+  it('normalizes Windows and classic Mac newlines without dropping blank lines or spaces', () => {
+    expect(getAnnotationTextLayout('\r\n  First\r\rLast\n', 20).lines.map(line => line.text))
+      .toEqual(['', '  First', '', 'Last', '']);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // rotatePoint

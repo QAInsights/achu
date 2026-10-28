@@ -1,5 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useId } from 'react';
 import { Annotation } from '../../canvasRenderer';
+import { getAnnotationTextLayout } from '../../utils/annotationUtils';
+import { getModKeyLabel } from '../../utils/shortcutLabels';
 
 interface TextEditorProps {
   ann: Annotation;
@@ -25,6 +27,9 @@ export default function TextEditor({
 
   const rectW = Math.abs(w);
   const rectH = Math.abs(h);
+  const fontSize = ann.fontSize || Math.max(12, rectH * 0.7);
+  const { editorHeight, lineHeight } = getAnnotationTextLayout(editingTextValue, fontSize);
+  const hintId = useId();
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -49,7 +54,9 @@ export default function TextEditor({
         left: `${x1}px`,
         top: `${y1}px`,
         width: `${rectW}px`,
-        height: `${rectH}px`,
+        height: `${Math.max(rectH, editorHeight)}px`,
+        outline: `2px dashed ${ann.color}`,
+        borderRadius: '4px',
         transform: `rotate(${ann.rotation || 0}deg)`,
         transformOrigin: 'center center',
         zIndex: 100,
@@ -61,32 +68,53 @@ export default function TextEditor({
     >
       <textarea
         ref={textareaRef}
+        aria-label="Annotation text"
+        aria-describedby={hintId}
+        wrap="off"
         value={editingTextValue}
         onChange={(e) => setEditingTextValue(e.target.value)}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
         style={{
           width: '100%',
-          height: '100%',
+          height: `${editorHeight}px`,
           background: 'transparent',
-          border: `2px dashed ${ann.color}`,
+          border: 'none',
           borderRadius: '4px',
           color: ann.color,
           fontFamily: ann.fontFamily || 'var(--font-sans)',
-          fontSize: `${ann.fontSize || Math.max(12, 14 + ann.strokeWidth)}px`,
+          fontSize: `${fontSize}px`,
+          lineHeight: `${lineHeight}px`,
+          whiteSpace: 'pre',
           fontWeight: ann.fontBold !== false ? 'bold' : 'normal',
           fontStyle: ann.fontItalic ? 'italic' : 'normal',
           textAlign: 'center',
           resize: 'none',
           outline: 'none',
-          padding: '4px',
+          padding: 0,
           margin: 0,
-          overflow: 'hidden',
+          overflow: 'auto',
           boxSizing: 'border-box',
           userSelect: 'text',
           WebkitUserSelect: 'text',
         }}
       />
+      <span
+        id={hintId}
+        style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          fontSize: '11px',
+          whiteSpace: 'nowrap',
+          color: 'var(--text-secondary)',
+          background: 'var(--surface-1)',
+          padding: '3px 6px',
+          borderRadius: '4px',
+          pointerEvents: 'none',
+        }}
+      >
+        Enter: new line · {getModKeyLabel()}+Enter: save
+      </span>
     </div>
   );
 }

@@ -1,3 +1,14 @@
+export function getAnnotationTextLayout(text: string, fontSize: number) {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  const lineHeight = fontSize * 1.2;
+  return {
+    lines: lines.map((text, index) => ({ text, y: (index - (lines.length - 1) / 2) * lineHeight })),
+    height: fontSize + (lines.length - 1) * lineHeight,
+    editorHeight: lines.length * lineHeight,
+    lineHeight,
+  };
+}
+
 export function rotatePoint(x: number, y: number, cx: number, cy: number, angleDeg: number) {
   const rad = (-angleDeg * Math.PI) / 180;
   const cos = Math.cos(rad);
