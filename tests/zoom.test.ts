@@ -1,5 +1,25 @@
 import { describe, it, expect } from 'vitest';
-import { getCanvasPreviewScale, zoomIn, zoomOut } from '../src/renderer/utils/layoutUtils';
+import { canShowBothSidebars, getCanvasPreviewScale, zoomIn, zoomOut } from '../src/renderer/utils/layoutUtils';
+
+describe('Responsive panels', () => {
+  it('reserves enough workspace for the toolbar even with resized sidebars', () => {
+    const root = document.createElement('div');
+    const primary = document.createElement('div');
+    const secondary = document.createElement('div');
+    primary.className = secondary.className = 'sidebar';
+    primary.style.width = '425px';
+    secondary.style.width = '360px';
+    root.append(primary, secondary);
+    Object.defineProperty(root, 'clientWidth', { value: 900, configurable: true });
+    expect(canShowBothSidebars(root)).toBe(false);
+
+    Object.defineProperty(root, 'clientWidth', { value: 1200, configurable: true });
+    expect(canShowBothSidebars(root)).toBe(true);
+    primary.style.width = '560px';
+    secondary.style.width = '500px';
+    expect(canShowBothSidebars(root)).toBe(false);
+  });
+});
 
 describe('Zoom', () => {
   describe('zoomIn', () => {

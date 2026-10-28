@@ -1,3 +1,12 @@
+export const MIN_WORKSPACE_WIDTH = 320;
+
+export function canShowBothSidebars(root: HTMLElement): boolean {
+  const sidebars = root.querySelectorAll<HTMLElement>(':scope > .sidebar');
+  const sidebarWidth = Array.from(sidebars).reduce((width, sidebar) =>
+    width + (Number.parseFloat(sidebar.style.width) || 0), 0);
+  return root.clientWidth - sidebarWidth >= MIN_WORKSPACE_WIDTH;
+}
+
 export function zoomIn(zoomLevel: string, fitScale = 1): string {
   const currentVal = zoomLevel === 'Zoom to fit' ? fitScale * 100 : parseFloat(zoomLevel);
   if (isNaN(currentVal)) return '100%';

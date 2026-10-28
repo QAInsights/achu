@@ -30,6 +30,7 @@ import FontSelector from './FontSelector';
 import ColorSwatchPicker from './annotations/ColorSwatchPicker';
 import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 import { formatModShortcut } from '../utils/shortcutLabels';
+import { canShowBothSidebars } from '../utils/layoutUtils';
 
 export default function WorkspaceToolbar() {
   useToolbarShortcuts();
@@ -226,7 +227,13 @@ export default function WorkspaceToolbar() {
         <Tooltip position="right">
           <button
             className={`tool-btn ${sidebarVisible ? 'active' : ''}`}
-            onClick={() => setSidebarVisible(prev => !prev)}
+            onClick={(e) => {
+              if (!sidebarVisible) {
+                const root = e.currentTarget.closest<HTMLElement>('.app-container');
+                if (root && !canShowBothSidebars(root)) setSecondarySidebarVisible(false);
+              }
+              setSidebarVisible(prev => !prev);
+            }}
             title={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
             aria-label={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
             aria-pressed={sidebarVisible}
@@ -238,7 +245,13 @@ export default function WorkspaceToolbar() {
         <Tooltip position="right">
           <button
             className={`tool-btn ${secondarySidebarVisible ? 'active' : ''}`}
-            onClick={() => setSecondarySidebarVisible(prev => !prev)}
+            onClick={(e) => {
+              if (!secondarySidebarVisible) {
+                const root = e.currentTarget.closest<HTMLElement>('.app-container');
+                if (root && !canShowBothSidebars(root)) setSidebarVisible(false);
+              }
+              setSecondarySidebarVisible(prev => !prev);
+            }}
             title={secondarySidebarVisible ? 'Hide AI & OCR Panel' : 'Show AI & OCR Panel'}
             aria-label={secondarySidebarVisible ? 'Hide AI & OCR Panel' : 'Show AI & OCR Panel'}
             aria-pressed={secondarySidebarVisible}

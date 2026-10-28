@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import React from 'react';
 import Sidebar from '../src/renderer/components/Sidebar';
@@ -225,6 +225,8 @@ beforeEach(() => {
     clearWorkspace: vi.fn(),
   };
 });
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe('Sidebar', () => {
   it('renders sidebar with logo and title', () => {
@@ -656,6 +658,24 @@ describe('WorkspaceToolbar', () => {
     fireEvent.click(toggleButton);
 
     expect(mockContext.setSidebarVisible).toHaveBeenCalled();
+  });
+
+  it.each([
+    { open: 'Show AI & OCR Panel', close: 'setSidebarVisible', visible: 'secondarySidebarVisible' },
+    { open: 'Show Sidebar', close: 'setSecondarySidebarVisible', visible: 'sidebarVisible' },
+  ])('keeps one panel open when $open is clicked in a narrow window', ({ open, close, visible }) => {
+    mockContext[visible] = false;
+    const { container } = render(
+      <div className="app-container">
+        <div className="sidebar" style={{ width: 425 }} />
+        <div className="sidebar" style={{ width: 360 }} />
+        <WorkspaceToolbar />
+      </div>
+    );
+    const root = container.querySelector('.app-container')!;
+    Object.defineProperty(root, 'clientWidth', { value: 900, configurable: true });
+    fireEvent.click(screen.getByRole('button', { name: open }));
+    expect(mockContext[close]).toHaveBeenCalledWith(false);
   });
 
   it('renders undo and redo buttons', () => {
@@ -1418,6 +1438,22 @@ describe('AnnotationsLayer', () => {
 });
 
 describe('App', () => {
+  it('collapses the secondary panel if resizing leaves no editing space', () => {
+    let onWorkspaceResize: ResizeObserverCallback | undefined;
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(private callback: ResizeObserverCallback) {}
+      observe(target: Element) {
+        if (target.classList.contains('workspace')) onWorkspaceResize = this.callback;
+      }
+      disconnect() {}
+    });
+
+    render(<App />);
+    expect(onWorkspaceResize).toBeDefined();
+    act(() => onWorkspaceResize!([{ contentRect: { width: 120 } } as ResizeObserverEntry], {} as ResizeObserver));
+    expect(mockContext.setSecondarySidebarVisible).toHaveBeenCalledWith(false);
+  });
+
   it('renders app container', () => {
     const { container } = render(<App />);
     
