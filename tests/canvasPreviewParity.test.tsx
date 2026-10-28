@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import React from 'react';
 import CanvasPreview from '../src/renderer/components/CanvasPreview';
 
@@ -59,6 +59,31 @@ beforeEach(() => {
 });
 
 describe('CanvasPreview Parity & Layout Tests', () => {
+  it('shows the actual fitted percentage and steps from that scale', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 664, height: 504, x: 0, y: 0, top: 0, left: 0, right: 664, bottom: 504, toJSON: () => ({}),
+    });
+    try {
+      const { container } = render(<CanvasPreview />);
+      const img = screen.getByAltText('Screenshot');
+      Object.defineProperty(img, 'naturalWidth', { value: 1120, configurable: true });
+      Object.defineProperty(img, 'naturalHeight', { value: 720, configurable: true });
+      fireEvent.load(img);
+
+      expect(screen.getByRole('region', { name: 'Canvas preview' })).toHaveAttribute('tabindex', '0');
+      expect(screen.getByRole('button', { name: 'Fit canvas to window' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('button', { name: 'Actual size (100%)' })).toHaveTextContent('50%');
+      expect(container.querySelector('.preview-card-wrapper')).toHaveStyle({ width: '600px', height: '400px' });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
+      expect(mockContext.setZoomLevel).toHaveBeenLastCalledWith('60%');
+      fireEvent.click(screen.getByRole('button', { name: 'Zoom out' }));
+      expect(mockContext.setZoomLevel).toHaveBeenLastCalledWith('40%');
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
   it('computes correct card dimensions in Auto aspect ratio with padding', () => {
     const { container } = render(<CanvasPreview />);
     const img = container.querySelector('img[alt="Screenshot"]') as HTMLImageElement;
@@ -73,6 +98,19 @@ describe('CanvasPreview Parity & Layout Tests', () => {
     // imgH (400) * scale (1.0) + paddingY (40*2) = 480
     expect(card).toHaveStyle({ width: '680px' });
     expect(card).toHaveStyle({ height: '480px' });
+  });
+
+  it('constrains a document name to the viewport rather than expanding the scroll area', () => {
+    mockContext.documentName = 'A long screenshot name that should not expand a narrow canvas viewport';
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 400, height: 600, x: 0, y: 0, top: 0, left: 0, right: 400, bottom: 600, toJSON: () => ({}),
+    });
+    try {
+      render(<CanvasPreview />);
+      expect(screen.getByTitle(mockContext.documentName)).toHaveStyle({ maxWidth: '336px' });
+    } finally {
+      rect.mockRestore();
+    }
   });
 
   it('handles fixed aspect ratio 1:1 in fit padding mode', () => {
@@ -132,11 +170,12 @@ describe('CanvasPreview Parity & Layout Tests', () => {
 
     // dims: width = 500 + 80 = 580; height = 300 + 80 = 380
     // scale factor is 1.5
-    // wrapper no longer sets width/height (avoids double-scale with the card transform)
-    expect(wrapper).not.toHaveStyle({ width: '870px' });
+    // Reserve the transformed footprint so every edge is reachable by scrolling.
+    expect(wrapper).toHaveStyle({ width: '870px', height: '570px' });
     expect(card).toHaveStyle({ width: '580px' });
     expect(card).toHaveStyle({ height: '380px' });
     expect(card).toHaveStyle({ transform: 'scale(1.5)' });
+    expect(card).toHaveStyle({ transformOrigin: 'top left', left: '0px', top: '0px' });
   });
 
   it('calculates content size with chrome height for macOS style', () => {

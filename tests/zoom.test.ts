@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { zoomIn, zoomOut } from '../src/renderer/utils/layoutUtils';
+import { getCanvasPreviewScale, zoomIn, zoomOut } from '../src/renderer/utils/layoutUtils';
 
 describe('Zoom', () => {
   describe('zoomIn', () => {
@@ -37,6 +37,12 @@ describe('Zoom', () => {
   });
 
   describe('boundary conditions', () => {
+    it('steps from the actual fitted scale instead of assuming 100%', () => {
+      expect(zoomIn('Zoom to fit', 0.43)).toBe('50%');
+      expect(zoomOut('Zoom to fit', 0.43)).toBe('40%');
+      expect(zoomIn('Zoom to fit', 0.05)).toBe('10%');
+      expect(zoomIn('Zoom to fit', 1)).toBe('110%');
+    });
     it('handles non-round values', () => {
       expect(zoomIn('105%')).toBe('110%');
       expect(zoomOut('105%')).toBe('100%');
@@ -48,6 +54,28 @@ describe('Zoom', () => {
       expect(z).toBe('110%');
       z = zoomOut(z);
       expect(z).toBe('100%');
+    });
+  });
+
+  describe('preview scale', () => {
+    const canvas = { width: 1200, height: 800 };
+
+    it('fits both dimensions while reserving space for canvas controls', () => {
+      const viewport = { width: 664, height: 504 };
+      expect(getCanvasPreviewScale('Zoom to fit', canvas, viewport, false)).toBe(0.5);
+      expect(getCanvasPreviewScale('Zoom to fit', canvas, viewport, true)).toBe(376 / 800);
+    });
+
+    it('does not upscale a small canvas in fit mode', () => {
+      expect(getCanvasPreviewScale('Zoom to fit', { width: 200, height: 100 }, { width: 1024, height: 768 }, false)).toBe(1);
+    });
+
+    it('uses bounded numeric zoom and falls back to fit for invalid input', () => {
+      const viewport = { width: 664, height: 504 };
+      expect(getCanvasPreviewScale('150%', canvas, viewport, false)).toBe(1.5);
+      expect(getCanvasPreviewScale('900%', canvas, viewport, false)).toBe(5);
+      expect(getCanvasPreviewScale('0%', canvas, viewport, false)).toBe(0.1);
+      expect(getCanvasPreviewScale('invalid', canvas, viewport, false)).toBe(0.5);
     });
   });
 });

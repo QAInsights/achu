@@ -492,6 +492,42 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   font-size: var(--fs-label) !important;
 }
 
+.range-control-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.range-number-field {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  padding-right: var(--space-2);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+}
+
+.range-number-field:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.range-number-field input[type="number"] {
+  width: 68px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  padding: 0 var(--space-2);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.range-control.is-disabled .range-number-field,
+.range-control input[type="range"]:disabled { opacity: 0.45; }
+
 /* === BUTTONS === */
 .btn {
   display: inline-flex;
@@ -623,6 +659,8 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 /* === WORKSPACE === */
 .workspace {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -632,10 +670,10 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 
 /* Toolbar Dock */
 .toolbar-dock {
-  position: absolute;
-  top: var(--space-1);
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  align-self: center;
+  flex-shrink: 0;
+  margin: var(--space-2) var(--space-3) 0;
   z-index: 20;
   display: flex;
   align-items: center;
@@ -646,7 +684,8 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   border-radius: var(--radius-md);
   box-shadow: var(--elev-2);
   max-width: calc(100% - var(--space-5));
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  justify-content: center;
   -webkit-app-region: no-drag;
 }
 
@@ -654,6 +693,27 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   display: flex;
   align-items: center;
   gap: 2px;
+  flex-wrap: wrap;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.toolbar-context {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-1);
+}
+
+.toolbar-context > .toolbar-divider { display: none; }
+.toolbar-context > .toolbar-group { flex: 1; gap: var(--space-1); }
+.toolbar-context-label {
+  font-size: var(--fs-label);
+  color: var(--text-tertiary);
+  padding: 0 var(--space-2);
 }
 
 .toolbar-divider {
@@ -676,6 +736,7 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out-quint);
   position: relative;
+  flex-shrink: 0;
 }
 
 .tool-btn:hover { background: var(--surface-2); color: var(--text-primary); transform: scale(1.05); }
@@ -731,15 +792,24 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 /* Canvas */
 .workspace-canvas-container {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-5);
-  overflow: auto;
+  min-height: 0;
+  overflow: hidden;
   position: relative;
   background:
     radial-gradient(ellipse 70% 50% at 50% 50%, color-mix(in oklch, var(--surface-1) 40%, transparent) 0%, transparent 70%),
     var(--surface-0);
+}
+
+.canvas-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.canvas-viewport:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .canvas-workspace-stack {
@@ -748,8 +818,11 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  max-width: 100%;
-  max-height: 100%;
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: 32px 32px 72px;
 }
 
 .canvas-document-name {
@@ -770,13 +843,11 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 
 /* Preview */
 .preview-card-wrapper {
-  max-width: 100%;
-  max-height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform var(--dur) var(--ease-out-quint);
-  transform-origin: center center;
+  position: relative;
+  flex-shrink: 0;
+  /* Keep the unscaled card out of the viewport's scroll bounds. */
+  overflow: clip;
+  overflow-clip-margin: 32px;
 }
 
 .preview-background-card {
@@ -958,6 +1029,9 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 .zoom-btn:active { transform: scale(0.96); }
 .zoom-btn.active { background: var(--accent-soft); color: var(--accent); }
 .zoom-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.zoom-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.zoom-value { min-width: 52px; }
+.zoom-divider { width: 1px; height: 16px; background: var(--border); margin: 0 2px; }
 
 /* === EMPTY STATE === */
 .empty-state {
@@ -1178,8 +1252,8 @@ input:checked + .slider-switch:before {
 }
 
 @keyframes toolbarFadeSlideIn {
-  from { opacity: 0; transform: translate(-50%, 8px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .app-load .sidebar { animation: fadeSlideIn var(--dur-slow) var(--ease-out-quint) both; }
@@ -1848,5 +1922,3 @@ input:checked + .slider-switch:before {
   font-size: 0.82rem;
   text-align: center;
 }
-
-

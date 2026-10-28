@@ -1,17 +1,30 @@
-export function zoomIn(zoomLevel: string): string {
-  if (zoomLevel === 'Zoom to fit') return '110%';
-  const currentVal = parseInt(zoomLevel, 10);
+export function zoomIn(zoomLevel: string, fitScale = 1): string {
+  const currentVal = zoomLevel === 'Zoom to fit' ? fitScale * 100 : parseFloat(zoomLevel);
   if (isNaN(currentVal)) return '100%';
-  const nextVal = Math.min(500, Math.floor(currentVal / 10) * 10 + 10);
+  const nextVal = Math.max(10, Math.min(500, Math.floor(currentVal / 10) * 10 + 10));
   return `${nextVal}%`;
 }
 
-export function zoomOut(zoomLevel: string): string {
-  if (zoomLevel === 'Zoom to fit') return '90%';
-  const currentVal = parseInt(zoomLevel, 10);
+export function zoomOut(zoomLevel: string, fitScale = 1): string {
+  const currentVal = zoomLevel === 'Zoom to fit' ? fitScale * 100 : parseFloat(zoomLevel);
   if (isNaN(currentVal)) return '100%';
-  const nextVal = Math.max(10, Math.ceil(currentVal / 10) * 10 - 10);
+  const nextVal = Math.min(500, Math.max(10, Math.ceil(currentVal / 10) * 10 - 10));
   return `${nextVal}%`;
+}
+
+export function getCanvasPreviewScale(
+  zoomLevel: string,
+  canvas: { width: number; height: number },
+  viewport: { width: number; height: number },
+  hasDocumentName: boolean,
+): number {
+  if (zoomLevel !== 'Zoom to fit') {
+    const percent = parseFloat(zoomLevel);
+    if (Number.isFinite(percent)) return Math.max(10, Math.min(500, percent)) / 100;
+  }
+  const availableWidth = Math.max(1, viewport.width - 64);
+  const availableHeight = Math.max(1, viewport.height - (hasDocumentName ? 128 : 104));
+  return Math.min(availableWidth / canvas.width, availableHeight / canvas.height, 1);
 }
 
 export function getZoomStyle(zoomLevel: string): React.CSSProperties {
