@@ -143,6 +143,33 @@ describe('AnnotationsLayer text telemetry', () => {
 });
 
 describe('AnnotationsLayer multiline editing', () => {
+  it('shrinks saved bounds when lines are removed and preserves the text center', () => {
+    const { layer, onSaveHistory, unmount } = renderLayer();
+    fireEvent.change(beginTextAnnotation(layer), { target: { value: 'One\nTwo\nThree\nFour\nFive' } });
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter', ctrlKey: true });
+    const [grown] = onSaveHistory.mock.calls.at(-1)![0] as Annotation[];
+    unmount();
+    const reopened = renderLayer([grown], 'pointer');
+    fireEvent.doubleClick(screen.getByText('One'));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'One' } });
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter', ctrlKey: true });
+    const [shrunk] = reopened.onSaveHistory.mock.calls.at(-1)![0] as Annotation[];
+    expect(grown.h).toBeCloseTo(0.24);
+    expect(shrunk.h).toBeCloseTo(0.048);
+    expect(shrunk.textMinHeight).toBeCloseTo(0.04);
+    expect(shrunk.y + shrunk.h / 2).toBeCloseTo(grown.y + grown.h / 2);
+  });
+
+  it('does not shift an inverted text annotation on save', () => {
+    const original = { ...createTextAnnotation('Caption'), y: 0.6, h: -0.1, fontSize: 24 };
+    const { onSaveHistory } = renderLayer([original], 'pointer');
+    fireEvent.doubleClick(screen.getByText('Caption'));
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter', ctrlKey: true });
+    const [saved] = onSaveHistory.mock.calls.at(-1)![0] as Annotation[];
+    expect(saved.h).toBe(-0.1);
+    expect(saved.y).toBe(0.6);
+  });
+
   it.each([{}, { shiftKey: true }])('leaves Enter available for newlines (%j)', modifiers => {
     const { layer, onSaveHistory } = renderLayer();
     const editor = beginTextAnnotation(layer);

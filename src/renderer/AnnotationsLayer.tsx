@@ -9,7 +9,7 @@ import SnapGuides from './components/annotations/SnapGuides';
 import AnnotationContextMenu, { LayerOrderAction } from './components/AnnotationContextMenu';
 import { trackFeature } from './utils/telemetry';
 import { transformCoordinates, getDeleteButtonPosition } from './utils/layoutUtils';
-import { getAnnotationTextLayout } from './utils/annotationUtils';
+import { getTextAnnotationBounds } from './utils/annotationUtils';
 import {
   bringToFront,
   bringForward,
@@ -331,11 +331,8 @@ export default function AnnotationsLayer({
           if (!text.trim()) {
             updated = annotations.filter(a => a.id !== ann.id);
           } else {
-            const fontSize = ann.fontSize || Math.max(12, Math.abs(ann.h * dimensions.height) * 0.7);
-            const { editorHeight } = getAnnotationTextLayout(text, fontSize);
             updated = annotations.map(a => (a.id === ann.id ? {
-              ...a, text, fontSize,
-              h: Math.max(Math.abs(ann.h), editorHeight / dimensions.height),
+              ...a, text, ...getTextAnnotationBounds(a, text, dimensions.height),
             } : a));
             if (!ann.text) trackFeature('annot_text');
           }

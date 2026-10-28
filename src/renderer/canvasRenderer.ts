@@ -15,6 +15,7 @@ export interface Annotation {
   arrowStyle?: 'classic' | 'dashed' | 'tapered' | 'curved';
   fontFamily?: string;
   fontSize?: number;
+  textMinHeight?: number; // Height fraction set by drawing/resizing, excluding automatic growth.
   fontBold?: boolean;
   fontItalic?: boolean;
   outlineEnabled?: boolean;

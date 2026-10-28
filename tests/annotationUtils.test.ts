@@ -8,7 +8,43 @@ import {
   isDoubleClick,
   calculateRotationAngle,
   getAnnotationTextLayout,
+  getTextAnnotationBounds,
 } from '../src/renderer/utils/annotationUtils';
+import type { Annotation } from '../src/renderer/canvasRenderer';
+
+describe('getTextAnnotationBounds', () => {
+  const ann: Annotation = { id: 'text', type: 'text', x: 0.1, y: 0.3, w: 0.3, h: 0.04,
+    color: '#ffffff', strokeWidth: 4, fontSize: 24 };
+  const fiveLines = 'One\nTwo\nThree\nFour\nFive';
+
+  it.each([0.04, -0.04])('grows and shrinks captions without moving their center (h=%s)', h => {
+    const original = { ...ann, h, rotation: 30 };
+    const center = original.y + original.h / 2;
+    const grown = { ...original, ...getTextAnnotationBounds(original, fiveLines, 600) };
+    expect(Math.abs(grown.h)).toBeCloseTo(0.24);
+    expect(grown.textMinHeight).toBe(0.04);
+    expect(grown.y + grown.h / 2).toBeCloseTo(center);
+    const shrunk = { ...grown, ...getTextAnnotationBounds(grown, 'One', 600) };
+    expect(Math.abs(shrunk.h)).toBeCloseTo(0.048);
+    expect(Math.sign(shrunk.h)).toBe(Math.sign(h));
+    expect(shrunk.y + shrunk.h / 2).toBeCloseTo(center);
+  });
+
+  it('honors a user-defined minimum rather than permanently retaining automatic growth', () => {
+    const original = { ...ann, h: 0.2 };
+    const grown = { ...original, ...getTextAnnotationBounds(original, fiveLines, 600) };
+    expect(grown.h).toBeCloseTo(0.24);
+    expect(getTextAnnotationBounds(grown, 'One', 600).h).toBe(0.2);
+  });
+
+  it('does not move a legacy inverted caption when unchanged text is saved', () => {
+    const original = { ...ann, y: 0.6, h: -0.1 };
+    const saved = getTextAnnotationBounds(original, 'Caption', 600);
+    expect(saved.y).toBe(0.6);
+    expect(saved.h).toBe(-0.1);
+    expect(saved.y + saved.h / 2).toBeCloseTo(0.55);
+  });
+});
 
 describe('getAnnotationTextLayout', () => {
   it('keeps single-line text at its original center', () => {

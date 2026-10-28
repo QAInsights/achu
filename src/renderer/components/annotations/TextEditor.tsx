@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useId } from 'react';
 import { Annotation } from '../../canvasRenderer';
-import { getAnnotationTextLayout } from '../../utils/annotationUtils';
+import { getAnnotationTextLayout, getTextAnnotationBounds } from '../../utils/annotationUtils';
 import { getModKeyLabel } from '../../utils/shortcutLabels';
 
 interface TextEditorProps {
@@ -21,13 +21,14 @@ export default function TextEditor({
   onKeyDown,
 }: TextEditorProps) {
   const x1 = ann.x * dimensions.width;
-  const y1 = ann.y * dimensions.height;
+  const bounds = getTextAnnotationBounds(ann, editingTextValue, dimensions.height);
+  const y1 = bounds.y * dimensions.height;
   const w = ann.w * dimensions.width;
-  const h = ann.h * dimensions.height;
+  const h = bounds.h * dimensions.height;
 
   const rectW = Math.abs(w);
   const rectH = Math.abs(h);
-  const fontSize = ann.fontSize || Math.max(12, rectH * 0.7);
+  const fontSize = bounds.fontSize;
   const { editorHeight, lineHeight } = getAnnotationTextLayout(editingTextValue, fontSize);
   const hintId = useId();
 
@@ -51,10 +52,10 @@ export default function TextEditor({
       onPointerUp={(e) => e.stopPropagation()}
       style={{
         position: 'absolute',
-        left: `${x1}px`,
-        top: `${y1}px`,
+        left: `${x1 + Math.min(0, w)}px`,
+        top: `${y1 + Math.min(0, h)}px`,
         width: `${rectW}px`,
-        height: `${Math.max(rectH, editorHeight)}px`,
+        height: `${rectH}px`,
         outline: `2px dashed ${ann.color}`,
         borderRadius: '4px',
         transform: `rotate(${ann.rotation || 0}deg)`,

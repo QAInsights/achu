@@ -595,6 +595,12 @@ describe('TextEditor', () => {
     expect(textarea).toHaveAccessibleDescription(/Enter: new line/);
   });
 
+  it('positions inverted bounds around the same visual center', () => {
+    const inverted = { ...ann, x: 0.6, y: 0.6, w: -0.2, h: -0.1, fontSize: 20 };
+    render(<TextEditor ann={inverted} {...defaultProps} />);
+    expect(screen.getByRole('textbox').parentElement).toHaveStyle({ left: '320px', top: '300px', width: '160px', height: '60px' });
+  });
+
   it('applies rotation transform', () => {
     const rotatedAnn = { ...ann, rotation: 45 };
     
