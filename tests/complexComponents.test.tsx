@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import React from 'react';
 import Sidebar from '../src/renderer/components/Sidebar';
 import SettingsModal from '../src/renderer/components/SettingsModal';
@@ -225,6 +225,8 @@ beforeEach(() => {
     clearWorkspace: vi.fn(),
   };
 });
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe('Sidebar', () => {
   it('renders sidebar with logo and title', () => {
@@ -625,6 +627,23 @@ describe('SettingsModal', () => {
 });
 
 describe('WorkspaceToolbar', () => {
+  it('exposes the active tool and keeps contextual options after the main controls', () => {
+    mockContext.activeTool = 'arrow';
+    render(<WorkspaceToolbar />);
+    const dock = screen.getByRole('group', { name: 'Editing tools' });
+    expect(within(dock).getByRole('button', { name: 'Draw Arrow', pressed: true })).toBeInTheDocument();
+    const context = within(dock).getByRole('group', { name: 'Arrow options' });
+    expect(context).toBe(dock.lastElementChild);
+    expect(within(context).getByTitle('Dashed Arrow')).toBeInTheDocument();
+  });
+
+  it('only shows text options when text is the active tool', () => {
+    mockContext.activeTool = 'text';
+    render(<WorkspaceToolbar />);
+    expect(screen.getByRole('group', { name: 'Text options' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Arrow options' })).not.toBeInTheDocument();
+  });
+
   it('renders sidebar toggle button', () => {
     render(<WorkspaceToolbar />);
 
@@ -639,6 +658,24 @@ describe('WorkspaceToolbar', () => {
     fireEvent.click(toggleButton);
 
     expect(mockContext.setSidebarVisible).toHaveBeenCalled();
+  });
+
+  it.each([
+    { open: 'Show AI & OCR Panel', close: 'setSidebarVisible', visible: 'secondarySidebarVisible' },
+    { open: 'Show Sidebar', close: 'setSecondarySidebarVisible', visible: 'sidebarVisible' },
+  ])('keeps one panel open when $open is clicked in a narrow window', ({ open, close, visible }) => {
+    mockContext[visible] = false;
+    const { container } = render(
+      <div className="app-container">
+        <div className="sidebar" style={{ width: 425 }} />
+        <div className="sidebar" style={{ width: 360 }} />
+        <WorkspaceToolbar />
+      </div>
+    );
+    const root = container.querySelector('.app-container')!;
+    Object.defineProperty(root, 'clientWidth', { value: 900, configurable: true });
+    fireEvent.click(screen.getByRole('button', { name: open }));
+    expect(mockContext[close]).toHaveBeenCalledWith(false);
   });
 
   it('renders undo and redo buttons', () => {
@@ -1059,7 +1096,7 @@ describe('CanvasPreview', () => {
     
     expect(screen.getByTitle('Zoom out (10%)')).toBeInTheDocument();
     expect(screen.getByTitle('Zoom in (10%)')).toBeInTheDocument();
-    expect(screen.getByTitle('Reset to Zoom to fit')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fit canvas to window' })).toBeInTheDocument();
   });
 
   it('hides zoom controls in empty state', () => {
@@ -1097,10 +1134,18 @@ describe('CanvasPreview', () => {
     
     render(<CanvasPreview />);
     
-    const fitButton = screen.getByTitle('Reset to Zoom to fit');
+    const fitButton = screen.getByRole('button', { name: 'Fit canvas to window' });
     fireEvent.click(fitButton);
     
     expect(mockContext.setZoomLevel).toHaveBeenCalledWith('Zoom to fit');
+  });
+
+  it('offers actual size independently from fitting the canvas', () => {
+    mockContext.imageSrc = 'data:image/png;base64,test';
+    mockContext.zoomLevel = '150%';
+    render(<CanvasPreview />);
+    fireEvent.click(screen.getByRole('button', { name: 'Actual size (100%)' }));
+    expect(mockContext.setZoomLevel).toHaveBeenCalledWith('100%');
   });
 
   it('disables zoom out at minimum', () => {
@@ -1393,6 +1438,22 @@ describe('AnnotationsLayer', () => {
 });
 
 describe('App', () => {
+  it('collapses the secondary panel if resizing leaves no editing space', () => {
+    let onWorkspaceResize: ResizeObserverCallback | undefined;
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(private callback: ResizeObserverCallback) {}
+      observe(target: Element) {
+        if (target.classList.contains('workspace')) onWorkspaceResize = this.callback;
+      }
+      disconnect() {}
+    });
+
+    render(<App />);
+    expect(onWorkspaceResize).toBeDefined();
+    act(() => onWorkspaceResize!([{ contentRect: { width: 120 } } as ResizeObserverEntry], {} as ResizeObserver));
+    expect(mockContext.setSecondarySidebarVisible).toHaveBeenCalledWith(false);
+  });
+
   it('renders app container', () => {
     const { container } = render(<App />);
     

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppContext } from '../AppContext';
 import AnnotationsLayer from '../AnnotationsLayer';
-import { zoomIn, zoomOut } from '../utils/layoutUtils';
+import { getCanvasPreviewScale, zoomIn, zoomOut } from '../utils/layoutUtils';
 import { platformPresets } from '../presetsData';
 import ContextMenu from './ContextMenu';
 import GrabTextModal from './GrabTextModal';
@@ -151,24 +151,15 @@ export default function CanvasPreview() {
 
   const dims = getCanvasDimensions(imgW, imgH, config);
 
-  const getScaleFactor = () => {
-    if (zoomLevel !== 'Zoom to fit') {
-      return parseInt(zoomLevel, 10) / 100;
-    }
-    const maxW = Math.max(100, containerSize.width - 80);
-    const maxH = Math.max(100, containerSize.height - 80);
-    return Math.min(maxW / dims.width, maxH / dims.height, 1.0);
-  };
-
-  const scaleFactor = getScaleFactor();
+  const scaleFactor = getCanvasPreviewScale(zoomLevel, dims, containerSize, !!documentName);
 
   const scaleVal = scale / 100;
   const chromeHeight = chromeStyle !== 'none' ? 32 : 0;
   const contentW = imgW * scaleVal;
   const contentH = (imgH + chromeHeight) * scaleVal;
 
-  const handleZoomIn = () => setZoomLevel(zoomIn(zoomLevel));
-  const handleZoomOut = () => setZoomLevel(zoomOut(zoomLevel));
+  const handleZoomIn = () => setZoomLevel(zoomIn(zoomLevel, scaleFactor));
+  const handleZoomOut = () => setZoomLevel(zoomOut(zoomLevel, scaleFactor));
 
   const handleToggleBreakpoint = (line: number) => {
     const next = codeStudioBreakpoints.includes(line)
@@ -241,10 +232,12 @@ export default function CanvasPreview() {
   };
 
   return (
-    <div className="workspace-canvas-container" ref={containerRef}>
+    <div className="workspace-canvas-container">
+      <div className="canvas-viewport" ref={containerRef} role="region" aria-label="Canvas preview" tabIndex={0}>
       <div className="canvas-workspace-stack">
         {documentName && (
-          <div className="canvas-document-name" title={documentName}>
+          <div className="canvas-document-name" title={documentName}
+            style={{ maxWidth: Math.max(1, Math.min(480, containerSize.width - 64)) }}>
             {documentName}
           </div>
         )}
@@ -252,10 +245,8 @@ export default function CanvasPreview() {
         <div
           className="preview-card-wrapper"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'visible',
+            width: `${dims.width * scaleFactor}px`,
+            height: `${dims.height * scaleFactor}px`,
           }}
         >
 
@@ -264,13 +255,15 @@ export default function CanvasPreview() {
             className="preview-background-card"
             onContextMenu={handleContextMenu}
             style={{
-              position: 'relative',
+              position: 'absolute',
+              top: 0,
+              left: 0,
               ...getBackgroundStyle(backgroundType, backgroundValue, imageSrc, meshDataUrl, shaderDataUrl),
               borderRadius: '12px',
               width: `${dims.width}px`,
               height: `${dims.height}px`,
               transform: `scale(${scaleFactor})`,
-              transformOrigin: 'center center',
+              transformOrigin: 'top left',
               flexShrink: 0,
             }}
           >
@@ -476,11 +469,13 @@ export default function CanvasPreview() {
         <EmptyState />
       )}
       </div>
+      </div>
 
       {/* Zoom controls cluster */}
       {(imageSrc || noImageMode) && (
         <ZoomControls
           zoomLevel={zoomLevel}
+          actualZoom={scaleFactor * 100}
           setZoomLevel={setZoomLevel}
           handleZoomIn={handleZoomIn}
           handleZoomOut={handleZoomOut}

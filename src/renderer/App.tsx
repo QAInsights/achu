@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { AppProvider, useAppContext } from './AppContext';
 import { GalleryProvider, useGalleryContext } from './contexts/GalleryContext';
 import { BurstPackProvider } from './contexts/BurstPackContext';
@@ -14,9 +15,19 @@ import HelpModal from './components/HelpModal';
 import OnboardingTour from './components/OnboardingTour';
 import ShareAchuPrompt from './components/ShareAchuPrompt';
 import logoUrl from '../../assets/logo.svg';
+import { MIN_WORKSPACE_WIDTH } from './utils/layoutUtils';
 
 function AppContent() {
-  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput, sidebarPosition, secondarySidebarVisible, secondarySidebarPosition, shareAchuPromptOpen, setShareAchuPromptOpen } = useAppContext();
+  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput, sidebarPosition, secondarySidebarVisible, setSecondarySidebarVisible, secondarySidebarPosition, shareAchuPromptOpen, setShareAchuPromptOpen } = useAppContext();
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!sidebarVisible || !secondarySidebarVisible || !workspaceRef.current || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry.contentRect.width < MIN_WORKSPACE_WIDTH) setSecondarySidebarVisible(false);
+    });
+    observer.observe(workspaceRef.current);
+    return () => observer.disconnect();
+  }, [sidebarVisible, secondarySidebarVisible, setSecondarySidebarVisible]);
   const { galleryVisible } = useGalleryContext();
   const isFrameless = window.snapFrameAPI && (window.snapFrameAPI.platform === 'win32' || window.snapFrameAPI.platform === 'darwin');
   const platformClass = window.snapFrameAPI ? `platform-${window.snapFrameAPI.platform}` : '';
@@ -27,7 +38,7 @@ function AppContent() {
     <div className={`app-container app-load ${platformClass} ${collapsedClass} ${positionClass}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
       {secondarySidebarPosition === 'left' && <SecondarySidebar />}
       {sidebarPosition === 'left' && <Sidebar />}
-      <div className="workspace">
+      <div className="workspace" ref={workspaceRef}>
         {isFrameless && (
           <div className="workspace-titlebar">
             <div className="workspace-titlebar-brand">

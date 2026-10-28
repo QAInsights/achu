@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { useState } from 'react';
+import { useHistory } from '../src/renderer/hooks/useHistory';
 
 const mockTrackFeature = vi.hoisted(() => vi.fn());
 
@@ -8,7 +10,7 @@ vi.mock('../src/renderer/utils/telemetry', () => ({
 }));
 
 import { usePresets } from '../src/renderer/hooks/usePresets';
-import { Annotation } from '../src/renderer/canvasRenderer';
+import { Annotation, RenderConfig } from '../src/renderer/canvasRenderer';
 
 describe('usePresets', () => {
   let mockSetImageSrc: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<string | null>>>>;
@@ -27,12 +29,27 @@ describe('usePresets', () => {
   let mockSetLightRaysSourceX: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<number>>>>;
   let mockSetLightRaysSourceY: ReturnType<typeof vi.fn<React.Dispatch<React.SetStateAction<number>>>>;
 
-  const defaultConfig = {
+  const defaultConfig: RenderConfig = {
     padding: 38,
     rounded: 20,
+    shadow: 20,
+    shadowColor: '#000000',
+    shadowEnabled: true,
+    inset: 0,
+    insetColor: '#ffffff',
+    border: 0,
+    borderColor: '#ffffff',
     scale: 100,
     backgroundType: 'gradient',
     backgroundValue: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+    aspectRatio: 'Auto',
+    canvasWidth: 800,
+    canvasHeight: 600,
+    paddingMode: 'fit',
+    chromeStyle: 'none',
+    watermarkEnabled: false,
+    watermarkText: '',
+    position: 'Middle center',
     annotations: [],
     bgGrain: 0,
     lightRaysStyle: 'none' as const,
@@ -159,10 +176,44 @@ describe('usePresets', () => {
       });
       expect(mockPushHistory).toHaveBeenCalledWith({
         ...defaultConfig,
+        imageSrc: 'test-image',
         annotations: [],
         redactions: [],
         noImage: false,
       });
+    });
+
+    it.each([null, 'previous-image'])('preserves the imported image when undoing the first edit from %s', (initialImage) => {
+      const { result } = renderHook(() => {
+        const [imageSrc, setImageSrc] = useState<string | null>(initialImage);
+        const [padding, setPadding] = useState(38);
+        const history = useHistory((config) => {
+          setImageSrc(config.imageSrc ?? null);
+          setPadding(config.padding);
+        });
+        const getCurrentConfig = (): RenderConfig => ({ ...defaultConfig, imageSrc, padding });
+        const presets = usePresets(
+          setImageSrc, mockSetNoImageMode, mockSetAnnotations,
+          'gradient', mockSetBackgroundType, defaultConfig.backgroundValue,
+          mockSetBackgroundValue, getCurrentConfig, history.pushHistory,
+        );
+        return {
+          imageSrc, padding, ...history, onImageLoaded: presets.onImageLoaded,
+          editPadding: (value: number) => {
+            setPadding(value);
+            history.pushHistory({ ...getCurrentConfig(), padding: value });
+          },
+        };
+      });
+
+      act(() => result.current.onImageLoaded('new-image'));
+      act(() => result.current.editPadding(47));
+      act(() => result.current.handleUndo());
+      expect(result.current.imageSrc).toBe('new-image');
+      expect(result.current.padding).toBe(38);
+      act(() => result.current.handleRedo());
+      expect(result.current.imageSrc).toBe('new-image');
+      expect(result.current.padding).toBe(47);
     });
   });
 

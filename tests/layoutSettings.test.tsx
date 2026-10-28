@@ -54,7 +54,7 @@ describe('LayoutSettings', () => {
     it('renders padding slider with value', () => {
       render(<LayoutSettings />);
       expect(screen.getByText('Padding')).toBeInTheDocument();
-      expect(screen.getByText('38px')).toBeInTheDocument();
+      expect(screen.getByRole('spinbutton', { name: 'Padding value' })).toHaveValue(38);
     });
 
     it('changes padding on slider input', () => {
@@ -65,11 +65,12 @@ describe('LayoutSettings', () => {
       expect(mockContext.setPadding).toHaveBeenCalledWith(50);
     });
 
-    it('calls handleSliderRelease on mouse up', () => {
+    it('commits the final padding value on pointer release', () => {
       render(<LayoutSettings />);
-      const sliders = screen.getAllByRole('slider');
-      fireEvent.mouseUp(sliders[0]);
-      expect(mockContext.handleSliderRelease).toHaveBeenCalled();
+      const slider = screen.getByRole('slider', { name: 'Padding' });
+      fireEvent.change(slider, { target: { value: '64' } });
+      fireEvent.pointerUp(slider);
+      expect(mockContext.pushHistory).toHaveBeenCalledWith({ padding: 64 });
     });
   });
 
@@ -77,7 +78,7 @@ describe('LayoutSettings', () => {
     it('renders scale slider with value', () => {
       render(<LayoutSettings />);
       expect(screen.getByText('Scale')).toBeInTheDocument();
-      expect(screen.getByText('100%')).toBeInTheDocument();
+      expect(screen.getByRole('spinbutton', { name: 'Scale value' })).toHaveValue(100);
     });
 
     it('changes scale on slider input', () => {
@@ -169,7 +170,7 @@ describe('LayoutSettings', () => {
     it('renders rounded corners slider with value', () => {
       render(<LayoutSettings />);
       expect(screen.getByText('Rounded Corners')).toBeInTheDocument();
-      expect(screen.getByText('20px')).toBeInTheDocument();
+      expect(screen.getByRole('spinbutton', { name: 'Rounded Corners value' })).toHaveValue(20);
     });
 
     it('changes rounded on slider input', () => {
@@ -238,11 +239,28 @@ describe('LayoutSettings', () => {
       rerender(<LayoutSettings key="c" />);
     });
 
-    it('calls handleSliderRelease on all slider mouse ups', () => {
+    it('commits keyboard slider changes with an explicit history value', () => {
       render(<LayoutSettings />);
-      const sliders = screen.getAllByRole('slider');
-      fireEvent.mouseUp(sliders[0]);
-      expect(mockContext.handleSliderRelease).toHaveBeenCalled();
+      const slider = screen.getByRole('slider', { name: 'Scale' });
+      fireEvent.change(slider, { target: { value: '80' } });
+      fireEvent.keyUp(slider, { key: 'ArrowLeft' });
+      expect(mockContext.pushHistory).toHaveBeenCalledWith({ scale: 80 });
+    });
+
+    it('supports precise numeric entry and clamps to the supported bounds', () => {
+      render(<LayoutSettings />);
+      const input = screen.getByRole('spinbutton', { name: 'Padding value' });
+      fireEvent.change(input, { target: { value: '150' } });
+      fireEvent.blur(input);
+      expect(mockContext.setPadding).toHaveBeenCalledWith(120);
+      expect(mockContext.pushHistory).toHaveBeenCalledWith({ padding: 120 });
+    });
+
+    it('disables both shadow inputs when shadow is off', () => {
+      mockContext.shadowEnabled = false;
+      render(<LayoutSettings />);
+      expect(screen.getByRole('slider', { name: 'Shadow' })).toBeDisabled();
+      expect(screen.getByRole('spinbutton', { name: 'Shadow value' })).toBeDisabled();
     });
   });
 });

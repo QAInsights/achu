@@ -33,6 +33,7 @@ export function usePresets(
     if (setRedactions) setRedactions([]);
     pushHistory({
       ...getCurrentConfig(),
+      imageSrc: src,
       annotations: [],
       redactions: [],
       noImage: false,

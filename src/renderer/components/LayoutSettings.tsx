@@ -1,5 +1,6 @@
 import { useAppContext } from '../AppContext';
 import InspectorSection from './InspectorSection';
+import RangeControl from './RangeControl';
 import { Layout } from 'lucide-react';
 
 export default function LayoutSettings() {
@@ -18,15 +19,15 @@ export default function LayoutSettings() {
     showAdvancedInset, setShowAdvancedInset,
     showAdvancedShadow, setShowAdvancedShadow,
     showAdvancedBorder, setShowAdvancedBorder,
-    getCurrentConfig, pushHistory, handleSliderRelease
+    getCurrentConfig, pushHistory
   } = useAppContext();
 
   return (
     <InspectorSection title="Layout" icon={<Layout className="w-3.5 h-3.5" />}>
       {/* Position Layout */}
       <div className="control-group">
-        <span className="control-label">Position</span>
-        <select value={position} onChange={(e) => {
+        <label className="control-label" htmlFor="layout-position">Position</label>
+        <select id="layout-position" value={position} onChange={(e) => {
           setPosition(e.target.value);
           pushHistory({ ...getCurrentConfig(), position: e.target.value });
         }}>
@@ -39,53 +40,20 @@ export default function LayoutSettings() {
       </div>
 
       {/* Padding */}
-      <div className="control-group">
-        <div className="control-label-container">
-          <span className="control-label">Padding</span>
-          <span className="control-value">{padding}px</span>
-        </div>
-        <input 
-          type="range" 
-          min="0" 
-          max="120" 
-          value={padding} 
-          onChange={(e) => setPadding(parseInt(e.target.value, 10))}
-          onMouseUp={handleSliderRelease}
-        />
-      </div>
+      <RangeControl label="Padding" value={padding} min={0} max={120}
+        onChange={setPadding} onCommit={(value) => pushHistory({ ...getCurrentConfig(), padding: value })} />
 
       {/* Scale */}
-      <div className="control-group">
-        <div className="control-label-container">
-          <span className="control-label">Scale</span>
-          <span className="control-value">{scale}%</span>
-        </div>
-        <input 
-          type="range" 
-          min="20" 
-          max="100" 
-          value={scale} 
-          onChange={(e) => setScale(parseInt(e.target.value, 10))}
-          onMouseUp={handleSliderRelease}
-        />
-      </div>
+      <RangeControl label="Scale" value={scale} min={20} max={100} unit="%"
+        onChange={setScale} onCommit={(value) => pushHistory({ ...getCurrentConfig(), scale: value })} />
 
       {/* Inset Border (Inner Border) */}
-      <div className="control-group">
-        <div className="control-label-container">
-          <span className="control-label">Inset Border</span>
-          <button type="button" className="control-link" onClick={() => setShowAdvancedInset(!showAdvancedInset)}>
+      <RangeControl label="Inset Border" value={inset} min={0} max={20}
+        onChange={setInset} onCommit={(value) => pushHistory({ ...getCurrentConfig(), inset: value })}
+        action={<button type="button" className="control-link" aria-expanded={showAdvancedInset} onClick={() => setShowAdvancedInset(!showAdvancedInset)}>
             {showAdvancedInset ? 'Hide' : 'Advanced'}
-          </button>
-        </div>
-        <input 
-          type="range" 
-          min="0" 
-          max="20" 
-          value={inset} 
-          onChange={(e) => setInset(parseInt(e.target.value, 10))}
-          onMouseUp={handleSliderRelease}
-        />
+          </button>}
+      >
         {showAdvancedInset && (
           <div className="color-picker-row" style={{ marginTop: '0.25rem' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Color:</span>
@@ -110,39 +78,26 @@ export default function LayoutSettings() {
             />
           </div>
         )}
-      </div>
+      </RangeControl>
 
       {/* Drop Shadow */}
       <div className="control-group">
-        <div className="control-label-container">
-          <span className="control-label">Shadow</span>
-          <button type="button" className="control-link" onClick={() => setShowAdvancedShadow(!showAdvancedShadow)}>
-            {showAdvancedShadow ? 'Hide' : 'Advanced'}
-          </button>
-        </div>
-        <div className="switch-container" style={{ marginBottom: '0.25rem' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Shadow Enabled</span>
+        <div className="switch-container">
+          <label className="control-label" htmlFor="layout-shadow-enabled">Shadow Enabled</label>
           <label className="switch">
-            <input 
-              type="checkbox" 
-              checked={shadowEnabled} 
-              onChange={(e) => {
-                setShadowEnabled(e.target.checked);
-                pushHistory({ ...getCurrentConfig(), shadowEnabled: e.target.checked });
-              }} 
-            />
+            <input id="layout-shadow-enabled" type="checkbox" checked={shadowEnabled} onChange={(e) => {
+              setShadowEnabled(e.target.checked);
+              pushHistory({ ...getCurrentConfig(), shadowEnabled: e.target.checked });
+            }} />
             <span className="slider-switch"></span>
           </label>
         </div>
-        <input 
-          type="range" 
-          min="0" 
-          max="50" 
-          value={shadow} 
-          disabled={!shadowEnabled}
-          onChange={(e) => setShadow(parseInt(e.target.value, 10))}
-          onMouseUp={handleSliderRelease}
-        />
+        <RangeControl label="Shadow" value={shadow} min={0} max={50} disabled={!shadowEnabled}
+          onChange={setShadow} onCommit={(value) => pushHistory({ ...getCurrentConfig(), shadow: value })}
+          action={<button type="button" className="control-link" aria-expanded={showAdvancedShadow} onClick={() => setShowAdvancedShadow(!showAdvancedShadow)}>
+            {showAdvancedShadow ? 'Hide' : 'Advanced'}
+          </button>}
+        >
         {showAdvancedShadow && (
           <div className="color-picker-row" style={{ marginTop: '0.25rem', opacity: shadowEnabled ? 1 : 0.5 }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Color:</span>
@@ -169,40 +124,20 @@ export default function LayoutSettings() {
             />
           </div>
         )}
+        </RangeControl>
       </div>
 
       {/* Rounded Corner */}
-      <div className="control-group">
-        <div className="control-label-container">
-          <span className="control-label">Rounded Corners</span>
-          <span className="control-value">{rounded}px</span>
-        </div>
-        <input 
-          type="range" 
-          min="0" 
-          max="40" 
-          value={rounded} 
-          onChange={(e) => setRounded(parseInt(e.target.value, 10))}
-          onMouseUp={handleSliderRelease}
-        />
-      </div>
+      <RangeControl label="Rounded Corners" value={rounded} min={0} max={40}
+        onChange={setRounded} onCommit={(value) => pushHistory({ ...getCurrentConfig(), rounded: value })} />
 
       {/* Border (Outer) */}
-      <div className="control-group">
-        <div className="control-label-container">
-          <span className="control-label">Outer Border</span>
-          <button type="button" className="control-link" onClick={() => setShowAdvancedBorder(!showAdvancedBorder)}>
+      <RangeControl label="Outer Border" value={border} min={0} max={20}
+        onChange={setBorder} onCommit={(value) => pushHistory({ ...getCurrentConfig(), border: value })}
+        action={<button type="button" className="control-link" aria-expanded={showAdvancedBorder} onClick={() => setShowAdvancedBorder(!showAdvancedBorder)}>
             {showAdvancedBorder ? 'Hide' : 'Advanced'}
-          </button>
-        </div>
-        <input 
-          type="range" 
-          min="0" 
-          max="20" 
-          value={border} 
-          onChange={(e) => setBorder(parseInt(e.target.value, 10))}
-          onMouseUp={handleSliderRelease}
-        />
+          </button>}
+      >
         {showAdvancedBorder && (
           <div className="color-picker-row" style={{ marginTop: '0.25rem' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Color:</span>
@@ -227,7 +162,7 @@ export default function LayoutSettings() {
             />
           </div>
         )}
-      </div>
+      </RangeControl>
     </InspectorSection>
   );
 }

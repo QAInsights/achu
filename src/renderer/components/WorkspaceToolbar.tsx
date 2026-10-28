@@ -30,6 +30,7 @@ import FontSelector from './FontSelector';
 import ColorSwatchPicker from './annotations/ColorSwatchPicker';
 import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 import { formatModShortcut } from '../utils/shortcutLabels';
+import { canShowBothSidebars } from '../utils/layoutUtils';
 
 export default function WorkspaceToolbar() {
   useToolbarShortcuts();
@@ -83,7 +84,7 @@ export default function WorkspaceToolbar() {
   ];
 
   return (
-    <div className="toolbar-dock">
+    <div className="toolbar-dock" role="group" aria-label="Editing tools">
       {/* Left: Gallery + Undo/Redo */}
       <div className="toolbar-group">
         <Tooltip position="right">
@@ -162,6 +163,8 @@ export default function WorkspaceToolbar() {
               className={`tool-btn ${activeTool === tool.id ? 'active' : ''}`}
               onClick={() => setActiveTool(tool.id)}
               title={tool.title}
+              aria-label={tool.title}
+              aria-pressed={activeTool === tool.id}
             >
               {tool.icon}
             </button>
@@ -169,261 +172,6 @@ export default function WorkspaceToolbar() {
         ))}
       </div>
 
-      {activeTool === 'arrow' && (
-        <>
-          <div className="toolbar-divider" />
-          <div className="toolbar-group">
-            <Tooltip position="right">
-              <button
-                className={`tool-btn ${arrowStyle === 'classic' ? 'active' : ''}`}
-                onClick={() => setArrowStyle('classic')}
-                title="Classic Arrow"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="19" x2="19" y2="5" />
-                  <polyline points="12 5 19 5 19 12" />
-                </svg>
-              </button>
-            </Tooltip>
-            <Tooltip position="right">
-              <button
-                className={`tool-btn ${arrowStyle === 'dashed' ? 'active' : ''}`}
-                onClick={() => setArrowStyle('dashed')}
-                title="Dashed Arrow"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3 3">
-                  <line x1="5" y1="19" x2="19" y2="5" />
-                  <polyline points="12 5 19 5 19 12" strokeDasharray="none" />
-                </svg>
-              </button>
-            </Tooltip>
-            <Tooltip position="right">
-              <button
-                className={`tool-btn ${arrowStyle === 'tapered' ? 'active' : ''}`}
-                onClick={() => setArrowStyle('tapered')}
-                title="Tapered Curved Arrow"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M4.5 19.5 C 5.5 18.5, 12 11, 15 8 L 13.5 6.5 L 20.5 5.5 L 19.5 12.5 L 18 11 C 15 14, 4.5 19.5, 4.5 19.5 Z" />
-                </svg>
-              </button>
-            </Tooltip>
-            <Tooltip position="right">
-              <button
-                className={`tool-btn ${arrowStyle === 'curved' ? 'active' : ''}`}
-                onClick={() => setArrowStyle('curved')}
-                title="Curved Arrow"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 20 Q 14 16 19 5" />
-                  <polyline points="12 5 19 5 19 12" />
-                </svg>
-              </button>
-            </Tooltip>
-          </div>
-        </>
-      )}
-
-      {activeTool === 'text' && (
-        <>
-          <div className="toolbar-divider" />
-          <div className="toolbar-group">
-            <Tooltip position="right">
-                <FontSelector
-                  value={annotationFont}
-                  onChange={(val) => {
-                    setAnnotationFont(val);
-                    pushHistory({ ...getCurrentConfig(), annotationFont: val });
-                  }}
-                  systemFonts={systemFonts}
-                  triggerWidth="110px"
-                  styleType="toolbar"
-                />
-            </Tooltip>
-            <Tooltip position="right">
-              <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>
-                <span className="toolbar-control-label">Font Size</span>
-                <input
-                  type="range"
-                  min="12"
-                  max="124"
-                  value={annotationFontSize}
-                  onChange={(e) => setAnnotationFontSize(parseInt(e.target.value, 10))}
-                  style={{ width: '60px' }}
-                  title={`Font Size: ${annotationFontSize}px`}
-                />
-                <span className="toolbar-control-value">{annotationFontSize}px</span>
-              </div>
-            </Tooltip>
-            <Tooltip position="right">
-              <button
-                className={`tool-btn ${annotationBold ? 'active' : ''}`}
-                style={{
-                  fontWeight: 'bold',
-                  backgroundColor: annotationBold ? 'var(--accent)' : 'transparent',
-                  color: annotationBold ? 'var(--on-accent)' : 'var(--text-secondary)',
-                }}
-                onClick={() => {
-                  setAnnotationBold(!annotationBold);
-                  pushHistory({ ...getCurrentConfig(), annotationBold: !annotationBold });
-                }}
-                title="Bold"
-              >
-                B
-              </button>
-            </Tooltip>
-            <Tooltip position="right">
-              <button
-                className={`tool-btn ${annotationItalic ? 'active' : ''}`}
-                style={{
-                  fontStyle: 'italic',
-                  backgroundColor: annotationItalic ? 'var(--accent)' : 'transparent',
-                  color: annotationItalic ? 'var(--on-accent)' : 'var(--text-secondary)',
-                }}
-                onClick={() => {
-                  setAnnotationItalic(!annotationItalic);
-                  pushHistory({ ...getCurrentConfig(), annotationItalic: !annotationItalic });
-                }}
-                title="Italic"
-              >
-                I
-              </button>
-            </Tooltip>
-            <Tooltip position="right">
-              <button
-                className={`tool-btn ${annotationOutlineEnabled ? 'active' : ''}`}
-                style={{
-                  backgroundColor: annotationOutlineEnabled ? 'var(--accent)' : 'transparent',
-                  color: annotationOutlineEnabled ? 'var(--on-accent)' : 'var(--text-secondary)',
-                }}
-                onClick={() => {
-                  setAnnotationOutlineEnabled(!annotationOutlineEnabled);
-                  pushHistory({ ...getCurrentConfig(), annotationOutlineEnabled: !annotationOutlineEnabled });
-                }}
-                title="Text Outline (toggle on/off)"
-              >
-                <TypeOutline className="w-4 h-4" style={{ strokeWidth: 2.5 }} />
-              </button>
-            </Tooltip>
-            <Tooltip position="right">
-              <button
-                className="tool-btn"
-                style={{
-                  position: 'relative',
-                  border: `1px solid ${annotationOutlineColor}`,
-                  backgroundColor: 'var(--surface-2)',
-                  padding: 0,
-                }}
-                title="Outline Color"
-              >
-                <span style={{ display: 'block', width: '16px', height: '16px', borderRadius: '2px', background: annotationOutlineColor }} />
-                <input
-                  type="color"
-                  value={annotationOutlineColor}
-                  onChange={(e) => {
-                    setAnnotationOutlineColor(e.target.value);
-                    if (!annotationOutlineEnabled) {
-                      setAnnotationOutlineEnabled(true);
-                      pushHistory({ ...getCurrentConfig(), annotationOutlineColor: e.target.value, annotationOutlineEnabled: true });
-                    } else {
-                      pushHistory({ ...getCurrentConfig(), annotationOutlineColor: e.target.value });
-                    }
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    width: '100%',
-                    height: '100%',
-                    opacity: 0,
-                    cursor: 'pointer',
-                  }}
-                />
-              </button>
-            </Tooltip>
-            {annotationOutlineEnabled && (
-              <Tooltip position="right">
-                <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>
-                  <span className="toolbar-control-label">Outline</span>
-                  <input
-                    type="range"
-                    min="1"
-                    max="20"
-                    value={annotationOutlineWidth}
-                    onChange={(e) => setAnnotationOutlineWidth(parseInt(e.target.value, 10))}
-                    style={{ width: '50px' }}
-                    title={`Outline Width: ${annotationOutlineWidth}px`}
-                  />
-                  <span className="toolbar-control-value">{annotationOutlineWidth}px</span>
-                </div>
-              </Tooltip>
-            )}
-            <Tooltip position="right">
-              <button
-                className={`tool-btn ${annotationGradientEnabled ? 'active' : ''}`}
-                style={{
-                  backgroundColor: annotationGradientEnabled ? 'var(--accent)' : 'transparent',
-                  color: annotationGradientEnabled ? 'var(--on-accent)' : 'var(--text-secondary)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-                onClick={() => {
-                  setAnnotationGradientEnabled(!annotationGradientEnabled);
-                  pushHistory({ ...getCurrentConfig(), annotationGradientEnabled: !annotationGradientEnabled });
-                }}
-                title="Gradient Text (toggle on/off)"
-              >
-                <span style={{
-                  display: 'block',
-                  width: '16px',
-                  height: '16px',
-                  borderRadius: '2px',
-                  background: `linear-gradient(${annotationGradientAngle}deg, ${annotationGradientColor1}, ${annotationGradientColor2})`,
-                }} />
-              </button>
-            </Tooltip>
-            {annotationGradientEnabled && (
-              <>
-                <Tooltip position="right">
-                  <ColorSwatchPicker
-                    value={annotationGradientColor1}
-                    onChange={(color) => {
-                      setAnnotationGradientColor1(color);
-                      pushHistory({ ...getCurrentConfig(), annotationGradientColor1: color });
-                    }}
-                    title="Gradient Start Color"
-                  />
-                </Tooltip>
-                <Tooltip position="right">
-                  <ColorSwatchPicker
-                    value={annotationGradientColor2}
-                    onChange={(color) => {
-                      setAnnotationGradientColor2(color);
-                      pushHistory({ ...getCurrentConfig(), annotationGradientColor2: color });
-                    }}
-                    title="Gradient End Color"
-                  />
-                </Tooltip>
-                <Tooltip position="right">
-                  <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>
-                    <span className="toolbar-control-label">Angle</span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="360"
-                      value={annotationGradientAngle}
-                      onChange={(e) => setAnnotationGradientAngle(parseInt(e.target.value, 10))}
-                      style={{ width: '50px' }}
-                      title={`Gradient Angle: ${annotationGradientAngle}°`}
-                    />
-                    <span className="toolbar-control-value">{annotationGradientAngle}°</span>
-                  </div>
-                </Tooltip>
-              </>
-            )}
-          </div>
-        </>
-      )}
 
       <div className="toolbar-divider" />
 
@@ -479,7 +227,13 @@ export default function WorkspaceToolbar() {
         <Tooltip position="right">
           <button
             className={`tool-btn ${sidebarVisible ? 'active' : ''}`}
-            onClick={() => setSidebarVisible(prev => !prev)}
+            onClick={(e) => {
+              if (!sidebarVisible) {
+                const root = e.currentTarget.closest<HTMLElement>('.app-container');
+                if (root && !canShowBothSidebars(root)) setSecondarySidebarVisible(false);
+              }
+              setSidebarVisible(prev => !prev);
+            }}
             title={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
             aria-label={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
             aria-pressed={sidebarVisible}
@@ -491,7 +245,13 @@ export default function WorkspaceToolbar() {
         <Tooltip position="right">
           <button
             className={`tool-btn ${secondarySidebarVisible ? 'active' : ''}`}
-            onClick={() => setSecondarySidebarVisible(prev => !prev)}
+            onClick={(e) => {
+              if (!secondarySidebarVisible) {
+                const root = e.currentTarget.closest<HTMLElement>('.app-container');
+                if (root && !canShowBothSidebars(root)) setSidebarVisible(false);
+              }
+              setSecondarySidebarVisible(prev => !prev);
+            }}
             title={secondarySidebarVisible ? 'Hide AI & OCR Panel' : 'Show AI & OCR Panel'}
             aria-label={secondarySidebarVisible ? 'Hide AI & OCR Panel' : 'Show AI & OCR Panel'}
             aria-pressed={secondarySidebarVisible}
@@ -587,6 +347,267 @@ export default function WorkspaceToolbar() {
           </button>
         </Tooltip>
       </div>
+      {(activeTool === 'arrow' || activeTool === 'text') && (
+        <div className="toolbar-context" role="group" aria-label={`${activeTool === 'text' ? 'Text' : 'Arrow'} options`}>
+          <span className="toolbar-context-label">{activeTool === 'text' ? 'Text' : 'Arrow'}</span>
+          {activeTool === 'arrow' && (
+            <>
+              <div className="toolbar-divider" />
+              <div className="toolbar-group">
+                <Tooltip position="right">
+                  <button
+                    className={`tool-btn ${arrowStyle === 'classic' ? 'active' : ''}`}
+                    onClick={() => setArrowStyle('classic')}
+                    title="Classic Arrow"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="19" x2="19" y2="5" />
+                      <polyline points="12 5 19 5 19 12" />
+                    </svg>
+                  </button>
+                </Tooltip>
+                <Tooltip position="right">
+                  <button
+                    className={`tool-btn ${arrowStyle === 'dashed' ? 'active' : ''}`}
+                    onClick={() => setArrowStyle('dashed')}
+                    title="Dashed Arrow"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3 3">
+                      <line x1="5" y1="19" x2="19" y2="5" />
+                      <polyline points="12 5 19 5 19 12" strokeDasharray="none" />
+                    </svg>
+                  </button>
+                </Tooltip>
+                <Tooltip position="right">
+                  <button
+                    className={`tool-btn ${arrowStyle === 'tapered' ? 'active' : ''}`}
+                    onClick={() => setArrowStyle('tapered')}
+                    title="Tapered Curved Arrow"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M4.5 19.5 C 5.5 18.5, 12 11, 15 8 L 13.5 6.5 L 20.5 5.5 L 19.5 12.5 L 18 11 C 15 14, 4.5 19.5, 4.5 19.5 Z" />
+                    </svg>
+                  </button>
+                </Tooltip>
+                <Tooltip position="right">
+                  <button
+                    className={`tool-btn ${arrowStyle === 'curved' ? 'active' : ''}`}
+                    onClick={() => setArrowStyle('curved')}
+                    title="Curved Arrow"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 20 Q 14 16 19 5" />
+                      <polyline points="12 5 19 5 19 12" />
+                    </svg>
+                  </button>
+                </Tooltip>
+              </div>
+            </>
+          )}
+
+          {activeTool === 'text' && (
+            <>
+              <div className="toolbar-divider" />
+              <div className="toolbar-group">
+                <Tooltip position="right">
+                    <FontSelector
+                      value={annotationFont}
+                      onChange={(val) => {
+                        setAnnotationFont(val);
+                        pushHistory({ ...getCurrentConfig(), annotationFont: val });
+                      }}
+                      systemFonts={systemFonts}
+                      triggerWidth="110px"
+                      styleType="toolbar"
+                    />
+                </Tooltip>
+                <Tooltip position="right">
+                  <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>
+                    <span className="toolbar-control-label">Font Size</span>
+                    <input
+                      type="range"
+                      min="12"
+                      max="124"
+                      value={annotationFontSize}
+                      onChange={(e) => setAnnotationFontSize(parseInt(e.target.value, 10))}
+                      style={{ width: '60px' }}
+                      title={`Font Size: ${annotationFontSize}px`}
+                    />
+                    <span className="toolbar-control-value">{annotationFontSize}px</span>
+                  </div>
+                </Tooltip>
+                <Tooltip position="right">
+                  <button
+                    className={`tool-btn ${annotationBold ? 'active' : ''}`}
+                    style={{
+                      fontWeight: 'bold',
+                      backgroundColor: annotationBold ? 'var(--accent)' : 'transparent',
+                      color: annotationBold ? 'var(--on-accent)' : 'var(--text-secondary)',
+                    }}
+                    onClick={() => {
+                      setAnnotationBold(!annotationBold);
+                      pushHistory({ ...getCurrentConfig(), annotationBold: !annotationBold });
+                    }}
+                    title="Bold"
+                  >
+                    B
+                  </button>
+                </Tooltip>
+                <Tooltip position="right">
+                  <button
+                    className={`tool-btn ${annotationItalic ? 'active' : ''}`}
+                    style={{
+                      fontStyle: 'italic',
+                      backgroundColor: annotationItalic ? 'var(--accent)' : 'transparent',
+                      color: annotationItalic ? 'var(--on-accent)' : 'var(--text-secondary)',
+                    }}
+                    onClick={() => {
+                      setAnnotationItalic(!annotationItalic);
+                      pushHistory({ ...getCurrentConfig(), annotationItalic: !annotationItalic });
+                    }}
+                    title="Italic"
+                  >
+                    I
+                  </button>
+                </Tooltip>
+                <Tooltip position="right">
+                  <button
+                    className={`tool-btn ${annotationOutlineEnabled ? 'active' : ''}`}
+                    style={{
+                      backgroundColor: annotationOutlineEnabled ? 'var(--accent)' : 'transparent',
+                      color: annotationOutlineEnabled ? 'var(--on-accent)' : 'var(--text-secondary)',
+                    }}
+                    onClick={() => {
+                      setAnnotationOutlineEnabled(!annotationOutlineEnabled);
+                      pushHistory({ ...getCurrentConfig(), annotationOutlineEnabled: !annotationOutlineEnabled });
+                    }}
+                    title="Text Outline (toggle on/off)"
+                  >
+                    <TypeOutline className="w-4 h-4" style={{ strokeWidth: 2.5 }} />
+                  </button>
+                </Tooltip>
+                <Tooltip position="right">
+                  <button
+                    className="tool-btn"
+                    style={{
+                      position: 'relative',
+                      border: `1px solid ${annotationOutlineColor}`,
+                      backgroundColor: 'var(--surface-2)',
+                      padding: 0,
+                    }}
+                    title="Outline Color"
+                  >
+                    <span style={{ display: 'block', width: '16px', height: '16px', borderRadius: '2px', background: annotationOutlineColor }} />
+                    <input
+                      type="color"
+                      value={annotationOutlineColor}
+                      onChange={(e) => {
+                        setAnnotationOutlineColor(e.target.value);
+                        if (!annotationOutlineEnabled) {
+                          setAnnotationOutlineEnabled(true);
+                          pushHistory({ ...getCurrentConfig(), annotationOutlineColor: e.target.value, annotationOutlineEnabled: true });
+                        } else {
+                          pushHistory({ ...getCurrentConfig(), annotationOutlineColor: e.target.value });
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer',
+                      }}
+                    />
+                  </button>
+                </Tooltip>
+                {annotationOutlineEnabled && (
+                  <Tooltip position="right">
+                    <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>
+                      <span className="toolbar-control-label">Outline</span>
+                      <input
+                        type="range"
+                        min="1"
+                        max="20"
+                        value={annotationOutlineWidth}
+                        onChange={(e) => setAnnotationOutlineWidth(parseInt(e.target.value, 10))}
+                        style={{ width: '50px' }}
+                        title={`Outline Width: ${annotationOutlineWidth}px`}
+                      />
+                      <span className="toolbar-control-value">{annotationOutlineWidth}px</span>
+                    </div>
+                  </Tooltip>
+                )}
+                <Tooltip position="right">
+                  <button
+                    className={`tool-btn ${annotationGradientEnabled ? 'active' : ''}`}
+                    style={{
+                      backgroundColor: annotationGradientEnabled ? 'var(--accent)' : 'transparent',
+                      color: annotationGradientEnabled ? 'var(--on-accent)' : 'var(--text-secondary)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                    onClick={() => {
+                      setAnnotationGradientEnabled(!annotationGradientEnabled);
+                      pushHistory({ ...getCurrentConfig(), annotationGradientEnabled: !annotationGradientEnabled });
+                    }}
+                    title="Gradient Text (toggle on/off)"
+                  >
+                    <span style={{
+                      display: 'block',
+                      width: '16px',
+                      height: '16px',
+                      borderRadius: '2px',
+                      background: `linear-gradient(${annotationGradientAngle}deg, ${annotationGradientColor1}, ${annotationGradientColor2})`,
+                    }} />
+                  </button>
+                </Tooltip>
+                {annotationGradientEnabled && (
+                  <>
+                    <Tooltip position="right">
+                      <ColorSwatchPicker
+                        value={annotationGradientColor1}
+                        onChange={(color) => {
+                          setAnnotationGradientColor1(color);
+                          pushHistory({ ...getCurrentConfig(), annotationGradientColor1: color });
+                        }}
+                        title="Gradient Start Color"
+                      />
+                    </Tooltip>
+                    <Tooltip position="right">
+                      <ColorSwatchPicker
+                        value={annotationGradientColor2}
+                        onChange={(color) => {
+                          setAnnotationGradientColor2(color);
+                          pushHistory({ ...getCurrentConfig(), annotationGradientColor2: color });
+                        }}
+                        title="Gradient End Color"
+                      />
+                    </Tooltip>
+                    <Tooltip position="right">
+                      <div className="toolbar-control" style={{ gap: '4px', paddingRight: '8px' }}>
+                        <span className="toolbar-control-label">Angle</span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="360"
+                          value={annotationGradientAngle}
+                          onChange={(e) => setAnnotationGradientAngle(parseInt(e.target.value, 10))}
+                          style={{ width: '50px' }}
+                          title={`Gradient Angle: ${annotationGradientAngle}°`}
+                        />
+                        <span className="toolbar-control-value">{annotationGradientAngle}°</span>
+                      </div>
+                    </Tooltip>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }

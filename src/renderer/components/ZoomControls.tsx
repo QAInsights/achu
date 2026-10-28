@@ -3,6 +3,7 @@ import Tooltip from './Tooltip';
 
 interface ZoomControlsProps {
   zoomLevel: string;
+  actualZoom: number;
   setZoomLevel: (v: string) => void;
   handleZoomIn: () => void;
   handleZoomOut: () => void;
@@ -10,17 +11,18 @@ interface ZoomControlsProps {
 
 export default function ZoomControls({
   zoomLevel,
+  actualZoom,
   setZoomLevel,
   handleZoomIn,
   handleZoomOut
 }: ZoomControlsProps) {
   return (
-    <div className="zoom-cluster" style={{ gap: '4px' }}>
+    <div className="zoom-cluster" role="group" aria-label="Canvas zoom">
       <Tooltip position="top">
         <button
           className="zoom-btn"
           onClick={handleZoomOut}
-          disabled={zoomLevel !== 'Zoom to fit' && parseInt(zoomLevel, 10) <= 10}
+          disabled={actualZoom <= 10}
           title="Zoom out (10%)"
           aria-label="Zoom out"
         >
@@ -29,23 +31,36 @@ export default function ZoomControls({
       </Tooltip>
       <Tooltip position="top">
         <button
-          className={`zoom-btn ${zoomLevel === 'Zoom to fit' ? 'active' : ''}`}
-          style={{ minWidth: '48px', fontWeight: 'bold' }}
-          onClick={() => setZoomLevel('Zoom to fit')}
-          title="Reset to Zoom to fit"
+          className={`zoom-btn zoom-value ${zoomLevel === '100%' ? 'active' : ''}`}
+          onClick={() => setZoomLevel('100%')}
+          title="Actual size (100%)"
+          aria-label="Actual size (100%)"
+          aria-pressed={zoomLevel === '100%'}
         >
-          {zoomLevel === 'Zoom to fit' ? 'Fit' : zoomLevel}
+          {Math.round(actualZoom)}%
         </button>
       </Tooltip>
       <Tooltip position="top">
         <button
           className="zoom-btn"
           onClick={handleZoomIn}
-          disabled={zoomLevel !== 'Zoom to fit' && parseInt(zoomLevel, 10) >= 500}
+          disabled={actualZoom >= 500}
           title="Zoom in (10%)"
           aria-label="Zoom in"
         >
           <Plus className="w-3.5 h-3.5" />
+        </button>
+      </Tooltip>
+      <span className="zoom-divider" aria-hidden="true" />
+      <Tooltip position="top">
+        <button
+          className={`zoom-btn ${zoomLevel === 'Zoom to fit' ? 'active' : ''}`}
+          onClick={() => setZoomLevel('Zoom to fit')}
+          title="Fit canvas to window"
+          aria-label="Fit canvas to window"
+          aria-pressed={zoomLevel === 'Zoom to fit'}
+        >
+          Fit
         </button>
       </Tooltip>
     </div>
