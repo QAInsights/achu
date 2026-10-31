@@ -10,6 +10,7 @@ import {
 } from '../utils/annotationClipboardUtils';
 import { trackFeature } from '../utils/telemetry';
 import { useAnnotationNudge } from './useAnnotationNudge';
+import { constrainDrawingDimensions } from '../utils/drawingUtils';
 import type { TelemetryFeature } from '../../shared/telemetryFeatures';
 
 const annotationFeatureByType: Partial<Record<Annotation['type'], TelemetryFeature>> = {
@@ -113,6 +114,7 @@ export function useAnnotationEvents({
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [editingTextValue, setEditingTextValue] = useState<string>('');
   const lastClickTimeRef = useRef<number>(0);
+  const drawingEndRef = useRef<{ x: number; y: number } | null>(null);
   
   const [dragStart, setDragStart] = useState<{
     mouseX: number;
@@ -402,10 +404,17 @@ export function useAnnotationEvents({
     });
   };
 
-  const handleShapeDraw = (mouseX: number, mouseY: number) => {
+  const handleShapeDraw = (mouseX: number, mouseY: number, shiftKey = false) => {
     if (!drawingAnnotation) return;
     const rawW = mouseX - drawingAnnotation.x;
     const rawH = mouseY - drawingAnnotation.y;
+
+    const constrained = shiftKey ? constrainDrawingDimensions(drawingAnnotation.type, rawW, rawH, dimensions) : null;
+    if (constrained) {
+      setActiveGuides([]);
+      setDrawingAnnotation({ ...drawingAnnotation, ...constrained });
+      return;
+    }
 
     const { w: snappedW, h: snappedH, guides } = snapDrawingDimensions(
       drawingAnnotation.x, drawingAnnotation.y,
@@ -417,6 +426,21 @@ export function useAnnotationEvents({
     setActiveGuides(guides);
     setDrawingAnnotation({ ...drawingAnnotation, w: snappedW, h: snappedH });
   };
+
+  useEffect(() => {
+    if (!drawingAnnotation || !constrainDrawingDimensions(drawingAnnotation.type, 0, 0, dimensions)) return;
+    const handleShift = (event: KeyboardEvent) => {
+      if (event.key !== 'Shift' || event.repeat || !drawingEndRef.current) return;
+      const { x, y } = drawingEndRef.current;
+      handleShapeDraw(x, y, event.type === 'keydown');
+    };
+    window.addEventListener('keydown', handleShift);
+    window.addEventListener('keyup', handleShift);
+    return () => {
+      window.removeEventListener('keydown', handleShift);
+      window.removeEventListener('keyup', handleShift);
+    };
+  }, [drawingAnnotation, annotations, dimensions]);
 
   const handleDragMove = (mouseX: number, mouseY: number) => {
     if (!dragStart || !selectedId) return;
@@ -541,6 +565,7 @@ export function useAnnotationEvents({
       gradientAngle: activeTool === 'text' ? (annotationGradientAngle ?? 135) : undefined,
     };
     if (activeTool === 'pen') setPenPoints([{ x: mouseX, y: mouseY }]);
+    drawingEndRef.current = { x: mouseX, y: mouseY };
     setDrawingAnnotation(newAnn);
     try { containerRef.current.setPointerCapture(e.pointerId); } catch (err) {}
   };
@@ -572,10 +597,11 @@ export function useAnnotationEvents({
     const mouseX = (e.clientX - rect.left) / w;
     const mouseY = (e.clientY - rect.top) / h;
     if (drawingAnnotation) {
+      drawingEndRef.current = { x: mouseX, y: mouseY };
       if (activeTool === 'pen') {
         handleFreehandDraw(mouseX, mouseY, drawingAnnotation.x, drawingAnnotation.y);
       } else {
-        handleShapeDraw(mouseX, mouseY);
+        handleShapeDraw(mouseX, mouseY, e.shiftKey);
       }
       return;
     }

@@ -105,6 +105,7 @@
 | **`R`** / **`Shift` + `R`** / **`2`** / **`3`** | Rectangle Tool (Outline / Filled) |
 | **`C`** / **`O`** / **`Shift` + `C`** / **`4`** / **`5`** | Circle / Oval Tool (Outline / Filled) |
 | **`L`** / **`A`** / **`6`** / **`7`** | Line / Arrow Tool |
+| **`Shift` while drawing** | Draw squares, perfect circles, or lines/arrows at 45-degree increments |
 | **`T`** / **`P`** / **`8`** / **`9`** | Text / Freehand Pen Tool |
 | **`E`** / **`0`** | Add Emoji Tool |
 
