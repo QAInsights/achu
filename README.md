@@ -100,6 +100,7 @@
 | **`Ctrl` + `Y`** | Redo last action |
 | **`Ctrl` + `Shift` + `S`** | Copy beautified snap to clipboard |
 | **`Delete`** / **`Backspace`** | Delete selected annotation object |
+| **Arrow keys** / **`Shift` + Arrow keys** | Nudge the selected annotation by 1 / 10 canvas pixels while the canvas is focused; each held-key movement is one Undo step |
 | **`V`** or **`1`** | Select / Move Tool |
 | **`R`** / **`Shift` + `R`** / **`2`** / **`3`** | Rectangle Tool (Outline / Filled) |
 | **`C`** / **`O`** / **`Shift` + `C`** / **`4`** / **`5`** | Circle / Oval Tool (Outline / Filled) |

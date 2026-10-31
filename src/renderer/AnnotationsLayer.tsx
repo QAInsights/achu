@@ -159,6 +159,9 @@ export default function AnnotationsLayer({
     <div
       ref={containerRef}
       className="annotations-layer"
+      role="group"
+      aria-label="Annotations"
+      tabIndex={-1}
       style={{
         position: 'absolute',
         top: 0,
