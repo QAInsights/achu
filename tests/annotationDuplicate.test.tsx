@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { act, cleanup, fireEvent, renderHook } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAnnotationEvents } from '../src/renderer/hooks/useAnnotationEvents';
 import { useHistory } from '../src/renderer/hooks/useHistory';
+import ShortcutsHelpSection from '../src/renderer/components/ShortcutsHelpSection';
+import { getKeywordsForTab } from '../src/renderer/utils/settingsRegistry';
 import { clearAnnotationClipboard, getAnnotationClipboard, setAnnotationClipboard } from '../src/renderer/utils/annotationClipboardUtils';
 import type { Annotation } from '../src/renderer/canvasRenderer';
 
@@ -18,12 +20,13 @@ function setup(source = original) {
   viewport.append(container);
   document.body.append(viewport);
   container.focus();
+  const containerRef = { current: container };
   const onSaveHistory = vi.fn();
   const hook = renderHook(({ activeTool }: { activeTool: 'pointer' | 'rect' }) => {
     const [annotations, setAnnotations] = useState([source]);
     const history = useHistory(config => setAnnotations(config.annotations ?? []));
     const events = useAnnotationEvents({ annotations, setAnnotations, activeTool, color: source.color,
-      strokeWidth: 4, containerRef: { current: container }, customPrompt: vi.fn(),
+      strokeWidth: 4, containerRef, customPrompt: vi.fn(),
       onSaveHistory: updated => { onSaveHistory(updated); history.pushHistory({ imageSrc: 'image', annotations: updated }); } });
     return { ...events, annotations, history };
   }, { initialProps: { activeTool: 'pointer' } });
@@ -38,6 +41,12 @@ beforeEach(() => clearAnnotationClipboard());
 afterEach(() => { cleanup(); document.body.replaceChildren(); });
 
 describe('quick duplicate', () => {
+  it('registers duplicate for Settings tab search and displays the shortcut', () => {
+    expect(getKeywordsForTab('shortcuts')).toContain('duplicate');
+    render(<ShortcutsHelpSection searchQuery="duplicate" />);
+    expect(screen.getByText('Duplicate Annotation').parentElement).toHaveTextContent('D');
+    expect(screen.queryByText('Copy Annotation')).not.toBeInTheDocument();
+  });
   it.each([{ ctrlKey: true }, { metaKey: true }])('duplicates on the platform modifier: %j', modifier => {
     const { container, result, onSaveHistory } = setup();
     setAnnotationClipboard({ ...original, id: 'clipboard' });

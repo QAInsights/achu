@@ -30,7 +30,7 @@ const TOOLBAR_SHORTCUTS = [
 
 const SUPPORT_KEYWORDS = 'support project donate donation github repo repository buy coffee';
 
-registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy cut annotation nudge position' });
+registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy duplicate cut annotation nudge position' });
 registerSettingsSection({ tab: 'shortcuts', label: 'Support & Project', keywords: SUPPORT_KEYWORDS });
 
 export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery?: string }) {
