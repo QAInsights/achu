@@ -57,6 +57,26 @@ describe('stitch resolution planning', () => {
     expect(plan.estimatedBytes).toBeLessThanOrEqual(STITCH_MEMORY_BUDGET);
   });
 
+  it('keeps planned allocations inside the budget across different source shapes and counts', () => {
+    let seed = 42;
+    const next = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed; };
+    for (let index = 0; index < 100; index++) {
+      const width = 200 + next() % 16_000;
+      const maximumHeight = Math.min(32_767, Math.floor(40_000_000 / width));
+      const sources = Array.from({ length: 2 + next() % 5 }, () => ({
+        width, height: 500 + next() % (maximumHeight - 499), bytes: 1000 + next() % 6_000_000,
+      }));
+      const plan = planStitchSources(sources);
+      expect(plan.estimatedBytes).toBeLessThanOrEqual(STITCH_MEMORY_BUDGET);
+      expect(plan.width).toBeGreaterThan(0);
+      expect(plan.width).toBeLessThanOrEqual(width);
+      plan.heights.forEach((height, sourceIndex) => {
+        expect(height).toBeGreaterThanOrEqual(3);
+        expect(height).toBeLessThanOrEqual(sources[sourceIndex].height);
+      });
+    }
+  });
+
   it('rejects a selection whose files and decode scratch space cannot fit even at reduced resolution', () => {
     expect(() => planStitchSources(Array.from({ length: 2 }, () => ({ width: 8000, height: 5000, bytes: 64_000_000 })))).toThrow('even as a smaller copy');
   });

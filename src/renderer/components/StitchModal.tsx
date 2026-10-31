@@ -371,6 +371,7 @@ export default function StitchModal({ open, onClose, onImport }: {
           <button type="button" className="btn btn-primary" disabled={!output || busy} onClick={importImage}>{smallerCopy ? 'Import smaller copy' : 'Import into editor'}</button>
         </footer>
         {smallerCopy && <p className="stitch-note">Original resolution is too large to stitch safely, so achu will import a smaller copy. Your source files stay unchanged.
+          {workingWidth !== images[0].original.width && ' Overlap values are measured in smaller-copy pixels.'}
           {output?.reduced && ' Increase overlap or use fewer screenshots to keep more detail.'}</p>}
       </section>
     </div>

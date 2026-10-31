@@ -263,14 +263,14 @@ describe('StitchModal', () => {
     expect(onImport).not.toHaveBeenCalled();
   });
 
-  it('rejects mismatched widths without importing and releases decoded bitmaps', async () => {
+  it('rejects mismatched original widths before decoding', async () => {
     const onImport = vi.fn();
     render(<StitchModal open onImport={onImport} onClose={vi.fn()} />);
     await choose('top.png', 'narrow.png');
     expect(await screen.findByRole('alert')).toHaveTextContent('same pixel width');
     expect(screen.getByRole('button', { name: 'Import into editor' })).toBeDisabled();
     expect(onImport).not.toHaveBeenCalled();
-    expect(bitmaps.every(bitmap => vi.mocked(bitmap.close).mock.calls.length === 1)).toBe(true);
+    expect(globalThis.createImageBitmap).not.toHaveBeenCalled();
   });
 
   it('keeps the current alignment after invalid selection counts and releases bitmaps on close', async () => {
@@ -347,6 +347,20 @@ describe('StitchModal', () => {
       args: [bitmaps[0], 0, 0, 4000, 3000, 0, 0, output.width, 3000 * (output.height / height)] });
   });
 
+  it('fits very tall output to the height ceiling without rejecting the original sources', async () => {
+    const sources = ['top.png', 'second.png'].map(name => file(name, { width: 100, height: 10_000 }));
+    const onImport = vi.fn();
+    render(<StitchModal open onImport={onImport} onClose={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(/Choose or drop/), { target: { files: sources } });
+    const slider = await screen.findByRole('slider');
+    fireEvent.change(slider, { target: { value: '0' } });
+    expect(screen.getByText('80 × 16000px smaller copy (80% of original)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Import smaller copy' }));
+    expect(onImport).toHaveBeenCalledOnce();
+    expect(draws).toContainEqual({ width: 80, height: 16_000,
+      args: [bitmaps[1], 0, 0, 100, 10_000, 0, 8000, 80, 8000] });
+  });
+
   it('asks before preparing a memory-heavy selection, then decodes the agreed smaller dimensions', async () => {
     const sources = [file('budget-top.png'), file('budget-second.png')];
     const plan = planStitchSources(sources.map(source => ({ ...dimensions(source.name), bytes: source.size })));
@@ -367,6 +381,7 @@ describe('StitchModal', () => {
       expect(bitmaps[index]).toMatchObject({ width: plan.width, height: plan.heights[index] });
     });
     expect(screen.getAllByText('6000 × 5000px')).toHaveLength(2);
+    expect(screen.getByText(/Overlap values are measured in smaller-copy pixels/)).toBeInTheDocument();
     expect(screen.getByRole('slider')).toHaveAttribute('max', String(plan.heights[1] - 1));
     fireEvent.change(screen.getByRole('slider'), { target: { value: '50' } });
     fireEvent.click(screen.getByRole('button', { name: 'Move budget-top.png down' }));
@@ -431,6 +446,22 @@ describe('StitchModal', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Prepare smaller copy' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('planned resolution');
     expect(bitmap.close).toHaveBeenCalledOnce();
+    expect(onImport).not.toHaveBeenCalled();
+  });
+
+  it('releases previously decoded sources if a later image cannot decode', async () => {
+    const decode = globalThis.createImageBitmap;
+    globalThis.createImageBitmap = vi.fn(async (source: ImageBitmapSource) => {
+      if ((source as File).name === 'second.png') throw new Error('Could not decode the second screenshot.');
+      return decode(source);
+    }) as typeof createImageBitmap;
+    const onImport = vi.fn();
+    render(<StitchModal open onImport={onImport} onClose={vi.fn()} />);
+    await choose('top.png', 'second.png');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not decode the second screenshot.');
+    expect(bitmaps).toHaveLength(1);
+    expect(bitmaps[0].close).toHaveBeenCalledOnce();
+    expect(screen.getByRole('button', { name: 'Import into editor' })).toBeDisabled();
     expect(onImport).not.toHaveBeenCalled();
   });
 
