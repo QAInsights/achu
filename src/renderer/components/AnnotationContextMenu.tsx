@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   BringToFront,
@@ -8,6 +8,7 @@ import {
   Scissors,
   Copy,
   ClipboardPaste,
+  RotateCcw,
 } from 'lucide-react';
 import { getModKeyLabel } from '../utils/shortcutLabels';
 import './GrabTextModal.css';
@@ -23,15 +24,16 @@ interface AnnotationContextMenuProps {
   y: number;
   onClose: () => void;
   onOrder: (action: LayerOrderAction) => void;
+  onResetRotation: () => void;
+  canResetRotation: boolean;
   onCut: () => void;
   onCopy: () => void;
   onPaste: () => void;
   canPaste?: boolean;
 }
 
-// 3 clipboard + 2 dividers + 4 layer ≈ 7 rows + 2 dividers
 const MENU_WIDTH = 200;
-const MENU_HEIGHT = 280;
+const MENU_HEIGHT = 320;
 
 /**
  * Right-click menu for a single annotation: clipboard (Cut/Copy/Paste) plus
@@ -48,26 +50,29 @@ export default function AnnotationContextMenu({
   y,
   onClose,
   onOrder,
+  onResetRotation,
+  canResetRotation,
   onCut,
   onCopy,
   onPaste,
   canPaste = false,
 }: AnnotationContextMenuProps) {
   const [coords, setCoords] = useState({ x, y });
+  const menuRef = useRef<HTMLDivElement>(null);
   const mod = getModKeyLabel();
 
-  useEffect(() => {
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    let adjustedX = x;
-    let adjustedY = y;
-    if (x + MENU_WIDTH > screenWidth) {
-      adjustedX = Math.max(8, screenWidth - MENU_WIDTH - 8);
-    }
-    if (y + MENU_HEIGHT > screenHeight) {
-      adjustedY = Math.max(8, screenHeight - MENU_HEIGHT - 8);
-    }
-    setCoords({ x: adjustedX, y: adjustedY });
+  useLayoutEffect(() => {
+    const updatePosition = () => {
+      const width = menuRef.current?.offsetWidth || MENU_WIDTH;
+      const height = menuRef.current?.offsetHeight || MENU_HEIGHT;
+      setCoords({
+        x: Math.max(8, Math.min(x, window.innerWidth - width - 8)),
+        y: Math.max(8, Math.min(y, window.innerHeight - height - 8)),
+      });
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
   }, [x, y]);
 
   useEffect(() => {
@@ -90,15 +95,16 @@ export default function AnnotationContextMenu({
     onClose();
   };
 
-  const runClipboard = (fn: () => void) => {
+  const runAction = (fn: () => void) => {
     fn();
     onClose();
   };
 
   return createPortal(
     <div
+      ref={menuRef}
       className="custom-context-menu"
-      style={{ top: `${coords.y}px`, left: `${coords.x}px` }}
+      style={{ top: `${coords.y}px`, left: `${coords.x}px`, maxWidth: 'calc(100vw - 16px)', maxHeight: 'calc(100vh - 16px)', overflowY: 'auto' }}
       onClick={(e) => e.stopPropagation()}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -107,7 +113,7 @@ export default function AnnotationContextMenu({
     >
       <button
         className="context-menu-item"
-        onClick={() => runClipboard(onCut)}
+        onClick={() => runAction(onCut)}
         title={`Cut (${mod}+X)`}
       >
         <Scissors className="w-4 h-4" />
@@ -117,7 +123,7 @@ export default function AnnotationContextMenu({
 
       <button
         className="context-menu-item"
-        onClick={() => runClipboard(onCopy)}
+        onClick={() => runAction(onCopy)}
         title={`Copy (${mod}+C)`}
       >
         <Copy className="w-4 h-4" />
@@ -127,13 +133,25 @@ export default function AnnotationContextMenu({
 
       <button
         className="context-menu-item"
-        onClick={() => runClipboard(onPaste)}
+        onClick={() => runAction(onPaste)}
         title={canPaste ? `Paste (${mod}+V)` : 'Nothing to paste'}
         disabled={!canPaste}
       >
         <ClipboardPaste className="w-4 h-4" />
         <span>Paste</span>
         <span className="context-menu-shortcut">{mod}+V</span>
+      </button>
+
+      <div className="context-menu-divider" />
+
+      <button
+        className="context-menu-item"
+        onClick={() => runAction(onResetRotation)}
+        title="Reset Rotation"
+        disabled={!canResetRotation}
+      >
+        <RotateCcw className="w-4 h-4" />
+        <span>Reset Rotation</span>
       </button>
 
       <div className="context-menu-divider" />
