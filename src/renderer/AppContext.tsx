@@ -738,7 +738,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...issueAgent,
       ...codeStudio,
       scanForSecrets: redaction.scanForSecrets, toggleRedaction: redaction.toggleRedaction, redactAll: redaction.redactAll, revealAll: redaction.revealAll,
-      getCurrentConfig, pushHistory, applyConfig, handleUndo, handleRedo, selectFile, handleHTMLFileInput,
+      getCurrentConfig, pushHistory, applyConfig, handleUndo, handleRedo, selectFile, onImageLoaded, handleHTMLFileInput,
       pasteFromClipboard, saveCustomPreset, deleteCustomPreset, copyBeautifiedImage, triggerExport, exportBeforeAfter, copyBeforeAfter, saveToGallery, handleSaveToGallery, galleryToast,
       showToast: showGalleryToast,
       shareAchuPromptOpen, setShareAchuPromptOpen,
