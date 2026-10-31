@@ -12,6 +12,7 @@ const SHORTCUTS = [
   { label: 'Toggle Gallery', keys: 'mod g gallery' },
   { label: 'Toggle Code Studio', keys: 'mod shift c code studio' },
   { label: 'Copy Annotation', keys: 'mod c copy annotation' },
+  { label: 'Duplicate Annotation', keys: 'mod d duplicate annotation' },
   { label: 'Cut Annotation', keys: 'mod x cut annotation' },
   { label: 'Paste Annotation', keys: 'mod v paste annotation' },
   { label: 'Delete Annotation', keys: 'delete backspace annotation' },
@@ -29,7 +30,7 @@ const TOOLBAR_SHORTCUTS = [
 
 const SUPPORT_KEYWORDS = 'support project donate donation github repo repository buy coffee';
 
-registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy cut annotation nudge position' });
+registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy duplicate cut annotation nudge position' });
 registerSettingsSection({ tab: 'shortcuts', label: 'Support & Project', keywords: SUPPORT_KEYWORDS });
 
 export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery?: string }) {
@@ -63,6 +64,7 @@ export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery
                 {s.label === 'Toggle Gallery' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>G</kbd></div>}
                 {s.label === 'Toggle Code Studio' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>Shift</kbd> <kbd>C</kbd></div>}
                 {s.label === 'Copy Annotation' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>C</kbd></div>}
+                {s.label === 'Duplicate Annotation' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>D</kbd></div>}
                 {s.label === 'Cut Annotation' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>X</kbd></div>}
                 {s.label === 'Paste Annotation' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>V</kbd></div>}
                 {s.label === 'Delete Annotation' && <div><kbd>Delete</kbd> or <kbd>Backspace</kbd></div>}

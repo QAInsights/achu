@@ -106,6 +106,7 @@ For memory safety, individual images are limited to 8 MB / 12 megapixels, 8192px
 | **`Ctrl` + `Shift` + `S`** | Copy beautified snap to clipboard |
 | **`Delete`** / **`Backspace`** | Delete selected annotation object |
 | **Arrow keys** / **`Shift` + Arrow keys** | Nudge the selected annotation by 1 / 10 canvas pixels while the canvas is focused; each held-key movement is one Undo step |
+| **`Ctrl/Cmd` + `D`** | Duplicate the selected annotation with an offset while the canvas is focused, without replacing the annotation clipboard |
 | **`V`** or **`1`** | Select / Move Tool |
 | **`R`** / **`Shift` + `R`** / **`2`** / **`3`** | Rectangle Tool (Outline / Filled) |
 | **`C`** / **`O`** / **`Shift` + `C`** / **`4`** / **`5`** | Circle / Oval Tool (Outline / Filled) |

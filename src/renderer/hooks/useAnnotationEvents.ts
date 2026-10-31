@@ -211,6 +211,23 @@ export function useAnnotationEvents({
     onSaveHistory(updated);
   }, [annotations, setAnnotations, onSaveHistory]);
 
+  const duplicateAnnotation = useCallback(() => {
+    const source = annotations.find(ann => ann.id === selectedId);
+    if (!source) return;
+    const duplicate = cloneAnnotation(source);
+    const offsetPosition = (position: number, size: number) => {
+      const fits = Math.min(position, position + size) >= 0 && Math.max(position, position + size) <= 1;
+      const shifted = position + ANNOTATION_PASTE_OFFSET;
+      return fits ? Math.min(shifted, 1 - Math.max(size, 0)) : shifted;
+    };
+    duplicate.x = offsetPosition(source.x, source.w);
+    duplicate.y = offsetPosition(source.y, source.h);
+    const updated = [...annotations, duplicate];
+    setAnnotations(updated);
+    setSelectedId(duplicate.id);
+    onSaveHistory(updated);
+  }, [annotations, selectedId, setAnnotations, onSaveHistory]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -218,6 +235,17 @@ export function useAnnotationEvents({
         return;
       }
       const mod = e.ctrlKey || e.metaKey;
+      if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'd') {
+        const container = containerRef.current;
+        if (e.defaultPrevented || e.isComposing || e.keyCode === 229 || activeTool !== 'pointer' ||
+          editingTextId || dragStart || resizeStart || drawingAnnotation || !container ||
+          (target !== container && target !== container.closest('.canvas-viewport')) ||
+          target.closest('dialog, [role="dialog"], [role="alertdialog"], [inert]') ||
+          !annotations.some(ann => ann.id === selectedId)) return;
+        e.preventDefault();
+        if (!e.repeat) duplicateAnnotation();
+        return;
+      }
       // Require plain mod+key (no Shift/Alt) so we don't steal Ctrl+Shift+C (Code Studio), etc.
       if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'c') {
         if (selectedId) {
@@ -249,7 +277,8 @@ export function useAnnotationEvents({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, annotations, setAnnotations, onSaveHistory, copyAnnotation, cutAnnotation, pasteAnnotation]);
+  }, [selectedId, annotations, setAnnotations, onSaveHistory, copyAnnotation, cutAnnotation, pasteAnnotation,
+    duplicateAnnotation, activeTool, editingTextId, dragStart, resizeStart, drawingAnnotation, containerRef]);
 
   useEffect(() => {
     if (selectedId && arrowStyle) {
