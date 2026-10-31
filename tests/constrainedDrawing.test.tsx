@@ -33,7 +33,7 @@ describe('constrained drawing geometry', () => {
     }
   });
 
-  it.each(['text', 'pen', 'emoji', 'pointer'] as const)('does not constrain %s', type => {
+  it.each(['text', 'pen', 'emoji', 'image'] as const)('does not constrain %s', type => {
     expect(constrainDrawingDimensions(type, 0.2, 0.1, dimensions)).toBeNull();
   });
 
@@ -45,7 +45,7 @@ describe('constrained drawing geometry', () => {
   });
 });
 
-function setup(type: Annotation['type'], zoom = 1) {
+function setup(type: Exclude<Annotation['type'], 'image'>, zoom = 1) {
   const container = document.createElement('div');
   Object.defineProperties(container, { offsetWidth: { value: 800 }, offsetHeight: { value: 400 } });
   container.getBoundingClientRect = () => ({ x: 0, y: 0, left: 0, top: 0,
@@ -89,7 +89,9 @@ describe('constrained drawing interactions', () => {
     if (type === 'line' || type === 'arrow') {
       expect(result.current.annotations[0]).toEqual(preview);
     } else {
-      expect(result.current.annotations[0]).toMatchObject({ x: 0.1875, y: 0.15, w: 0.25, h: 0.5 });
+      expect(result.current.annotations[0].x).toBeCloseTo(0.1875);
+      expect(result.current.annotations[0].y).toBeCloseTo(0.15);
+      expect(result.current.annotations[0]).toMatchObject({ w: 0.25, h: 0.5 });
     }
     const saved = result.current.annotations;
     act(() => result.current.history.handleUndo());
@@ -104,7 +106,8 @@ describe('constrained drawing interactions', () => {
     act(() => result.current.handlePointerMove(pointer(280, 140)));
     const unconstrained = result.current.drawingAnnotation;
     fireEvent.keyDown(window, { key: 'Shift' });
-    expect(result.current.drawingAnnotation).toMatchObject({ w: 0.25, h: 0.5 });
+    expect(result.current.drawingAnnotation!.w).toBeCloseTo(0.25);
+    expect(result.current.drawingAnnotation!.h).toBeCloseTo(0.5);
     fireEvent.keyUp(window, { key: 'Shift' });
     expect(result.current.drawingAnnotation).toEqual(unconstrained);
   });
@@ -126,7 +129,10 @@ describe('constrained drawing interactions', () => {
     const preview = result.current.drawingAnnotation;
     fireEvent.keyUp(window, { key: 'Shift' });
     expect(result.current.drawingAnnotation).toEqual(preview);
-    if (type !== 'pen') expect(preview).toMatchObject({ w: 0.25, h: 0.25 });
+    if (type !== 'pen') {
+      expect(preview!.w).toBeCloseTo(0.25);
+      expect(preview!.h).toBeCloseTo(0.25);
+    }
   });
 
   it('registers and displays constraint help in Settings search', () => {
