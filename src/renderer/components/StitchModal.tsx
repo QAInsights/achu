@@ -24,7 +24,7 @@ const SAMPLE_WIDTH = 128;
 function sampleScreenshot(bitmap: ImageBitmap): StitchSample {
   const canvas = document.createElement('canvas');
   canvas.width = SAMPLE_WIDTH;
-  canvas.height = Math.max(3, Math.round(bitmap.height * SAMPLE_WIDTH / bitmap.width));
+  canvas.height = bitmap.height;
   const context = canvas.getContext('2d', { willReadFrequently: true });
   if (!context) throw new Error('This device cannot read screenshot pixels.');
   context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
@@ -36,7 +36,7 @@ function alignScreenshots(images: LoadedScreenshot[]): Seam[] {
   return images.slice(1).map((image, index) => {
     const match = estimateOverlap(images[index].sample, image.sample);
     const { min, max } = overlapRange(images[index].bitmap.height, image.bitmap.height);
-    const pixels = Math.round(match.rows * images[index].bitmap.width / SAMPLE_WIDTH);
+    const pixels = match.rows;
     return { pixels: Math.max(min, Math.min(max, pixels)), confident: match.confident };
   });
 }
@@ -125,6 +125,7 @@ export default function StitchModal({ open, onClose, onImport }: {
   const readFiles = async (files: FileList | null) => {
     if (!files) return;
     const chosen = Array.from(files);
+    if (!chosen.length) return;
     if (chosen.length < 2 || chosen.length > STITCH_MAX_IMAGES) {
       token.current++;
       resources.current.forEach(bitmap => bitmap.close());
@@ -201,7 +202,11 @@ export default function StitchModal({ open, onClose, onImport }: {
   };
 
   return (
-    <div className="stitch-overlay" role="presentation" onPointerDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+    <div className="stitch-overlay" role="presentation"
+      onDragOver={event => { event.preventDefault(); event.stopPropagation(); }}
+      onDragLeave={event => event.stopPropagation()}
+      onDrop={event => { event.preventDefault(); event.stopPropagation(); if (!busy) void readFiles(event.dataTransfer.files); }}
+      onPointerDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
       <section className="stitch-dialog" role="dialog" aria-modal="true" aria-label="Stitch Screenshots" onKeyDown={event => {
         if (event.key !== 'Tab') return;
         const controls = event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled)');
@@ -215,7 +220,7 @@ export default function StitchModal({ open, onClose, onImport }: {
             <p>Combine a scrolling page into one image. Your screenshots stay on this device.</p></div>
           <button ref={closeRef} type="button" className="btn btn-secondary" onClick={onClose} disabled={busy} aria-label="Close Stitch Screenshots"><X size={16} /></button>
         </header>
-        <label className="stitch-upload">Choose 2–6 screenshots from top to bottom
+        <label className="stitch-upload">Choose or drop 2–6 screenshots from top to bottom
           <input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={event => { void readFiles(event.target.files); event.target.value = ''; }} disabled={busy} />
           <span>PNG, JPEG or WebP · Same width · Up to 8 MB each</span>
         </label>

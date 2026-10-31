@@ -16,7 +16,7 @@ function file(name: string) {
 
 function pixels(name: string, width: number, height: number) {
   const result = new Uint8ClampedArray(width * height * 4);
-  const offset = name.startsWith('second') ? 64 : name.startsWith('unrelated') ? 140 : 0;
+  const offset = name.startsWith('second-native') ? 67 : name.startsWith('second') ? 50 : name.startsWith('unrelated') ? 140 : 0;
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     const i = (y * width + x) * 4;
     result[i] = ((y + offset) * 37 + x * 13) % 256;
@@ -32,7 +32,8 @@ beforeEach(() => {
   draws.length = 0;
   globalThis.createImageBitmap = vi.fn(async (source: ImageBitmapSource) => {
     const input = source as File;
-    const bitmap = { width: input.name.startsWith('narrow') ? 99 : 100, height: 100, fileName: input.name,
+    const bitmap = { width: input.name.startsWith('narrow') ? 99 : input.name.startsWith('large') ? 5000 : 100,
+      height: input.name.startsWith('large') ? 3000 : 100, fileName: input.name,
       close: vi.fn() } as unknown as FakeBitmap;
     bitmaps.push(bitmap);
     return bitmap;
@@ -59,7 +60,7 @@ afterEach(() => {
 });
 
 async function choose(...names: string[]) {
-  fireEvent.change(screen.getByLabelText(/Choose 2–6 screenshots/), { target: { files: names.map(file) } });
+  fireEvent.change(screen.getByLabelText(/Choose or drop 2–6 screenshots/), { target: { files: names.map(file) } });
 }
 
 describe('StitchModal', () => {
@@ -88,6 +89,59 @@ describe('StitchModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Move top.png down' }));
     expect(screen.getByText(/1\. second.png/)).toBeInTheDocument();
     expect(screen.getByText(/2\. top.png/)).toBeInTheDocument();
+  });
+
+  it('uses native row precision and lets the numeric control adjust a seam', async () => {
+    render(<StitchModal open onImport={vi.fn()} onClose={vi.fn()} />);
+    await choose('top.png', 'second-native.png');
+    await screen.findByText(/Auto-aligned/);
+    expect(screen.getByRole('slider')).toHaveValue('33');
+    const numeric = screen.getByRole('spinbutton', { name: 'Overlap before screenshot 2 value' });
+    fireEvent.change(numeric, { target: { value: '34' } });
+    fireEvent.keyDown(numeric, { key: 'Enter' });
+    expect(screen.getByRole('slider')).toHaveValue('34');
+    expect(screen.getByText(/166px output/)).toBeInTheDocument();
+  });
+
+  it('owns file drops instead of changing the workspace underneath the dialog', async () => {
+    const workspaceDrop = vi.fn();
+    render(<div onDrop={workspaceDrop}><StitchModal open onImport={vi.fn()} onClose={vi.fn()} /></div>);
+    fireEvent.drop(screen.getByRole('dialog'), { dataTransfer: { files: [file('top.png'), file('second.png')] } });
+    await screen.findByText(/Auto-aligned/);
+    expect(workspaceDrop).not.toHaveBeenCalled();
+  });
+
+  it('rejects oversized sources and unsupported files', async () => {
+    render(<StitchModal open onImport={vi.fn()} onClose={vi.fn()} />);
+    await choose('top.png', 'large.png');
+    expect(await screen.findByRole('alert')).toHaveTextContent('12 megapixels');
+    expect(screen.getByRole('button', { name: 'Import into editor' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(/Choose or drop/), { target: { files: [file('top.png'), new File(['<svg/>'], 'vector.svg', { type: 'image/svg+xml' })] } });
+    expect(await screen.findByRole('alert')).toHaveTextContent('PNG, JPEG or WebP');
+  });
+
+  it('discards a late decode when the dialog closes', async () => {
+    let finishDecode!: (value: ImageBitmap) => void;
+    globalThis.createImageBitmap = vi.fn(() => new Promise<ImageBitmap>(resolve => { finishDecode = resolve; })) as typeof createImageBitmap;
+    const onImport = vi.fn();
+    const { rerender } = render(<StitchModal open onImport={onImport} onClose={vi.fn()} />);
+    await choose('top.png', 'second.png');
+    rerender(<StitchModal open={false} onImport={onImport} onClose={vi.fn()} />);
+    const bitmap = { width: 100, height: 100, close: vi.fn() } as unknown as ImageBitmap;
+    finishDecode(bitmap);
+    await waitFor(() => expect(bitmap.close).toHaveBeenCalledOnce());
+    expect(onImport).not.toHaveBeenCalled();
+  });
+
+  it('reports PNG encoding failure instead of importing an invalid data URL', async () => {
+    const onImport = vi.fn();
+    render(<StitchModal open onImport={onImport} onClose={vi.fn()} />);
+    await choose('top.png', 'second.png');
+    await screen.findByText(/Auto-aligned/);
+    HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:,');
+    fireEvent.click(screen.getByRole('button', { name: 'Import into editor' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('could not encode');
+    expect(onImport).not.toHaveBeenCalled();
   });
 
   it('rejects mismatched widths without importing and releases decoded bitmaps', async () => {
