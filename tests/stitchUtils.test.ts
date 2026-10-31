@@ -1,5 +1,122 @@
 import { describe, expect, it, vi } from 'vitest';
-import { drawStitchedImages, estimateOverlap, estimateOverlapAsync, overlapRange, stitchedHeight, type StitchSample } from '../src/renderer/utils/stitchUtils';
+import {
+  drawStitchedImages, estimateOverlap, estimateOverlapAsync, overlapRange, planStitchOutput, planStitchSources, stitchedHeight,
+  validateStitchFileBudget, validateStitchSourceDimensions, STITCH_MAX_FILE_BYTES, STITCH_MAX_OUTPUT_HEIGHT,
+  STITCH_MAX_OUTPUT_PIXELS, STITCH_MEMORY_BUDGET, type StitchSample,
+} from '../src/renderer/utils/stitchUtils';
+
+describe('stitch resolution planning', () => {
+  it.each([
+    { width: 5000, height: 3000 }, { width: 100, height: 20_000 },
+    { width: 16_384, height: 100 }, { width: 100, height: 32_767 },
+  ])('accepts larger and taller sources within the hard ceiling: %o', size => {
+    expect(() => validateStitchSourceDimensions(size)).not.toThrow();
+  });
+
+  it.each([
+    { width: 0, height: 100 }, { width: 100, height: 2 }, { width: 1.5, height: 100 },
+    { width: NaN, height: 100 }, { width: 16_385, height: 100 }, { width: 100, height: 32_768 },
+    { width: 8000, height: 5001 },
+  ])('rejects invalid or excessive source dimensions: %o', size => {
+    expect(() => validateStitchSourceDimensions(size)).toThrow('40 megapixels');
+  });
+
+  it('keeps source resolution when the complete working set fits', () => {
+    const plan = planStitchSources(Array.from({ length: 2 }, () => ({ width: 5000, height: 3000, bytes: 1000 })));
+    expect(plan).toMatchObject({ reduced: false, scale: 1, width: 5000, heights: [3000, 3000] });
+    expect(plan.estimatedBytes).toBeLessThanOrEqual(STITCH_MEMORY_BUDGET);
+  });
+
+  it('plans one shared scale for a large selection without changing source metadata', () => {
+    const sources = Array.from({ length: 6 }, (_, index) => Object.freeze({ width: 5000, height: 3000 - index * 100, bytes: 1000 }));
+    const plan = planStitchSources(sources);
+    expect(plan.reduced).toBe(true);
+    expect(plan.scale).toBeGreaterThan(0);
+    expect(plan.scale).toBeLessThan(1);
+    expect(plan.width).toBe(Math.floor(5000 * plan.scale));
+    expect(plan.heights).toEqual(sources.map(source => Math.floor(source.height * plan.scale)));
+    expect(plan.estimatedBytes).toBeLessThanOrEqual(STITCH_MEMORY_BUDGET);
+    expect(sources[0]).toEqual({ width: 5000, height: 3000, bytes: 1000 });
+  });
+
+  it('budgets file buffers rather than relying on a per-file compressed-size cap', () => {
+    const smallFiles = Array.from({ length: 2 }, () => ({ width: 5000, height: 3000, bytes: 1000 }));
+    expect(planStitchSources(smallFiles).reduced).toBe(false);
+    expect(planStitchSources(smallFiles.map(source => ({ ...source, bytes: 30_000_000 }))).reduced).toBe(true);
+    expect(planStitchSources(smallFiles.map(source => ({ ...source, width: 100, height: 100, bytes: 12_000_000 }))).reduced).toBe(false);
+  });
+
+  it('accounts for native-height samples and the full decoder scratch buffer for tall sources', () => {
+    const sources = Array.from({ length: 6 }, () => ({ width: 1000, height: 32_767, bytes: 10_000 }));
+    const plan = planStitchSources(sources);
+    expect(plan.reduced).toBe(true);
+    const totalHeight = plan.heights.reduce((sum, height) => sum + height, 0);
+    const maximumOutputPixels = Math.min(STITCH_MAX_OUTPUT_PIXELS, plan.width * Math.min(totalHeight, STITCH_MAX_OUTPUT_HEIGHT));
+    expect(plan.estimatedBytes).toBe(sources.length * 10_000 * 2 + 1000 * 32_767 * 4 +
+      plan.width * totalHeight * 4 + 128 * totalHeight * 8 + maximumOutputPixels * 8 + 128 * 1024 * 1024);
+    expect(plan.estimatedBytes).toBeLessThanOrEqual(STITCH_MEMORY_BUDGET);
+  });
+
+  it('rejects a selection whose files and decode scratch space cannot fit even at reduced resolution', () => {
+    expect(() => planStitchSources(Array.from({ length: 2 }, () => ({ width: 8000, height: 5000, bytes: 64_000_000 })))).toThrow('even as a smaller copy');
+  });
+
+  it('rejects a reduction that would leave a source too short to align', () => {
+    expect(() => planStitchSources([
+      { width: 8000, height: 3, bytes: 1000 }, { width: 8000, height: 5000, bytes: 1000 },
+    ])).toThrow('even as a smaller copy');
+  });
+
+  it.each([0, 1, 7])(
+    'rejects an invalid count of %i sources', count => {
+      const sources = Array.from({ length: count }, () => ({ width: 100, height: 100, bytes: 1 }));
+      expect(() => planStitchSources(sources)).toThrow('2–6 screenshots');
+    },
+  );
+
+  it('requires matching original widths even if downscaling would round them to the same size', () => {
+    expect(() => planStitchSources([
+      { width: 6000, height: 5000, bytes: 1 }, { width: 6001, height: 5000, bytes: 1 },
+    ])).toThrow('same pixel width');
+  });
+
+  it.each([-1, 0.5, Infinity, STITCH_MAX_FILE_BYTES + 1])('rejects an unsafe file-data budget of %s bytes', bytes => {
+    expect(() => validateStitchFileBudget(bytes)).toThrow('too much file data');
+  });
+
+  it('checks the aggregate file-data budget as well as individual sizes', () => {
+    expect(() => validateStitchFileBudget(STITCH_MAX_FILE_BYTES)).not.toThrow();
+    expect(() => planStitchSources(Array.from({ length: 2 }, () => ({ width: 100, height: 100, bytes: STITCH_MAX_FILE_BYTES / 2 + 1 })))).toThrow('too much file data');
+  });
+
+  it.each([{ width: 3840, height: 5000 }, { width: 1250, height: 16_000 }])('preserves a safe output at original resolution: %o', size => {
+    expect(planStitchOutput(size)).toEqual({ ...size, scale: 1, reduced: false });
+  });
+
+  it.each([{ width: 3840, height: 9000 }, { width: 100, height: 60_000 }, { width: 8000, height: 30_000 }])(
+    'uniformly fits a large output inside pixel and height limits: %o', size => {
+      const output = planStitchOutput(size);
+      expect(output.reduced).toBe(true);
+      expect(output.width * output.height).toBeLessThanOrEqual(STITCH_MAX_OUTPUT_PIXELS);
+      expect(output.height).toBeLessThanOrEqual(STITCH_MAX_OUTPUT_HEIGHT);
+      expect(output.width).toBe(Math.floor(size.width * output.scale));
+      expect(output.height).toBe(Math.floor(size.height * output.scale));
+    },
+  );
+
+  it.each([{ width: 0, height: 100 }, { width: 100, height: Infinity }, { width: 100, height: 0.5 }])('rejects invalid output dimensions: %o', size => {
+    expect(() => planStitchOutput(size)).toThrow('valid pixel dimensions');
+  });
+
+  it('draws a reduced output all the way to its separately rounded width and height', () => {
+    const ctx = { drawImage: vi.fn() } as unknown as CanvasRenderingContext2D;
+    const images = [{ width: 100, height: 100 }, { width: 100, height: 80 }] as ImageBitmap[];
+    const scaleY = 74 / 150;
+    drawStitchedImages(ctx, images, [30], { x: 0.37, y: scaleY });
+    expect(ctx.drawImage).toHaveBeenNthCalledWith(1, images[0], 0, 0, 100, 100, 0, 0, 37, 100 * scaleY);
+    expect(ctx.drawImage).toHaveBeenNthCalledWith(2, images[1], 0, 30, 100, 50, 0, 100 * scaleY, 37, 50 * scaleY);
+  });
+});
 
 function screenshot(start: number, rows = 65, width = 24): StitchSample {
   const data = new Uint8ClampedArray(rows * width * 4);
