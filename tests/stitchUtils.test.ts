@@ -39,6 +39,7 @@ describe('screenshot stitching', () => {
 
   it('yields during a single pair so cancellation can stop the remaining candidates', async () => {
     vi.useFakeTimers();
+    vi.stubGlobal('scheduler', undefined);
     let now = 0;
     const clock = vi.spyOn(performance, 'now').mockImplementation(() => now += 10);
     try {
@@ -50,7 +51,24 @@ describe('screenshot stitching', () => {
       expect(await pending).toBeNull();
     } finally {
       clock.mockRestore();
+      vi.unstubAllGlobals();
       vi.useRealTimers();
+    }
+  });
+
+  it('prefers scheduler yields to avoid clamped background timers when available', async () => {
+    let now = 0;
+    const clock = vi.spyOn(performance, 'now').mockImplementation(() => now += 10);
+    const yieldTask = vi.fn(async () => {});
+    vi.stubGlobal('scheduler', { yield: yieldTask });
+    try {
+      const first = screenshot(0);
+      const second = screenshot(35);
+      expect(await estimateOverlapAsync(first, second, () => true)).toEqual(estimateOverlap(first, second));
+      expect(yieldTask).toHaveBeenCalled();
+    } finally {
+      clock.mockRestore();
+      vi.unstubAllGlobals();
     }
   });
 

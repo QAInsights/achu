@@ -39,7 +39,6 @@ type AlignmentCache = WeakMap<ImageBitmap, WeakMap<ImageBitmap, Seam>>;
 async function alignScreenshots(images: LoadedScreenshot[], cache: AlignmentCache, isCurrent: () => boolean): Promise<Seam[] | null> {
   const seams: Seam[] = [];
   for (let index = 1; index < images.length; index++) {
-    await new Promise<void>(resolve => setTimeout(resolve, 0));
     if (!isCurrent()) return null;
     const previous = images[index - 1];
     const image = images[index];

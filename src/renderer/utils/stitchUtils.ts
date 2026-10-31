@@ -72,12 +72,14 @@ export function estimateOverlap(first: StitchSample, second: StitchSample): Over
 
 export async function estimateOverlapAsync(first: StitchSample, second: StitchSample, isCurrent: () => boolean): Promise<OverlapEstimate | null> {
   const scores: OverlapScore[] = [];
+  const scheduler = (globalThis as typeof globalThis & { scheduler?: { yield: () => Promise<void> } }).scheduler;
   let deadline = performance.now() + 8;
   for (const score of scoreOverlaps(first, second)) {
     if (!isCurrent()) return null;
     scores.push(score);
     if (performance.now() >= deadline) {
-      await new Promise<void>(resolve => setTimeout(resolve, 0));
+      if (scheduler?.yield) await scheduler.yield();
+      else await new Promise<void>(resolve => setTimeout(resolve, 0));
       deadline = performance.now() + 8;
     }
   }
