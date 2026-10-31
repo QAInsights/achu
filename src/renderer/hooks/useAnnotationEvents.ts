@@ -705,7 +705,7 @@ export function useAnnotationEvents({
   };
 
   const startDrag = (e: React.PointerEvent, ann: Annotation) => {
-    if (activeTool !== 'pointer') return;
+    if (activeTool !== 'pointer' || e.button > 0) return;
     e.stopPropagation();
     setSelectedId(ann.id);
     if (!containerRef.current) return;

@@ -107,6 +107,22 @@ beforeEach(() => {
 });
 
 describe('annotation rotation reset', () => {
+  it.each([true, false])('right-click does not drag or create an extra history entry (menu before release: %s)', menuBeforeRelease => {
+    const source: Annotation = { ...createTextAnnotation(), type: 'rect', rotation: 45 };
+    const { layer, onSaveHistory } = renderLayer([source], 'pointer');
+    const shape = layer.querySelector('g[transform]')!;
+    fireEvent.pointerDown(shape, { button: 2, buttons: 2, clientX: 200, clientY: 150, pointerId: 1 });
+    if (menuBeforeRelease) {
+      fireEvent.contextMenu(shape, { clientX: 200, clientY: 150 });
+      fireEvent.pointerMove(screen.getByText('Reset Rotation'), { buttons: 2, clientX: 350, clientY: 250, pointerId: 1 });
+    }
+    fireEvent.pointerUp(shape, { button: 2, clientX: 200, clientY: 150, pointerId: 1 });
+    if (!menuBeforeRelease) fireEvent.contextMenu(shape, { clientX: 200, clientY: 150 });
+    expect(onSaveHistory).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Rotation' }));
+    expect(onSaveHistory).toHaveBeenCalledExactlyOnceWith([{ ...source, rotation: 0 }]);
+  });
+
   it.each([45, -90, 360])('changes only rotation and supports Undo/Redo (%s degrees)', rotation => {
     const source = { ...createTextAnnotation('First\nSecond'), rotation, w: -0.3,
       fontItalic: true, gradientEnabled: true, textMinHeight: 0.1 };
