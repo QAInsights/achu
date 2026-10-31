@@ -16,6 +16,7 @@ const SHORTCUTS = [
   { label: 'Paste Annotation', keys: 'mod v paste annotation' },
   { label: 'Delete Annotation', keys: 'delete backspace annotation' },
   { label: 'Nudge Annotation', keys: 'arrow shift move nudge position 1px 10px' },
+  { label: 'Constrain Drawing', keys: 'shift constrain square circle angle 45 drawing' },
 ];
 
 const TOOLBAR_SHORTCUTS = [
@@ -29,7 +30,7 @@ const TOOLBAR_SHORTCUTS = [
 
 const SUPPORT_KEYWORDS = 'support project donate donation github repo repository buy coffee';
 
-registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy cut annotation nudge position' });
+registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy cut annotation nudge position constrain square angle 45 drawing' });
 registerSettingsSection({ tab: 'shortcuts', label: 'Support & Project', keywords: SUPPORT_KEYWORDS });
 
 export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery?: string }) {
@@ -67,6 +68,7 @@ export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery
                 {s.label === 'Paste Annotation' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>V</kbd></div>}
                 {s.label === 'Delete Annotation' && <div><kbd>Delete</kbd> or <kbd>Backspace</kbd></div>}
                 {s.label === 'Nudge Annotation' && <div><kbd>Arrow keys</kbd> 1px / <kbd>Shift</kbd> + <kbd>Arrow keys</kbd> 10px</div>}
+                {s.label === 'Constrain Drawing' && <div><kbd>Shift</kbd> while drawing</div>}
               </div>
               {i === filteredShortcuts.length - 1 && filteredToolbar.length > 0 && (
                 <div style={{ borderTop: '1px solid var(--border)', margin: '6px 0', paddingTop: '6px' }} />

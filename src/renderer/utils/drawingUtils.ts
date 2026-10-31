@@ -1,3 +1,26 @@
+import type { Annotation } from '../canvasRenderer';
+
+export function constrainDrawingDimensions(
+  type: Annotation['type'], w: number, h: number, dimensions: { width: number; height: number },
+): { w: number; h: number } | null {
+  const { width, height } = dimensions;
+  if (![width, height, w, h].every(Number.isFinite) || width <= 0 || height <= 0) return null;
+  const dx = w * width;
+  const dy = h * height;
+  if (type === 'line' || type === 'arrow') {
+    const angle = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4);
+    const length = Math.hypot(dx, dy);
+    const x = Math.cos(angle) * length;
+    const y = Math.sin(angle) * length;
+    return { w: Math.abs(x) < 1e-10 ? 0 : x / width, h: Math.abs(y) < 1e-10 ? 0 : y / height };
+  }
+  if (type === 'rect' || type === 'filled-rect' || type === 'circle' || type === 'filled-circle') {
+    const size = Math.max(Math.abs(dx), Math.abs(dy));
+    return { w: (dx < 0 ? -size : size) / width, h: (dy < 0 ? -size : size) / height };
+  }
+  return null;
+}
+
 export function getArrowAngle(w: number, h: number) {
   return Math.atan2(h, w);
 }
