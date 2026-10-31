@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Images, X } from 'lucide-react';
+import { imageSize } from 'image-size';
 import './StitchModal.css';
 import RangeControl from './RangeControl';
 import {
-  drawStitchedImages, estimateOverlap, overlapRange, stitchedHeight,
+  drawStitchedImages, estimateOverlap, overlapRange, stitchedHeight, validateStitchSourceDimensions,
   STITCH_MAX_IMAGES, STITCH_MAX_OUTPUT_HEIGHT, STITCH_MAX_OUTPUT_PIXELS,
-  STITCH_MAX_SOURCE_PIXELS, type StitchSample,
+  type StitchSample,
 } from '../utils/stitchUtils';
 
 interface LoadedScreenshot {
@@ -33,13 +34,27 @@ function sampleScreenshot(bitmap: ImageBitmap): StitchSample {
     data: context.getImageData(0, 0, canvas.width, canvas.height).data };
 }
 
-function alignScreenshots(images: LoadedScreenshot[]): Seam[] {
-  return images.slice(1).map((image, index) => {
-    const match = estimateOverlap(images[index].sample, image.sample);
-    const { min, max } = overlapRange(images[index].bitmap.height, image.bitmap.height);
-    const pixels = match.rows;
-    return { pixels: Math.max(min, Math.min(max, pixels)), confident: match.confident };
-  });
+type AlignmentCache = WeakMap<ImageBitmap, WeakMap<ImageBitmap, Seam>>;
+
+async function alignScreenshots(images: LoadedScreenshot[], cache: AlignmentCache, isCurrent: () => boolean): Promise<Seam[] | null> {
+  const seams: Seam[] = [];
+  for (let index = 1; index < images.length; index++) {
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    if (!isCurrent()) return null;
+    const previous = images[index - 1];
+    const image = images[index];
+    let pairs = cache.get(previous.bitmap);
+    if (!pairs) { pairs = new WeakMap(); cache.set(previous.bitmap, pairs); }
+    let seam = pairs.get(image.bitmap);
+    if (!seam) {
+      const match = estimateOverlap(previous.sample, image.sample);
+      const { min, max } = overlapRange(previous.bitmap.height, image.bitmap.height);
+      seam = { pixels: Math.max(min, Math.min(max, match.rows)), confident: match.confident };
+      pairs.set(image.bitmap, seam);
+    }
+    seams.push(seam);
+  }
+  return seams;
 }
 
 export default function StitchModal({ open, onClose, onImport }: {
@@ -53,6 +68,7 @@ export default function StitchModal({ open, onClose, onImport }: {
   const [error, setError] = useState('');
   const token = useRef(0);
   const resources = useRef<ImageBitmap[]>([]);
+  const alignmentCache = useRef<AlignmentCache>(new WeakMap());
   const previewRef = useRef<HTMLCanvasElement>(null);
   const seamRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -96,15 +112,26 @@ export default function StitchModal({ open, onClose, onImport }: {
     seams.forEach((seam, index) => {
       const sample = seamRefs.current[index];
       if (!sample) return;
-      sample.width = 320;
+      sample.width = Math.min(320, images[index].bitmap.width);
       sample.height = 72;
       const context = sample.getContext('2d');
       if (!context) return;
       const first = images[index].bitmap;
       const second = images[index + 1].bitmap;
-      context.drawImage(first, 0, first.height - seam.pixels, first.width, seam.pixels, 0, 0, 320, 72);
+      const width = sample.width;
+      const left = Math.floor((first.width - width) / 2);
+      if (seam.pixels === 0) {
+        const before = Math.min(36, first.height);
+        const after = Math.min(36, second.height);
+        context.drawImage(first, left, first.height - before, width, before, 0, 36 - before, width, before);
+        context.drawImage(second, left, 0, width, after, 0, 36, width, after);
+        return;
+      }
+      const before = Math.min(72, first.height);
+      const after = Math.min(72, seam.pixels);
+      context.drawImage(first, left, first.height - before, width, before, 0, 72 - before, width, before);
       context.globalAlpha = 0.5;
-      context.drawImage(second, 0, 0, second.width, seam.pixels, 0, 0, 320, 72);
+      context.drawImage(second, left, seam.pixels - after, width, after, 0, 72 - after, width, after);
       context.globalAlpha = 1;
     });
   }, [open, images, seams]);
@@ -124,11 +151,6 @@ export default function StitchModal({ open, onClose, onImport }: {
     const chosen = Array.from(files);
     if (!chosen.length) return;
     if (chosen.length < 2 || chosen.length > STITCH_MAX_IMAGES) {
-      token.current++;
-      resources.current.forEach(bitmap => bitmap.close());
-      resources.current = [];
-      setImages([]);
-      setSeams([]);
       setError(`Choose 2–${STITCH_MAX_IMAGES} screenshots in reading order.`);
       return;
     }
@@ -145,21 +167,23 @@ export default function StitchModal({ open, onClose, onImport }: {
         if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 8_000_000) {
           throw new Error('Choose PNG, JPEG or WebP images smaller than 8 MB each.');
         }
+        const metadata = imageSize(new Uint8Array(await file.arrayBuffer()));
+        if (!['png', 'jpg', 'webp'].includes(metadata.type ?? '')) throw new Error('Choose valid PNG, JPEG or WebP images.');
+        validateStitchSourceDimensions(metadata);
+        if (id !== token.current) break;
         const bitmap = await createImageBitmap(file);
         if (id !== token.current) { bitmap.close(); break; }
         resources.current.push(bitmap);
-        if (!bitmap.width || !bitmap.height || bitmap.width > 8192 || bitmap.height > 8192 ||
-            bitmap.height / bitmap.width > 12 || bitmap.width * bitmap.height > STITCH_MAX_SOURCE_PIXELS) {
-          throw new Error('Use screenshots up to 12 megapixels, 8192px per side and a 12:1 height-to-width ratio.');
-        }
+        validateStitchSourceDimensions(bitmap);
         if (loaded.length && bitmap.width !== loaded[0].bitmap.width) {
           throw new Error('Screenshots must have the same pixel width. Capture them at the same window size.');
         }
         loaded.push({ file, bitmap, sample: sampleScreenshot(bitmap) });
       }
-      if (id === token.current) {
+      const nextSeams = await alignScreenshots(loaded, alignmentCache.current, () => id === token.current);
+      if (id === token.current && nextSeams) {
         setImages(loaded);
-        setSeams(alignScreenshots(loaded));
+        setSeams(nextSeams);
       }
     } catch (cause) {
       if (id === token.current) {
@@ -172,12 +196,21 @@ export default function StitchModal({ open, onClose, onImport }: {
     }
   };
 
-  const reorder = (index: number, direction: number) => {
+  const reorder = async (index: number, direction: number) => {
+    if (busy) return;
     const ordered = [...images];
     [ordered[index], ordered[index + direction]] = [ordered[index + direction], ordered[index]];
-    setImages(ordered);
-    setSeams(alignScreenshots(ordered));
+    const id = ++token.current;
+    setBusy(true);
     setError('');
+    try {
+      const nextSeams = await alignScreenshots(ordered, alignmentCache.current, () => id === token.current);
+      if (id === token.current && nextSeams) { setImages(ordered); setSeams(nextSeams); }
+    } catch (cause) {
+      if (id === token.current) setError(cause instanceof Error ? cause.message : 'Could not align these screenshots.');
+    } finally {
+      if (id === token.current) setBusy(false);
+    }
   };
 
   const importImage = () => {
@@ -198,15 +231,21 @@ export default function StitchModal({ open, onClose, onImport }: {
     }
   };
 
+  const changeOverlap = (index: number, pixels: number) => {
+    const seam = { pixels, confident: false, adjusted: true };
+    alignmentCache.current.get(images[index].bitmap)?.set(images[index + 1].bitmap, seam);
+    setSeams(current => current.map((value, seamIndex) => seamIndex === index ? seam : value));
+  };
+
   return (
     <div className="stitch-overlay" role="presentation"
       onDragOver={event => { event.preventDefault(); event.stopPropagation(); }}
       onDragLeave={event => event.stopPropagation()}
       onDrop={event => { event.preventDefault(); event.stopPropagation(); if (!busy) void readFiles(event.dataTransfer.files); }}
       onPointerDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-      <section ref={dialogRef} tabIndex={-1} className="stitch-dialog" role="dialog" aria-modal="true" aria-busy={busy} aria-label="Stitch Screenshots" onKeyDown={event => {
+      <section ref={dialogRef} tabIndex={-1} className="stitch-dialog" role="dialog" aria-modal="true" aria-busy={busy} aria-label="Stitch Screenshots" onPaste={event => event.stopPropagation()} onKeyDown={event => {
         event.stopPropagation();
-        if (event.key === 'Escape' && !busy) { event.preventDefault(); onClose(); return; }
+        if (event.key === 'Escape') { event.preventDefault(); onClose(); return; }
         if (event.key !== 'Tab') return;
         const controls = event.currentTarget.querySelectorAll<HTMLElement>(':is(button, input):not(:disabled)');
         if (!controls.length) { event.preventDefault(); return; }
@@ -218,13 +257,13 @@ export default function StitchModal({ open, onClose, onImport }: {
         <header className="stitch-header">
           <div><p className="stitch-eyebrow">IMAGE WORKFLOW</p><h2><Images size={20} /> Stitch Screenshots</h2>
             <p>Combine a scrolling page into one image. Your screenshots stay on this device.</p></div>
-          <button ref={closeRef} type="button" className="btn btn-secondary" onClick={onClose} disabled={busy} aria-label="Close Stitch Screenshots"><X size={16} /></button>
+          <button ref={closeRef} type="button" className="btn btn-secondary" onClick={onClose} aria-label="Close Stitch Screenshots"><X size={16} /></button>
         </header>
         <label className="stitch-upload">Choose or drop 2–6 screenshots from top to bottom
           <input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={event => { void readFiles(event.target.files); event.target.value = ''; }} disabled={busy} />
           <span>PNG, JPEG or WebP · Same width · Up to 8 MB each</span>
         </label>
-        {busy && <p role="status">Reading screenshots locally…</p>}
+        {busy && <p role="status">Preparing screenshots locally…</p>}
         {error && <p className="stitch-error" role="alert">{error}</p>}
         {images.length >= 2 && (
           <div className="stitch-body">
@@ -232,17 +271,17 @@ export default function StitchModal({ open, onClose, onImport }: {
               {images.map((image, index) => (
                 <div key={image.file.name + index} className="stitch-row">
                   <div className="stitch-filename"><strong>{index + 1}. {image.file.name}</strong><span>{image.bitmap.width} × {image.bitmap.height}px</span></div>
-                  <button type="button" aria-label={`Move ${image.file.name} up`} title="Move up" disabled={index === 0} onClick={() => reorder(index, -1)}><ArrowUp size={16} /></button>
-                  <button type="button" aria-label={`Move ${image.file.name} down`} title="Move down" disabled={index === images.length - 1} onClick={() => reorder(index, 1)}><ArrowDown size={16} /></button>
+                  <button type="button" aria-label={`Move ${image.file.name} up`} title="Move up" disabled={busy || index === 0} onClick={() => void reorder(index, -1)}><ArrowUp size={16} /></button>
+                  <button type="button" aria-label={`Move ${image.file.name} down`} title="Move down" disabled={busy || index === images.length - 1} onClick={() => void reorder(index, 1)}><ArrowDown size={16} /></button>
                   {index > 0 && (() => {
                     const min = 0;
                     const max = Math.min(images[index - 1].bitmap.height, image.bitmap.height) - 1;
                     return <div className="stitch-seam">
-                      <RangeControl label={`Overlap before screenshot ${index + 1}`} min={min} max={max} value={seams[index - 1].pixels}
-                        onChange={pixels => setSeams(current => current.map((seam, seamIndex) => seamIndex === index - 1 ? { pixels, confident: false, adjusted: true } : seam))} onCommit={() => {}}>
+                      <RangeControl label={`Overlap before screenshot ${index + 1}`} min={min} max={max} value={seams[index - 1].pixels} disabled={busy}
+                        onChange={pixels => changeOverlap(index - 1, pixels)} onCommit={() => {}}>
                         <span>{seams[index - 1].confident ? 'Auto-aligned. Check the preview.' : seams[index - 1].adjusted ? 'Adjusted manually. Check the combined preview.' : 'Uncertain match. Adjust the overlap before importing.'}</span>
                       </RangeControl>
-                      <canvas ref={node => { seamRefs.current[index - 1] = node; }} aria-label={`Alignment preview for screenshot ${index + 1}`} role="img" />
+                      <canvas ref={node => { seamRefs.current[index - 1] = node; }} aria-label={`Center-crop alignment detail for screenshot ${index + 1}`} role="img" />
                     </div>;
                   })()}
                 </div>
@@ -253,7 +292,7 @@ export default function StitchModal({ open, onClose, onImport }: {
         )}
         <footer className="stitch-footer">
           <span>{images.length >= 2 ? `${images[0].bitmap.width} × ${outputHeight}px output` : 'Review every join before importing.'}</span>
-          <button type="button" className="btn btn-secondary" disabled={busy} onClick={onClose}>Cancel</button>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
           <button type="button" className="btn btn-primary" disabled={images.length < 2 || oversized || busy} onClick={importImage}>Import into editor</button>
         </footer>
         {oversized && <p className="stitch-error" role="alert">Combined image is too large. Increase overlap or use fewer screenshots.</p>}

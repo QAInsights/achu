@@ -15,6 +15,13 @@ export const STITCH_MAX_SOURCE_PIXELS = 12_000_000;
 export const STITCH_MAX_OUTPUT_PIXELS = 20_000_000;
 export const STITCH_MAX_OUTPUT_HEIGHT = 16_000;
 
+export function validateStitchSourceDimensions({ width, height }: { width: number; height: number }) {
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 3 || width > 8192 || height > 8192 ||
+      height / width > 12 || width * height > STITCH_MAX_SOURCE_PIXELS) {
+    throw new Error('Use screenshots at least 3px high and up to 12 megapixels, 8192px per side and a 12:1 height-to-width ratio.');
+  }
+}
+
 export function overlapRange(firstHeight: number, secondHeight: number) {
   const shortest = Math.min(firstHeight, secondHeight);
   return { min: Math.max(1, Math.floor(shortest * 0.08)), max: Math.max(1, Math.floor(shortest * 0.9)) };
@@ -29,7 +36,11 @@ export function estimateOverlap(first: StitchSample, second: StitchSample): Over
   for (let rows = min; rows <= max; rows++) {
     let sum = 0;
     let count = 0;
-    for (let y = 0; y < rows; y += Math.max(1, Math.floor(rows / 32))) {
+    const sampleRows = Math.min(rows, 96);
+    for (let index = 0; index < sampleRows; index++) {
+      // Irregular sampling avoids repeatedly hitting the gaps between text lines.
+      const jitter = rows <= sampleRows ? 0 : (index * 0.61803398875) % 1;
+      const y = Math.floor((index + jitter) * rows / sampleRows);
       for (let x = 0; x < first.width; x += 2) {
         const a = ((first.height - rows + y) * first.width + x) * 4;
         const b = (y * second.width + x) * 4;
@@ -45,7 +56,7 @@ export function estimateOverlap(first: StitchSample, second: StitchSample): Over
   const best = scores[0];
   const alternative = scores.find(result => Math.abs(result.rows - best.rows) > 2);
   const confident = best.score < 14 && (!alternative || alternative.score > best.score * 1.35 + 2);
-  return { rows: confident ? best.rows : Math.round((min + max) / 2), score: best.score, confident };
+  return { rows: best.rows, score: best.score, confident };
 }
 
 export function stitchedHeight(heights: number[], overlaps: number[]) {

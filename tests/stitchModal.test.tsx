@@ -1,6 +1,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import StitchModal from '../src/renderer/components/StitchModal';
+import sharp from 'sharp';
 
 type FakeBitmap = ImageBitmap & { fileName: string };
 
@@ -10,8 +11,23 @@ const originalCreateImageBitmap = globalThis.createImageBitmap;
 const bitmaps: FakeBitmap[] = [];
 const draws: Array<{ width: number; height: number; args: unknown[] }> = [];
 
+function dimensions(name: string) {
+  return {
+    width: name.startsWith('narrow') ? 99 : name.startsWith('large') ? 5000 : name.startsWith('output') ? 4000 : 100,
+    height: name.startsWith('short') ? 2 : name.startsWith('large') || name.startsWith('output') ? 3000 : 100,
+  };
+}
+
 function file(name: string) {
-  return new File([new Uint8Array(200)], name, { type: 'image/png' });
+  const size = dimensions(name);
+  const bytes = new Uint8Array(33);
+  bytes.set([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(16, size.width);
+  view.setUint32(20, size.height);
+  const result = new File([bytes], name, { type: 'image/png' });
+  Object.defineProperty(result, 'arrayBuffer', { value: async () => bytes.buffer });
+  return result;
 }
 
 function pixels(name: string, width: number, height: number) {
@@ -32,8 +48,7 @@ beforeEach(() => {
   draws.length = 0;
   globalThis.createImageBitmap = vi.fn(async (source: ImageBitmapSource) => {
     const input = source as File;
-    const bitmap = { width: input.name.startsWith('narrow') ? 99 : input.name.startsWith('large') ? 5000 : input.name.startsWith('output') ? 4000 : 100,
-      height: input.name.startsWith('large') || input.name.startsWith('output') ? 3000 : 100, fileName: input.name,
+    const bitmap = { ...dimensions(input.name), fileName: input.name,
       close: vi.fn() } as unknown as FakeBitmap;
     bitmaps.push(bitmap);
     return bitmap;
@@ -87,8 +102,34 @@ describe('StitchModal', () => {
     await choose('top.png', 'second.png');
     await screen.findByText(/Auto-aligned/);
     fireEvent.click(screen.getByRole('button', { name: 'Move top.png down' }));
-    expect(screen.getByText(/1\. second.png/)).toBeInTheDocument();
+    expect(await screen.findByText(/1\. second.png/)).toBeInTheDocument();
     expect(screen.getByText(/2\. top.png/)).toBeInTheDocument();
+  });
+
+  it.each(['png', 'jpeg', 'webp'] as const)('accepts real %s metadata before decoding', async format => {
+    const bytes = await sharp({ create: { width: 100, height: 100, channels: 3, background: '#445566' } }).toFormat(format).toBuffer();
+    const sources = ['top', 'second'].map(name => {
+      const input = new File([new Uint8Array(bytes)], `${name}.${format}`, { type: `image/${format}` });
+      Object.defineProperty(input, 'arrayBuffer', { value: async () => new Uint8Array(bytes).buffer });
+      return input;
+    });
+    render(<StitchModal open onImport={vi.fn()} onClose={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(/Choose or drop/), { target: { files: sources } });
+    expect(await screen.findByText(/Auto-aligned/)).toBeInTheDocument();
+    expect(globalThis.createImageBitmap).toHaveBeenCalledTimes(2);
+  });
+
+  it('preserves manual alignment when returning to a previously ordered image pair', async () => {
+    render(<StitchModal open onImport={vi.fn()} onClose={vi.fn()} />);
+    await choose('top.png', 'second.png');
+    await screen.findByText(/Auto-aligned/);
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Move top.png down' }));
+    await screen.findByText(/1\. second.png/);
+    fireEvent.click(screen.getByRole('button', { name: 'Move top.png up' }));
+    await screen.findByText(/1\. top.png/);
+    expect(screen.getByRole('slider')).toHaveValue('30');
+    expect(screen.getByText(/Adjusted manually/)).toBeInTheDocument();
   });
 
   it('contains keyboard focus and shortcuts and restores the launching control', () => {
@@ -112,6 +153,11 @@ describe('StitchModal', () => {
     fireEvent.keyDown(close, { key: '2' });
     expect(workspaceShortcut).not.toHaveBeenCalled();
     window.removeEventListener('keydown', workspaceShortcut);
+    const paste = vi.fn();
+    window.addEventListener('paste', paste);
+    fireEvent.paste(close);
+    expect(paste).not.toHaveBeenCalled();
+    window.removeEventListener('paste', paste);
     fireEvent.keyDown(close, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledOnce();
     rerender(<><button>Launch stitch</button><StitchModal open={false} onImport={onImport} onClose={onClose} /></>);
@@ -163,6 +209,7 @@ describe('StitchModal', () => {
     await choose('top.png', 'large.png');
     expect(await screen.findByRole('alert')).toHaveTextContent('12 megapixels');
     expect(screen.getByRole('button', { name: 'Import into editor' })).toBeDisabled();
+    expect(globalThis.createImageBitmap).toHaveBeenCalledTimes(1);
     fireEvent.change(screen.getByLabelText(/Choose or drop/), { target: { files: [file('top.png'), new File(['<svg/>'], 'vector.svg', { type: 'image/svg+xml' })] } });
     expect(await screen.findByRole('alert')).toHaveTextContent('PNG, JPEG or WebP');
   });
@@ -171,8 +218,12 @@ describe('StitchModal', () => {
     let finishDecode!: (value: ImageBitmap) => void;
     globalThis.createImageBitmap = vi.fn(() => new Promise<ImageBitmap>(resolve => { finishDecode = resolve; })) as typeof createImageBitmap;
     const onImport = vi.fn();
-    const { rerender } = render(<StitchModal open onImport={onImport} onClose={vi.fn()} />);
+    const onClose = vi.fn();
+    const { rerender } = render(<StitchModal open onImport={onImport} onClose={onClose} />);
     await choose('top.png', 'second.png');
+    await waitFor(() => expect(globalThis.createImageBitmap).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onClose).toHaveBeenCalledOnce();
     rerender(<StitchModal open={false} onImport={onImport} onClose={vi.fn()} />);
     const bitmap = { width: 100, height: 100, close: vi.fn() } as unknown as ImageBitmap;
     finishDecode(bitmap);
@@ -201,15 +252,24 @@ describe('StitchModal', () => {
     expect(bitmaps.every(bitmap => vi.mocked(bitmap.close).mock.calls.length === 1)).toBe(true);
   });
 
-  it('rejects too many sources, preserves no partial import, and releases bitmaps on close', async () => {
+  it('keeps the current alignment after invalid selection counts and releases bitmaps on close', async () => {
     const { rerender } = render(<StitchModal open onImport={vi.fn()} onClose={vi.fn()} />);
     await choose('top.png', 'second.png');
     await screen.findByText(/Auto-aligned/);
     await choose('one.png');
     expect(screen.getByRole('alert')).toHaveTextContent('Choose 2–6');
-    expect(screen.getByRole('button', { name: 'Import into editor' })).toBeDisabled();
-    await choose('top.png', 'second.png');
+    expect(screen.getByRole('slider')).toHaveValue('50');
+    expect(screen.getByRole('button', { name: 'Import into editor' })).toBeEnabled();
     rerender(<StitchModal open={false} onImport={vi.fn()} onClose={vi.fn()} />);
     await waitFor(() => expect(bitmaps.every(bitmap => vi.mocked(bitmap.close).mock.calls.length === 1)).toBe(true));
+  });
+
+  it('rejects short sources without publishing images with missing seams or crashing', async () => {
+    render(<StitchModal open onImport={vi.fn()} onClose={vi.fn()} />);
+    await choose('short-a.png', 'short-b.png');
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Import into editor' })).toBeDisabled();
+    expect(bitmaps.every(bitmap => vi.mocked(bitmap.close).mock.calls.length === 1)).toBe(true);
   });
 });
