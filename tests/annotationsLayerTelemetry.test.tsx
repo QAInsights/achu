@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import AnnotationsLayer from '../src/renderer/AnnotationsLayer';
+import { useHistory } from '../src/renderer/hooks/useHistory';
 import type { Annotation } from '../src/renderer/canvasRenderer';
 
 const mockTrackFeature = vi.hoisted(() => vi.fn());
@@ -46,7 +47,10 @@ function renderLayer(initialAnnotations: Annotation[] = [], activeTool: 'pointer
   const onSaveHistory = vi.fn();
   function Harness() {
     const [annotations, setAnnotations] = useState(initialAnnotations);
+    const history = useHistory(config => setAnnotations(config.annotations ?? []));
+    useEffect(() => { history.pushHistory({ annotations: initialAnnotations }); }, []);
     return (
+      <>
       <AnnotationsLayer
         annotations={annotations}
         setAnnotations={setAnnotations}
@@ -55,9 +59,15 @@ function renderLayer(initialAnnotations: Annotation[] = [], activeTool: 'pointer
         color="#ff0000"
         setAnnotationColor={vi.fn()}
         strokeWidth={4}
-        onSaveHistory={onSaveHistory}
+        onSaveHistory={updated => {
+          onSaveHistory(updated);
+          history.pushHistory({ annotations: updated });
+        }}
         customPrompt={vi.fn().mockResolvedValue(null)}
       />
+      <button onClick={history.handleUndo}>Undo</button>
+      <button onClick={history.handleRedo}>Redo</button>
+      </>
     );
   }
 
@@ -94,6 +104,74 @@ function beginTextAnnotation(layer: HTMLDivElement) {
 beforeEach(() => {
   mockTrackFeature.mockClear();
   mockContext.value = contextDefaults;
+});
+
+describe('annotation rotation reset', () => {
+  it.each(Array.from({ length: 9 }, (_, index) => index))('right-clicking handle %s preserves geometry and one-step history', index => {
+    const source: Annotation = { ...createTextAnnotation(), type: 'rect', rotation: 45 };
+    const { layer, onSaveHistory } = renderLayer([source], 'pointer');
+    fireEvent.contextMenu(layer.querySelector('g[transform]')!);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    const handle = layer.querySelectorAll('rect[style*="resize"], circle[style*="grab"]')[index];
+    expect(handle).toBeDefined();
+    fireEvent.pointerDown(handle, { button: 2, buttons: 2, clientX: 200, clientY: 150, pointerId: 1 });
+    fireEvent.contextMenu(handle, { clientX: 200, clientY: 150 });
+    fireEvent.pointerMove(screen.getByText('Reset Rotation'), { buttons: 2, clientX: 350, clientY: 250, pointerId: 1 });
+    fireEvent.pointerUp(handle, { button: 2, clientX: 350, clientY: 250, pointerId: 1 });
+    expect(onSaveHistory).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Rotation' }));
+    expect(onSaveHistory).toHaveBeenCalledExactlyOnceWith([{ ...source, rotation: 0 }]);
+  });
+
+  it.each([true, false])('right-click does not drag or create an extra history entry (menu before release: %s)', menuBeforeRelease => {
+    const source: Annotation = { ...createTextAnnotation(), type: 'rect', rotation: 45 };
+    const { layer, onSaveHistory } = renderLayer([source], 'pointer');
+    const shape = layer.querySelector('g[transform]')!;
+    fireEvent.pointerDown(shape, { button: 2, buttons: 2, clientX: 200, clientY: 150, pointerId: 1 });
+    if (menuBeforeRelease) {
+      fireEvent.contextMenu(shape, { clientX: 200, clientY: 150 });
+      fireEvent.pointerMove(screen.getByText('Reset Rotation'), { buttons: 2, clientX: 350, clientY: 250, pointerId: 1 });
+    }
+    fireEvent.pointerUp(shape, { button: 2, clientX: 200, clientY: 150, pointerId: 1 });
+    if (!menuBeforeRelease) fireEvent.contextMenu(shape, { clientX: 200, clientY: 150 });
+    expect(onSaveHistory).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Rotation' }));
+    expect(onSaveHistory).toHaveBeenCalledExactlyOnceWith([{ ...source, rotation: 0 }]);
+  });
+
+  it.each([45, -90, 360])('changes only rotation and supports Undo/Redo (%s degrees)', rotation => {
+    const source = { ...createTextAnnotation('First\nSecond'), rotation, w: -0.3,
+      fontItalic: true, gradientEnabled: true, textMinHeight: 0.1 };
+    const other = { ...createTextAnnotation('Other'), id: 'other' };
+    const { layer, onSaveHistory } = renderLayer([source, other], 'pointer');
+    fireEvent.contextMenu(screen.getByText('First'), { clientX: 100, clientY: 120 });
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Rotation' }));
+    expect(onSaveHistory).toHaveBeenCalledExactlyOnceWith([{ ...source, rotation: 0 }, other]);
+    expect(screen.queryByText('Reset Rotation')).not.toBeInTheDocument();
+    expect(layer.querySelector('g[transform]')).toHaveAttribute('transform', expect.stringContaining('rotate(0)'));
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(layer.querySelector('g[transform]')).toHaveAttribute('transform', expect.stringContaining(`rotate(${rotation})`));
+    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(layer.querySelector('g[transform]')).toHaveAttribute('transform', expect.stringContaining('rotate(0)'));
+  });
+
+  it.each([undefined, 0])('leaves already-straight annotations and history unchanged (%s)', rotation => {
+    const { onSaveHistory } = renderLayer([{ ...createTextAnnotation('Straight'), rotation }], 'pointer');
+    fireEvent.contextMenu(screen.getByText('Straight'));
+    const reset = screen.getByRole('button', { name: 'Reset Rotation' });
+    expect(reset).toBeDisabled();
+    fireEvent.click(reset);
+    expect(onSaveHistory).not.toHaveBeenCalled();
+  });
+
+  it.each(['rect', 'filled-rect', 'circle', 'filled-circle', 'line', 'arrow', 'pen', 'emoji'] as const)('straightens a %s without altering its data', type => {
+    const source: Annotation = { ...createTextAnnotation('Caption'), type, rotation: 70,
+      w: -0.25, h: -0.1, points: [{ x: 0, y: 0 }, { x: 1, y: 1 }] };
+    const { layer, onSaveHistory } = renderLayer([source], 'pointer');
+    fireEvent.contextMenu(layer.querySelector('g[transform]')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Rotation' }));
+    expect(onSaveHistory).toHaveBeenCalledExactlyOnceWith([{ ...source, rotation: 0 }]);
+  });
 });
 
 describe('AnnotationsLayer text telemetry', () => {

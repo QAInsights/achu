@@ -114,6 +114,8 @@ For memory safety, individual images are limited to 8 MB / 12 megapixels, 8192px
 | **`T`** / **`P`** / **`8`** / **`9`** | Text / Freehand Pen Tool |
 | **`E`** / **`0`** | Add Emoji Tool |
 
+Right-click an annotation and choose **Reset Rotation** to straighten it without changing its position, size, or styling. Undo restores its previous rotation.
+
 ---
 
 ## 🚀 Getting Started
