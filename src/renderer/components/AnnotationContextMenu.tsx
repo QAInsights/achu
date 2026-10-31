@@ -95,7 +95,7 @@ export default function AnnotationContextMenu({
     onClose();
   };
 
-  const runClipboard = (fn: () => void) => {
+  const runAction = (fn: () => void) => {
     fn();
     onClose();
   };
@@ -113,7 +113,7 @@ export default function AnnotationContextMenu({
     >
       <button
         className="context-menu-item"
-        onClick={() => runClipboard(onCut)}
+        onClick={() => runAction(onCut)}
         title={`Cut (${mod}+X)`}
       >
         <Scissors className="w-4 h-4" />
@@ -123,7 +123,7 @@ export default function AnnotationContextMenu({
 
       <button
         className="context-menu-item"
-        onClick={() => runClipboard(onCopy)}
+        onClick={() => runAction(onCopy)}
         title={`Copy (${mod}+C)`}
       >
         <Copy className="w-4 h-4" />
@@ -133,7 +133,7 @@ export default function AnnotationContextMenu({
 
       <button
         className="context-menu-item"
-        onClick={() => runClipboard(onPaste)}
+        onClick={() => runAction(onPaste)}
         title={canPaste ? `Paste (${mod}+V)` : 'Nothing to paste'}
         disabled={!canPaste}
       >
@@ -146,7 +146,7 @@ export default function AnnotationContextMenu({
 
       <button
         className="context-menu-item"
-        onClick={() => runClipboard(onResetRotation)}
+        onClick={() => runAction(onResetRotation)}
         title="Reset Rotation"
         disabled={!canResetRotation}
       >
