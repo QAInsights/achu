@@ -56,6 +56,7 @@ export default function StitchModal({ open, onClose, onImport }: {
   const previewRef = useRef<HTMLCanvasElement>(null);
   const seamRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -109,13 +110,8 @@ export default function StitchModal({ open, onClose, onImport }: {
   }, [open, images, seams]);
 
   useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !busy) onClose();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open, busy, onClose]);
+    if (open && busy) dialogRef.current?.focus();
+  }, [open, busy]);
 
   if (!open) return null;
 
@@ -208,13 +204,16 @@ export default function StitchModal({ open, onClose, onImport }: {
       onDragLeave={event => event.stopPropagation()}
       onDrop={event => { event.preventDefault(); event.stopPropagation(); if (!busy) void readFiles(event.dataTransfer.files); }}
       onPointerDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-      <section className="stitch-dialog" role="dialog" aria-modal="true" aria-label="Stitch Screenshots" onKeyDown={event => {
+      <section ref={dialogRef} tabIndex={-1} className="stitch-dialog" role="dialog" aria-modal="true" aria-busy={busy} aria-label="Stitch Screenshots" onKeyDown={event => {
+        event.stopPropagation();
+        if (event.key === 'Escape' && !busy) { event.preventDefault(); onClose(); return; }
         if (event.key !== 'Tab') return;
-        const controls = event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled)');
+        const controls = event.currentTarget.querySelectorAll<HTMLElement>(':is(button, input):not(:disabled)');
+        if (!controls.length) { event.preventDefault(); return; }
         const first = controls[0];
         const last = controls[controls.length - 1];
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && (document.activeElement === last || document.activeElement === event.currentTarget)) { event.preventDefault(); first?.focus(); }
       }}>
         <header className="stitch-header">
           <div><p className="stitch-eyebrow">IMAGE WORKFLOW</p><h2><Images size={20} /> Stitch Screenshots</h2>

@@ -91,6 +91,33 @@ describe('StitchModal', () => {
     expect(screen.getByText(/2\. top.png/)).toBeInTheDocument();
   });
 
+  it('contains keyboard focus and shortcuts and restores the launching control', () => {
+    const onClose = vi.fn();
+    const onImport = vi.fn();
+    const { rerender } = render(<><button>Launch stitch</button><StitchModal open={false} onImport={onImport} onClose={onClose} /></>);
+    const launcher = screen.getByRole('button', { name: 'Launch stitch' });
+    launcher.focus();
+    rerender(<><button>Launch stitch</button><StitchModal open onImport={onImport} onClose={onClose} /></>);
+    const close = screen.getByRole('button', { name: 'Close Stitch Screenshots' });
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    expect(close).toHaveFocus();
+    fireEvent.keyDown(close, { key: 'Tab', shiftKey: true });
+    expect(cancel).toHaveFocus();
+    fireEvent.keyDown(cancel, { key: 'Tab' });
+    expect(close).toHaveFocus();
+    const workspaceShortcut = vi.fn();
+    window.addEventListener('keydown', workspaceShortcut);
+    fireEvent.keyDown(close, { key: 'n', ctrlKey: true });
+    fireEvent.keyDown(close, { key: 's', ctrlKey: true });
+    fireEvent.keyDown(close, { key: '2' });
+    expect(workspaceShortcut).not.toHaveBeenCalled();
+    window.removeEventListener('keydown', workspaceShortcut);
+    fireEvent.keyDown(close, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledOnce();
+    rerender(<><button>Launch stitch</button><StitchModal open={false} onImport={onImport} onClose={onClose} /></>);
+    expect(launcher).toHaveFocus();
+  });
+
   it('allows a manual join with zero overlap or near-total overlap', async () => {
     render(<StitchModal open onImport={vi.fn()} onClose={vi.fn()} />);
     await choose('top.png', 'second.png');
