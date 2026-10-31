@@ -132,6 +132,18 @@ describe('StitchModal', () => {
     expect(screen.getByText(/Adjusted manually/)).toBeInTheDocument();
   });
 
+  it.each([0, 12])('gives a readable error for a damaged %i-byte image before decoding', async size => {
+    const bytes = new Uint8Array(size).fill(65);
+    const damaged = new File([bytes], 'damaged.png', { type: 'image/png' });
+    Object.defineProperty(damaged, 'arrayBuffer', { value: async () => bytes.buffer });
+    render(<StitchModal open onImport={vi.fn()} onClose={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(/Choose or drop/), { target: { files: [file('top.png'), damaged] } });
+    expect(await screen.findByRole('alert')).toHaveTextContent('Choose valid PNG, JPEG or WebP images.');
+    expect(globalThis.createImageBitmap).toHaveBeenCalledOnce();
+    bitmaps.forEach(bitmap => expect(bitmap.close).toHaveBeenCalledOnce());
+    expect(screen.getByRole('button', { name: 'Import into editor' })).toBeDisabled();
+  });
+
   it('contains keyboard focus and shortcuts and restores the launching control', () => {
     const onClose = vi.fn();
     const onImport = vi.fn();

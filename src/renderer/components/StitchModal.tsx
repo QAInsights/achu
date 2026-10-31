@@ -167,7 +167,12 @@ export default function StitchModal({ open, onClose, onImport }: {
         if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 8_000_000) {
           throw new Error('Choose PNG, JPEG or WebP images smaller than 8 MB each.');
         }
-        const metadata = imageSize(new Uint8Array(await file.arrayBuffer()));
+        let metadata: ReturnType<typeof imageSize>;
+        try {
+          metadata = imageSize(new Uint8Array(await file.arrayBuffer()));
+        } catch {
+          throw new Error('Choose valid PNG, JPEG or WebP images.');
+        }
         if (!['png', 'jpg', 'webp'].includes(metadata.type ?? '')) throw new Error('Choose valid PNG, JPEG or WebP images.');
         validateStitchSourceDimensions(metadata);
         if (id !== token.current) break;
