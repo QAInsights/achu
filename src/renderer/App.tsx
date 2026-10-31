@@ -30,7 +30,7 @@ function AppContent() {
     observer.observe(workspaceRef.current);
     return () => observer.disconnect();
   }, [sidebarVisible, secondarySidebarVisible, setSecondarySidebarVisible]);
-  const { galleryVisible } = useGalleryContext();
+  const { galleryVisible, closeGallery } = useGalleryContext();
   const isFrameless = window.snapFrameAPI && (window.snapFrameAPI.platform === 'win32' || window.snapFrameAPI.platform === 'darwin');
   const platformClass = window.snapFrameAPI ? `platform-${window.snapFrameAPI.platform}` : '';
   const collapsedClass = (!sidebarVisible && !secondarySidebarVisible) ? 'sidebar-collapsed' : '';
@@ -65,7 +65,7 @@ function AppContent() {
       <SettingsModal />
       <HelpModal />
       <BurstPackModal />
-      <StitchModal open={stitchOpen} onClose={() => setStitchOpen(false)} onImport={onImageLoaded} />
+      <StitchModal open={stitchOpen} onClose={() => setStitchOpen(false)} onImport={src => { onImageLoaded(src); closeGallery(); }} />
       <OnboardingTour />
       <ShareAchuPrompt open={shareAchuPromptOpen} onClose={() => setShareAchuPromptOpen(false)} />
       <input
