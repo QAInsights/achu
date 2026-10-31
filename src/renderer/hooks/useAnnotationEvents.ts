@@ -733,6 +733,7 @@ export function useAnnotationEvents({
   };
 
   const startResize = (e: React.PointerEvent, ann: Annotation, handle: string) => {
+    if (e.button > 0) return;
     e.stopPropagation();
     setSelectedId(ann.id);
     if (!containerRef.current) return;

@@ -107,6 +107,22 @@ beforeEach(() => {
 });
 
 describe('annotation rotation reset', () => {
+  it.each(Array.from({ length: 9 }, (_, index) => index))('right-clicking handle %s preserves geometry and one-step history', index => {
+    const source: Annotation = { ...createTextAnnotation(), type: 'rect', rotation: 45 };
+    const { layer, onSaveHistory } = renderLayer([source], 'pointer');
+    fireEvent.contextMenu(layer.querySelector('g[transform]')!);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    const handle = layer.querySelectorAll('rect[style*="resize"], circle[style*="grab"]')[index];
+    expect(handle).toBeDefined();
+    fireEvent.pointerDown(handle, { button: 2, buttons: 2, clientX: 200, clientY: 150, pointerId: 1 });
+    fireEvent.contextMenu(handle, { clientX: 200, clientY: 150 });
+    fireEvent.pointerMove(screen.getByText('Reset Rotation'), { buttons: 2, clientX: 350, clientY: 250, pointerId: 1 });
+    fireEvent.pointerUp(handle, { button: 2, clientX: 350, clientY: 250, pointerId: 1 });
+    expect(onSaveHistory).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Rotation' }));
+    expect(onSaveHistory).toHaveBeenCalledExactlyOnceWith([{ ...source, rotation: 0 }]);
+  });
+
   it.each([true, false])('right-click does not drag or create an extra history entry (menu before release: %s)', menuBeforeRelease => {
     const source: Annotation = { ...createTextAnnotation(), type: 'rect', rotation: 45 };
     const { layer, onSaveHistory } = renderLayer([source], 'pointer');
