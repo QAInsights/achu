@@ -27,12 +27,16 @@ export function overlapRange(firstHeight: number, secondHeight: number) {
   return { min: Math.max(1, Math.floor(shortest * 0.08)), max: Math.max(1, Math.floor(shortest * 0.9)) };
 }
 
-export function estimateOverlap(first: StitchSample, second: StitchSample): OverlapEstimate {
+interface OverlapScore {
+  rows: number;
+  score: number;
+}
+
+function* scoreOverlaps(first: StitchSample, second: StitchSample) {
   if (first.width !== second.width || first.width < 1 || Math.min(first.height, second.height) < 3) {
     throw new Error('Screenshots must have matching widths and enough image content.');
   }
   const { min, max } = overlapRange(first.height, second.height);
-  const scores: { rows: number; score: number }[] = [];
   for (let rows = min; rows <= max; rows++) {
     let sum = 0;
     let count = 0;
@@ -50,13 +54,34 @@ export function estimateOverlap(first: StitchSample, second: StitchSample): Over
         count += 3;
       }
     }
-    scores.push({ rows, score: sum / count });
+    yield { rows, score: sum / count };
   }
+}
+
+function selectOverlap(scores: OverlapScore[]): OverlapEstimate {
   scores.sort((a, b) => a.score - b.score);
   const best = scores[0];
   const alternative = scores.find(result => Math.abs(result.rows - best.rows) > 2);
   const confident = best.score < 14 && (!alternative || alternative.score > best.score * 1.35 + 2);
   return { rows: best.rows, score: best.score, confident };
+}
+
+export function estimateOverlap(first: StitchSample, second: StitchSample): OverlapEstimate {
+  return selectOverlap([...scoreOverlaps(first, second)]);
+}
+
+export async function estimateOverlapAsync(first: StitchSample, second: StitchSample, isCurrent: () => boolean): Promise<OverlapEstimate | null> {
+  const scores: OverlapScore[] = [];
+  let deadline = performance.now() + 8;
+  for (const score of scoreOverlaps(first, second)) {
+    if (!isCurrent()) return null;
+    scores.push(score);
+    if (performance.now() >= deadline) {
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+      deadline = performance.now() + 8;
+    }
+  }
+  return isCurrent() ? selectOverlap(scores) : null;
 }
 
 export function stitchedHeight(heights: number[], overlaps: number[]) {

@@ -4,7 +4,7 @@ import { imageSize } from 'image-size';
 import './StitchModal.css';
 import RangeControl from './RangeControl';
 import {
-  drawStitchedImages, estimateOverlap, overlapRange, stitchedHeight, validateStitchSourceDimensions,
+  drawStitchedImages, estimateOverlapAsync, overlapRange, stitchedHeight, validateStitchSourceDimensions,
   STITCH_MAX_IMAGES, STITCH_MAX_OUTPUT_HEIGHT, STITCH_MAX_OUTPUT_PIXELS,
   type StitchSample,
 } from '../utils/stitchUtils';
@@ -47,7 +47,8 @@ async function alignScreenshots(images: LoadedScreenshot[], cache: AlignmentCach
     if (!pairs) { pairs = new WeakMap(); cache.set(previous.bitmap, pairs); }
     let seam = pairs.get(image.bitmap);
     if (!seam) {
-      const match = estimateOverlap(previous.sample, image.sample);
+      const match = await estimateOverlapAsync(previous.sample, image.sample, isCurrent);
+      if (!match) return null;
       const { min, max } = overlapRange(previous.bitmap.height, image.bitmap.height);
       seam = { pixels: Math.max(min, Math.min(max, match.rows)), confident: match.confident };
       pairs.set(image.bitmap, seam);

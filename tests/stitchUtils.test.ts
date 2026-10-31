@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { drawStitchedImages, estimateOverlap, overlapRange, stitchedHeight, type StitchSample } from '../src/renderer/utils/stitchUtils';
+import { drawStitchedImages, estimateOverlap, estimateOverlapAsync, overlapRange, stitchedHeight, type StitchSample } from '../src/renderer/utils/stitchUtils';
 
 function screenshot(start: number, rows = 65, width = 24): StitchSample {
   const data = new Uint8ClampedArray(rows * width * 4);
@@ -31,6 +31,29 @@ function crop(page: { width: number; data: Uint8ClampedArray }, top: number, hei
 }
 
 describe('screenshot stitching', () => {
+  it('uses the same overlap scoring for interactive and synchronous matching', async () => {
+    const first = screenshot(0);
+    const second = screenshot(35);
+    expect(await estimateOverlapAsync(first, second, () => true)).toEqual(estimateOverlap(first, second));
+  });
+
+  it('yields during a single pair so cancellation can stop the remaining candidates', async () => {
+    vi.useFakeTimers();
+    let now = 0;
+    const clock = vi.spyOn(performance, 'now').mockImplementation(() => now += 10);
+    try {
+      let current = true;
+      const pending = estimateOverlapAsync(screenshot(0), screenshot(35), () => current);
+      expect(vi.getTimerCount()).toBe(1);
+      current = false;
+      await vi.runAllTimersAsync();
+      expect(await pending).toBeNull();
+    } finally {
+      clock.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
   it.each([8, 20, 40, 56])('recognizes an exact %s-row overlap', rows => {
     const first = screenshot(0);
     const second = screenshot(65 - rows);
