@@ -17,6 +17,7 @@ interface LoadedScreenshot {
 interface Seam {
   pixels: number;
   confident: boolean;
+  adjusted?: boolean;
 }
 
 const SAMPLE_WIDTH = 128;
@@ -235,11 +236,12 @@ export default function StitchModal({ open, onClose, onImport }: {
                   <button type="button" aria-label={`Move ${image.file.name} up`} title="Move up" disabled={index === 0} onClick={() => reorder(index, -1)}><ArrowUp size={16} /></button>
                   <button type="button" aria-label={`Move ${image.file.name} down`} title="Move down" disabled={index === images.length - 1} onClick={() => reorder(index, 1)}><ArrowDown size={16} /></button>
                   {index > 0 && (() => {
-                    const { min, max } = overlapRange(images[index - 1].bitmap.height, image.bitmap.height);
+                    const min = 0;
+                    const max = Math.min(images[index - 1].bitmap.height, image.bitmap.height) - 1;
                     return <div className="stitch-seam">
                       <RangeControl label={`Overlap before screenshot ${index + 1}`} min={min} max={max} value={seams[index - 1].pixels}
-                        onChange={pixels => setSeams(current => current.map((seam, seamIndex) => seamIndex === index - 1 ? { pixels, confident: false } : seam))} onCommit={() => {}}>
-                        <span>{seams[index - 1].confident ? 'Auto-aligned. Check the preview.' : 'Review this join and adjust the overlap if needed.'}</span>
+                        onChange={pixels => setSeams(current => current.map((seam, seamIndex) => seamIndex === index - 1 ? { pixels, confident: false, adjusted: true } : seam))} onCommit={() => {}}>
+                        <span>{seams[index - 1].confident ? 'Auto-aligned. Check the preview.' : seams[index - 1].adjusted ? 'Adjusted manually. Check the combined preview.' : 'Uncertain match. Adjust the overlap before importing.'}</span>
                       </RangeControl>
                       <canvas ref={node => { seamRefs.current[index - 1] = node; }} aria-label={`Alignment preview for screenshot ${index + 1}`} role="img" />
                     </div>;

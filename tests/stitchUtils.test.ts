@@ -27,6 +27,12 @@ describe('screenshot stitching', () => {
     expect(estimateOverlap(screenshot(0), screenshot(150)).confident).toBe(false);
   });
 
+  it('tolerates small compression differences in an otherwise matching region', () => {
+    const second = screenshot(35);
+    for (let i = 0; i < second.data.length; i++) if (i % 4 !== 3) second.data[i] += i % 3 - 1;
+    expect(estimateOverlap(screenshot(0), second)).toMatchObject({ rows: 30, confident: true });
+  });
+
   it('rejects mismatched widths and samples too short to align', () => {
     expect(() => estimateOverlap(screenshot(0), screenshot(0, 65, 32))).toThrow('matching widths');
     expect(() => estimateOverlap(screenshot(0, 2), screenshot(0))).toThrow('enough image content');

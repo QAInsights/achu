@@ -32,8 +32,8 @@ beforeEach(() => {
   draws.length = 0;
   globalThis.createImageBitmap = vi.fn(async (source: ImageBitmapSource) => {
     const input = source as File;
-    const bitmap = { width: input.name.startsWith('narrow') ? 99 : input.name.startsWith('large') ? 5000 : 100,
-      height: input.name.startsWith('large') ? 3000 : 100, fileName: input.name,
+    const bitmap = { width: input.name.startsWith('narrow') ? 99 : input.name.startsWith('large') ? 5000 : input.name.startsWith('output') ? 4000 : 100,
+      height: input.name.startsWith('large') || input.name.startsWith('output') ? 3000 : 100, fileName: input.name,
       close: vi.fn() } as unknown as FakeBitmap;
     bitmaps.push(bitmap);
     return bitmap;
@@ -74,7 +74,7 @@ describe('StitchModal', () => {
     expect(slider).toHaveValue('50');
     fireEvent.change(slider, { target: { value: '30' } });
     expect(screen.getByText(/170px output/)).toBeInTheDocument();
-    expect(screen.getByText(/Review this join/)).toBeInTheDocument();
+    expect(screen.getByText(/Adjusted manually/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Import into editor' }));
     expect(onImport).toHaveBeenCalledExactlyOnceWith('data:image/png;base64,combined');
     expect(onClose).toHaveBeenCalledOnce();
@@ -89,6 +89,26 @@ describe('StitchModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Move top.png down' }));
     expect(screen.getByText(/1\. second.png/)).toBeInTheDocument();
     expect(screen.getByText(/2\. top.png/)).toBeInTheDocument();
+  });
+
+  it('allows a manual join with zero overlap or near-total overlap', async () => {
+    render(<StitchModal open onImport={vi.fn()} onClose={vi.fn()} />);
+    await choose('top.png', 'second.png');
+    await screen.findByText(/Auto-aligned/);
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '0' } });
+    expect(screen.getByText(/200px output/)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '99' } });
+    expect(screen.getByText(/101px output/)).toBeInTheDocument();
+  });
+
+  it('blocks oversized output until manual alignment reduces it below the memory limit', async () => {
+    render(<StitchModal open onImport={vi.fn()} onClose={vi.fn()} />);
+    await choose('output-a.png', 'output-b.png', 'output-c.png');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Combined image is too large');
+    expect(screen.getByRole('button', { name: 'Import into editor' })).toBeDisabled();
+    screen.getAllByRole('slider').forEach(slider => fireEvent.change(slider, { target: { value: '2500' } }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Import into editor' })).toBeEnabled();
   });
 
   it('uses native row precision and lets the numeric control adjust a seam', async () => {
