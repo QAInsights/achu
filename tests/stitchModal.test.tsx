@@ -348,17 +348,19 @@ describe('StitchModal', () => {
   });
 
   it('fits very tall output to the height ceiling without rejecting the original sources', async () => {
-    const sources = ['top.png', 'second.png'].map(name => file(name, { width: 100, height: 10_000 }));
+    const sources = ['top.png', 'second.png'].map(name => file(name, { width: 101, height: 10_000 }));
     const onImport = vi.fn();
     render(<StitchModal open onImport={onImport} onClose={vi.fn()} />);
     fireEvent.change(screen.getByLabelText(/Choose or drop/), { target: { files: sources } });
     const slider = await screen.findByRole('slider');
     fireEvent.change(slider, { target: { value: '0' } });
     expect(screen.getByText('80 × 16000px smaller copy (80% of original)')).toBeInTheDocument();
+    expect(draws).toContainEqual({ width: 8, height: 1600,
+      args: [bitmaps[1], 0, 0, 101, 10_000, 0, 800, 8, 800] });
     fireEvent.click(screen.getByRole('button', { name: 'Import smaller copy' }));
     expect(onImport).toHaveBeenCalledOnce();
     expect(draws).toContainEqual({ width: 80, height: 16_000,
-      args: [bitmaps[1], 0, 0, 100, 10_000, 0, 8000, 80, 8000] });
+      args: [bitmaps[1], 0, 0, 101, 10_000, 0, 8000, 80, 8000] });
   });
 
   it('asks before preparing a memory-heavy selection, then decodes the agreed smaller dimensions', async () => {

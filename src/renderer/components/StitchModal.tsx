@@ -135,7 +135,8 @@ export default function StitchModal({ open, onClose, onImport }: {
     canvas.width = Math.max(1, Math.round(images[0].bitmap.width * scale));
     canvas.height = Math.max(1, Math.round(outputHeight * scale));
     const context = canvas.getContext('2d');
-    if (context) drawStitchedImages(context, images.map(image => image.bitmap), seams.map(seam => seam.pixels), canvas.width / images[0].bitmap.width);
+    if (context) drawStitchedImages(context, images.map(image => image.bitmap), seams.map(seam => seam.pixels),
+      { x: canvas.width / images[0].bitmap.width, y: canvas.height / outputHeight });
 
     seams.forEach((seam, index) => {
       const sample = seamRefs.current[index];
