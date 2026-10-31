@@ -371,7 +371,8 @@ describe('StitchModal', () => {
     fireEvent.change(screen.getByLabelText(/Choose or drop/), { target: { files: sources } });
     const prepare = await screen.findByRole('button', { name: 'Prepare smaller copy' });
     expect(prepare).toHaveFocus();
-    expect(screen.getByText(`${plan.width} × ${plan.heights.reduce((sum, height) => sum + height, 0)}px`)).toBeInTheDocument();
+    const pendingOutput = planStitchOutput({ width: plan.width, height: plan.heights.reduce((sum, height) => sum + height, 0) });
+    expect(screen.getByText(/Without overlap:/)).toHaveTextContent(`${pendingOutput.width} × ${pendingOutput.height}px`);
     expect(globalThis.createImageBitmap).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Import into editor' })).toBeDisabled();
     fireEvent.click(prepare);
@@ -393,6 +394,20 @@ describe('StitchModal', () => {
     expect(screen.getByRole('slider')).toHaveValue('50');
     fireEvent.click(screen.getByRole('button', { name: 'Import smaller copy' }));
     expect(onImport).toHaveBeenCalledOnce();
+  });
+
+  it('quotes a height-limited zero-overlap estimate rather than an unattainable width-height pair before preparation', async () => {
+    const sources = Array.from({ length: 6 }, (_, index) => file(`tall-${index}.png`, { width: 1200, height: 32_767 }));
+    const plan = planStitchSources(sources.map(source => ({ width: 1200, height: 32_767, bytes: source.size })));
+    const estimated = planStitchOutput({ width: plan.width, height: plan.heights.reduce((sum, height) => sum + height, 0) });
+    expect(estimated.width).toBeLessThan(plan.width);
+    expect(estimated.height).toBe(16_000);
+    render(<StitchModal open onImport={vi.fn()} onClose={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(/Choose or drop/), { target: { files: sources } });
+    await screen.findByRole('button', { name: 'Prepare smaller copy' });
+    expect(screen.getByText(/Without overlap:/)).toHaveTextContent(`${estimated.width} × ${estimated.height}px`);
+    expect(screen.queryByText(`${plan.width} × 16000px`)).not.toBeInTheDocument();
+    expect(globalThis.createImageBitmap).not.toHaveBeenCalled();
   });
 
   it('clears an unapproved smaller-copy choice when closed and reopened without decoding', async () => {

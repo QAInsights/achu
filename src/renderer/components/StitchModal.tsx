@@ -5,7 +5,7 @@ import './StitchModal.css';
 import RangeControl from './RangeControl';
 import {
   drawStitchedImages, estimateOverlapAsync, overlapRange, planStitchOutput, planStitchSources, stitchedHeight,
-  validateStitchFileBudget, validateStitchSourceDimensions, STITCH_MAX_IMAGES, STITCH_SAMPLE_WIDTH, STITCH_MAX_OUTPUT_HEIGHT,
+  validateStitchFileBudget, validateStitchSourceDimensions, STITCH_MAX_IMAGES, STITCH_SAMPLE_WIDTH,
   type StitchSample, type StitchSize, type StitchSourcePlan, type StitchSourceSize,
 } from '../utils/stitchUtils';
 
@@ -181,6 +181,9 @@ export default function StitchModal({ open, onClose, onImport }: {
   const originalScale = output ? workingWidth / images[0].original.width * output.scale : 1;
   const smallerCopy = originalScale < 1;
   const percent = Math.floor(originalScale * 100);
+  const pendingOutput = pending ? planStitchOutput({
+    width: pending.plan.width, height: pending.plan.heights.reduce((sum, height) => sum + height, 0),
+  }) : null;
 
   const reportLoadError = (cause: unknown, id: number) => {
     if (id !== token.current) return;
@@ -332,10 +335,10 @@ export default function StitchModal({ open, onClose, onImport }: {
         </label>
         {busy && <p role="status">Preparing screenshots locally…</p>}
         {error && <p className="stitch-error" role="alert">{error}</p>}
-        {pending && <div className="stitch-resolution" aria-label="Smaller copy options">
+        {pending && pendingOutput && <div className="stitch-resolution" aria-label="Smaller copy options">
           <h3>Prepare a smaller stitched copy</h3>
           <p>This selection needs more working memory than achu can safely use at original resolution. Your source files stay unchanged.</p>
-          <p>Up to <strong>{pending.plan.width} × {Math.min(STITCH_MAX_OUTPUT_HEIGHT, pending.plan.heights.reduce((sum, height) => sum + height, 0))}px</strong> output.
+          <p>Without overlap: <strong>{pendingOutput.width} × {pendingOutput.height}px</strong>.
             Exact dimensions appear after alignment.</p>
           <button ref={prepareRef} type="button" className="btn btn-primary" onClick={() => void prepareSmallerCopy()}>Prepare smaller copy</button>
           <p>Or choose fewer screenshots to keep more detail.</p>
