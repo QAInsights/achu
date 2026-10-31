@@ -141,6 +141,7 @@ export interface AppContextType {
   handleUndo: () => void;
   handleRedo: () => void;
   selectFile: () => Promise<void>;
+  onImageLoaded: (src: string) => void;
   handleHTMLFileInput: (e: React.ChangeEvent<HTMLInputElement>) => void;
   pasteFromClipboard: () => Promise<void>;
   saveCustomPreset: () => void;

@@ -20,7 +20,8 @@ import {
   Sun,
   Moon,
   Settings,
-  Code
+  Code,
+  Images
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import { useGalleryContext } from '../contexts/GalleryContext';
@@ -32,7 +33,7 @@ import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 import { formatModShortcut } from '../utils/shortcutLabels';
 import { canShowBothSidebars } from '../utils/layoutUtils';
 
-export default function WorkspaceToolbar() {
+export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () => void }) {
   useToolbarShortcuts();
   const { galleryVisible, openGallery, closeGallery } = useGalleryContext();
 
@@ -151,6 +152,13 @@ export default function WorkspaceToolbar() {
             <FilePlus className="w-4 h-4" />
           </button>
         </Tooltip>
+        {onOpenStitch && (
+          <Tooltip position="right">
+            <button type="button" className="tool-btn" onClick={onOpenStitch} title="Stitch Screenshots" aria-label="Stitch Screenshots">
+              <Images className="w-4 h-4" />
+            </button>
+          </Tooltip>
+        )}
       </div>
 
       <div className="toolbar-divider" />

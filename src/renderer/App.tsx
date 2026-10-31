@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppProvider, useAppContext } from './AppContext';
 import { GalleryProvider, useGalleryContext } from './contexts/GalleryContext';
 import { BurstPackProvider } from './contexts/BurstPackContext';
 import BurstPackModal from './components/burst/BurstPackModal';
+import StitchModal from './components/StitchModal';
 import Sidebar from './components/Sidebar';
 import SecondarySidebar from './components/SecondarySidebar';
 import WorkspaceToolbar from './components/WorkspaceToolbar';
@@ -18,7 +19,8 @@ import logoUrl from '../../assets/logo.svg';
 import { MIN_WORKSPACE_WIDTH } from './utils/layoutUtils';
 
 function AppContent() {
-  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput, sidebarPosition, secondarySidebarVisible, setSecondarySidebarVisible, secondarySidebarPosition, shareAchuPromptOpen, setShareAchuPromptOpen } = useAppContext();
+  const { handleDragOver, handleDragLeave, handleDrop, sidebarVisible, fileInputRef, handleHTMLFileInput, onImageLoaded, sidebarPosition, secondarySidebarVisible, setSecondarySidebarVisible, secondarySidebarPosition, shareAchuPromptOpen, setShareAchuPromptOpen } = useAppContext();
+  const [stitchOpen, setStitchOpen] = useState(false);
   const workspaceRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!sidebarVisible || !secondarySidebarVisible || !workspaceRef.current || typeof ResizeObserver === 'undefined') return;
@@ -28,7 +30,7 @@ function AppContent() {
     observer.observe(workspaceRef.current);
     return () => observer.disconnect();
   }, [sidebarVisible, secondarySidebarVisible, setSecondarySidebarVisible]);
-  const { galleryVisible } = useGalleryContext();
+  const { galleryVisible, closeGallery } = useGalleryContext();
   const isFrameless = window.snapFrameAPI && (window.snapFrameAPI.platform === 'win32' || window.snapFrameAPI.platform === 'darwin');
   const platformClass = window.snapFrameAPI ? `platform-${window.snapFrameAPI.platform}` : '';
   const collapsedClass = (!sidebarVisible && !secondarySidebarVisible) ? 'sidebar-collapsed' : '';
@@ -47,7 +49,7 @@ function AppContent() {
             </div>
           </div>
         )}
-        <WorkspaceToolbar />
+        <WorkspaceToolbar onOpenStitch={() => setStitchOpen(true)} />
         {galleryVisible ? (
           <GalleryView />
         ) : (
@@ -63,6 +65,7 @@ function AppContent() {
       <SettingsModal />
       <HelpModal />
       <BurstPackModal />
+      <StitchModal open={stitchOpen} onClose={() => setStitchOpen(false)} onImport={src => { onImageLoaded(src); closeGallery(); }} />
       <OnboardingTour />
       <ShareAchuPrompt open={shareAchuPromptOpen} onClose={() => setShareAchuPromptOpen(false)} />
       <input
