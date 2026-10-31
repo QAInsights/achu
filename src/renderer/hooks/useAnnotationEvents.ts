@@ -9,6 +9,7 @@ import {
   setAnnotationClipboard,
 } from '../utils/annotationClipboardUtils';
 import { trackFeature } from '../utils/telemetry';
+import { useAnnotationNudge } from './useAnnotationNudge';
 import type { TelemetryFeature } from '../../shared/telemetryFeatures';
 
 const annotationFeatureByType: Partial<Record<Annotation['type'], TelemetryFeature>> = {
@@ -171,6 +172,11 @@ export function useAnnotationEvents({
   useEffect(() => {
     if (onDimensionsChange) onDimensionsChange(dimensions);
   }, [dimensions, onDimensionsChange]);
+
+  useAnnotationNudge({
+    annotations, setAnnotations, selectedId, dimensions, containerRef, onSaveHistory,
+    enabled: activeTool === 'pointer' && !editingTextId && !dragStart && !resizeStart && !drawingAnnotation,
+  });
 
   const copyAnnotation = useCallback((id?: string | null) => {
     const targetId = id ?? selectedId;
@@ -728,6 +734,7 @@ export function useAnnotationEvents({
     e.stopPropagation();
     setSelectedId(ann.id);
     if (!containerRef.current) return;
+    containerRef.current.focus({ preventScroll: true });
     const now = Date.now();
     if (e.detail === 2 || (lastClickTimeRef.current > 0 && now - lastClickTimeRef.current < 300)) {
       handleDoubleOrTripleClick(e, ann);
@@ -754,6 +761,7 @@ export function useAnnotationEvents({
     e.stopPropagation();
     setSelectedId(ann.id);
     if (!containerRef.current) return;
+    containerRef.current.focus({ preventScroll: true });
     const rect = containerRef.current.getBoundingClientRect();
     const w = rect.width || 1;
     const h = rect.height || 1;

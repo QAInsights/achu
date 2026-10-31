@@ -15,6 +15,7 @@ const SHORTCUTS = [
   { label: 'Cut Annotation', keys: 'mod x cut annotation' },
   { label: 'Paste Annotation', keys: 'mod v paste annotation' },
   { label: 'Delete Annotation', keys: 'delete backspace annotation' },
+  { label: 'Nudge Annotation', keys: 'arrow shift move nudge position 1px 10px' },
 ];
 
 const TOOLBAR_SHORTCUTS = [
@@ -28,7 +29,7 @@ const TOOLBAR_SHORTCUTS = [
 
 const SUPPORT_KEYWORDS = 'support project donate donation github repo repository buy coffee';
 
-registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy cut annotation' });
+registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy cut annotation nudge position' });
 registerSettingsSection({ tab: 'shortcuts', label: 'Support & Project', keywords: SUPPORT_KEYWORDS });
 
 export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery?: string }) {
@@ -65,6 +66,7 @@ export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery
                 {s.label === 'Cut Annotation' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>X</kbd></div>}
                 {s.label === 'Paste Annotation' && <div><kbd>{getModKeyLabel()}</kbd> <kbd>V</kbd></div>}
                 {s.label === 'Delete Annotation' && <div><kbd>Delete</kbd> or <kbd>Backspace</kbd></div>}
+                {s.label === 'Nudge Annotation' && <div><kbd>Arrow keys</kbd> 1px / <kbd>Shift</kbd> + <kbd>Arrow keys</kbd> 10px</div>}
               </div>
               {i === filteredShortcuts.length - 1 && filteredToolbar.length > 0 && (
                 <div style={{ borderTop: '1px solid var(--border)', margin: '6px 0', paddingTop: '6px' }} />
