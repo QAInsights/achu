@@ -155,6 +155,14 @@ export default function AnnotationsLayer({
     }
   };
 
+  const handleResetRotation = () => {
+    const target = annotations.find(ann => ann.id === orderMenu?.id);
+    if (!target?.rotation) return;
+    const updated = annotations.map(ann => ann.id === target.id ? { ...ann, rotation: 0 } : ann);
+    setAnnotations(updated);
+    onSaveHistory(updated);
+  };
+
   return (
     <div
       ref={containerRef}
@@ -317,6 +325,8 @@ export default function AnnotationsLayer({
           y={orderMenu.y}
           onClose={() => setOrderMenu(null)}
           onOrder={handleOrder}
+          onResetRotation={handleResetRotation}
+          canResetRotation={!!annotations.find(ann => ann.id === orderMenu.id)?.rotation}
           onCut={() => cutAnnotation(orderMenu.id)}
           onCopy={() => copyAnnotation(orderMenu.id)}
           onPaste={() => pasteAnnotation()}

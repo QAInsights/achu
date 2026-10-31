@@ -8,6 +8,8 @@ describe('AnnotationContextMenu', () => {
     y: 100,
     onClose: vi.fn(),
     onOrder: vi.fn(),
+    onResetRotation: vi.fn(),
+    canResetRotation: true,
     onCut: vi.fn(),
     onCopy: vi.fn(),
     onPaste: vi.fn(),
@@ -23,6 +25,7 @@ describe('AnnotationContextMenu', () => {
     expect(screen.getByText('Cut')).toBeInTheDocument();
     expect(screen.getByText('Copy')).toBeInTheDocument();
     expect(screen.getByText('Paste')).toBeInTheDocument();
+    expect(screen.getByText('Reset Rotation')).toBeInTheDocument();
     expect(screen.getByText('Bring to Front')).toBeInTheDocument();
     expect(screen.getByText('Bring Forward')).toBeInTheDocument();
     expect(screen.getByText('Send Backward')).toBeInTheDocument();
@@ -128,8 +131,31 @@ describe('AnnotationContextMenu', () => {
     // window.innerHeight in jsdom defaults to 768
     render(<AnnotationContextMenu {...defaultProps} x={100} y={2000} />);
     const menu = document.body.querySelector('.custom-context-menu') as HTMLElement;
-    // MENU_HEIGHT=280, padding 8 -> clamped to 768 - 280 - 8 = 480
-    expect(Number(menu.style.top.replace('px', ''))).toBeLessThanOrEqual(480);
+    expect(Number(menu.style.top.replace('px', ''))).toBeLessThanOrEqual(440);
+  });
+
+  it('resets rotation and closes the menu', () => {
+    render(<AnnotationContextMenu {...defaultProps} />);
+    fireEvent.click(screen.getByText('Reset Rotation'));
+    expect(defaultProps.onResetRotation).toHaveBeenCalledOnce();
+    expect(defaultProps.onClose).toHaveBeenCalledOnce();
+  });
+
+  it('disables Reset Rotation for a straight annotation', () => {
+    render(<AnnotationContextMenu {...defaultProps} canResetRotation={false} />);
+    fireEvent.click(screen.getByText('Reset Rotation'));
+    expect(screen.getByText('Reset Rotation').closest('button')).toBeDisabled();
+    expect(defaultProps.onResetRotation).not.toHaveBeenCalled();
+  });
+
+  it('repositions using measured menu dimensions when the window resizes', () => {
+    render(<AnnotationContextMenu {...defaultProps} x={1000} y={750} />);
+    const menu = document.body.querySelector('.custom-context-menu') as HTMLElement;
+    Object.defineProperties(menu, { offsetWidth: { value: 260 }, offsetHeight: { value: 380 } });
+    fireEvent(window, new Event('resize'));
+    expect(menu.style.left).toBe('756px');
+    expect(menu.style.top).toBe('380px');
+    expect(menu.style.overflowY).toBe('auto');
   });
 
   it('closes on Escape key', () => {

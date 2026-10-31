@@ -89,6 +89,11 @@
 * **Full Object Control:** Move, resize, delete, and re-order drawn annotation layers.
 * **Deep Edit History:** Full support for multi-step Undo (`Ctrl+Z`) and Redo (`Ctrl+Y`) operations.
 
+### Stitch Screenshots
+Select **Stitch Screenshots** in the editor toolbar and choose or drop 2–6 overlapping PNG, JPEG, or WebP screenshots in top-to-bottom order. The images must have the same pixel width (capture at the same window size). achu detects the overlap locally and shows a preview before importing a single combined image. If alignment is uncertain, adjust each overlap slider or enter an exact pixel value while checking the translucent seam preview; use the arrow buttons to change screenshot order. The combined image opens in the regular editor, where you can annotate, undo, and export it as usual.
+
+For memory safety, individual images are limited to 8 MB / 12 megapixels, 8192px per side and a 12:1 height-to-width ratio. The combined image is limited to 20 megapixels or 16,000 pixels high. This first version works best with content-only captures: crop repeated browser chrome, sticky headers and footers from the source images first. It combines supplied screenshots; it does not scroll or capture a page automatically.
+
 ---
 
 ## ⌨️ Keyboard Shortcuts
@@ -101,6 +106,7 @@
 | **`Ctrl` + `Shift` + `S`** | Copy beautified snap to clipboard |
 | **`Delete`** / **`Backspace`** | Delete selected annotation object |
 | **Arrow keys** / **`Shift` + Arrow keys** | Nudge the selected annotation by 1 / 10 canvas pixels while the canvas is focused; each held-key movement is one Undo step |
+| **`Ctrl/Cmd` + `D`** | Duplicate the selected annotation with an offset while the canvas is focused, without replacing the annotation clipboard |
 | **`V`** or **`1`** | Select / Move Tool |
 | **`R`** / **`Shift` + `R`** / **`2`** / **`3`** | Rectangle Tool (Outline / Filled) |
 | **`C`** / **`O`** / **`Shift` + `C`** / **`4`** / **`5`** | Circle / Oval Tool (Outline / Filled) |
@@ -108,6 +114,8 @@
 | **`Shift` while drawing** | Draw squares, perfect circles, or lines/arrows at 45-degree increments |
 | **`T`** / **`P`** / **`8`** / **`9`** | Text / Freehand Pen Tool |
 | **`E`** / **`0`** | Add Emoji Tool |
+
+Right-click an annotation and choose **Reset Rotation** to straighten it without changing its position, size, or styling. Undo restores its previous rotation.
 
 ---
 

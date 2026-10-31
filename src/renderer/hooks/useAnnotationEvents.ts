@@ -213,6 +213,23 @@ export function useAnnotationEvents({
     onSaveHistory(updated);
   }, [annotations, setAnnotations, onSaveHistory]);
 
+  const duplicateAnnotation = useCallback(() => {
+    const source = annotations.find(ann => ann.id === selectedId);
+    if (!source) return;
+    const duplicate = cloneAnnotation(source);
+    const offsetPosition = (position: number, size: number) => {
+      const fits = Math.min(position, position + size) >= 0 && Math.max(position, position + size) <= 1;
+      const shifted = position + ANNOTATION_PASTE_OFFSET;
+      return fits ? Math.min(shifted, 1 - Math.max(size, 0)) : shifted;
+    };
+    duplicate.x = offsetPosition(source.x, source.w);
+    duplicate.y = offsetPosition(source.y, source.h);
+    const updated = [...annotations, duplicate];
+    setAnnotations(updated);
+    setSelectedId(duplicate.id);
+    onSaveHistory(updated);
+  }, [annotations, selectedId, setAnnotations, onSaveHistory]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -220,6 +237,17 @@ export function useAnnotationEvents({
         return;
       }
       const mod = e.ctrlKey || e.metaKey;
+      if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'd') {
+        const container = containerRef.current;
+        if (e.defaultPrevented || e.isComposing || e.keyCode === 229 || activeTool !== 'pointer' ||
+          editingTextId || dragStart || resizeStart || drawingAnnotation || !container ||
+          (target !== container && target !== container.closest('.canvas-viewport')) ||
+          target.closest('dialog, [role="dialog"], [role="alertdialog"], [inert]') ||
+          !annotations.some(ann => ann.id === selectedId)) return;
+        e.preventDefault();
+        if (!e.repeat) duplicateAnnotation();
+        return;
+      }
       // Require plain mod+key (no Shift/Alt) so we don't steal Ctrl+Shift+C (Code Studio), etc.
       if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'c') {
         if (selectedId) {
@@ -251,10 +279,14 @@ export function useAnnotationEvents({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, annotations, setAnnotations, onSaveHistory, copyAnnotation, cutAnnotation, pasteAnnotation]);
+  }, [selectedId, annotations, setAnnotations, onSaveHistory, copyAnnotation, cutAnnotation, pasteAnnotation,
+    duplicateAnnotation, activeTool, editingTextId, dragStart, resizeStart, drawingAnnotation, containerRef]);
 
+  const previousArrowStyle = useRef(arrowStyle);
   useEffect(() => {
-    if (selectedId && arrowStyle) {
+    const changed = previousArrowStyle.current !== arrowStyle;
+    previousArrowStyle.current = arrowStyle;
+    if (changed && selectedId && arrowStyle) {
       setAnnotations(prev =>
         prev.map(ann => {
           if (ann.id === selectedId && ann.type === 'arrow' && ann.arrowStyle !== arrowStyle) {
@@ -267,8 +299,11 @@ export function useAnnotationEvents({
   }, [arrowStyle, selectedId, setAnnotations]);
 
   // Synchronize selected annotation's color with active color picker
+  const previousColor = useRef(color);
   useEffect(() => {
-    if (!selectedId) return;
+    const changed = previousColor.current !== color;
+    previousColor.current = color;
+    if (!selectedId || !changed) return;
     const selectedAnn = annotations.find(a => a.id === selectedId);
     if (!selectedAnn) return;
 
@@ -290,60 +325,29 @@ export function useAnnotationEvents({
     }
   }, [selectedId, setAnnotationColor]);
 
-  // Synchronize selected annotation's font properties with active selectors
+  const textStyle: Partial<Annotation> = {
+    fontFamily: annotationFont, fontSize: annotationFontSize, fontBold: annotationBold,
+    fontItalic: annotationItalic, outlineEnabled: annotationOutlineEnabled,
+    outlineColor: annotationOutlineColor, outlineWidth: annotationOutlineWidth,
+    gradientEnabled: annotationGradientEnabled, gradientColor1: annotationGradientColor1,
+    gradientColor2: annotationGradientColor2, gradientAngle: annotationGradientAngle,
+  };
+  const previousTextStyle = useRef(textStyle);
   useEffect(() => {
+    const previous = previousTextStyle.current;
+    previousTextStyle.current = textStyle;
     if (!selectedId) return;
     const selectedAnn = annotations.find(a => a.id === selectedId);
     if (!selectedAnn || selectedAnn.type !== 'text') return;
 
-    let changed = false;
     const updatedAnn = { ...selectedAnn };
-
-    if (annotationFont && selectedAnn.fontFamily !== annotationFont) {
-      updatedAnn.fontFamily = annotationFont;
+    let changed = false;
+    for (const key of Object.keys(textStyle) as (keyof Annotation)[]) {
+      const value = textStyle[key];
+      if (value === undefined || value === '' || value === previous[key] || value === selectedAnn[key]) continue;
+      Object.assign(updatedAnn, { [key]: value });
       changed = true;
     }
-    if (annotationFontSize !== undefined && selectedAnn.fontSize !== annotationFontSize) {
-      updatedAnn.fontSize = annotationFontSize;
-      changed = true;
-    }
-    if (annotationBold !== undefined && selectedAnn.fontBold !== annotationBold) {
-      updatedAnn.fontBold = annotationBold;
-      changed = true;
-    }
-    if (annotationItalic !== undefined && selectedAnn.fontItalic !== annotationItalic) {
-      updatedAnn.fontItalic = annotationItalic;
-      changed = true;
-    }
-    if (annotationOutlineEnabled !== undefined && selectedAnn.outlineEnabled !== annotationOutlineEnabled) {
-      updatedAnn.outlineEnabled = annotationOutlineEnabled;
-      changed = true;
-    }
-    if (annotationOutlineColor !== undefined && selectedAnn.outlineColor !== annotationOutlineColor) {
-      updatedAnn.outlineColor = annotationOutlineColor;
-      changed = true;
-    }
-    if (annotationOutlineWidth !== undefined && selectedAnn.outlineWidth !== annotationOutlineWidth) {
-      updatedAnn.outlineWidth = annotationOutlineWidth;
-      changed = true;
-    }
-    if (annotationGradientEnabled !== undefined && selectedAnn.gradientEnabled !== annotationGradientEnabled) {
-      updatedAnn.gradientEnabled = annotationGradientEnabled;
-      changed = true;
-    }
-    if (annotationGradientColor1 !== undefined && selectedAnn.gradientColor1 !== annotationGradientColor1) {
-      updatedAnn.gradientColor1 = annotationGradientColor1;
-      changed = true;
-    }
-    if (annotationGradientColor2 !== undefined && selectedAnn.gradientColor2 !== annotationGradientColor2) {
-      updatedAnn.gradientColor2 = annotationGradientColor2;
-      changed = true;
-    }
-    if (annotationGradientAngle !== undefined && selectedAnn.gradientAngle !== annotationGradientAngle) {
-      updatedAnn.gradientAngle = annotationGradientAngle;
-      changed = true;
-    }
-
     if (changed) {
       const updated = annotations.map(a => (a.id === selectedId ? updatedAnn : a));
       setAnnotations(updated);
@@ -756,7 +760,7 @@ export function useAnnotationEvents({
   };
 
   const startDrag = (e: React.PointerEvent, ann: Annotation) => {
-    if (activeTool !== 'pointer') return;
+    if (activeTool !== 'pointer' || e.button > 0) return;
     e.stopPropagation();
     setSelectedId(ann.id);
     if (!containerRef.current) return;
@@ -784,6 +788,7 @@ export function useAnnotationEvents({
   };
 
   const startResize = (e: React.PointerEvent, ann: Annotation, handle: string) => {
+    if (e.button > 0) return;
     e.stopPropagation();
     setSelectedId(ann.id);
     if (!containerRef.current) return;

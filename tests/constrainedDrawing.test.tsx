@@ -135,8 +135,10 @@ describe('constrained drawing interactions', () => {
     }
   });
 
-  it('registers and displays constraint help in Settings search', () => {
-    expect(getKeywordsForTab('shortcuts')).toContain('constrain');
+  it('preserves duplicate and constraint keywords and displays constraint help in Settings search', () => {
+    expect(getKeywordsForTab('shortcuts').split(' ')).toEqual(
+      expect.arrayContaining(['duplicate', 'constrain', 'square', 'angle', '45', 'drawing']),
+    );
     render(<ShortcutsHelpSection searchQuery="constrain" />);
     expect(screen.getByText('Constrain Drawing').parentElement).toHaveTextContent('Shift');
   });
