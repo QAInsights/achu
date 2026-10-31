@@ -215,8 +215,13 @@ export function useAnnotationEvents({
     const source = annotations.find(ann => ann.id === selectedId);
     if (!source) return;
     const duplicate = cloneAnnotation(source);
-    duplicate.x += ANNOTATION_PASTE_OFFSET;
-    duplicate.y += ANNOTATION_PASTE_OFFSET;
+    const offsetPosition = (position: number, size: number) => {
+      const fits = Math.min(position, position + size) >= 0 && Math.max(position, position + size) <= 1;
+      const shifted = position + ANNOTATION_PASTE_OFFSET;
+      return fits ? Math.min(shifted, 1 - Math.max(size, 0)) : shifted;
+    };
+    duplicate.x = offsetPosition(source.x, source.w);
+    duplicate.y = offsetPosition(source.y, source.h);
     const updated = [...annotations, duplicate];
     setAnnotations(updated);
     setSelectedId(duplicate.id);

@@ -87,6 +87,17 @@ describe('quick duplicate', () => {
     expect(result.current.annotations[1]).toMatchObject({ x: -0.08, y: 1.01, w: -1.4, h: 1.5 });
   });
 
+  it.each([{ x: 0.98, y: 0.98, w: 0.01, h: 0.01 }, { x: 0.99, y: 0.99, w: -0.2, h: -0.1 }])('keeps an on-canvas duplicate inside the edges (%j)', bounds => {
+    const { container, result } = setup({ ...original, ...bounds });
+    for (let i = 0; i < 3; i++) fireEvent.keyDown(container, { key: 'd', ctrlKey: true });
+    for (const copy of result.current.annotations) {
+      expect(Math.min(copy.x, copy.x + copy.w)).toBeGreaterThanOrEqual(0);
+      expect(Math.max(copy.x, copy.x + copy.w)).toBeLessThanOrEqual(1);
+      expect(Math.min(copy.y, copy.y + copy.h)).toBeGreaterThanOrEqual(0);
+      expect(Math.max(copy.y, copy.y + copy.h)).toBeLessThanOrEqual(1);
+    }
+  });
+
   it.each(['input', 'textarea', 'button', 'select', 'editable', 'outside'])('leaves %s shortcuts untouched', kind => {
     const { container, result } = setup();
     const target = document.createElement(['editable', 'outside'].includes(kind) ? 'div' : kind);
