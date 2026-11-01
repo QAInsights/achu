@@ -45,6 +45,16 @@
 .stitch-upload input { display: block; max-width: 100%; font: inherit; }
 .stitch-upload span, .stitch-filename span, .stitch-seam span { color: var(--text-secondary); font-size: .78rem; font-weight: 400; }
 .stitch-error { color: #ff9797; font-size: .85rem; }
+.stitch-note, .stitch-resolution p { color: var(--text-secondary); font-size: .85rem; line-height: 1.5; }
+.stitch-resolution {
+  padding: 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.stitch-resolution h3 { margin: 0; font-size: 1rem; }
+.stitch-resolution strong { color: var(--text-primary); }
+.stitch-resolution p:last-child { margin-bottom: 0; }
 
 .stitch-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 34%); gap: 16px; }
 .stitch-seams { display: grid; gap: 12px; align-content: start; }
