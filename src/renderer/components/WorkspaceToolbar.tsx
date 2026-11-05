@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   PaintRoller,
   Bot,
@@ -74,6 +74,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     imageSrc, showToast,
     toggleCodeStudio,
   } = useAppContext();
+  const cropToolRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => { if (cropActive && galleryVisible) closeGallery(); }, [cropActive, galleryVisible, closeGallery]);
 
@@ -92,7 +93,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
 
   return (
     <>
-    <CropControls />
+    <CropControls anchorRef={cropToolRef} />
     <div className="toolbar-dock" role="group" aria-label="Editing tools" ref={node => {
       if (cropActive) node?.setAttribute('inert', '');
       else node?.removeAttribute('inert');
@@ -172,9 +173,11 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
         )}
         <Tooltip content="Crop (X)" position="right">
           <button
-            className="tool-btn"
+            ref={cropToolRef}
+            className={`tool-btn ${cropActive ? 'active' : ''}`}
             title="Crop (X)"
             aria-label="Crop"
+            aria-pressed={cropActive}
             disabled={!imageSrc || noImageMode || codeStudioActive || galleryVisible}
             onClick={startCrop}
           >
@@ -190,11 +193,11 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
         {tools.map((tool) => (
           <Tooltip key={tool.id} content={tool.tooltip} position="right">
             <button
-              className={`tool-btn ${activeTool === tool.id ? 'active' : ''}`}
+              className={`tool-btn ${!cropActive && activeTool === tool.id ? 'active' : ''}`}
               onClick={() => setActiveTool(tool.id)}
               title={tool.title}
               aria-label={tool.title}
-              aria-pressed={activeTool === tool.id}
+              aria-pressed={!cropActive && activeTool === tool.id}
             >
               {tool.icon}
             </button>
