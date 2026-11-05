@@ -12,7 +12,7 @@ import { trackFeature } from '../utils/telemetry';
 import { useAnnotationNudge } from './useAnnotationNudge';
 import { constrainDrawingDimensions } from '../utils/drawingUtils';
 import type { TelemetryFeature } from '../../shared/telemetryFeatures';
-import { assignStepOrder, nextStepOrder, resizeStep } from '../utils/stepUtils';
+import { assignStepOrder, nextStepOrder, resizeStep, sizeStep } from '../utils/stepUtils';
 
 const annotationFeatureByType: Partial<Record<Annotation['type'], TelemetryFeature>> = {
   rect: 'annot_rect',
@@ -37,6 +37,8 @@ interface UseAnnotationEventsProps {
   annotationFont?: string;
   setAnnotationFont?: (font: string) => void;
   annotationFontSize?: number;
+  annotationStepSize?: number;
+  setAnnotationStepSize?: (size: number) => void;
   setAnnotationFontSize?: (size: number) => void;
   annotationBold?: boolean;
   setAnnotationBold?: (bold: boolean) => void;
@@ -85,6 +87,8 @@ export function useAnnotationEvents({
   annotationFont,
   setAnnotationFont,
   annotationFontSize,
+  annotationStepSize = 40,
+  setAnnotationStepSize,
   setAnnotationFontSize,
   annotationBold,
   setAnnotationBold,
@@ -334,6 +338,24 @@ export function useAnnotationEvents({
     gradientEnabled: annotationGradientEnabled, gradientColor1: annotationGradientColor1,
     gradientColor2: annotationGradientColor2, gradientAngle: annotationGradientAngle,
   };
+  const previousStepSize = useRef(annotationStepSize);
+  useEffect(() => {
+    const changed = previousStepSize.current !== annotationStepSize;
+    previousStepSize.current = annotationStepSize;
+    if (!changed || !selectedId) return;
+    const selected = annotations.find(a => a.id === selectedId && a.type === 'step');
+    if (!selected || Math.abs(selected.w * dimensions.width - annotationStepSize) < .01) return;
+    const updated = annotations.map(a => a.id === selectedId ? sizeStep(a, annotationStepSize, dimensions) : a);
+    setAnnotations(updated);
+    onSaveHistory(updated);
+  }, [annotationStepSize, selectedId]);
+  useEffect(() => {
+    const selected = annotations.find(a => a.id === selectedId && a.type === 'step');
+    if (!selected || !setAnnotationStepSize) return;
+    const diameter = Math.round(selected.w * dimensions.width * 1000) / 1000;
+    previousStepSize.current = diameter;
+    setAnnotationStepSize(diameter);
+  }, [selectedId, activeTool, setAnnotationStepSize]);
   const previousTextStyle = useRef(textStyle);
   useEffect(() => {
     const previous = previousTextStyle.current;
@@ -559,7 +581,7 @@ export function useAnnotationEvents({
       return;
     }
     if (activeTool === 'step') {
-      const diameter = Math.max(32, (annotationFontSize || 24) * 1.6);
+      const diameter = annotationStepSize;
       const badgeW = diameter / dimensions.width;
       const badgeH = diameter / dimensions.height;
       const step: Annotation = {

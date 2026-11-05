@@ -104,6 +104,7 @@ export function useStyleConfig() {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [annotationColor, setAnnotationColor] = useState<string>('#f43f5e');
   const [annotationStrokeWidth, setAnnotationStrokeWidth] = useState<number>(8);
+  const [annotationStepSize, setAnnotationStepSize] = useState<number>(40);
   const [annotationDisplayWidth, setAnnotationDisplayWidth] = useState<number>(0);
 
   // Load system fonts dynamically on startup
@@ -174,6 +175,7 @@ export function useStyleConfig() {
     position, setPosition, activeTool, setActiveTool, arrowStyle, setArrowStyle,
     annotations, setAnnotations, annotationColor, setAnnotationColor,
     annotationStrokeWidth, setAnnotationStrokeWidth, annotationDisplayWidth, setAnnotationDisplayWidth,
+    annotationStepSize, setAnnotationStepSize,
     autoImportCaptured, setAutoImportCaptured,
     checkForUpdatesOnStartup, setCheckForUpdatesOnStartup,
     telemetryEnabled, setTelemetryEnabled,

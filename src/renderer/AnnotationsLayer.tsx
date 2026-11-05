@@ -47,6 +47,8 @@ export default function AnnotationsLayer({
     annotationFont,
     setAnnotationFont,
     annotationFontSize,
+    annotationStepSize,
+    setAnnotationStepSize,
     setAnnotationFontSize,
     annotationBold,
     setAnnotationBold,
@@ -99,6 +101,8 @@ export default function AnnotationsLayer({
     setAnnotationColor,
     strokeWidth,
     arrowStyle,
+    annotationStepSize,
+    setAnnotationStepSize,
     annotationFont,
     setAnnotationFont,
     annotationFontSize,
@@ -181,6 +185,7 @@ export default function AnnotationsLayer({
         zIndex: 10,
         cursor: activeTool === 'pointer' ? 'default' : 'crosshair',
         userSelect: 'none',
+        outline: 'none',
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

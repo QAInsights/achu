@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAnnotationEvents } from '../src/renderer/hooks/useAnnotationEvents';
 import { useHistory } from '../src/renderer/hooks/useHistory';
-import { assignStepOrder, nextStepOrder, resizeStep, stepNumbers, stepTextColor } from '../src/renderer/utils/stepUtils';
+import { assignStepOrder, nextStepOrder, resizeStep, stepNumbers, stepTextColor, stepTextBaseline } from '../src/renderer/utils/stepUtils';
 import { clearAnnotationClipboard } from '../src/renderer/utils/annotationClipboardUtils';
 import { bringToFront, sendToBack } from '../src/renderer/utils/layerOrderUtils';
 import type { Annotation } from '../src/renderer/canvasRenderer';
@@ -24,12 +24,14 @@ function setup(initial: Annotation[] = [], tool: 'step' | 'pointer' = 'step', zo
   const hook = renderHook(() => {
     const [annotations, setAnnotations] = useState(initial);
     const [color, setColor] = useState('#00ff00');
+    const [stepSize, setStepSize] = useState(40);
     const history = useHistory(config => setAnnotations(config.annotations ?? []));
     const events = useAnnotationEvents({ annotations, setAnnotations, activeTool: tool,
       color, setAnnotationColor: setColor, annotationFontSize: 24, strokeWidth: 4,
+      annotationStepSize: stepSize, setAnnotationStepSize: setStepSize,
       containerRef, customPrompt: vi.fn(),
       onSaveHistory: updated => { onSave(updated); history.pushHistory({ annotations: updated }); } });
-    return { ...events, annotations, history, color };
+    return { ...events, annotations, history, color, stepSize, setStepSize };
   });
   act(() => hook.result.current.history.pushHistory({ annotations: initial }));
   const pointer = (x: number, y: number, extra = {}) => ({ clientX: x * zoom, clientY: y * zoom,
@@ -55,8 +57,23 @@ describe('step numbering', () => {
   it('chooses white or near-black from fill luminance', () => {
     expect(stepTextColor('#000')).toBe('#ffffff');
     expect(stepTextColor('#fff')).toBe('#111827');
-    expect(stepTextColor('#ff0000')).toBe('#111827');
+    expect(stepTextColor('#ff0000')).toBe('#ffffff');
     expect(stepTextColor('invalid')).toBe('#ffffff');
+  });
+  it.each([
+    ['#f43f5e', '#ffffff'], ['#F43F5EFF', '#ffffff'], ['#f00', '#ffffff'], ['#f008', '#ffffff'],
+    ['rgb(244, 63, 94)', '#ffffff'], ['rgba(244, 63, 94, 0.7)', '#ffffff'],
+    ['rgb(100% 0% 0%)', '#ffffff'], ['hsl(350, 89%, 60%)', '#ffffff'], ['red', '#ffffff'],
+    ['rebeccapurple', '#ffffff'], ['#ff0', '#111827'], ['#ffff00ff', '#111827'],
+    ['rgb(255 255 0 / 80%)', '#111827'], ['hsla(60, 100%, 50%, .6)', '#111827'],
+    ['yellow', '#111827'], ['white', '#111827'], ['lightgreen', '#111827'],
+    ['#a3e635', '#111827'], ['#2563eb', '#ffffff'], ['', '#ffffff'],
+  ])('resolves %s consistently with a white-biased lightness threshold', (fill, expected) => {
+    expect(stepTextColor(fill)).toBe(expected);
+  });
+  it('centers the ink bounds and has a fallback for missing canvas metrics', () => {
+    expect(stepTextBaseline({ actualBoundingBoxAscent: 15, actualBoundingBoxDescent: 3 } as TextMetrics, 24)).toBe(6);
+    expect(stepTextBaseline({} as TextMetrics, 20)).toBe(7);
   });
   it.each(['tl', 'tc', 'tr', 'ml', 'mr', 'bl', 'bc', 'br'])('keeps %s resizing circular in non-square canvas pixels', handle => {
     const bounds = resizeStep(step(1), .12, .3, handle, { width: 800, height: 400 });
@@ -68,6 +85,35 @@ describe('step numbering', () => {
 });
 
 describe('step placement and editing', () => {
+  it('reads a selected badge size without applying the toolbar default', () => {
+    const original = { ...step(1), w: .07, h: .14 };
+    const { result, onSave } = setup([original], 'pointer');
+    act(() => result.current.setSelectedId(original.id));
+    expect(result.current.stepSize).toBe(56);
+    expect(result.current.annotations).toEqual([original]);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+  it('applies size controls to new badges and selected steps without changing their center or pushing defaults on selection', () => {
+    const { result, onSave } = setup([step(1)], 'pointer');
+    act(() => result.current.setSelectedId('step-1'));
+    expect(onSave).not.toHaveBeenCalled();
+    const before = result.current.annotations[0];
+    act(() => result.current.setStepSize(56));
+    const after = result.current.annotations[0];
+    expect(after.w * 800).toBeCloseTo(56);
+    expect(after.h * 400).toBeCloseTo(56);
+    expect(after.x + after.w / 2).toBeCloseTo(before.x + before.w / 2);
+    expect(after.y + after.h / 2).toBeCloseTo(before.y + before.h / 2);
+    expect(onSave).toHaveBeenCalledTimes(1);
+    act(() => result.current.history.handleUndo());
+    expect(result.current.annotations).toEqual([step(1)]);
+  });
+  it('places badges at the chosen size', () => {
+    const { result, pointer } = setup();
+    act(() => result.current.setStepSize(56));
+    act(() => result.current.handlePointerDown(pointer(200, 200)));
+    expect(result.current.annotations[0].w * 800).toBeCloseTo(56);
+  });
   it('places centered circles on primary clicks at zoom, without dragging, and one snapshot each', () => {
     const { result, pointer, onSave } = setup([], 'step', 1.5);
     for (let i = 1; i <= 3; i++) {

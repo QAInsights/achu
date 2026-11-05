@@ -1,7 +1,44 @@
 import { Annotation } from '../../canvasRenderer';
 import { getCurvedArrowPoints, getTaperedCurvedArrowPoints } from '../../arrowUtils';
 import { getAnnotationTextLayout } from '../../utils/annotationUtils';
-import { STEP_FONT, stepFontSize, stepTextColor } from '../../utils/stepUtils';
+import { STEP_FONT, stepFontSize, stepTextColor, stepTextBaseline } from '../../utils/stepUtils';
+import { useLayoutEffect, useRef } from 'react';
+
+function StepBadge({ diameter, number, color }: { diameter: number; number: number; color: string }) {
+  const textRef = useRef<SVGTextElement>(null);
+  const fontSize = stepFontSize(diameter, number);
+  useLayoutEffect(() => {
+    const text = textRef.current;
+    if (!text) return;
+    const ctx = document.createElement('canvas').getContext('2d');
+    if (!ctx) return;
+    ctx.font = `700 ${fontSize}px ${STEP_FONT}`;
+    const baseline = stepTextBaseline(ctx.measureText(String(number)), fontSize);
+    text.setAttribute('y', String(baseline));
+  }, [fontSize, number]);
+
+  return (
+    <g data-step-number={number} aria-label={`Step ${number}`}>
+      <circle
+        r={diameter / 2}
+        fill={color}
+        style={{ filter: `drop-shadow(0 ${diameter * .04}px ${diameter * .04}px rgba(0,0,0,0.22))` }}
+      />
+      <text
+        ref={textRef}
+        x={0}
+        y={0}
+        textAnchor="middle"
+        fill={stepTextColor(color)}
+        fontSize={fontSize}
+        fontFamily={STEP_FONT}
+        fontWeight="700"
+      >
+        {number}
+      </text>
+    </g>
+  );
+}
 
 interface AnnotationShapeProps {
   ann: Annotation;
@@ -29,11 +66,7 @@ export default function AnnotationShape({
 }: AnnotationShapeProps) {
   if (ann.type === 'step') {
     const diameter = Math.min(rectW, rectH);
-    return <g data-step-number={stepNumber} aria-label={`Step ${stepNumber}`}>
-      <circle r={diameter / 2} fill={ann.color} style={{ filter: `drop-shadow(0 ${diameter * .04}px ${diameter * .04}px rgba(0,0,0,0.22))` }} />
-      <text x={0} y={0} textAnchor="middle" dominantBaseline="central" fill={stepTextColor(ann.color)}
-        fontSize={stepFontSize(diameter, stepNumber)} fontFamily={STEP_FONT} fontWeight="700">{stepNumber}</text>
-    </g>;
+    return <StepBadge diameter={diameter} number={stepNumber} color={ann.color} />;
   }
   if (ann.type === 'rect') {
     return (

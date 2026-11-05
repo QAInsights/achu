@@ -86,6 +86,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     watermarkPosition: style.watermarkPosition, watermarkOpacity: style.watermarkOpacity,
     watermarkFont: style.watermarkFont, watermarkBold: style.watermarkBold, watermarkItalic: style.watermarkItalic,
     annotationFont: style.annotationFont, annotationFontSize: style.annotationFontSize, annotationBold: style.annotationBold, annotationItalic: style.annotationItalic,
+    annotationStepSize: style.annotationStepSize,
     annotationOutlineEnabled: style.annotationOutlineEnabled, annotationOutlineColor: style.annotationOutlineColor, annotationOutlineWidth: style.annotationOutlineWidth,
     annotationGradientEnabled: style.annotationGradientEnabled, annotationGradientColor1: style.annotationGradientColor1, annotationGradientColor2: style.annotationGradientColor2, annotationGradientAngle: style.annotationGradientAngle,
     position: style.position, annotations: style.annotations, meshPoints: style.meshPoints, meshBlur: style.meshBlur, meshGrain: style.meshGrain, meshOpacity: style.meshOpacity, meshSpread: style.meshSpread,
@@ -163,6 +164,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     style.setWatermarkItalic(config.watermarkItalic ?? false);
     style.setAnnotationFont(config.annotationFont ?? 'sans-serif');
     style.setAnnotationFontSize(config.annotationFontSize ?? 24);
+    style.setAnnotationStepSize(config.annotationStepSize ?? 40);
     style.setAnnotationBold(config.annotationBold ?? true);
     style.setAnnotationItalic(config.annotationItalic ?? false);
     style.setAnnotationOutlineEnabled(config.annotationOutlineEnabled ?? false);

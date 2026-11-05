@@ -18,21 +18,33 @@ let mockContext: any = {};
 describe('step badge preview/export parity', () => {
   it.each([50, 100, 200])('matches labels, circles, colors and type at %s percent export scale', scale => {
     const steps: Annotation[] = [
-      { id: 'third', type: 'step', stepOrder: 3, x: .3, y: .2, w: .05, h: .1, color: '#ffffff', strokeWidth: 4 },
-      { id: 'first', type: 'step', stepOrder: 1, x: .1, y: .2, w: .05, h: .1, color: '#000000', strokeWidth: 4 },
+      { id: 'third', type: 'step', stepOrder: 3, x: .3, y: .2, w: .05, h: .1, color: 'rgba(244, 63, 94, 1)', strokeWidth: 4 },
+      { id: 'first', type: 'step', stepOrder: 1, x: .1, y: .2, w: .05, h: .1, color: 'hsl(60, 100%, 50%)', strokeWidth: 4 },
     ];
     const numbers = stepNumbers(steps);
+    const measurement = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      measureText: () => ({ actualBoundingBoxAscent: 15, actualBoundingBoxDescent: 3 }),
+    } as any);
     const { container } = render(<svg>{steps.map(ann => <AnnotationShape key={ann.id} ann={ann}
       dimensions={{ width: 800, height: 400 }} rectW={40} rectH={40} w={40} h={40}
       strokeW={4} editingTextId={null} stepNumber={numbers.get(ann.id)} />)}</svg>);
+    measurement.mockRestore();
     const badges = [...container.querySelectorAll('[data-step-number]')];
     expect(badges.map(b => b.textContent)).toEqual(['2', '1']);
     const { canvas, ctx } = makeMockCanvas();
     const fills: string[] = [];
     const fonts: string[] = [];
     const labels = vi.fn();
+    const labelColors = new Map<string, string>();
     const tracked = new Proxy(ctx, { get(target, key) {
-      return key === 'fillText' ? labels : Reflect.get(target, key);
+      if (key === 'measureText') return () => {
+        const fontSize = parseFloat(fonts.at(-1)?.split(' ')[1] || '20');
+        return { width: 10, actualBoundingBoxAscent: fontSize * .75, actualBoundingBoxDescent: fontSize * .15 };
+      };
+      return key === 'fillText' ? (label: string, x: number, y: number) => {
+        labelColors.set(label, fills.at(-1)!);
+        labels(label, x, y);
+      } : Reflect.get(target, key);
     }, set(target, key, value) {
       if (key === 'fillStyle') fills.push(value);
       if (key === 'font') fonts.push(value);
@@ -50,7 +62,9 @@ describe('step badge preview/export parity', () => {
       expect(text.getAttribute('fill')).toBe(stepTextColor(ann.color));
       expect(text.getAttribute('font-family')).toBe(STEP_FONT);
       expect(ctx.calls).toContain(`arc(0,0,${diameter / 2},0,${Math.PI * 2})`);
-      expect(labels).toHaveBeenCalledWith(String(label), 0, 0);
+      expect(text.getAttribute('y')).toBe('6');
+      expect(labels).toHaveBeenCalledWith(String(label), 0, stepFontSize(diameter, label) * .3);
+      expect(labelColors.get(String(label))).toBe(text.getAttribute('fill'));
       expect(fills).toContain(ann.color);
       expect(fills).toContain(stepTextColor(ann.color));
       expect(fonts).toContain(`700 ${stepFontSize(diameter, label)}px ${STEP_FONT}`);

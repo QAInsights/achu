@@ -57,6 +57,7 @@ export interface AppContextType {
   watermarkItalic: boolean; setWatermarkItalic: React.Dispatch<React.SetStateAction<boolean>>;
   annotationFont: string; setAnnotationFont: React.Dispatch<React.SetStateAction<string>>;
   annotationFontSize: number; setAnnotationFontSize: React.Dispatch<React.SetStateAction<number>>;
+  annotationStepSize: number; setAnnotationStepSize: React.Dispatch<React.SetStateAction<number>>;
   annotationBold: boolean; setAnnotationBold: React.Dispatch<React.SetStateAction<boolean>>;
   annotationItalic: boolean; setAnnotationItalic: React.Dispatch<React.SetStateAction<boolean>>;
   annotationOutlineEnabled: boolean; setAnnotationOutlineEnabled: React.Dispatch<React.SetStateAction<boolean>>;

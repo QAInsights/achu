@@ -1,5 +1,5 @@
 import { getAnnotationTextLayout } from './utils/annotationUtils';
-import { STEP_FONT, stepFontSize, stepNumbers, stepTextColor } from './utils/stepUtils';
+import { STEP_FONT, stepFontSize, stepNumbers, stepTextColor, stepTextBaseline } from './utils/stepUtils';
 
 export interface Annotation {
   id: string;
@@ -130,6 +130,7 @@ export interface RenderConfig {
   watermarkItalic?: boolean;
   annotationFont?: string;
   annotationFontSize?: number;
+  annotationStepSize?: number;
   annotationBold?: boolean;
   annotationItalic?: boolean;
   annotationOutlineEnabled?: boolean;
@@ -1349,11 +1350,13 @@ function drawAnnotationsOnCanvas(
       ctx.arc(0, 0, diameter / 2, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowColor = 'transparent';
-      ctx.font = `700 ${stepFontSize(diameter, number)}px ${STEP_FONT}`;
+      const fontSize = stepFontSize(diameter, number);
+      ctx.font = `700 ${fontSize}px ${STEP_FONT}`;
       ctx.fillStyle = stepTextColor(ann.color);
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(number), 0, 0);
+      ctx.textBaseline = 'alphabetic';
+      const baseline = stepTextBaseline(ctx.measureText(String(number)), fontSize);
+      ctx.fillText(String(number), 0, baseline);
     } else if (ann.type === 'rect') {
       ctx.strokeRect(-halfW, -halfH, w, h);
     } else if (ann.type === 'filled-rect') {

@@ -50,6 +50,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     annotationStrokeWidth, setAnnotationStrokeWidth,
     annotationFont = 'sans-serif', setAnnotationFont,
     annotationFontSize = 24, setAnnotationFontSize,
+    annotationStepSize = 40, setAnnotationStepSize,
     annotationBold = true, setAnnotationBold,
     annotationItalic = false, setAnnotationItalic,
     annotationOutlineEnabled = false, setAnnotationOutlineEnabled,
@@ -357,6 +358,25 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
           </button>
         </Tooltip>
       </div>
+      {activeTool === 'step' && (
+        <div className="toolbar-context" role="group" aria-label="Step options">
+          <span className="toolbar-context-label">Step size</span>
+          <div className="toolbar-group">
+            {([{ label: 'S', diameter: 32 }, { label: 'M', diameter: 40 }, { label: 'L', diameter: 56 }]).map(({ label, diameter }) => (
+              <button
+                key={label}
+                type="button"
+                className={`tool-btn ${annotationStepSize === diameter ? 'active' : ''}`}
+                aria-label={`Step size ${label}`}
+                aria-pressed={annotationStepSize === diameter}
+                onClick={() => setAnnotationStepSize(diameter)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {(activeTool === 'arrow' || activeTool === 'text') && (
         <div className="toolbar-context" role="group" aria-label={`${activeTool === 'text' ? 'Text' : 'Arrow'} options`}>
           <span className="toolbar-context-label">{activeTool === 'text' ? 'Text' : 'Arrow'}</span>
