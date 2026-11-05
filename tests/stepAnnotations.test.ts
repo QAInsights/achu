@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { act, cleanup, fireEvent, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAnnotationEvents } from '../src/renderer/hooks/useAnnotationEvents';
@@ -25,15 +25,25 @@ function setup(initial: Annotation[] = [], tool: 'step' | 'pointer' = 'step', zo
     const [annotations, setAnnotations] = useState(initial);
     const [color, setColor] = useState('#00ff00');
     const [stepSize, setStepSize] = useState(40);
-    const history = useHistory(config => setAnnotations(config.annotations ?? []));
+    const stepSizeActionRef = useRef<((size: number) => void) | null>(null);
+    const applyConfig = (config: { annotations?: Annotation[]; annotationStepSize?: number }) => {
+      setAnnotations(config.annotations ?? []);
+      setStepSize(config.annotationStepSize ?? 40);
+    };
+    const history = useHistory(applyConfig);
     const events = useAnnotationEvents({ annotations, setAnnotations, activeTool: tool,
       color, setAnnotationColor: setColor, annotationFontSize: 24, strokeWidth: 4,
       annotationStepSize: stepSize, setAnnotationStepSize: setStepSize,
+      stepSizeActionRef,
       containerRef, customPrompt: vi.fn(),
-      onSaveHistory: updated => { onSave(updated); history.pushHistory({ annotations: updated }); } });
-    return { ...events, annotations, history, color, stepSize, setStepSize };
+      onSaveHistory: updated => { onSave(updated); history.pushHistory({ annotations: updated, annotationStepSize: stepSize }); } });
+    const clickSize = (diameter: number) => {
+      setStepSize(diameter);
+      stepSizeActionRef.current?.(diameter);
+    };
+    return { ...events, annotations, history, color, setColor, stepSize, setStepSize, clickSize, applyConfig };
   });
-  act(() => hook.result.current.history.pushHistory({ annotations: initial }));
+  act(() => hook.result.current.history.pushHistory({ annotations: initial, annotationStepSize: 40 }));
   const pointer = (x: number, y: number, extra = {}) => ({ clientX: x * zoom, clientY: y * zoom,
     target: container, currentTarget: container, button: 0, isPrimary: true, pointerId: 1, stopPropagation: vi.fn(), ...extra } as unknown as React.PointerEvent<HTMLDivElement>);
   return { ...hook, container, pointer, onSave };
@@ -98,7 +108,7 @@ describe('step placement and editing', () => {
     act(() => result.current.setSelectedId('step-1'));
     expect(onSave).not.toHaveBeenCalled();
     const before = result.current.annotations[0];
-    act(() => result.current.setStepSize(56));
+    act(() => result.current.clickSize(56));
     const after = result.current.annotations[0];
     expect(after.w * 800).toBeCloseTo(56);
     expect(after.h * 400).toBeCloseTo(56);
@@ -113,6 +123,49 @@ describe('step placement and editing', () => {
     act(() => result.current.setStepSize(56));
     act(() => result.current.handlePointerDown(pointer(200, 200)));
     expect(result.current.annotations[0].w * 800).toBeCloseTo(56);
+  });
+  it('does not resize or write history when restoring size config, including color undo/redo with a selected 56px step', () => {
+    const original = { ...step(1), w: .07, h: .14 };
+    const { result, onSave } = setup([original], 'pointer');
+    act(() => result.current.setSelectedId(original.id));
+    expect(result.current.stepSize).toBe(56);
+    expect(onSave).not.toHaveBeenCalled();
+    act(() => result.current.setColor('#ffff00'));
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(result.current.history.historyIndex).toBe(1);
+    act(() => result.current.history.handleUndo());
+    expect(result.current.annotations).toEqual([original]);
+    expect(result.current.history.historyIndex).toBe(0);
+    expect(result.current.history.history).toHaveLength(2);
+    expect(onSave).toHaveBeenCalledTimes(1);
+    act(() => result.current.history.handleRedo());
+    expect(result.current.annotations[0]).toEqual({ ...original, color: '#ffff00' });
+    expect(result.current.history.historyIndex).toBe(1);
+    expect(onSave).toHaveBeenCalledTimes(1);
+    act(() => result.current.applyConfig({ annotations: [original], annotationStepSize: 32 }));
+    expect(result.current.annotations).toEqual([original]);
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
+  it('syncs manual resize diameters without extra history and accepts explicit size clicks even when the value matches', () => {
+    const { result, pointer, onSave } = setup([step(1)], 'pointer');
+    act(() => result.current.setSelectedId('step-1'));
+    act(() => result.current.clickSize(40));
+    expect(onSave).toHaveBeenCalledTimes(1);
+    onSave.mockClear();
+    act(() => result.current.startResize(pointer(120, 120), result.current.annotations[0], 'br'));
+    act(() => result.current.handlePointerMove(pointer(128, 128)));
+    expect(result.current.stepSize).toBe(48);
+    expect(onSave).not.toHaveBeenCalled();
+    act(() => { void result.current.handlePointerUp(pointer(128, 128)); });
+    expect(onSave).toHaveBeenCalledTimes(1);
+    act(() => result.current.clickSize(40));
+    expect(result.current.annotations[0].w * 800).toBeCloseTo(40);
+    expect(result.current.stepSize).toBe(40);
+    expect(onSave).toHaveBeenCalledTimes(2);
+    act(() => result.current.history.handleUndo());
+    expect(result.current.stepSize).toBe(48);
+    expect(result.current.annotations[0].w * 800).toBeCloseTo(48);
+    expect(onSave).toHaveBeenCalledTimes(2);
   });
   it('places centered circles on primary clicks at zoom, without dragging, and one snapshot each', () => {
     const { result, pointer, onSave } = setup([], 'step', 1.5);

@@ -39,6 +39,7 @@ interface UseAnnotationEventsProps {
   annotationFontSize?: number;
   annotationStepSize?: number;
   setAnnotationStepSize?: (size: number) => void;
+  stepSizeActionRef?: React.MutableRefObject<((size: number) => void) | null>;
   setAnnotationFontSize?: (size: number) => void;
   annotationBold?: boolean;
   setAnnotationBold?: (bold: boolean) => void;
@@ -89,6 +90,7 @@ export function useAnnotationEvents({
   annotationFontSize,
   annotationStepSize = 40,
   setAnnotationStepSize,
+  stepSizeActionRef,
   setAnnotationFontSize,
   annotationBold,
   setAnnotationBold,
@@ -338,24 +340,27 @@ export function useAnnotationEvents({
     gradientEnabled: annotationGradientEnabled, gradientColor1: annotationGradientColor1,
     gradientColor2: annotationGradientColor2, gradientAngle: annotationGradientAngle,
   };
-  const previousStepSize = useRef(annotationStepSize);
-  useEffect(() => {
-    const changed = previousStepSize.current !== annotationStepSize;
-    previousStepSize.current = annotationStepSize;
-    if (!changed || !selectedId) return;
+  const resizeSelectedStep = useCallback((diameter: number) => {
+    if (!selectedId) return;
     const selected = annotations.find(a => a.id === selectedId && a.type === 'step');
-    if (!selected || Math.abs(selected.w * dimensions.width - annotationStepSize) < .01) return;
-    const updated = annotations.map(a => a.id === selectedId ? sizeStep(a, annotationStepSize, dimensions) : a);
+    if (!selected) return;
+    const updated = annotations.map(a => a.id === selectedId ? sizeStep(a, diameter, dimensions) : a);
     setAnnotations(updated);
     onSaveHistory(updated);
-  }, [annotationStepSize, selectedId]);
+  }, [selectedId, annotations, dimensions, setAnnotations, onSaveHistory]);
+  useLayoutEffect(() => {
+    if (!stepSizeActionRef) return;
+    stepSizeActionRef.current = resizeSelectedStep;
+    return () => {
+      if (stepSizeActionRef.current === resizeSelectedStep) stepSizeActionRef.current = null;
+    };
+  }, [stepSizeActionRef, resizeSelectedStep]);
   useEffect(() => {
     const selected = annotations.find(a => a.id === selectedId && a.type === 'step');
     if (!selected || !setAnnotationStepSize) return;
     const diameter = Math.round(selected.w * dimensions.width * 1000) / 1000;
-    previousStepSize.current = diameter;
     setAnnotationStepSize(diameter);
-  }, [selectedId, activeTool, setAnnotationStepSize]);
+  }, [selectedId, annotations, dimensions.width, annotationStepSize, setAnnotationStepSize]);
   const previousTextStyle = useRef(textStyle);
   useEffect(() => {
     const previous = previousTextStyle.current;

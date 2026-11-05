@@ -51,6 +51,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     annotationFont = 'sans-serif', setAnnotationFont,
     annotationFontSize = 24, setAnnotationFontSize,
     annotationStepSize = 40, setAnnotationStepSize,
+    stepSizeActionRef,
     annotationBold = true, setAnnotationBold,
     annotationItalic = false, setAnnotationItalic,
     annotationOutlineEnabled = false, setAnnotationOutlineEnabled,
@@ -369,7 +370,10 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
                 className={`tool-btn ${annotationStepSize === diameter ? 'active' : ''}`}
                 aria-label={`Step size ${label}`}
                 aria-pressed={annotationStepSize === diameter}
-                onClick={() => setAnnotationStepSize(diameter)}
+                onClick={() => {
+                  setAnnotationStepSize(diameter);
+                  stepSizeActionRef.current?.(diameter);
+                }}
               >
                 {label}
               </button>
