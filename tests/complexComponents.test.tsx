@@ -665,6 +665,30 @@ describe('WorkspaceToolbar', () => {
     rerender(<WorkspaceToolbar />);
     expect(screen.getByRole('button', { name: 'Step size L', pressed: true })).toBeInTheDocument();
   });
+  it('marks Crop active instead of the annotation tool and floats its options outside the inert toolbar', () => {
+    mockContext.cropActive = true;
+    mockContext.cropAspect = 'Free';
+    mockContext.activeTool = 'pointer';
+    render(<WorkspaceToolbar />);
+    expect(screen.getByRole('button', { name: 'Crop' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Select / Move' })).toHaveAttribute('aria-pressed', 'false');
+    const dock = screen.getByRole('group', { name: 'Editing tools' });
+    expect(dock).toHaveAttribute('inert');
+    expect(dock).not.toContainElement(screen.getByRole('group', { name: 'Crop options' }));
+  });
+  it('hides the Step pill during crop and restores it after crop closes', () => {
+    mockContext.cropActive = true;
+    mockContext.cropAspect = 'Free';
+    mockContext.activeTool = 'step';
+    mockContext.stepSelected = true;
+    const { rerender } = render(<WorkspaceToolbar />);
+    expect(screen.getByRole('group', { name: 'Crop options' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Step options' })).toBeNull();
+    mockContext.cropActive = false;
+    rerender(<WorkspaceToolbar />);
+    expect(screen.queryByRole('group', { name: 'Crop options' })).toBeNull();
+    expect(screen.getByRole('group', { name: 'Step options' })).toBeInTheDocument();
+  });
   it('exposes the active tool and keeps contextual options after the main controls', () => {
     mockContext.activeTool = 'arrow';
     render(<WorkspaceToolbar />);

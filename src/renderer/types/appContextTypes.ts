@@ -4,8 +4,9 @@ import type { VibePalette } from '../utils/colorExtractor';
 import type { ShaderType, ShaderParams } from '../shaders/shaderPresets';
 import type { WordBoundingBox, GitHubIssuePayload } from '../utils/githubAgentUtils';
 import type { GalleryItem } from '../hooks/useGallery';
+import type { useCrop } from '../hooks/useCrop';
 
-export interface AppContextType {
+export interface AppContextType extends ReturnType<typeof useCrop> {
   // Config state
   padding: number; setPadding: React.Dispatch<React.SetStateAction<number>>;
   rounded: number; setRounded: React.Dispatch<React.SetStateAction<number>>;

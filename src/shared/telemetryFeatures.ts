@@ -6,7 +6,7 @@ export const TELEMETRY_FEATURES = [
   'github_push', 'err_github_push', 'code_studio_open',
   'bg_color', 'bg_gradient', 'bg_blur', 'bg_mesh', 'bg_shader', 'preset_apply',
   'annot_rect', 'annot_filled_rect', 'annot_circle', 'annot_filled_circle', 'annot_line', 'annot_arrow', 'annot_text', 'annot_pen', 'annot_emoji', 'annot_step',
-  'image_open', 'paste_clipboard', 'onboarding_done', 'onboarding_skip', 'share_prompt_shown',
+  'image_open', 'paste_clipboard', 'crop_apply', 'onboarding_done', 'onboarding_skip', 'share_prompt_shown',
   'capture_hotkey', 'capture_tray', 'capture_button', 'capture_import', 'update_install',
 ] as const;
 

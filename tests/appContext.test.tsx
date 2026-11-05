@@ -6,6 +6,10 @@ import { AppProvider, useAppContext } from '../src/renderer/AppContext';
 import { useToolbarShortcuts } from '../src/renderer/hooks/useToolbarShortcuts';
 
 // Mock dependency hooks
+vi.mock('../src/renderer/contexts/GalleryContext', () => ({
+  useGalleryContext: () => ({ galleryVisible: false }),
+}));
+
 vi.mock('../src/renderer/hooks/useHistory', () => ({
   useHistory: () => mockUseHistory,
 }));

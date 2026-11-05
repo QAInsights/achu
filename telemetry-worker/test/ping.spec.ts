@@ -118,9 +118,17 @@ describe("POST /v1/ping", () => {
 		expect((await postPing(pingBody({ firstRun: "yes" }))).status).toBe(400);
 	});
 
-	it("rejects more than 50 feature keys", async () => {
+	it("accepts the combined feature catalog above the previous 50-key limit", async () => {
 		const features: Record<string, number> = {};
 		for (let i = 0; i < 51; i++) features[`f_${i}`] = 1;
+		features.crop_apply = 1;
+		features.annot_step = 1;
+		expect((await postPing(pingBody({ features }))).status).toBe(204);
+	});
+
+	it("rejects more than 64 feature keys", async () => {
+		const features: Record<string, number> = {};
+		for (let i = 0; i < 65; i++) features[`f_${i}`] = 1;
 		expect((await postPing(pingBody({ features }))).status).toBe(400);
 	});
 

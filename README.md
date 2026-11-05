@@ -45,6 +45,7 @@
 ## ✨ Features
 
 ### 🎨 Canvas & Framing Aesthetics
+* **Crop:** Trim screenshots on canvas with resize handles, aspect ratios, and full-resolution PNG output. Press X to crop, Enter to apply, or Esc to cancel. Crops support undo and redo.
 * **Beautification Layouts:** Frame screenshots with custom padding, background blur, rounded corners, adjustable shadows, scale, and custom aspect ratios.
 * **Fluid Mesh Gradients:** Generate premium multi-point mesh gradients for background wrappers, along with linear/radial gradients and solid colors.
 * **Browser Chrome Overlays:** Instantly add polished browser mockups (macOS-style or Windows-style window controls) around your screenshots.

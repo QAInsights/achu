@@ -11,7 +11,7 @@ export interface Annotation {
   h: number;          // height fraction
   text?: string;
   color: string;
-  strokeWidth: number; // relative to 1000px viewBox
+  strokeWidth: number; // CSS pixels at annotationDisplayWidth
   points?: Array<{ x: number; y: number }>;
   rotation?: number;
   arrowStyle?: 'classic' | 'dashed' | 'tapered' | 'curved';

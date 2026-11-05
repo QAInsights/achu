@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 
 // Mock useAppContext before importing the hook
 const mockSetActiveTool = vi.fn();
+vi.mock('../src/renderer/contexts/GalleryContext', () => ({ useGalleryContext: () => ({ galleryVisible: false }) }));
 
 vi.mock('../src/renderer/AppContext', () => ({
   useAppContext: () => ({

@@ -5,7 +5,7 @@ import { loadSettings, saveSettings } from './settings';
 
 export const TELEMETRY_URL = 'https://telemetry.achu.app/v1/ping';
 export const FEATURE_RE = /^[a-z0-9_]{1,40}$/;
-export const MAX_FEATURES = 50;
+export const MAX_FEATURES = 64;
 export const MAX_COUNT = 1_000_000;
 
 let enabledCache = false;

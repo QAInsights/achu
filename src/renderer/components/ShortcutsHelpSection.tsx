@@ -22,6 +22,7 @@ const SHORTCUTS = [
 
 const TOOLBAR_SHORTCUTS = [
   { label: 'Step Callout', keys: 's step numbered callout badge' },
+  { label: 'Crop Screenshot', keys: 'x crop trim enter apply escape esc cancel shift ratio resize' },
   { label: 'Select / Move', keys: 'v 1 select move' },
   { label: 'Rectangle (Outline / Filled)', keys: 'r f 2 3 rectangle outline filled' },
   { label: 'Circle (Outline / Filled)', keys: 'c o 4 5 circle outline filled' },
@@ -32,7 +33,7 @@ const TOOLBAR_SHORTCUTS = [
 
 const SUPPORT_KEYWORDS = 'support project donate donation github repo repository buy coffee';
 
-registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy duplicate cut annotation nudge position constrain square angle 45 drawing step numbered callout badge' });
+registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy duplicate cut annotation nudge position constrain square angle 45 drawing step numbered callout badge crop trim x enter apply escape cancel ratio resize' });
 registerSettingsSection({ tab: 'shortcuts', label: 'Support & Project', keywords: SUPPORT_KEYWORDS });
 
 export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery?: string }) {
@@ -84,6 +85,7 @@ export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery
               {filteredToolbar.map(s => (
                 <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
+                  {s.label === 'Crop Screenshot' && <div><kbd>X</kbd>, <kbd>Enter</kbd> apply, <kbd>Esc</kbd> cancel, <kbd>Shift</kbd> lock ratio</div>}
                   {s.label === 'Select / Move' && <div><kbd>V</kbd> or <kbd>1</kbd></div>}
                   {s.label === 'Rectangle (Outline / Filled)' && <div><kbd>R</kbd> (<kbd>Shift+R</kbd> / <kbd>F</kbd> for Filled) or <kbd>2</kbd> / <kbd>3</kbd></div>}
                   {s.label === 'Circle (Outline / Filled)' && <div><kbd>C</kbd> / <kbd>O</kbd> (<kbd>Shift+C</kbd> / <kbd>Shift+O</kbd> for Filled) or <kbd>4</kbd> / <kbd>5</kbd></div>}
