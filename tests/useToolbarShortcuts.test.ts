@@ -37,6 +37,15 @@ describe('useToolbarShortcuts', () => {
   };
 
   describe('number key mappings', () => {
+    it('selects Step with S without stealing modified Save', () => {
+      render();
+      pressKey('s', { ctrlKey: true });
+      expect(mockSetActiveTool).not.toHaveBeenCalled();
+      pressKey('s');
+      expect(mockSetActiveTool).toHaveBeenLastCalledWith('step');
+      pressKey('S');
+      expect(mockSetActiveTool).toHaveBeenLastCalledWith('step');
+    });
     it('maps 1 to pointer', () => {
       render();
       pressKey('1');

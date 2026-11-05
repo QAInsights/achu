@@ -10,6 +10,7 @@ import AnnotationContextMenu, { LayerOrderAction } from './components/Annotation
 import { trackFeature } from './utils/telemetry';
 import { transformCoordinates, getDeleteButtonPosition } from './utils/layoutUtils';
 import { getTextAnnotationBounds } from './utils/annotationUtils';
+import { stepNumbers } from './utils/stepUtils';
 import {
   bringToFront,
   bringForward,
@@ -20,8 +21,8 @@ import {
 interface AnnotationsLayerProps {
   annotations: Annotation[];
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
-  activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji';
-  setActiveTool: (tool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji') => void;
+  activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji' | 'step';
+  setActiveTool: (tool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji' | 'step') => void;
   color: string;
   setAnnotationColor: (color: string) => void;
   strokeWidth: number;
@@ -47,6 +48,10 @@ export default function AnnotationsLayer({
     annotationFont,
     setAnnotationFont,
     annotationFontSize,
+    annotationStepSize,
+    setAnnotationStepSize,
+    stepSizeActionRef,
+    setStepSelected,
     setAnnotationFontSize,
     annotationBold,
     setAnnotationBold,
@@ -100,6 +105,10 @@ export default function AnnotationsLayer({
     setAnnotationColor,
     strokeWidth,
     arrowStyle,
+    annotationStepSize,
+    setAnnotationStepSize,
+    stepSizeActionRef,
+    setStepSelected,
     annotationFont,
     setAnnotationFont,
     annotationFontSize,
@@ -165,6 +174,7 @@ export default function AnnotationsLayer({
     onSaveHistory(updated);
   };
 
+  const numbers = stepNumbers(annotations);
   return (
     <div
       ref={node => {
@@ -185,6 +195,7 @@ export default function AnnotationsLayer({
         zIndex: 10,
         cursor: activeTool === 'pointer' ? 'default' : 'crosshair',
         userSelect: 'none',
+        outline: 'none',
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -257,6 +268,7 @@ export default function AnnotationsLayer({
 
                 <AnnotationShape
                   ann={ann}
+                  stepNumber={numbers.get(ann.id)}
                   dimensions={dimensions}
                   rectW={rectW}
                   rectH={rectH}

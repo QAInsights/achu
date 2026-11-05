@@ -556,7 +556,7 @@ describe('configUtils', () => {
     it('ACTIVE_TOOLS has all expected tools', () => {
       expect(ACTIVE_TOOLS).toEqual([
         'pointer', 'rect', 'filled-rect', 'circle', 'filled-circle',
-        'line', 'arrow', 'text', 'pen', 'emoji',
+        'line', 'arrow', 'text', 'pen', 'emoji', 'step',
       ]);
     });
 

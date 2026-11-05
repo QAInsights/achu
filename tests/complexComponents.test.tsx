@@ -142,6 +142,9 @@ beforeEach(() => {
     setAnnotationFont: vi.fn(),
     annotationFontSize: 24,
     setAnnotationFontSize: vi.fn(),
+    annotationStepSize: 40,
+    setAnnotationStepSize: vi.fn(),
+    stepSizeActionRef: { current: vi.fn() },
     annotationBold: true,
     setAnnotationBold: vi.fn(),
     annotationItalic: false,
@@ -627,6 +630,41 @@ describe('SettingsModal', () => {
 });
 
 describe('WorkspaceToolbar', () => {
+  it('floats Step options outside the toolbar layout for an active tool or a selected badge', () => {
+    mockContext.activeTool = 'step';
+    const { rerender } = render(<WorkspaceToolbar />);
+    const dock = screen.getByRole('group', { name: 'Editing tools' });
+    const flyout = screen.getByRole('group', { name: 'Step options' });
+    expect(flyout).toHaveClass('step-size-flyout');
+    expect(dock).not.toContainElement(flyout);
+    expect(dock.querySelector('.toolbar-context')).toBeNull();
+    mockContext.activeTool = 'pointer';
+    mockContext.stepSelected = true;
+    rerender(<WorkspaceToolbar />);
+    expect(screen.getByRole('group', { name: 'Step options' })).toBeInTheDocument();
+    mockContext.stepSelected = false;
+    rerender(<WorkspaceToolbar />);
+    expect(screen.queryByRole('group', { name: 'Step options' })).not.toBeInTheDocument();
+  });
+  it('highlights actual step sizes and routes every explicit size click, including an already-selected size, to the resize action', () => {
+    mockContext.activeTool = 'step';
+    const { rerender } = render(<WorkspaceToolbar />);
+    const medium = screen.getByRole('button', { name: 'Step size M', pressed: true });
+    fireEvent.click(medium);
+    expect(mockContext.setAnnotationStepSize).toHaveBeenCalledWith(40);
+    expect(mockContext.stepSizeActionRef.current).toHaveBeenCalledExactlyOnceWith(40);
+    mockContext.annotationStepSize = 48;
+    rerender(<WorkspaceToolbar />);
+    for (const size of ['S', 'M', 'L']) {
+      expect(screen.getByRole('button', { name: `Step size ${size}` })).toHaveAttribute('aria-pressed', 'false');
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Step size M' }));
+    expect(mockContext.stepSizeActionRef.current).toHaveBeenCalledTimes(2);
+    expect(mockContext.stepSizeActionRef.current).toHaveBeenLastCalledWith(40);
+    mockContext.annotationStepSize = 56;
+    rerender(<WorkspaceToolbar />);
+    expect(screen.getByRole('button', { name: 'Step size L', pressed: true })).toBeInTheDocument();
+  });
   it('marks Crop active instead of the annotation tool and floats its options outside the inert toolbar', () => {
     mockContext.cropActive = true;
     mockContext.cropAspect = 'Free';
@@ -637,6 +675,19 @@ describe('WorkspaceToolbar', () => {
     const dock = screen.getByRole('group', { name: 'Editing tools' });
     expect(dock).toHaveAttribute('inert');
     expect(dock).not.toContainElement(screen.getByRole('group', { name: 'Crop options' }));
+  });
+  it('hides the Step pill during crop and restores it after crop closes', () => {
+    mockContext.cropActive = true;
+    mockContext.cropAspect = 'Free';
+    mockContext.activeTool = 'step';
+    mockContext.stepSelected = true;
+    const { rerender } = render(<WorkspaceToolbar />);
+    expect(screen.getByRole('group', { name: 'Crop options' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Step options' })).toBeNull();
+    mockContext.cropActive = false;
+    rerender(<WorkspaceToolbar />);
+    expect(screen.queryByRole('group', { name: 'Crop options' })).toBeNull();
+    expect(screen.getByRole('group', { name: 'Step options' })).toBeInTheDocument();
   });
   it('exposes the active tool and keeps contextual options after the main controls', () => {
     mockContext.activeTool = 'arrow';

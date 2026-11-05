@@ -7,7 +7,7 @@ export interface Env {
 
 const MAX_BODY_BYTES = 4096;
 const MAX_STRING_FIELD = 64;
-const MAX_FEATURES = 50;
+const MAX_FEATURES = 64;
 const FEATURE_KEY_RE = /^[a-z0-9_]{1,40}$/;
 const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 const STRING_FIELDS = [
@@ -444,7 +444,7 @@ const FEATURE_GROUPS: { title: string; features: [string, string][] }[] = [
 	{ title: "Annotations", features: [
 		["annot_rect", "Rectangle"], ["annot_filled_rect", "Filled rectangle"], ["annot_circle", "Circle"],
 		["annot_filled_circle", "Filled circle"], ["annot_line", "Line"], ["annot_arrow", "Arrow"],
-		["annot_text", "Text"], ["annot_pen", "Pen"], ["annot_emoji", "Emoji"],
+		["annot_text", "Text"], ["annot_pen", "Pen"], ["annot_emoji", "Emoji"], ["annot_step", "Step callout"],
 	] },
 	{ title: "Privacy and OCR", features: [
 		["privacy_scan", "Privacy scan"], ["redact_all", "Redact all"], ["ocr_grab", "Grab text (OCR)"],

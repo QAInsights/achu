@@ -278,9 +278,9 @@ describe('feature counters and opt-out', () => {
     expect(storedSettings.telemetryPendingFeatures).toEqual({ github_push: 1 });
   });
 
-  it('ignores invalid names and limits distinct pending features to 50', async () => {
+  it('ignores invalid names and limits distinct pending features to 64', async () => {
     storedSettings.telemetryPendingFeatures = Object.fromEntries(
-      Array.from({ length: 50 }, (_, index) => [`persisted_${index}`, 1])
+      Array.from({ length: 64 }, (_, index) => [`persisted_${index}`, 1])
     );
     const telemetry = await loadTelemetry();
     telemetry.initTelemetry({ settingsExistedAtLaunch: true });
@@ -292,7 +292,7 @@ describe('feature counters and opt-out', () => {
     telemetry.recordFeature('export_png');
     telemetry.persistCounts();
 
-    expect(Object.keys(storedSettings.telemetryPendingFeatures)).toHaveLength(50);
+    expect(Object.keys(storedSettings.telemetryPendingFeatures)).toHaveLength(64);
     expect(storedSettings.telemetryPendingFeatures.export_png).toBeUndefined();
   });
 

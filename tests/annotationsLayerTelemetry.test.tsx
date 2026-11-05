@@ -96,8 +96,8 @@ function createTextAnnotation(text?: string): Annotation {
 }
 
 function beginTextAnnotation(layer: HTMLDivElement) {
-  fireEvent.pointerDown(layer, { clientX: 100, clientY: 100, pointerId: 1 });
-  fireEvent.pointerUp(layer, { clientX: 100, clientY: 100, pointerId: 1 });
+  fireEvent.pointerDown(layer, { clientX: 100, clientY: 100, pointerId: 1, button: 0, isPrimary: true });
+  fireEvent.pointerUp(layer, { clientX: 100, clientY: 100, pointerId: 1, button: 0, isPrimary: true });
   return screen.getByRole('textbox');
 }
 

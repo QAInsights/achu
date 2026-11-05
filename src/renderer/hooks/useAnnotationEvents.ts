@@ -12,6 +12,7 @@ import { trackFeature } from '../utils/telemetry';
 import { useAnnotationNudge } from './useAnnotationNudge';
 import { constrainDrawingDimensions } from '../utils/drawingUtils';
 import type { TelemetryFeature } from '../../shared/telemetryFeatures';
+import { assignStepOrder, nextStepOrder, resizeStep, sizeStep } from '../utils/stepUtils';
 
 const annotationFeatureByType: Partial<Record<Annotation['type'], TelemetryFeature>> = {
   rect: 'annot_rect',
@@ -22,13 +23,14 @@ const annotationFeatureByType: Partial<Record<Annotation['type'], TelemetryFeatu
   arrow: 'annot_arrow',
   pen: 'annot_pen',
   emoji: 'annot_emoji',
+  step: 'annot_step',
 };
 
 interface UseAnnotationEventsProps {
   disabled?: boolean;
   annotations: Annotation[];
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
-  activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji';
+  activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji' | 'step';
   color: string;
   setAnnotationColor?: (color: string) => void;
   strokeWidth: number;
@@ -36,6 +38,10 @@ interface UseAnnotationEventsProps {
   annotationFont?: string;
   setAnnotationFont?: (font: string) => void;
   annotationFontSize?: number;
+  annotationStepSize?: number;
+  setAnnotationStepSize?: (size: number) => void;
+  stepSizeActionRef?: React.MutableRefObject<((size: number) => void) | null>;
+  setStepSelected?: (selected: boolean) => void;
   setAnnotationFontSize?: (size: number) => void;
   annotationBold?: boolean;
   setAnnotationBold?: (bold: boolean) => void;
@@ -85,6 +91,10 @@ export function useAnnotationEvents({
   annotationFont,
   setAnnotationFont,
   annotationFontSize,
+  annotationStepSize = 40,
+  setAnnotationStepSize,
+  stepSizeActionRef,
+  setStepSelected,
   setAnnotationFontSize,
   annotationBold,
   setAnnotationBold,
@@ -206,7 +216,7 @@ export function useAnnotationEvents({
   const pasteAnnotation = useCallback(() => {
     const source = getAnnotationClipboard();
     if (!source) return;
-    const pasted = cloneAnnotation(source, { offset: ANNOTATION_PASTE_OFFSET });
+    const pasted = assignStepOrder(cloneAnnotation(source, { offset: ANNOTATION_PASTE_OFFSET }), annotations);
     // Cascade: next paste offsets from this pasted clone.
     setAnnotationClipboard(pasted);
     const updated = [...annotations, pasted];
@@ -218,7 +228,7 @@ export function useAnnotationEvents({
   const duplicateAnnotation = useCallback(() => {
     const source = annotations.find(ann => ann.id === selectedId);
     if (!source) return;
-    const duplicate = cloneAnnotation(source);
+    const duplicate = assignStepOrder(cloneAnnotation(source), annotations);
     const offsetPosition = (position: number, size: number) => {
       const fits = Math.min(position, position + size) >= 0 && Math.max(position, position + size) <= 1;
       const shifted = position + ANNOTATION_PASTE_OFFSET;
@@ -335,6 +345,31 @@ export function useAnnotationEvents({
     gradientEnabled: annotationGradientEnabled, gradientColor1: annotationGradientColor1,
     gradientColor2: annotationGradientColor2, gradientAngle: annotationGradientAngle,
   };
+  const resizeSelectedStep = useCallback((diameter: number) => {
+    if (!selectedId) return;
+    const selected = annotations.find(a => a.id === selectedId && a.type === 'step');
+    if (!selected) return;
+    const updated = annotations.map(a => a.id === selectedId ? sizeStep(a, diameter, dimensions) : a);
+    setAnnotations(updated);
+    onSaveHistory(updated);
+  }, [selectedId, annotations, dimensions, setAnnotations, onSaveHistory]);
+  useEffect(() => {
+    setStepSelected?.(annotations.some(a => a.id === selectedId && a.type === 'step'));
+  }, [selectedId, annotations, setStepSelected]);
+  useEffect(() => () => setStepSelected?.(false), [setStepSelected]);
+  useLayoutEffect(() => {
+    if (!stepSizeActionRef) return;
+    stepSizeActionRef.current = resizeSelectedStep;
+    return () => {
+      if (stepSizeActionRef.current === resizeSelectedStep) stepSizeActionRef.current = null;
+    };
+  }, [stepSizeActionRef, resizeSelectedStep]);
+  useEffect(() => {
+    const selected = annotations.find(a => a.id === selectedId && a.type === 'step');
+    if (!selected || !setAnnotationStepSize) return;
+    const diameter = Math.round(selected.w * dimensions.width * 1000) / 1000;
+    setAnnotationStepSize(diameter);
+  }, [selectedId, annotations, dimensions.width, annotationStepSize, setAnnotationStepSize]);
   const previousTextStyle = useRef(textStyle);
   useEffect(() => {
     const previous = previousTextStyle.current;
@@ -489,7 +524,11 @@ export function useAnnotationEvents({
       return;
     }
 
-    const unrotated = rotatePoint(mouseX, mouseY, cx, cy, resizeStart.rotation);
+    const isStep = annotations.find(a => a.id === selectedId)?.type === 'step';
+    const point = isStep
+      ? rotatePoint(mouseX * dimensions.width, mouseY * dimensions.height, cx * dimensions.width, cy * dimensions.height, resizeStart.rotation)
+      : rotatePoint(mouseX, mouseY, cx, cy, resizeStart.rotation);
+    const unrotated = isStep ? { x: point.x / dimensions.width, y: point.y / dimensions.height } : point;
 
     let proposedX = resizeStart.x;
     let proposedY = resizeStart.y;
@@ -507,6 +546,13 @@ export function useAnnotationEvents({
       const bottom = resizeStart.y + resizeStart.h;
       proposedY = unrotated.y;
       proposedH = bottom - proposedY;
+    }
+
+    if (isStep) {
+      const bounds = resizeStep(resizeStart, proposedW, proposedH, resizeHandle, dimensions);
+      setActiveGuides([]);
+      setAnnotations(prev => prev.map(a => a.id === selectedId ? { ...a, ...bounds } : a));
+      return;
     }
 
     const { x: snappedX, y: snappedY, w: snappedW, h: snappedH, guides } = snapResizeDimensions(
@@ -537,6 +583,7 @@ export function useAnnotationEvents({
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button > 0 || e.isPrimary === false) return;
     if (!containerRef.current || editingTextId) return;
     const rect = containerRef.current.getBoundingClientRect();
     const w = rect.width || 1;
@@ -545,6 +592,23 @@ export function useAnnotationEvents({
     const mouseY = (e.clientY - rect.top) / h;
     if (activeTool === 'pointer') {
       if (e.target === e.currentTarget) setSelectedId(null);
+      return;
+    }
+    if (activeTool === 'step') {
+      const diameter = annotationStepSize;
+      const badgeW = diameter / dimensions.width;
+      const badgeH = diameter / dimensions.height;
+      const step: Annotation = {
+        id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        type: 'step', stepOrder: nextStepOrder(annotations),
+        x: mouseX - badgeW / 2, y: mouseY - badgeH / 2, w: badgeW, h: badgeH,
+        color, strokeWidth, rotation: 0,
+      };
+      const updated = [...annotations, step];
+      setSelectedId(null);
+      setAnnotations(updated);
+      onSaveHistory(updated);
+      trackFeature('annot_step');
       return;
     }
     const newAnn: Annotation = {
@@ -597,6 +661,7 @@ export function useAnnotationEvents({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.isPrimary === false) return;
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const w = rect.width || 1;
@@ -712,6 +777,7 @@ export function useAnnotationEvents({
   };
 
   const handlePointerUp = async (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button > 0 || e.isPrimary === false) return;
     setActiveGuides([]);
     if (drawingAnnotation) {
       try { containerRef.current?.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -763,7 +829,7 @@ export function useAnnotationEvents({
   };
 
   const startDrag = (e: React.PointerEvent, ann: Annotation) => {
-    if (activeTool !== 'pointer' || e.button > 0) return;
+    if (activeTool !== 'pointer' || e.button > 0 || e.isPrimary === false) return;
     e.stopPropagation();
     setSelectedId(ann.id);
     if (!containerRef.current) return;
@@ -791,7 +857,7 @@ export function useAnnotationEvents({
   };
 
   const startResize = (e: React.PointerEvent, ann: Annotation, handle: string) => {
-    if (e.button > 0) return;
+    if (e.button > 0 || e.isPrimary === false) return;
     e.stopPropagation();
     setSelectedId(ann.id);
     if (!containerRef.current) return;

@@ -67,6 +67,10 @@ export function useToolbarShortcuts() {
 
       // Handle letters
       switch (key) {
+        case 's':
+        case 'S':
+          setActiveTool('step');
+          break;
         case 'v':
         case 'V':
           setActiveTool('pointer');

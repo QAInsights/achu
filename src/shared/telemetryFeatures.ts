@@ -5,7 +5,7 @@ export const TELEMETRY_FEATURES = [
   'ai_issue_ollama', 'ai_issue_openai', 'ai_issue_google', 'ai_issue_claude', 'ai_issue_offline', 'err_ai_issue',
   'github_push', 'err_github_push', 'code_studio_open',
   'bg_color', 'bg_gradient', 'bg_blur', 'bg_mesh', 'bg_shader', 'preset_apply',
-  'annot_rect', 'annot_filled_rect', 'annot_circle', 'annot_filled_circle', 'annot_line', 'annot_arrow', 'annot_text', 'annot_pen', 'annot_emoji',
+  'annot_rect', 'annot_filled_rect', 'annot_circle', 'annot_filled_circle', 'annot_line', 'annot_arrow', 'annot_text', 'annot_pen', 'annot_emoji', 'annot_step',
   'image_open', 'paste_clipboard', 'crop_apply', 'onboarding_done', 'onboarding_skip', 'share_prompt_shown',
   'capture_hotkey', 'capture_tray', 'capture_button', 'capture_import', 'update_install',
 ] as const;

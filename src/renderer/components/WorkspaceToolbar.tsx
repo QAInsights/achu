@@ -16,6 +16,7 @@ import {
   TypeOutline,
   Pencil,
   Smile,
+  ListOrdered,
   Palette,
   HelpCircle,
   Sun,
@@ -34,6 +35,7 @@ import ColorSwatchPicker from './annotations/ColorSwatchPicker';
 import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 import { formatModShortcut } from '../utils/shortcutLabels';
 import { canShowBothSidebars } from '../utils/layoutUtils';
+import StepSizeFlyout from './StepSizeFlyout';
 import { CropControls } from './CropOverlay';
 
 export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () => void }) {
@@ -53,6 +55,9 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     annotationStrokeWidth, setAnnotationStrokeWidth,
     annotationFont = 'sans-serif', setAnnotationFont,
     annotationFontSize = 24, setAnnotationFontSize,
+    annotationStepSize = 40, setAnnotationStepSize,
+    stepSizeActionRef,
+    stepSelected,
     annotationBold = true, setAnnotationBold,
     annotationItalic = false, setAnnotationItalic,
     annotationOutlineEnabled = false, setAnnotationOutlineEnabled,
@@ -74,6 +79,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     imageSrc, showToast,
     toggleCodeStudio,
   } = useAppContext();
+  const stepToolRef = useRef<HTMLSpanElement>(null);
   const cropToolRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => { if (cropActive && galleryVisible) closeGallery(); }, [cropActive, galleryVisible, closeGallery]);
@@ -89,6 +95,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     { id: 'text', icon: <Type className="w-4 h-4" />, title: 'Draw Text', tooltip: 'Draw Text (T or 8)' },
     { id: 'pen', icon: <Pencil className="w-4 h-4" />, title: 'Freehand Draw', tooltip: 'Freehand Draw (P, D, or 9)' },
     { id: 'emoji', icon: <Smile className="w-4 h-4" />, title: 'Add Emoji', tooltip: 'Add Emoji (E or 0)' },
+    { id: 'step', icon: <ListOrdered className="w-4 h-4" />, title: 'Step', tooltip: 'Step (S)' },
   ];
 
   return (
@@ -190,8 +197,8 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
 
       {/* Center: Annotation tools */}
       <div className="toolbar-group">
-        {tools.map((tool) => (
-          <Tooltip key={tool.id} content={tool.tooltip} position="right">
+        {tools.map((tool) => {
+          const button = <Tooltip key={tool.id} content={tool.tooltip} position="right">
             <button
               className={`tool-btn ${!cropActive && activeTool === tool.id ? 'active' : ''}`}
               onClick={() => setActiveTool(tool.id)}
@@ -201,8 +208,20 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
             >
               {tool.icon}
             </button>
-          </Tooltip>
-        ))}
+          </Tooltip>;
+          if (tool.id !== 'step') return button;
+          return (
+            <span key={tool.id} ref={stepToolRef} className="step-tool-anchor">
+              {button}
+              {(activeTool === 'step' || stepSelected) && !cropActive && !galleryVisible && !codeStudioActive && (
+                <StepSizeFlyout anchorRef={stepToolRef} size={annotationStepSize} onChange={diameter => {
+                  setAnnotationStepSize(diameter);
+                  stepSizeActionRef.current?.(diameter);
+                }} />
+              )}
+            </span>
+          );
+        })}
       </div>
 
 

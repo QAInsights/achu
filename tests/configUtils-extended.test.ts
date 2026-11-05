@@ -216,7 +216,7 @@ describe('configUtils - Extended', () => {
     it('exports all active tools', () => {
       expect(ACTIVE_TOOLS).toEqual([
         'pointer', 'rect', 'filled-rect', 'circle', 'filled-circle',
-        'line', 'arrow', 'text', 'pen', 'emoji',
+        'line', 'arrow', 'text', 'pen', 'emoji', 'step',
       ]);
     });
 

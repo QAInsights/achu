@@ -8,6 +8,17 @@ const size = { width: 800, height: 600 };
 const rect = { x: 100, y: 100, w: 400, h: 300 };
 
 describe('crop geometry', () => {
+  it('keeps Step badges circular in source pixels and preserves creation keys through unequal-axis crops', () => {
+    const step = { id: 'step', type: 'step', x: .25, y: .25, w: 56 / 800, h: 56 / 600, stepOrder: 7, color: '#f43f5e', strokeWidth: 4 } as Annotation;
+    const config = { ...baseConfig, annotations: [step] };
+    const cropped = cropSnapshot(config, size, { x: 100, y: 100, w: 400, h: 200 }, 'cropped');
+    const after = cropped.annotations![0];
+    expect(after.stepOrder).toBe(7);
+    expect(after.w * 400).toBeCloseTo(56);
+    expect(after.h * 200).toBeCloseTo(56);
+    expect(after.x * 400 + 100).toBeCloseTo(step.x * 800);
+    expect(after.y * 200 + 100).toBeCloseTo(step.y * 600);
+  });
   it('clamps bounds and minimum source size', () => {
     expect(clampCrop({ x: -50, y: 999, w: 0, h: 2 }, size)).toEqual({ x: 0, y: 584, w: 16, h: 16 });
     expect(clampCrop({ x: 20, y: 30, w: 900, h: 700 }, size)).toEqual({ x: 0, y: 0, w: 800, h: 600 });

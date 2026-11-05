@@ -10,6 +10,15 @@ beforeEach(() => { vi.clearAllMocks(); gallery.galleryVisible = false; Object.as
 const press = (key: string, opts: KeyboardEventInit = {}) => act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...opts })); });
 
 describe('crop toolbar shortcut', () => {
+  it('keeps S available for Step but isolates it while cropping', () => {
+    const { rerender } = renderHook(useToolbarShortcuts);
+    press('s');
+    expect(context.setActiveTool).toHaveBeenCalledExactlyOnceWith('step');
+    context.cropActive = true;
+    rerender();
+    press('s');
+    expect(context.setActiveTool).toHaveBeenCalledTimes(1);
+  });
   it('does not crop in the gallery, but enables X after the gallery closes', () => {
     gallery.galleryVisible = true;
     const { rerender } = renderHook(useToolbarShortcuts);
