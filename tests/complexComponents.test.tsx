@@ -630,6 +630,22 @@ describe('SettingsModal', () => {
 });
 
 describe('WorkspaceToolbar', () => {
+  it('floats Step options outside the toolbar layout for an active tool or a selected badge', () => {
+    mockContext.activeTool = 'step';
+    const { rerender } = render(<WorkspaceToolbar />);
+    const dock = screen.getByRole('group', { name: 'Editing tools' });
+    const flyout = screen.getByRole('group', { name: 'Step options' });
+    expect(flyout).toHaveClass('step-size-flyout');
+    expect(dock).not.toContainElement(flyout);
+    expect(dock.querySelector('.toolbar-context')).toBeNull();
+    mockContext.activeTool = 'pointer';
+    mockContext.stepSelected = true;
+    rerender(<WorkspaceToolbar />);
+    expect(screen.getByRole('group', { name: 'Step options' })).toBeInTheDocument();
+    mockContext.stepSelected = false;
+    rerender(<WorkspaceToolbar />);
+    expect(screen.queryByRole('group', { name: 'Step options' })).not.toBeInTheDocument();
+  });
   it('highlights actual step sizes and routes every explicit size click, including an already-selected size, to the resize action', () => {
     mockContext.activeTool = 'step';
     const { rerender } = render(<WorkspaceToolbar />);

@@ -59,6 +59,7 @@ export interface AppContextType {
   annotationFontSize: number; setAnnotationFontSize: React.Dispatch<React.SetStateAction<number>>;
   annotationStepSize: number; setAnnotationStepSize: React.Dispatch<React.SetStateAction<number>>;
   stepSizeActionRef: React.MutableRefObject<((size: number) => void) | null>;
+  stepSelected: boolean; setStepSelected: React.Dispatch<React.SetStateAction<boolean>>;
   annotationBold: boolean; setAnnotationBold: React.Dispatch<React.SetStateAction<boolean>>;
   annotationItalic: boolean; setAnnotationItalic: React.Dispatch<React.SetStateAction<boolean>>;
   annotationOutlineEnabled: boolean; setAnnotationOutlineEnabled: React.Dispatch<React.SetStateAction<boolean>>;

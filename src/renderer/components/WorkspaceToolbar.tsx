@@ -33,6 +33,8 @@ import ColorSwatchPicker from './annotations/ColorSwatchPicker';
 import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 import { formatModShortcut } from '../utils/shortcutLabels';
 import { canShowBothSidebars } from '../utils/layoutUtils';
+import { useRef } from 'react';
+import StepSizeFlyout from './StepSizeFlyout';
 
 export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () => void }) {
   useToolbarShortcuts();
@@ -52,6 +54,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     annotationFontSize = 24, setAnnotationFontSize,
     annotationStepSize = 40, setAnnotationStepSize,
     stepSizeActionRef,
+    stepSelected,
     annotationBold = true, setAnnotationBold,
     annotationItalic = false, setAnnotationItalic,
     annotationOutlineEnabled = false, setAnnotationOutlineEnabled,
@@ -73,6 +76,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     imageSrc, showToast,
     toggleCodeStudio,
   } = useAppContext();
+  const stepToolRef = useRef<HTMLSpanElement>(null);
 
   const tools: Array<{ id: typeof activeTool; icon: React.ReactNode; title: string; tooltip: string }> = [
     { id: 'pointer', icon: <MousePointer className="w-4 h-4" />, title: 'Select / Move', tooltip: 'Select / Move (V or 1)' },
@@ -169,8 +173,8 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
 
       {/* Center: Annotation tools */}
       <div className="toolbar-group">
-        {tools.map((tool) => (
-          <Tooltip key={tool.id} content={tool.tooltip} position="right">
+        {tools.map((tool) => {
+          const button = <Tooltip key={tool.id} content={tool.tooltip} position="right">
             <button
               className={`tool-btn ${activeTool === tool.id ? 'active' : ''}`}
               onClick={() => setActiveTool(tool.id)}
@@ -180,8 +184,20 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
             >
               {tool.icon}
             </button>
-          </Tooltip>
-        ))}
+          </Tooltip>;
+          if (tool.id !== 'step') return button;
+          return (
+            <span key={tool.id} ref={stepToolRef} className="step-tool-anchor">
+              {button}
+              {(activeTool === 'step' || stepSelected) && !galleryVisible && !codeStudioActive && (
+                <StepSizeFlyout anchorRef={stepToolRef} size={annotationStepSize} onChange={diameter => {
+                  setAnnotationStepSize(diameter);
+                  stepSizeActionRef.current?.(diameter);
+                }} />
+              )}
+            </span>
+          );
+        })}
       </div>
 
 
@@ -359,28 +375,6 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
           </button>
         </Tooltip>
       </div>
-      {activeTool === 'step' && (
-        <div className="toolbar-context" role="group" aria-label="Step options">
-          <span className="toolbar-context-label">Step size</span>
-          <div className="toolbar-group">
-            {([{ label: 'S', diameter: 32 }, { label: 'M', diameter: 40 }, { label: 'L', diameter: 56 }]).map(({ label, diameter }) => (
-              <button
-                key={label}
-                type="button"
-                className={`tool-btn ${annotationStepSize === diameter ? 'active' : ''}`}
-                aria-label={`Step size ${label}`}
-                aria-pressed={annotationStepSize === diameter}
-                onClick={() => {
-                  setAnnotationStepSize(diameter);
-                  stepSizeActionRef.current?.(diameter);
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
       {(activeTool === 'arrow' || activeTool === 'text') && (
         <div className="toolbar-context" role="group" aria-label={`${activeTool === 'text' ? 'Text' : 'Arrow'} options`}>
           <span className="toolbar-context-label">{activeTool === 'text' ? 'Text' : 'Arrow'}</span>

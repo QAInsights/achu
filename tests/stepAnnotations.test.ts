@@ -25,6 +25,7 @@ function setup(initial: Annotation[] = [], tool: 'step' | 'pointer' = 'step', zo
     const [annotations, setAnnotations] = useState(initial);
     const [color, setColor] = useState('#00ff00');
     const [stepSize, setStepSize] = useState(40);
+    const [stepSelected, setStepSelected] = useState(false);
     const stepSizeActionRef = useRef<((size: number) => void) | null>(null);
     const applyConfig = (config: { annotations?: Annotation[]; annotationStepSize?: number }) => {
       setAnnotations(config.annotations ?? []);
@@ -35,13 +36,14 @@ function setup(initial: Annotation[] = [], tool: 'step' | 'pointer' = 'step', zo
       color, setAnnotationColor: setColor, annotationFontSize: 24, strokeWidth: 4,
       annotationStepSize: stepSize, setAnnotationStepSize: setStepSize,
       stepSizeActionRef,
+      setStepSelected,
       containerRef, customPrompt: vi.fn(),
       onSaveHistory: updated => { onSave(updated); history.pushHistory({ annotations: updated, annotationStepSize: stepSize }); } });
     const clickSize = (diameter: number) => {
       setStepSize(diameter);
       stepSizeActionRef.current?.(diameter);
     };
-    return { ...events, annotations, history, color, setColor, stepSize, setStepSize, clickSize, applyConfig };
+    return { ...events, annotations, history, color, setColor, stepSize, setStepSize, clickSize, applyConfig, stepSelected };
   });
   act(() => hook.result.current.history.pushHistory({ annotations: initial, annotationStepSize: 40 }));
   const pointer = (x: number, y: number, extra = {}) => ({ clientX: x * zoom, clientY: y * zoom,
@@ -100,6 +102,7 @@ describe('step placement and editing', () => {
     const { result, onSave } = setup([original], 'pointer');
     act(() => result.current.setSelectedId(original.id));
     expect(result.current.stepSize).toBe(56);
+    expect(result.current.stepSelected).toBe(true);
     expect(result.current.annotations).toEqual([original]);
     expect(onSave).not.toHaveBeenCalled();
   });

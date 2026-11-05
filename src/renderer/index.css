@@ -708,6 +708,35 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   padding-top: var(--space-1);
 }
 
+.step-tool-anchor { display: inline-flex; flex-shrink: 0; }
+.step-size-flyout {
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  width: 102px;
+  box-sizing: border-box;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-2);
+  -webkit-app-region: no-drag;
+}
+.step-size-flyout .tool-btn { width: 28px; height: 28px; }
+.step-size-caret {
+  position: absolute;
+  top: -5px;
+  width: 8px;
+  height: 8px;
+  background: var(--surface-1);
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  transform: translateX(-50%) rotate(45deg);
+  pointer-events: none;
+}
+
 .toolbar-context > .toolbar-divider { display: none; }
 .toolbar-context > .toolbar-group { flex: 1; gap: var(--space-1); }
 .toolbar-context-label {

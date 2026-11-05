@@ -37,6 +37,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 1. Style config hook (all style state)
   const style = useStyleConfig();
   const stepSizeActionRef = useRef<((size: number) => void) | null>(null);
+  const [stepSelected, setStepSelected] = useState(false);
 
   // 2. UI state (stays in AppContext)
   const [promptConfig, setPromptConfig] = useState<{ message: string; defaultValue: string; resolve: (val: string | null) => void } | null>(null);
@@ -719,6 +720,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{
       ...style,
       stepSizeActionRef,
+      stepSelected, setStepSelected,
       meshDataUrl: meshControls.meshDataUrl, setMeshDataUrl: meshControls.setMeshDataUrl,
       shaderDataUrl: meshControls.shaderDataUrl, setShaderDataUrl: meshControls.setShaderDataUrl,
       promptConfig, setPromptConfig, sidebarVisible, setSidebarVisible,

@@ -40,6 +40,7 @@ interface UseAnnotationEventsProps {
   annotationStepSize?: number;
   setAnnotationStepSize?: (size: number) => void;
   stepSizeActionRef?: React.MutableRefObject<((size: number) => void) | null>;
+  setStepSelected?: (selected: boolean) => void;
   setAnnotationFontSize?: (size: number) => void;
   annotationBold?: boolean;
   setAnnotationBold?: (bold: boolean) => void;
@@ -91,6 +92,7 @@ export function useAnnotationEvents({
   annotationStepSize = 40,
   setAnnotationStepSize,
   stepSizeActionRef,
+  setStepSelected,
   setAnnotationFontSize,
   annotationBold,
   setAnnotationBold,
@@ -348,6 +350,10 @@ export function useAnnotationEvents({
     setAnnotations(updated);
     onSaveHistory(updated);
   }, [selectedId, annotations, dimensions, setAnnotations, onSaveHistory]);
+  useEffect(() => {
+    setStepSelected?.(annotations.some(a => a.id === selectedId && a.type === 'step'));
+  }, [selectedId, annotations, setStepSelected]);
+  useEffect(() => () => setStepSelected?.(false), [setStepSelected]);
   useLayoutEffect(() => {
     if (!stepSizeActionRef) return;
     stepSizeActionRef.current = resizeSelectedStep;
