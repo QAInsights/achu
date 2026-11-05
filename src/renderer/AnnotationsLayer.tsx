@@ -42,6 +42,7 @@ export default function AnnotationsLayer({
   onDimensionsChange,
 }: AnnotationsLayerProps) {
   const {
+    cropActive,
     arrowStyle,
     annotationFont,
     setAnnotationFont,
@@ -91,6 +92,7 @@ export default function AnnotationsLayer({
     pasteAnnotation,
     canPasteAnnotation,
   } = useAnnotationEvents({
+    disabled: cropActive,
     annotations,
     setAnnotations,
     activeTool,
@@ -165,7 +167,11 @@ export default function AnnotationsLayer({
 
   return (
     <div
-      ref={containerRef}
+      ref={node => {
+        containerRef.current = node;
+        if (cropActive) node?.setAttribute('inert', '');
+        else node?.removeAttribute('inert');
+      }}
       className="annotations-layer"
       role="group"
       aria-label="Annotations"

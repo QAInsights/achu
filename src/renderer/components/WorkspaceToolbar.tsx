@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   PaintRoller,
   Bot,
@@ -21,7 +22,8 @@ import {
   Moon,
   Settings,
   Code,
-  Images
+  Images,
+  Crop
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import { useGalleryContext } from '../contexts/GalleryContext';
@@ -32,12 +34,14 @@ import ColorSwatchPicker from './annotations/ColorSwatchPicker';
 import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 import { formatModShortcut } from '../utils/shortcutLabels';
 import { canShowBothSidebars } from '../utils/layoutUtils';
+import { CropControls } from './CropOverlay';
 
 export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () => void }) {
   useToolbarShortcuts();
   const { galleryVisible, openGallery, closeGallery } = useGalleryContext();
 
   const {
+    cropActive, startCrop,
     sidebarVisible, setSidebarVisible,
     secondarySidebarVisible, setSecondarySidebarVisible,
     noImageMode, setNoImageMode,
@@ -71,6 +75,8 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     toggleCodeStudio,
   } = useAppContext();
 
+  useEffect(() => { if (cropActive && galleryVisible) closeGallery(); }, [cropActive, galleryVisible, closeGallery]);
+
   const tools: Array<{ id: typeof activeTool; icon: React.ReactNode; title: string; tooltip: string }> = [
     { id: 'pointer', icon: <MousePointer className="w-4 h-4" />, title: 'Select / Move', tooltip: 'Select / Move (V or 1)' },
     { id: 'rect', icon: <Square className="w-4 h-4" />, title: 'Rectangle Outline', tooltip: 'Rectangle Outline (R or 2)' },
@@ -85,7 +91,17 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
   ];
 
   return (
-    <div className="toolbar-dock" role="group" aria-label="Editing tools">
+    <>
+    <CropControls />
+    <div className="toolbar-dock" role="group" aria-label="Editing tools" ref={node => {
+      if (cropActive) node?.setAttribute('inert', '');
+      else node?.removeAttribute('inert');
+    }}>
+      <Tooltip position="right">
+        <button className="tool-btn" title="Crop (X)" aria-label="Crop" disabled={!imageSrc || noImageMode || codeStudioActive || galleryVisible} onClick={startCrop}>
+          <Crop className="w-4 h-4" />
+        </button>
+      </Tooltip>
       {/* Left: Gallery + Undo/Redo */}
       <div className="toolbar-group">
         <Tooltip position="right">
@@ -617,5 +633,6 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
       )}
 
     </div>
+    </>
   );
 }

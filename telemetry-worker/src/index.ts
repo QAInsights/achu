@@ -439,7 +439,7 @@ const FEATURE_GROUPS: { title: string; features: [string, string][] }[] = [
 	{ title: "Editing", features: [
 		["bg_color", "Background: color"], ["bg_gradient", "Background: gradient"], ["bg_blur", "Background: blur"],
 		["bg_mesh", "Background: mesh"], ["bg_shader", "Background: shader"], ["preset_apply", "Apply preset"],
-		["code_studio_open", "Open Code Studio"],
+		["code_studio_open", "Open Code Studio"], ["crop_apply", "Crop image"],
 	] },
 	{ title: "Annotations", features: [
 		["annot_rect", "Rectangle"], ["annot_filled_rect", "Filled rectangle"], ["annot_circle", "Circle"],
