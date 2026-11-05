@@ -15,6 +15,7 @@ import {
   TypeOutline,
   Pencil,
   Smile,
+  ListOrdered,
   Palette,
   HelpCircle,
   Sun,
@@ -82,6 +83,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     { id: 'text', icon: <Type className="w-4 h-4" />, title: 'Draw Text', tooltip: 'Draw Text (T or 8)' },
     { id: 'pen', icon: <Pencil className="w-4 h-4" />, title: 'Freehand Draw', tooltip: 'Freehand Draw (P, D, or 9)' },
     { id: 'emoji', icon: <Smile className="w-4 h-4" />, title: 'Add Emoji', tooltip: 'Add Emoji (E or 0)' },
+    { id: 'step', icon: <ListOrdered className="w-4 h-4" />, title: 'Step', tooltip: 'Step (S)' },
   ];
 
   return (

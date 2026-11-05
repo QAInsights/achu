@@ -345,7 +345,7 @@ describe('AppContext', () => {
       expect(PADDING_MODES.length).toBe(2);
       expect(CHROME_STYLES.length).toBe(3);
       expect(CHROME_THEMES.length).toBe(2);
-      expect(ACTIVE_TOOLS.length).toBe(10);
+      expect(ACTIVE_TOOLS.length).toBe(11);
       expect(ARROW_STYLES.length).toBe(4);
       expect(GRADIENT_CATEGORIES.length).toBe(4);
       expect(APP_THEMES.length).toBe(2);

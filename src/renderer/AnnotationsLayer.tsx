@@ -10,6 +10,7 @@ import AnnotationContextMenu, { LayerOrderAction } from './components/Annotation
 import { trackFeature } from './utils/telemetry';
 import { transformCoordinates, getDeleteButtonPosition } from './utils/layoutUtils';
 import { getTextAnnotationBounds } from './utils/annotationUtils';
+import { stepNumbers } from './utils/stepUtils';
 import {
   bringToFront,
   bringForward,
@@ -20,8 +21,8 @@ import {
 interface AnnotationsLayerProps {
   annotations: Annotation[];
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
-  activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji';
-  setActiveTool: (tool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji') => void;
+  activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji' | 'step';
+  setActiveTool: (tool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji' | 'step') => void;
   color: string;
   setAnnotationColor: (color: string) => void;
   strokeWidth: number;
@@ -163,6 +164,7 @@ export default function AnnotationsLayer({
     onSaveHistory(updated);
   };
 
+  const numbers = stepNumbers(annotations);
   return (
     <div
       ref={containerRef}
@@ -251,6 +253,7 @@ export default function AnnotationsLayer({
 
                 <AnnotationShape
                   ann={ann}
+                  stepNumber={numbers.get(ann.id)}
                   dimensions={dimensions}
                   rectW={rectW}
                   rectH={rectH}

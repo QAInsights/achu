@@ -85,6 +85,7 @@
 * **Debug Points:** Add or remove debug point markers to highlight specific lines for tutorials, bug reports, or reviews.
 
 ### 🖊️ Rich Vector Annotations
+* **Numbered Steps:** Press S and click to place circular callouts with automatic numbering, contrasting labels, and full move, resize, duplicate, and undo support. Deleting a step renumbers the remaining badges without changing layer order.
 * **Drawing Tools:** Annotate screenshots using rectangles (filled/outline), ovals (filled/outline), straight lines, arrows, freehand pen, custom text fields, and emojis.
 * **Full Object Control:** Move, resize, delete, and re-order drawn annotation layers.
 * **Deep Edit History:** Full support for multi-step Undo (`Ctrl+Z`) and Redo (`Ctrl+Y`) operations.

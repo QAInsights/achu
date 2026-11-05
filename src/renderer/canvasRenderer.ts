@@ -1,8 +1,10 @@
 import { getAnnotationTextLayout } from './utils/annotationUtils';
+import { STEP_FONT, stepFontSize, stepNumbers, stepTextColor } from './utils/stepUtils';
 
 export interface Annotation {
   id: string;
-  type: 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji' | 'image';
+  type: 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji' | 'image' | 'step';
+  stepOrder?: number;
   x: number;          // 0 to 1 relative to screenshot width
   y: number;          // 0 to 1 relative to screenshot height
   w: number;          // width fraction
@@ -1312,6 +1314,7 @@ function drawAnnotationsOnCanvas(
   const refW = refWidth && refWidth > 0 ? refWidth : canvasW / (sf || 1);
   const pxScale = canvasW / refW;
 
+  const numbers = stepNumbers(annotations);
   annotations.forEach((ann) => {
     ctx.save();
     ctx.strokeStyle = ann.color;
@@ -1335,7 +1338,23 @@ function drawAnnotationsOnCanvas(
     const halfW = w / 2;
     const halfH = h / 2;
 
-    if (ann.type === 'rect') {
+    if (ann.type === 'step') {
+      const diameter = Math.min(Math.abs(w), Math.abs(h));
+      const number = numbers.get(ann.id) ?? 1;
+      ctx.shadowColor = 'rgba(0,0,0,0.22)';
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = diameter * .04;
+      ctx.shadowBlur = diameter * .08;
+      ctx.beginPath();
+      ctx.arc(0, 0, diameter / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.font = `700 ${stepFontSize(diameter, number)}px ${STEP_FONT}`;
+      ctx.fillStyle = stepTextColor(ann.color);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(number), 0, 0);
+    } else if (ann.type === 'rect') {
       ctx.strokeRect(-halfW, -halfH, w, h);
     } else if (ann.type === 'filled-rect') {
       ctx.beginPath();

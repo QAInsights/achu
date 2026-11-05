@@ -21,6 +21,7 @@ const SHORTCUTS = [
 ];
 
 const TOOLBAR_SHORTCUTS = [
+  { label: 'Step Callout', keys: 's step numbered callout badge' },
   { label: 'Select / Move', keys: 'v 1 select move' },
   { label: 'Rectangle (Outline / Filled)', keys: 'r f 2 3 rectangle outline filled' },
   { label: 'Circle (Outline / Filled)', keys: 'c o 4 5 circle outline filled' },
@@ -31,7 +32,7 @@ const TOOLBAR_SHORTCUTS = [
 
 const SUPPORT_KEYWORDS = 'support project donate donation github repo repository buy coffee';
 
-registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy duplicate cut annotation nudge position constrain square angle 45 drawing' });
+registerSettingsSection({ tab: 'shortcuts', label: 'Keyboard Shortcuts', keywords: 'keyboard shortcut paste undo redo save delete export toggle gallery code studio select move rectangle circle line arrow text pen emoji copy duplicate cut annotation nudge position constrain square angle 45 drawing step numbered callout badge' });
 registerSettingsSection({ tab: 'shortcuts', label: 'Support & Project', keywords: SUPPORT_KEYWORDS });
 
 export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery?: string }) {
@@ -89,6 +90,7 @@ export default function ShortcutsHelpSection({ searchQuery = '' }: { searchQuery
                   {s.label === 'Straight Line / Arrow' && <div><kbd>L</kbd> / <kbd>A</kbd> or <kbd>6</kbd> / <kbd>7</kbd></div>}
                   {s.label === 'Draw Text / Freehand Pen' && <div><kbd>T</kbd> / <kbd>P</kbd> / <kbd>D</kbd> or <kbd>8</kbd> / <kbd>9</kbd></div>}
                   {s.label === 'Add Emoji' && <div><kbd>E</kbd> or <kbd>0</kbd></div>}
+                  {s.label === 'Step Callout' && <div><kbd>S</kbd></div>}
                 </div>
               ))}
             </>

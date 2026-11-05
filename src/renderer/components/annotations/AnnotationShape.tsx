@@ -1,6 +1,7 @@
 import { Annotation } from '../../canvasRenderer';
 import { getCurvedArrowPoints, getTaperedCurvedArrowPoints } from '../../arrowUtils';
 import { getAnnotationTextLayout } from '../../utils/annotationUtils';
+import { STEP_FONT, stepFontSize, stepTextColor } from '../../utils/stepUtils';
 
 interface AnnotationShapeProps {
   ann: Annotation;
@@ -12,6 +13,7 @@ interface AnnotationShapeProps {
   strokeW: number;
   editingTextId: string | null;
   previewFont?: string | null;
+  stepNumber?: number;
 }
 
 export default function AnnotationShape({
@@ -23,7 +25,16 @@ export default function AnnotationShape({
   strokeW,
   editingTextId,
   previewFont,
+  stepNumber = 1,
 }: AnnotationShapeProps) {
+  if (ann.type === 'step') {
+    const diameter = Math.min(rectW, rectH);
+    return <g data-step-number={stepNumber} aria-label={`Step ${stepNumber}`}>
+      <circle r={diameter / 2} fill={ann.color} style={{ filter: `drop-shadow(0 ${diameter * .04}px ${diameter * .04}px rgba(0,0,0,0.22))` }} />
+      <text x={0} y={0} textAnchor="middle" dominantBaseline="central" fill={stepTextColor(ann.color)}
+        fontSize={stepFontSize(diameter, stepNumber)} fontFamily={STEP_FONT} fontWeight="700">{stepNumber}</text>
+    </g>;
+  }
   if (ann.type === 'rect') {
     return (
       <rect

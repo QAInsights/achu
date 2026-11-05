@@ -133,6 +133,7 @@ export default function HelpModal() {
           <div><strong>OS:</strong> {osInfo}</div>
         </div>
 
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Press S for Step, then click to place numbered callouts. Numbers follow creation order and update when steps are deleted. Find all shortcuts in Settings &gt; Shortcuts.</p>
         <UpdateChecker />
 
         {/* Link / Action Buttons */}
