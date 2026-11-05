@@ -627,6 +627,17 @@ describe('SettingsModal', () => {
 });
 
 describe('WorkspaceToolbar', () => {
+  it('marks Crop active instead of the annotation tool and floats its options outside the inert toolbar', () => {
+    mockContext.cropActive = true;
+    mockContext.cropAspect = 'Free';
+    mockContext.activeTool = 'pointer';
+    render(<WorkspaceToolbar />);
+    expect(screen.getByRole('button', { name: 'Crop' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Select / Move' })).toHaveAttribute('aria-pressed', 'false');
+    const dock = screen.getByRole('group', { name: 'Editing tools' });
+    expect(dock).toHaveAttribute('inert');
+    expect(dock).not.toContainElement(screen.getByRole('group', { name: 'Crop options' }));
+  });
   it('exposes the active tool and keeps contextual options after the main controls', () => {
     mockContext.activeTool = 'arrow';
     render(<WorkspaceToolbar />);

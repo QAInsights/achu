@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import { useAppContext } from '../AppContext';
+import { useGalleryContext } from '../contexts/GalleryContext';
 
 export function useToolbarShortcuts() {
-  const { setActiveTool } = useAppContext();
+  const { setActiveTool, cropActive, startCrop, imageSrc, noImageMode, codeStudioActive } = useAppContext();
+  const { galleryVisible } = useGalleryContext();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (cropActive) return;
       const target = e.target as HTMLElement;
       if (
         target &&
@@ -22,6 +25,11 @@ export function useToolbarShortcuts() {
       }
 
       const key = e.key;
+      if (key.toLowerCase() === 'x' && imageSrc && !noImageMode && !codeStudioActive && !galleryVisible) {
+        e.preventDefault();
+        startCrop();
+        return;
+      }
 
       // Handle numbers
       switch (key) {
@@ -106,5 +114,5 @@ export function useToolbarShortcuts() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setActiveTool]);
+  }, [setActiveTool, cropActive, startCrop, imageSrc, noImageMode, codeStudioActive, galleryVisible]);
 }

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import {
   PaintRoller,
   Bot,
@@ -21,7 +22,8 @@ import {
   Moon,
   Settings,
   Code,
-  Images
+  Images,
+  Crop
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import { useGalleryContext } from '../contexts/GalleryContext';
@@ -32,12 +34,14 @@ import ColorSwatchPicker from './annotations/ColorSwatchPicker';
 import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 import { formatModShortcut } from '../utils/shortcutLabels';
 import { canShowBothSidebars } from '../utils/layoutUtils';
+import { CropControls } from './CropOverlay';
 
 export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () => void }) {
   useToolbarShortcuts();
   const { galleryVisible, openGallery, closeGallery } = useGalleryContext();
 
   const {
+    cropActive, startCrop,
     sidebarVisible, setSidebarVisible,
     secondarySidebarVisible, setSecondarySidebarVisible,
     noImageMode, setNoImageMode,
@@ -70,6 +74,9 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     imageSrc, showToast,
     toggleCodeStudio,
   } = useAppContext();
+  const cropToolRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => { if (cropActive && galleryVisible) closeGallery(); }, [cropActive, galleryVisible, closeGallery]);
 
   const tools: Array<{ id: typeof activeTool; icon: React.ReactNode; title: string; tooltip: string }> = [
     { id: 'pointer', icon: <MousePointer className="w-4 h-4" />, title: 'Select / Move', tooltip: 'Select / Move (V or 1)' },
@@ -85,7 +92,12 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
   ];
 
   return (
-    <div className="toolbar-dock" role="group" aria-label="Editing tools">
+    <>
+    <CropControls anchorRef={cropToolRef} />
+    <div className="toolbar-dock" role="group" aria-label="Editing tools" ref={node => {
+      if (cropActive) node?.setAttribute('inert', '');
+      else node?.removeAttribute('inert');
+    }}>
       {/* Left: Gallery + Undo/Redo */}
       <div className="toolbar-group">
         <Tooltip position="right">
@@ -159,6 +171,19 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
             </button>
           </Tooltip>
         )}
+        <Tooltip content="Crop (X)" position="right">
+          <button
+            ref={cropToolRef}
+            className={`tool-btn ${cropActive ? 'active' : ''}`}
+            title="Crop (X)"
+            aria-label="Crop"
+            aria-pressed={cropActive}
+            disabled={!imageSrc || noImageMode || codeStudioActive || galleryVisible}
+            onClick={startCrop}
+          >
+            <Crop className="w-4 h-4" />
+          </button>
+        </Tooltip>
       </div>
 
       <div className="toolbar-divider" />
@@ -168,11 +193,11 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
         {tools.map((tool) => (
           <Tooltip key={tool.id} content={tool.tooltip} position="right">
             <button
-              className={`tool-btn ${activeTool === tool.id ? 'active' : ''}`}
+              className={`tool-btn ${!cropActive && activeTool === tool.id ? 'active' : ''}`}
               onClick={() => setActiveTool(tool.id)}
               title={tool.title}
               aria-label={tool.title}
-              aria-pressed={activeTool === tool.id}
+              aria-pressed={!cropActive && activeTool === tool.id}
             >
               {tool.icon}
             </button>
@@ -617,5 +642,6 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
       )}
 
     </div>
+    </>
   );
 }

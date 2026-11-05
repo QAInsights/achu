@@ -25,6 +25,7 @@ const annotationFeatureByType: Partial<Record<Annotation['type'], TelemetryFeatu
 };
 
 interface UseAnnotationEventsProps {
+  disabled?: boolean;
   annotations: Annotation[];
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
   activeTool: 'pointer' | 'rect' | 'filled-rect' | 'circle' | 'filled-circle' | 'line' | 'arrow' | 'text' | 'pen' | 'emoji';
@@ -73,6 +74,7 @@ function rotatePoint(x: number, y: number, cx: number, cy: number, angleDeg: num
 }
 
 export function useAnnotationEvents({
+  disabled = false,
   annotations,
   setAnnotations,
   activeTool,
@@ -177,7 +179,7 @@ export function useAnnotationEvents({
 
   useAnnotationNudge({
     annotations, setAnnotations, selectedId, dimensions, containerRef, onSaveHistory,
-    enabled: activeTool === 'pointer' && !editingTextId && !dragStart && !resizeStart && !drawingAnnotation,
+    enabled: !disabled && activeTool === 'pointer' && !editingTextId && !dragStart && !resizeStart && !drawingAnnotation,
   });
 
   const copyAnnotation = useCallback((id?: string | null) => {
@@ -232,6 +234,7 @@ export function useAnnotationEvents({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (disabled) return;
       const target = e.target as HTMLElement;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
         return;
@@ -280,7 +283,7 @@ export function useAnnotationEvents({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedId, annotations, setAnnotations, onSaveHistory, copyAnnotation, cutAnnotation, pasteAnnotation,
-    duplicateAnnotation, activeTool, editingTextId, dragStart, resizeStart, drawingAnnotation, containerRef]);
+    duplicateAnnotation, activeTool, editingTextId, dragStart, resizeStart, drawingAnnotation, containerRef, disabled]);
 
   const previousArrowStyle = useRef(arrowStyle);
   useEffect(() => {

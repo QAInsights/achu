@@ -22,6 +22,7 @@ import { useRedaction } from './hooks/useRedaction';
 import { useMeshControls } from './hooks/useMeshControls';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { trackFeature } from './utils/telemetry';
+import { useCrop } from './hooks/useCrop';
 
 
 // TypeScript declarations for secure Electron IPC bridge
@@ -125,6 +126,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const applyConfig = (config: RenderConfig) => {
     if (!config) return;
+    if (config.imageSrc !== undefined && config.imageSrc !== imageSrc) issueAgent.setCachedOcrResult(null);
     style.setPadding(config.padding ?? 38);
     style.setRounded(config.rounded ?? 20);
     style.setShadow(config.shadow ?? 30);
@@ -245,6 +247,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMeshOpacity: style.setMeshOpacity, setMeshSpread: style.setMeshSpread,
     setSelectedPreset: style.setSelectedPreset, setNoImageMode: style.setNoImageMode,
     getCurrentConfig, pushHistory,
+  });
+
+  const crop = useCrop(imageSrc, style.noImageMode || codeStudio.codeStudioActive, getCurrentConfig, applyConfig, pushHistory, () => {
+    issueAgent.setCachedOcrResult(null);
+    issueAgent.setHighlightedComponents([]);
   });
 
   // 8. Mesh controls hook
@@ -724,6 +731,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       helpVisible, setHelpVisible,
       updateAvailable, setUpdateAvailable,
       imageSrc, setImageSrc, documentName, setDocumentName, isDragging, setIsDragging,
+      ...crop,
       customPresets, setCustomPresets, newPresetName, setNewPresetName,
       showAdvancedInset, setShowAdvancedInset, showAdvancedShadow, setShowAdvancedShadow, showAdvancedBorder, setShowAdvancedBorder,
       exportFormat, setExportFormat, jpegQuality, setJpegQuality, compressionMode, setCompressionMode,

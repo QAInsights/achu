@@ -6,6 +6,7 @@ import { platformPresets } from '../presetsData';
 import ContextMenu from './ContextMenu';
 import GrabTextModal from './GrabTextModal';
 import CodePreview from '../views/codeStudio/CodePreview';
+import CropOverlay from './CropOverlay';
 
 // Modular Subcomponents
 import ChromeMockup from './ChromeMockup';
@@ -27,6 +28,7 @@ import { getCanvasDimensions } from '../canvasRenderer';
 export default function CanvasPreview() {
   const [imgDims, setImgDims] = useState<{ width: number; height: number } | null>(null);
   const {
+    cropActive,
     padding,
     rounded,
     shadow,
@@ -351,7 +353,7 @@ export default function CanvasPreview() {
               <div
                 className={`preview-container-box ${chromeStyle !== 'none' ? `mockup-${chromeTheme}` : ''}`}
                 style={{
-                  borderRadius: `${rounded}px`,
+                  borderRadius: cropActive ? 0 : `${rounded}px`,
                   boxShadow: shadowEnabled ? `0 ${shadow * 0.8}px ${shadow * 1.5}px ${shadowColor}` : 'none',
                   border: border > 0 ? `${border}px solid ${borderColor}` : 'none',
                   outline: inset > 0 ? `${inset}px solid ${insetColor}` : 'none',
@@ -426,6 +428,7 @@ export default function CanvasPreview() {
                       customPrompt={customPrompt}
                       onDimensionsChange={handleAnnotationDimensionsChange}
                     />
+                    {cropActive && imgDims && <CropOverlay size={imgDims} />}
                   </div>
                 )}
               </div>
