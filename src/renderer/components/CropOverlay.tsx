@@ -236,18 +236,20 @@ export function CropControls({ anchorRef }: { anchorRef: RefObject<HTMLButtonEle
           </button>
         ))}
       </div>
-      <button className="btn btn-secondary" disabled={cropBusy} onClick={() => {
-        setCropAspect('Free');
-        setCropRect(null);
-      }}>
-        Reset
-      </button>
-      <button className="btn btn-secondary" disabled={cropBusy} onClick={cancelCrop}>Cancel <kbd>Esc</kbd></button>
-      <button className="btn btn-primary" disabled={cropBusy} onClick={() => {
-        void applyCrop();
-      }}>
-        {cropBusy ? 'Applying...' : <>Apply <kbd>Enter</kbd></>}
-      </button>
+      <div className="crop-actions" role="group" aria-label="Crop actions">
+        <button className="btn btn-secondary" disabled={cropBusy} onClick={() => {
+          setCropAspect('Free');
+          setCropRect(null);
+        }}>
+          Reset
+        </button>
+        <button className="btn btn-secondary" disabled={cropBusy} onClick={cancelCrop}>Cancel <kbd>Esc</kbd></button>
+        <button className="btn btn-primary" disabled={cropBusy} onClick={() => {
+          void applyCrop();
+        }}>
+          {cropBusy ? 'Applying...' : <>Apply <kbd>Enter</kbd></>}
+        </button>
+      </div>
       {cropError && <span role="alert">{cropError}</span>}
     </div>,
     document.body,

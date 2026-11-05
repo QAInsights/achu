@@ -31,5 +31,7 @@
 .crop-controls .btn { min-height: 32px; gap: 6px; font-size: 12px; }
 .crop-controls kbd { font-size: 10px; font-family: var(--font-mono); font-weight: 500; padding: 1px 3px; border: 1px solid currentColor; border-radius: 3px; }
 .crop-controls [role="alert"] { flex-basis: 100%; color: var(--text-primary); font-size: 12px; overflow-wrap: anywhere; }
-.crop-aspects { gap: 2px; padding: 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.crop-aspects { flex: 1 0 auto; justify-content: space-between; gap: 2px; padding: 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); }
 .crop-aspects .tool-btn { width: auto; min-width: 36px; padding: 0 8px; font-size: 12px; font-weight: 600; }
+.crop-actions { display: flex; flex-shrink: 0; flex-wrap: nowrap; gap: 6px; margin-left: auto; }
+.crop-actions .btn { white-space: nowrap; }

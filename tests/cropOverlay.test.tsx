@@ -41,6 +41,9 @@ describe('crop overlay', () => {
     expect(controls.parentElement).toBe(document.body);
     expect(document.querySelector('.toolbar-dock')).not.toContainElement(controls);
     expect(document.querySelector('.toolbar-context')).toBeNull();
+    const actions = screen.getByRole('group', { name: 'Crop actions' });
+    expect([...actions.querySelectorAll('button')].map(button => button.textContent)).toEqual(['Reset', 'Cancel Esc', 'Apply Enter']);
+    expect(actions.previousElementSibling).toBe(screen.getByRole('group', { name: 'Crop aspect ratio' }));
     expect(screen.getByRole('button', { name: 'Cancel Esc' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Apply Enter' }));
     expect(context.applyCrop).toHaveBeenCalledOnce();
