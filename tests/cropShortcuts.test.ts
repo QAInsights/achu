@@ -4,10 +4,23 @@ import { useToolbarShortcuts } from '../src/renderer/hooks/useToolbarShortcuts';
 
 const context = vi.hoisted(() => ({ setActiveTool: vi.fn(), startCrop: vi.fn(), imageSrc: 'image' as string | null, cropActive: false, noImageMode: false, codeStudioActive: false }));
 vi.mock('../src/renderer/AppContext', () => ({ useAppContext: () => context }));
-beforeEach(() => { vi.clearAllMocks(); Object.assign(context, { imageSrc: 'image', cropActive: false, noImageMode: false, codeStudioActive: false }); });
+const gallery = vi.hoisted(() => ({ galleryVisible: false }));
+vi.mock('../src/renderer/contexts/GalleryContext', () => ({ useGalleryContext: () => gallery }));
+beforeEach(() => { vi.clearAllMocks(); gallery.galleryVisible = false; Object.assign(context, { imageSrc: 'image', cropActive: false, noImageMode: false, codeStudioActive: false }); });
 const press = (key: string, opts: KeyboardEventInit = {}) => act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...opts })); });
 
 describe('crop toolbar shortcut', () => {
+  it('does not crop in the gallery, but enables X after the gallery closes', () => {
+    gallery.galleryVisible = true;
+    const { rerender } = renderHook(useToolbarShortcuts);
+    press('x');
+    expect(context.startCrop).not.toHaveBeenCalled();
+    expect(gallery.galleryVisible).toBe(true);
+    gallery.galleryVisible = false;
+    rerender();
+    press('x');
+    expect(context.startCrop).toHaveBeenCalledOnce();
+  });
   it('uses plain X without stealing modified cut', () => {
     renderHook(useToolbarShortcuts);
     press('x', { ctrlKey: true });

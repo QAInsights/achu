@@ -75,17 +75,23 @@ describe('crop snapshot coordinate spaces', () => {
       }
     },
   );
-  it.each([50, 100, 200].flatMap(scale => ['Auto', '1:1'].map(aspectRatio => ({ scale, aspectRatio }))))(
-    'preserves export styling at $scale percent with $aspectRatio aspect', ({ scale, aspectRatio }) => {
-    const displayScale = aspectRatio === 'Auto' ? Math.min(1, scale / 100) : scale / 100;
+  it.each([33.3, 50, 100, 200].flatMap(scale => ['Auto', '1:1', '16:9'].flatMap(aspectRatio =>
+    [0, 10].flatMap(border => [0, 8].map(inset => ({ scale, aspectRatio, border, inset }))))))(
+    'preserves export styling at $scale percent, $aspectRatio aspect, $border border and $inset inset', ({ scale, aspectRatio, border, inset }) => {
+    const measuredWidth = (width: number) => Math.round(aspectRatio === 'Auto'
+      ? Math.min(width, width * scale / 100 - 2 * border) : width * scale / 100 - 2 * border);
     const annotations: Annotation[] = [
       { id: 'r', type: 'rect', x: .2, y: .2, w: .2, h: .2, color: '#f00', strokeWidth: 4 },
       { id: 't', type: 'text', x: .3, y: .3, w: .2, h: .1, color: '#f00', strokeWidth: 4,
         text: 'Crop', fontSize: 24, outlineEnabled: true, outlineWidth: 3 },
       { id: 'e', type: 'emoji', x: .4, y: .4, w: .1, h: .1, color: '#f00', strokeWidth: 4, text: '⭐' },
+      { id: 'legacy', type: 'text', x: .2, y: .2, w: .1, h: .001, text: 'Tiny', color: '#f00', strokeWidth: 4, outlineEnabled: true },
+      { id: 'legacy-large', type: 'text', x: .2, y: .2, w: .1, h: .1, text: 'Large', color: '#f00', strokeWidth: 4, outlineEnabled: true },
     ];
-    const config = { ...baseConfig, scale, aspectRatio, annotationDisplayWidth: size.width * displayScale, annotations };
+    const config = { ...baseConfig, scale, aspectRatio, border, inset, annotationDisplayWidth: measuredWidth(size.width), annotations };
     const cropped = cropSnapshot(config, size, { x: 80, y: 60, w: 400, h: 200 }, 'crop');
+    expect(cropped.annotationDisplayWidth).toBe(measuredWidth(400));
+    cropped.annotationDisplayWidth = measuredWidth(400);
     const draw = (cfg: RenderConfig, width: number, height: number) => {
       const { canvas, ctx } = makeMockCanvas();
       const styles: unknown[] = [];
@@ -122,8 +128,9 @@ describe('crop snapshot coordinate spaces', () => {
       color: '#f00', strokeWidth: 4, outlineEnabled: true,
     }] } as RenderConfig;
     const text = cropSnapshot(config, size, rect, 'crop').annotations![0];
-    expect(text.fontSize).toBeCloseTo(9.6);
-    expect(text.outlineWidth).toBeCloseTo(1.6);
+    expect(text.fontSize).toBeCloseTo(12);
+    expect(text.outlineWidth).toBeCloseTo(2);
+    expect(text.fontSize! * 400 / 400).toBe(12);
   });
   it('translates normalized bounds while preserving box-relative pen points and rotation', () => {
     const config = { annotations: [{ id: 'a', type: 'pen', x: .25, y: .25, w: .5, h: .5, color: 'red', strokeWidth: 3, rotation: 30, textMinHeight: .1, points: [{ x: .1, y: .2 }] }] } as RenderConfig;

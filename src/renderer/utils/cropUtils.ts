@@ -73,24 +73,28 @@ export function cropSnapshot(config: RenderConfig, size: ImageSize, crop: CropRe
   const sx = size.width / crop.w;
   const sy = size.height / crop.h;
   const scale = (config.scale ?? 100) / 100;
-  // Auto uses an intrinsic-size image capped by its container; fixed aspects
-  // stretch the image to the content width. Zoom is a parent CSS transform.
-  const displayScale = !config.aspectRatio || config.aspectRatio === 'Auto' ? Math.min(1, scale) : scale;
-  const displayWidth = crop.w * displayScale;
+  const innerWidth = Math.max(1, crop.w * scale - 2 * (config.border || 0));
+  const autoAspect = !config.aspectRatio || config.aspectRatio === 'Auto';
+  // Match the border-box content width and offsetWidth's integer rounding.
+  const displayWidth = Math.max(1, Math.round(autoAspect ? Math.min(crop.w, innerWidth) : innerWidth));
   const oldDisplayWidth = config.annotationDisplayWidth || size.width;
-  const styleScale = displayScale * size.width / oldDisplayWidth;
+  const oldPxScale = size.width * scale / oldDisplayWidth;
+  const newPxScale = crop.w * scale / displayWidth;
+  const styleScale = oldPxScale / newPxScale;
   return {
     ...config,
     imageSrc,
     issuePayload: null,
     annotationDisplayWidth: displayWidth,
     annotations: (config.annotations || []).map(a => {
-      const fontSize = a.type === 'text'
-        ? a.fontSize || Math.max(12, Math.abs(a.h) * size.height * oldDisplayWidth / size.width * 0.7)
-        : a.fontSize;
-      const outlineWidth = a.outlineWidth ?? (a.type === 'text' && a.outlineEnabled
-        ? Math.max(2, (fontSize || 0) * 0.15)
-        : undefined);
+      let fontSize = a.fontSize === undefined ? undefined : a.fontSize * oldPxScale;
+      if (a.type === 'text' && !a.fontSize) {
+        fontSize = Math.max(12, Math.abs(a.h) * size.height * scale * 0.7);
+      }
+      let outlineWidth = a.outlineWidth === undefined ? undefined : a.outlineWidth * oldPxScale;
+      if (a.type === 'text' && a.outlineEnabled) {
+        outlineWidth = outlineWidth === undefined ? Math.max(2, (fontSize || 0) * 0.15) : Math.max(1, outlineWidth);
+      }
       return {
         ...a,
         x: (a.x * size.width - crop.x) / crop.w,
@@ -98,8 +102,8 @@ export function cropSnapshot(config: RenderConfig, size: ImageSize, crop: CropRe
         w: a.w * sx,
         h: a.h * sy,
         strokeWidth: a.strokeWidth * styleScale,
-        fontSize: fontSize === undefined ? undefined : fontSize * styleScale,
-        outlineWidth: outlineWidth === undefined ? undefined : outlineWidth * styleScale,
+        fontSize: fontSize === undefined ? undefined : fontSize / newPxScale,
+        outlineWidth: outlineWidth === undefined ? undefined : outlineWidth / newPxScale,
         textMinHeight: a.textMinHeight === undefined ? undefined : a.textMinHeight * sy,
       };
     }),
