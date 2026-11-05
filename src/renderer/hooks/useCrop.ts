@@ -7,12 +7,28 @@ export function isolateCropEvents(apply: () => void, cancel: () => void) {
   const keyboard = (event: KeyboardEvent) => {
     event.stopImmediatePropagation();
     if (event.type !== 'keydown') return;
-    if (event.key === 'Escape') { event.preventDefault(); cancel(); }
-    else if (event.key === 'Enter') { event.preventDefault(); apply(); }
-    else if (!(event.target instanceof HTMLSelectElement) && event.key !== 'Tab' && event.key !== 'Shift' &&
-      !(event.key === ' ' && event.target instanceof HTMLButtonElement && event.target.closest('[data-crop-ui]'))) event.preventDefault();
+    const cropButton = event.target instanceof HTMLButtonElement && event.target.closest('[data-crop-ui]')
+      ? event.target
+      : null;
+    if (cropButton && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      if (!event.repeat) cropButton.click();
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      cancel();
+    } else if (event.key === 'Enter' && !cropButton) {
+      event.preventDefault();
+      apply();
+    } else if (event.key !== 'Tab' && event.key !== 'Shift') {
+      event.preventDefault();
+    }
   };
-  const block = (event: Event) => { event.preventDefault(); event.stopImmediatePropagation(); };
+  const block = (event: Event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
   const pointer = (event: Event) => {
     if (!(event.target instanceof Element) || !event.target.closest('[data-crop-ui]')) block(event);
   };
@@ -52,7 +68,9 @@ export function useCrop(
     setCropError(null);
     setCropActive(true);
   };
-  const cancelCrop = () => { if (!applying.current) setCropActive(false); };
+  const cancelCrop = () => {
+    if (!applying.current) setCropActive(false);
+  };
   const applyCrop = async () => {
     if (!imageSrc || !cropRect || applying.current) return;
     applying.current = true;
@@ -74,9 +92,29 @@ export function useCrop(
       setCropBusy(false);
     }
   };
+  const callbacks = useRef({ applyCrop, cancelCrop });
   useLayoutEffect(() => {
-    if (cropActive) return isolateCropEvents(() => { void applyCrop(); }, cancelCrop);
+    callbacks.current = { applyCrop, cancelCrop };
+  }, [applyCrop, cancelCrop]);
+
+  useLayoutEffect(() => {
+    if (cropActive) {
+      return isolateCropEvents(() => {
+        void callbacks.current.applyCrop();
+      }, () => callbacks.current.cancelCrop());
+    }
     return undefined;
-  });
-  return { cropActive, cropRect, setCropRect, cropAspect, setCropAspect, cropBusy, cropError, startCrop, cancelCrop, applyCrop };
+  }, [cropActive]);
+  return {
+    cropActive,
+    cropRect,
+    setCropRect,
+    cropAspect,
+    setCropAspect,
+    cropBusy,
+    cropError,
+    startCrop,
+    cancelCrop,
+    applyCrop,
+  };
 }

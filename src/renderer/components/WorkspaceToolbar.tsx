@@ -97,11 +97,6 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
       if (cropActive) node?.setAttribute('inert', '');
       else node?.removeAttribute('inert');
     }}>
-      <Tooltip position="right">
-        <button className="tool-btn" title="Crop (X)" aria-label="Crop" disabled={!imageSrc || noImageMode || codeStudioActive || galleryVisible} onClick={startCrop}>
-          <Crop className="w-4 h-4" />
-        </button>
-      </Tooltip>
       {/* Left: Gallery + Undo/Redo */}
       <div className="toolbar-group">
         <Tooltip position="right">
@@ -175,6 +170,17 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
             </button>
           </Tooltip>
         )}
+        <Tooltip content="Crop (X)" position="right">
+          <button
+            className="tool-btn"
+            title="Crop (X)"
+            aria-label="Crop"
+            disabled={!imageSrc || noImageMode || codeStudioActive || galleryVisible}
+            onClick={startCrop}
+          >
+            <Crop className="w-4 h-4" />
+          </button>
+        </Tooltip>
       </div>
 
       <div className="toolbar-divider" />

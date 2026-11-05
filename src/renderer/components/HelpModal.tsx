@@ -133,7 +133,6 @@ export default function HelpModal() {
           <div><strong>OS:</strong> {osInfo}</div>
         </div>
 
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Crop a screenshot with X. Drag the handles to resize, hold Shift to lock the ratio, press Enter to apply, or Esc to cancel. Find all shortcuts in Settings &gt; Shortcuts.</p>
         <UpdateChecker />
 
         {/* Link / Action Buttons */}

@@ -1,7 +1,15 @@
 import type { RenderConfig } from '../canvasRenderer';
 
-export interface CropRect { x: number; y: number; w: number; h: number }
-export interface ImageSize { width: number; height: number }
+export interface CropRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+export interface ImageSize {
+  width: number;
+  height: number;
+}
 export type CropHandle = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw' | 'move';
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
@@ -13,11 +21,18 @@ export function clampCrop(rect: CropRect, size: ImageSize, ratio?: number): Crop
     w = clamp(w, minW, Math.min(size.width, size.height * ratio));
     h = w / ratio;
   }
-  return { x: clamp(rect.x, 0, size.width - w), y: clamp(rect.y, 0, size.height - h), w, h };
+  return {
+    x: clamp(rect.x, 0, size.width - w),
+    y: clamp(rect.y, 0, size.height - h),
+    w,
+    h,
+  };
 }
 
 export function resizeCrop(rect: CropRect, handle: CropHandle, dx: number, dy: number, size: ImageSize, ratio?: number): CropRect {
-  if (handle === 'move') return clampCrop({ ...rect, x: rect.x + dx, y: rect.y + dy }, size);
+  if (handle === 'move') {
+    return clampCrop({ ...rect, x: rect.x + dx, y: rect.y + dy }, size);
+  }
   const west = handle.includes('w');
   const east = handle.includes('e');
   const north = handle.includes('n');
@@ -37,29 +52,70 @@ export function resizeCrop(rect: CropRect, handle: CropHandle, dx: number, dy: n
     w = clamp(w, Math.min(16, maxW), maxW);
     h = clamp(h, Math.min(16, maxH), maxH);
   }
-  return { x: west ? ax - w : east ? ax : ax - w / 2, y: north ? ay - h : south ? ay : ay - h / 2, w, h };
+  return {
+    x: west ? ax - w : east ? ax : ax - w / 2,
+    y: north ? ay - h : south ? ay : ay - h / 2,
+    w,
+    h,
+  };
 }
 
 export function pixelCrop(rect: CropRect, size: ImageSize): CropRect {
-  return clampCrop({ x: Math.round(rect.x), y: Math.round(rect.y), w: Math.round(rect.w), h: Math.round(rect.h) }, size);
+  return clampCrop({
+    x: Math.round(rect.x),
+    y: Math.round(rect.y),
+    w: Math.round(rect.w),
+    h: Math.round(rect.h),
+  }, size);
 }
 
 export function cropSnapshot(config: RenderConfig, size: ImageSize, crop: CropRect, imageSrc: string): RenderConfig {
   const sx = size.width / crop.w;
   const sy = size.height / crop.h;
+  const scale = (config.scale ?? 100) / 100;
+  // Auto uses an intrinsic-size image capped by its container; fixed aspects
+  // stretch the image to the content width. Zoom is a parent CSS transform.
+  const displayScale = !config.aspectRatio || config.aspectRatio === 'Auto' ? Math.min(1, scale) : scale;
+  const displayWidth = crop.w * displayScale;
+  const oldDisplayWidth = config.annotationDisplayWidth || size.width;
+  const styleScale = displayScale * size.width / oldDisplayWidth;
   return {
-    ...config, imageSrc, issuePayload: null,
-    annotations: (config.annotations || []).map(a => ({
-      ...a, x: (a.x * size.width - crop.x) / crop.w, y: (a.y * size.height - crop.y) / crop.h,
-      w: a.w * sx, h: a.h * sy,
-      textMinHeight: a.textMinHeight === undefined ? undefined : a.textMinHeight * sy,
-    })),
+    ...config,
+    imageSrc,
+    issuePayload: null,
+    annotationDisplayWidth: displayWidth,
+    annotations: (config.annotations || []).map(a => {
+      const fontSize = a.type === 'text'
+        ? a.fontSize || Math.max(12, Math.abs(a.h) * size.height * oldDisplayWidth / size.width * 0.7)
+        : a.fontSize;
+      const outlineWidth = a.outlineWidth ?? (a.type === 'text' && a.outlineEnabled
+        ? Math.max(2, (fontSize || 0) * 0.15)
+        : undefined);
+      return {
+        ...a,
+        x: (a.x * size.width - crop.x) / crop.w,
+        y: (a.y * size.height - crop.y) / crop.h,
+        w: a.w * sx,
+        h: a.h * sy,
+        strokeWidth: a.strokeWidth * styleScale,
+        fontSize: fontSize === undefined ? undefined : fontSize * styleScale,
+        outlineWidth: outlineWidth === undefined ? undefined : outlineWidth * styleScale,
+        textMinHeight: a.textMinHeight === undefined ? undefined : a.textMinHeight * sy,
+      };
+    }),
     redactions: (config.redactions || []).flatMap(r => {
       const x = Math.max(r.x * size.width, crop.x);
       const y = Math.max(r.y * size.height, crop.y);
       const right = Math.min((r.x + r.w) * size.width, crop.x + crop.w);
       const bottom = Math.min((r.y + r.h) * size.height, crop.y + crop.h);
-      return right <= x || bottom <= y ? [] : [{ ...r, x: (x - crop.x) / crop.w, y: (y - crop.y) / crop.h, w: (right - x) / crop.w, h: (bottom - y) / crop.h }];
+      if (right <= x || bottom <= y) return [];
+      return [{
+        ...r,
+        x: (x - crop.x) / crop.w,
+        y: (y - crop.y) / crop.h,
+        w: (right - x) / crop.w,
+        h: (bottom - y) / crop.h,
+      }];
     }),
   };
 }

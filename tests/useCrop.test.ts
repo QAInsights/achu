@@ -53,6 +53,22 @@ describe('crop apply and history', () => {
     expect(result.current.history).toHaveLength(0);
     expect(apply).not.toHaveBeenCalled();
   });
+  it('keeps listeners stable while applying the latest rectangle', async () => {
+    const render = vi.spyOn(cropUtils, 'renderCrop').mockResolvedValue({
+      imageSrc: 'cropped', size: { width: 800, height: 600 }, crop: rect,
+    });
+    const add = vi.spyOn(window, 'addEventListener');
+    const { result } = setup();
+    act(() => result.current.startCrop());
+    const registrations = add.mock.calls.filter(([type]) => type === 'keydown').length;
+    act(() => result.current.setCropRect({ ...rect, w: 200 }));
+    act(() => result.current.setCropRect(rect));
+    expect(add.mock.calls.filter(([type]) => type === 'keydown')).toHaveLength(registrations);
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    });
+    expect(render).toHaveBeenCalledExactlyOnceWith('original', rect);
+  });
   it('retains crop mode on error and does not mutate history', async () => {
     vi.spyOn(cropUtils, 'renderCrop').mockRejectedValue(new Error('bad image'));
     const { result, apply } = setup();
@@ -66,6 +82,26 @@ describe('crop apply and history', () => {
 });
 
 describe('crop event isolation', () => {
+  it('activates crop buttons with Enter and Space without applying', () => {
+    const apply = vi.fn();
+    const cleanup = isolateCropEvents(apply, vi.fn());
+    const group = document.createElement('div');
+    group.dataset.cropUi = '';
+    const button = document.createElement('button');
+    const click = vi.fn();
+    button.addEventListener('click', click);
+    group.append(button);
+    document.body.append(group);
+    for (const key of ['Enter', ' ']) {
+      const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+      button.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+    }
+    expect(apply).not.toHaveBeenCalled();
+    expect(click).toHaveBeenCalledTimes(2);
+    cleanup();
+    group.remove();
+  });
   it('blocks app shortcuts, annotation keys, window paste and file drops until cancel', () => {
     const appShortcut = vi.fn();
     const paste = vi.fn();

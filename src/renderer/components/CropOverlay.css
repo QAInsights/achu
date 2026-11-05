@@ -1,6 +1,12 @@
 .crop-overlay { position: absolute; inset: 0; z-index: 30; overflow: hidden; touch-action: none; user-select: none; }
 .crop-rectangle { position: absolute; border: 1px solid white; box-sizing: border-box; box-shadow: 0 0 0 10000px #0009; cursor: move; }
 .crop-guide { position: absolute; pointer-events: none; }
+.crop-guide-vertical { top: 0; height: 100%; border-left: 1px solid #ffffff80; }
+.crop-guide-horizontal { left: 0; width: 100%; border-top: 1px solid #ffffff80; }
+.crop-guide-vertical.crop-guide-1 { left: 33.333333%; }
+.crop-guide-vertical.crop-guide-2 { left: 66.666667%; }
+.crop-guide-horizontal.crop-guide-1 { top: 33.333333%; }
+.crop-guide-horizontal.crop-guide-2 { top: 66.666667%; }
 .crop-handle { position: absolute; width: 10px; height: 10px; background: white; border: 1px solid #222; transform: translate(-50%, -50%); }
 .crop-handle-nw { left: 0; top: 0; cursor: nwse-resize; }
 .crop-handle-n { left: 50%; top: 0; cursor: ns-resize; }
@@ -12,4 +18,5 @@
 .crop-handle-w { left: 0; top: 50%; cursor: ew-resize; }
 .crop-size { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); background: #000b; color: white; padding: 3px 6px; border-radius: 4px; white-space: nowrap; font-size: 12px; pointer-events: none; }
 .toolbar-context.crop-controls { align-self: center; flex-basis: auto; flex-shrink: 0; flex-wrap: wrap; max-width: calc(100% - 24px); margin: 8px; z-index: 40; background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 6px; }
-.crop-controls select { width: auto; color: var(--text-primary); background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px; }
+.crop-aspects { gap: 2px; padding: 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.crop-aspects .tool-btn { width: auto; min-width: 36px; padding: 0 8px; font-size: 12px; font-weight: 600; }

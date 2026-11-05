@@ -18,7 +18,10 @@ describe('crop overlay', () => {
     render(<CropHarness />);
     expect(screen.getByText('800 × 600 px')).toBeTruthy();
     expect(document.querySelectorAll('.crop-handle')).toHaveLength(8);
-    fireEvent.change(screen.getByLabelText('Crop aspect ratio'), { target: { value: '1:1' } });
+    expect(screen.getByRole('button', { name: 'Free' })).toHaveFocus();
+    fireEvent.click(screen.getByRole('button', { name: '1:1' }));
+    expect(screen.getByRole('button', { name: '1:1' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Free' })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByText('600 × 600 px')).toBeTruthy();
     fireEvent.click(screen.getByText('Reset'));
     expect(screen.getByText('800 × 600 px')).toBeTruthy();

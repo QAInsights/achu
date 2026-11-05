@@ -1,6 +1,8 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { clampCrop, cropSnapshot, pixelCrop, renderCrop, resizeCrop, type CropHandle } from '../src/renderer/utils/cropUtils';
-import type { RenderConfig } from '../src/renderer/canvasRenderer';
+import { renderCanvas, type Annotation, type RenderConfig } from '../src/renderer/canvasRenderer';
+import { baseConfig, makeMockCanvas, makeMockImage } from './shared';
+import { getCurvedArrowPoints, getTaperedCurvedArrowPoints } from '../src/renderer/arrowUtils';
 
 const size = { width: 800, height: 600 };
 const rect = { x: 100, y: 100, w: 400, h: 300 };
@@ -39,6 +41,90 @@ describe('crop geometry', () => {
 });
 
 describe('crop snapshot coordinate spaces', () => {
+  it.each(['rect', 'filled-rect', 'circle', 'filled-circle', 'line', 'arrow', 'text', 'pen', 'emoji', 'image'] as Annotation['type'][])(
+    'preserves %s source-pixel geometry, including rotation, through an unequal-axis crop', type => {
+      const annotation: Annotation = {
+        id: type, type, x: .2, y: .3, w: .3, h: .2, rotation: 37,
+        color: '#ff0000', strokeWidth: 5, fontSize: 30, outlineWidth: 3,
+        points: [{ x: .1, y: .4 }, { x: .9, y: .7 }],
+      };
+      const crop = { x: 80, y: 60, w: 400, h: 200 };
+      const config = { ...baseConfig, annotationDisplayWidth: 1000, annotations: [annotation] };
+      const after = cropSnapshot(config, size, crop, 'crop');
+      const transformed = after.annotations![0];
+      expect(after.annotationDisplayWidth).toBe(400);
+      expect(transformed.strokeWidth).toBe(4);
+      expect(transformed.fontSize).toBe(24);
+      expect(transformed.outlineWidth).toBeCloseTo(2.4);
+      expect(transformed.rotation).toBe(37);
+      expect(transformed.points).toEqual(annotation.points);
+      const point = (a: Annotation, width: number, height: number, u: number, v: number) => {
+        const angle = (a.rotation || 0) * Math.PI / 180;
+        const dx = (u - .5) * a.w * width;
+        const dy = (v - .5) * a.h * height;
+        return {
+          x: (a.x + a.w / 2) * width + dx * Math.cos(angle) - dy * Math.sin(angle),
+          y: (a.y + a.h / 2) * height + dx * Math.sin(angle) + dy * Math.cos(angle),
+        };
+      };
+      for (const [u, v] of [[0, 0], [1, 1], [.1, .4], [.9, .7]]) {
+        const beforePoint = point(annotation, size.width, size.height, u, v);
+        const afterPoint = point(transformed, crop.w, crop.h, u, v);
+        expect(afterPoint.x + crop.x).toBeCloseTo(beforePoint.x);
+        expect(afterPoint.y + crop.y).toBeCloseTo(beforePoint.y);
+      }
+    },
+  );
+  it.each([50, 100, 200].flatMap(scale => ['Auto', '1:1'].map(aspectRatio => ({ scale, aspectRatio }))))(
+    'preserves export styling at $scale percent with $aspectRatio aspect', ({ scale, aspectRatio }) => {
+    const displayScale = aspectRatio === 'Auto' ? Math.min(1, scale / 100) : scale / 100;
+    const annotations: Annotation[] = [
+      { id: 'r', type: 'rect', x: .2, y: .2, w: .2, h: .2, color: '#f00', strokeWidth: 4 },
+      { id: 't', type: 'text', x: .3, y: .3, w: .2, h: .1, color: '#f00', strokeWidth: 4,
+        text: 'Crop', fontSize: 24, outlineEnabled: true, outlineWidth: 3 },
+      { id: 'e', type: 'emoji', x: .4, y: .4, w: .1, h: .1, color: '#f00', strokeWidth: 4, text: '⭐' },
+    ];
+    const config = { ...baseConfig, scale, aspectRatio, annotationDisplayWidth: size.width * displayScale, annotations };
+    const cropped = cropSnapshot(config, size, { x: 80, y: 60, w: 400, h: 200 }, 'crop');
+    const draw = (cfg: RenderConfig, width: number, height: number) => {
+      const { canvas, ctx } = makeMockCanvas();
+      const styles: unknown[] = [];
+      canvas.getContext = (() => new Proxy(ctx, { set(target, key, value) {
+        if (key === 'font') {
+          styles.push([key, String(value).replace(/[\d.]+px/, number => `${Number.parseFloat(number).toFixed(8)}px`)]);
+        }
+        if (key === 'lineWidth') styles.push([key, Number(value.toFixed(8))]);
+        return Reflect.set(target, key, value);
+      } })) as any;
+      renderCanvas(canvas, makeMockImage(width, height), cfg);
+      return styles;
+    };
+    expect(draw(cropped, 400, 200)).toEqual(draw(config, 800, 600));
+  });
+  it.each([getCurvedArrowPoints, getTaperedCurvedArrowPoints])('preserves curved arrow control points and head geometry', getPoints => {
+    const annotation: Annotation = {
+      id: 'arrow', type: 'arrow', x: .2, y: .2, w: .3, h: .2,
+      color: '#f00', strokeWidth: 5,
+    };
+    const crop = { x: 80, y: 60, w: 400, h: 200 };
+    const cropped = cropSnapshot({ ...baseConfig, annotationDisplayWidth: 1000, annotations: [annotation] }, size, crop, 'crop');
+    const after = cropped.annotations![0];
+    const beforePoints = getPoints(-annotation.w * 800 / 2, -annotation.h * 600 / 2,
+      annotation.w * 800 / 2, annotation.h * 600 / 2, annotation.strokeWidth * 800 / 1000);
+    const afterPoints = getPoints(-after.w * 400 / 2, -after.h * 200 / 2,
+      after.w * 400 / 2, after.h * 200 / 2, after.strokeWidth * 400 / cropped.annotationDisplayWidth!);
+    const rounded = (value: unknown) => JSON.stringify(value, (_key, n) => typeof n === 'number' ? Number(n.toFixed(8)) : n);
+    expect(rounded(afterPoints)).toBe(rounded(beforePoints));
+  });
+  it('materializes legacy text defaults before changing display density', () => {
+    const config = { ...baseConfig, annotationDisplayWidth: 1000, annotations: [{
+      id: 'text', type: 'text', x: .2, y: .2, w: .2, h: .01,
+      color: '#f00', strokeWidth: 4, outlineEnabled: true,
+    }] } as RenderConfig;
+    const text = cropSnapshot(config, size, rect, 'crop').annotations![0];
+    expect(text.fontSize).toBeCloseTo(9.6);
+    expect(text.outlineWidth).toBeCloseTo(1.6);
+  });
   it('translates normalized bounds while preserving box-relative pen points and rotation', () => {
     const config = { annotations: [{ id: 'a', type: 'pen', x: .25, y: .25, w: .5, h: .5, color: 'red', strokeWidth: 3, rotation: 30, textMinHeight: .1, points: [{ x: .1, y: .2 }] }] } as RenderConfig;
     const cropped = cropSnapshot(config, size, rect, 'cropped');
