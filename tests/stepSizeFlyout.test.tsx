@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import StepSizeFlyout, { ToolOptionsFlyout } from '../src/renderer/components/StepSizeFlyout';
+import StepSizeFlyout from '../src/renderer/components/StepSizeFlyout';
+import { ToolOptionsFlyout } from '../src/renderer/components/ToolOptionsFlyout';
 
 afterEach(() => { cleanup(); document.body.replaceChildren(); });
 

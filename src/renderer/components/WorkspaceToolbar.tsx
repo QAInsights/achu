@@ -35,7 +35,8 @@ import ColorSwatchPicker from './annotations/ColorSwatchPicker';
 import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 import { formatModShortcut } from '../utils/shortcutLabels';
 import { canShowBothSidebars } from '../utils/layoutUtils';
-import StepSizeFlyout, { ToolOptionsFlyout } from './StepSizeFlyout';
+import StepSizeFlyout from './StepSizeFlyout';
+import { ToolOptionsFlyout } from './ToolOptionsFlyout';
 import { CropControls } from './CropOverlay';
 
 export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () => void }) {
@@ -463,7 +464,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
 
           {activeTool === 'text' && (
             <>
-              <div className="toolbar-group">
+              <div className="text-options-row" role="group" aria-label="Text font and size">
                 <Tooltip position="right">
                     <FontSelector
                       value={annotationFont}
@@ -491,6 +492,9 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
                     <span className="toolbar-control-value">{annotationFontSize}px</span>
                   </div>
                 </Tooltip>
+              </div>
+              <div className="text-options-row" role="group" aria-label="Text style and colors">
+                <div className="text-options-cluster" role="group" aria-label="Text emphasis">
                 <Tooltip position="right">
                   <button
                     className={`tool-btn ${annotationBold ? 'active' : ''}`}
@@ -541,6 +545,8 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
                     <TypeOutline className="w-4 h-4" style={{ strokeWidth: 2.5 }} />
                   </button>
                 </Tooltip>
+                </div>
+                <div className="text-options-cluster" role="group" aria-label="Text outline color">
                 <Tooltip position="right">
                   <button
                     className="tool-btn"
@@ -594,6 +600,8 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
                     </div>
                   </Tooltip>
                 )}
+                </div>
+                <div className="text-options-cluster" role="group" aria-label="Text gradient">
                 <Tooltip position="right">
                   <button
                     className={`tool-btn ${annotationGradientEnabled ? 'active' : ''}`}
@@ -649,7 +657,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
                           max="360"
                           value={annotationGradientAngle}
                           onChange={(e) => setAnnotationGradientAngle(parseInt(e.target.value, 10))}
-                          style={{ width: '50px' }}
+                          style={{ width: '40px' }}
                           title={`Gradient Angle: ${annotationGradientAngle}°`}
                         />
                         <span className="toolbar-control-value">{annotationGradientAngle}°</span>
@@ -657,6 +665,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
                     </Tooltip>
                   </>
                 )}
+                </div>
               </div>
             </>
           )}
