@@ -219,7 +219,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
           return (
             <span key={tool.id} ref={stepToolRef} className="step-tool-anchor">
               {button}
-              {(activeTool === 'step' || stepSelected) && !cropActive && !galleryVisible && !codeStudioActive && (
+              {(activeTool === 'step' || stepSelected) && activeTool !== 'text' && activeTool !== 'arrow' && !cropActive && !galleryVisible && !codeStudioActive && (
                 <StepSizeFlyout anchorRef={stepToolRef} size={annotationStepSize} onChange={diameter => {
                   setAnnotationStepSize(diameter);
                   stepSizeActionRef.current?.(diameter);

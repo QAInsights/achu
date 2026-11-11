@@ -2,11 +2,25 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import WorkspaceToolbar from '../src/renderer/components/WorkspaceToolbar';
 
-const state = vi.hoisted(() => ({ activeTool: 'text', cropActive: false, codeStudioActive: false, galleryVisible: false }));
+const state = vi.hoisted(() => ({ activeTool: 'text', stepSelected: false, cropActive: false, codeStudioActive: false, galleryVisible: false }));
 vi.mock('../src/renderer/AppContext', () => ({ useAppContext: () => new Proxy({ ...state, history: [], systemFonts: [] }, { get: (target, key) => target[key as keyof typeof target] ?? vi.fn() }) }));
 vi.mock('../src/renderer/contexts/GalleryContext', () => ({ useGalleryContext: () => state }));
 vi.mock('../src/renderer/components/CropOverlay', () => ({ CropControls: () => null }));
-afterEach(() => { cleanup(); Object.assign(state, { activeTool: 'text', cropActive: false, codeStudioActive: false, galleryVisible: false }); });
+afterEach(() => { cleanup(); Object.assign(state, { activeTool: 'text', stepSelected: false, cropActive: false, codeStudioActive: false, galleryVisible: false }); });
+
+it.each(['text', 'arrow'])('only shows the %s flyout while a Step remains selected', tool => {
+  state.activeTool = 'pointer';
+  state.stepSelected = true;
+  const { rerender } = render(<WorkspaceToolbar />);
+  expect(screen.getByRole('group', { name: 'Step options' })).toBeInTheDocument();
+  state.activeTool = tool;
+  rerender(<WorkspaceToolbar />);
+  expect(screen.queryByRole('group', { name: 'Step options' })).toBeNull();
+  expect(document.querySelectorAll('.tool-options-flyout')).toHaveLength(1);
+  state.activeTool = 'pointer';
+  rerender(<WorkspaceToolbar />);
+  expect(screen.getByRole('group', { name: 'Step options' })).toBeInTheDocument();
+});
 
 it('portals Text and Arrow options without a full-width toolbar row', () => {
   const { container, rerender } = render(<WorkspaceToolbar />);

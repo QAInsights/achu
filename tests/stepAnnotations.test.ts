@@ -12,7 +12,7 @@ const track = vi.hoisted(() => vi.fn());
 vi.mock('../src/renderer/utils/telemetry', () => ({ trackFeature: track }));
 const step = (key: number): Annotation => ({ id: `step-${key}`, type: 'step', stepOrder: key, x: .1 * key, y: .2, w: .05, h: .1, color: '#ff0000', strokeWidth: 4 });
 
-function setup(initial: Annotation[] = [], tool: 'step' | 'pointer' = 'step', zoom = 1) {
+function setup(initial: Annotation[] = [], tool: 'step' | 'pointer' | 'text' | 'arrow' = 'step', zoom = 1) {
   const container = document.createElement('div');
   container.tabIndex = -1;
   Object.defineProperties(container, { offsetWidth: { value: 800 }, offsetHeight: { value: 400 } });
@@ -22,6 +22,7 @@ function setup(initial: Annotation[] = [], tool: 'step' | 'pointer' = 'step', zo
   const onSave = vi.fn();
   const containerRef = { current: container };
   const hook = renderHook(() => {
+    const [activeTool, setActiveTool] = useState(tool);
     const [annotations, setAnnotations] = useState(initial);
     const [color, setColor] = useState('#00ff00');
     const [stepSize, setStepSize] = useState(40);
@@ -32,7 +33,7 @@ function setup(initial: Annotation[] = [], tool: 'step' | 'pointer' = 'step', zo
       setStepSize(config.annotationStepSize ?? 40);
     };
     const history = useHistory(applyConfig);
-    const events = useAnnotationEvents({ annotations, setAnnotations, activeTool: tool,
+    const events = useAnnotationEvents({ annotations, setAnnotations, activeTool,
       color, setAnnotationColor: setColor, annotationFontSize: 24, strokeWidth: 4,
       annotationStepSize: stepSize, setAnnotationStepSize: setStepSize,
       stepSizeActionRef,
@@ -43,7 +44,7 @@ function setup(initial: Annotation[] = [], tool: 'step' | 'pointer' = 'step', zo
       setStepSize(diameter);
       stepSizeActionRef.current?.(diameter);
     };
-    return { ...events, annotations, history, color, setColor, stepSize, setStepSize, clickSize, applyConfig, stepSelected };
+    return { ...events, annotations, history, color, setColor, stepSize, setStepSize, clickSize, applyConfig, stepSelected, setActiveTool };
   });
   act(() => hook.result.current.history.pushHistory({ annotations: initial, annotationStepSize: 40 }));
   const pointer = (x: number, y: number, extra = {}) => ({ clientX: x * zoom, clientY: y * zoom,
@@ -97,6 +98,14 @@ describe('step numbering', () => {
 });
 
 describe('step placement and editing', () => {
+  it.each(['text', 'arrow'] as const)('preserves a selected Step when switching to %s', tool => {
+    const original = step(1);
+    const { result, pointer } = setup([original], 'pointer');
+    act(() => result.current.startDrag(pointer(100, 100), original));
+    act(() => result.current.setActiveTool(tool));
+    expect(result.current.selectedId).toBe(original.id);
+    expect(result.current.stepSelected).toBe(true);
+  });
   it('reads a selected badge size without applying the toolbar default', () => {
     const original = { ...step(1), w: .07, h: .14 };
     const { result, onSave } = setup([original], 'pointer');
