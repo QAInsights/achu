@@ -698,25 +698,16 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   min-width: 0;
 }
 
-.toolbar-context {
-  flex-basis: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  border-top: 1px solid var(--border);
-  padding-top: var(--space-1);
-}
-
 .step-tool-anchor { display: inline-flex; flex-shrink: 0; }
-.step-size-flyout {
+.tool-options-flyout {
   position: fixed;
   transform: translateX(-50%);
   z-index: 30;
   display: flex;
   gap: 4px;
   padding: 4px;
-  width: 102px;
+  max-width: calc(100vw - 8px);
+  max-height: calc(100vh - 8px);
   box-sizing: border-box;
   background: var(--surface-1);
   border: 1px solid var(--border);
@@ -724,6 +715,11 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   box-shadow: var(--elev-2);
   -webkit-app-region: no-drag;
 }
+.step-size-flyout { width: 102px; }
+.text-options-flyout { width: 360px; padding: 8px; }
+.text-options-flyout > .toolbar-group { gap: 6px; }
+.text-options-flyout .toolbar-control { padding: 0 4px; }
+.arrow-options-flyout { padding: 4px; }
 .step-size-flyout .tool-btn { width: 28px; height: 28px; }
 .step-size-caret {
   position: absolute;
@@ -735,14 +731,6 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   border-top: 1px solid var(--border);
   transform: translateX(-50%) rotate(45deg);
   pointer-events: none;
-}
-
-.toolbar-context > .toolbar-divider { display: none; }
-.toolbar-context > .toolbar-group { flex: 1; gap: var(--space-1); }
-.toolbar-context-label {
-  font-size: var(--fs-label);
-  color: var(--text-tertiary);
-  padding: 0 var(--space-2);
 }
 
 .toolbar-divider {

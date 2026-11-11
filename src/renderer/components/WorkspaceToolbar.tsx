@@ -35,7 +35,7 @@ import ColorSwatchPicker from './annotations/ColorSwatchPicker';
 import { useToolbarShortcuts } from '../hooks/useToolbarShortcuts';
 import { formatModShortcut } from '../utils/shortcutLabels';
 import { canShowBothSidebars } from '../utils/layoutUtils';
-import StepSizeFlyout from './StepSizeFlyout';
+import StepSizeFlyout, { ToolOptionsFlyout } from './StepSizeFlyout';
 import { CropControls } from './CropOverlay';
 
 export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () => void }) {
@@ -80,6 +80,8 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
     toggleCodeStudio,
   } = useAppContext();
   const stepToolRef = useRef<HTMLSpanElement>(null);
+  const textToolRef = useRef<HTMLSpanElement>(null);
+  const arrowToolRef = useRef<HTMLSpanElement>(null);
   const cropToolRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => { if (cropActive && galleryVisible) closeGallery(); }, [cropActive, galleryVisible, closeGallery]);
@@ -209,6 +211,9 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
               {tool.icon}
             </button>
           </Tooltip>;
+          if (tool.id === 'text' || tool.id === 'arrow') return (
+            <span key={tool.id} ref={tool.id === 'text' ? textToolRef : arrowToolRef} className="step-tool-anchor">{button}</span>
+          );
           if (tool.id !== 'step') return button;
           return (
             <span key={tool.id} ref={stepToolRef} className="step-tool-anchor">
@@ -399,12 +404,11 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
           </button>
         </Tooltip>
       </div>
-      {(activeTool === 'arrow' || activeTool === 'text') && (
-        <div className="toolbar-context" role="group" aria-label={`${activeTool === 'text' ? 'Text' : 'Arrow'} options`}>
-          <span className="toolbar-context-label">{activeTool === 'text' ? 'Text' : 'Arrow'}</span>
+      {(activeTool === 'arrow' || activeTool === 'text') && !cropActive && !galleryVisible && !codeStudioActive && (
+        <ToolOptionsFlyout anchorRef={activeTool === 'text' ? textToolRef : arrowToolRef}
+          label={`${activeTool === 'text' ? 'Text' : 'Arrow'} options`} className={`${activeTool}-options-flyout`}>
           {activeTool === 'arrow' && (
             <>
-              <div className="toolbar-divider" />
               <div className="toolbar-group">
                 <Tooltip position="right">
                   <button
@@ -459,7 +463,6 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
 
           {activeTool === 'text' && (
             <>
-              <div className="toolbar-divider" />
               <div className="toolbar-group">
                 <Tooltip position="right">
                     <FontSelector
@@ -657,7 +660,7 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
               </div>
             </>
           )}
-        </div>
+        </ToolOptionsFlyout>
       )}
 
     </div>

@@ -689,13 +689,13 @@ describe('WorkspaceToolbar', () => {
     expect(screen.queryByRole('group', { name: 'Crop options' })).toBeNull();
     expect(screen.getByRole('group', { name: 'Step options' })).toBeInTheDocument();
   });
-  it('exposes the active tool and keeps contextual options after the main controls', () => {
+  it('exposes the active tool and floats contextual options outside the dock', () => {
     mockContext.activeTool = 'arrow';
     render(<WorkspaceToolbar />);
     const dock = screen.getByRole('group', { name: 'Editing tools' });
     expect(within(dock).getByRole('button', { name: 'Draw Arrow', pressed: true })).toBeInTheDocument();
-    const context = within(dock).getByRole('group', { name: 'Arrow options' });
-    expect(context).toBe(dock.lastElementChild);
+    const context = screen.getByRole('group', { name: 'Arrow options' });
+    expect(dock).not.toContainElement(context);
     expect(within(context).getByTitle('Dashed Arrow')).toBeInTheDocument();
   });
 
