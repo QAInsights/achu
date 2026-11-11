@@ -29,6 +29,12 @@ it('portals Text and Arrow options without a full-width toolbar row', () => {
   expect(within(fontRow).getByTitle(/^Font Size:/)).toBeInTheDocument();
   const emphasis = within(styleRow).getByRole('group', { name: 'Text emphasis' });
   for (const title of ['Bold', 'Italic', 'Text Outline (toggle on/off)']) expect(within(emphasis).getByTitle(title)).toBeInTheDocument();
+  expect(within(emphasis).getByTitle('Outline Color')).toBeInTheDocument();
+  expect(within(emphasis).getByTitle(/^Outline Width:/)).toBeInTheDocument();
+  const gradient = within(styleRow).getByRole('group', { name: 'Text gradient' });
+  for (const title of ['Gradient Text (toggle on/off)', 'Gradient Start Color', 'Gradient End Color']) expect(within(gradient).getByTitle(title)).toBeInTheDocument();
+  expect(within(gradient).getByTitle(/^Gradient Angle:/)).toBeInTheDocument();
+  expect(styleRow.children).toHaveLength(2);
   expect(fontRow.nextElementSibling).toBe(styleRow);
   expect(screen.getByRole('group', { name: 'Text options' }).parentElement).toBe(document.body);
   expect(container.querySelector('.toolbar-context')).toBeNull();

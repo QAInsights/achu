@@ -545,8 +545,6 @@ export default function WorkspaceToolbar({ onOpenStitch }: { onOpenStitch?: () =
                     <TypeOutline className="w-4 h-4" style={{ strokeWidth: 2.5 }} />
                   </button>
                 </Tooltip>
-                </div>
-                <div className="text-options-cluster" role="group" aria-label="Text outline color">
                 <Tooltip position="right">
                   <button
                     className="tool-btn"

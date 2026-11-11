@@ -716,9 +716,9 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   -webkit-app-region: no-drag;
 }
 .step-size-flyout { width: 102px; }
-.text-options-flyout { width: 360px; padding: 8px; flex-direction: column; gap: 8px; }
+.text-options-flyout { width: max-content; padding: 8px; flex-direction: column; gap: 8px; }
 .text-options-row { display: flex; align-items: center; gap: 6px; min-width: 0; flex-shrink: 0; }
-.text-options-row:last-child { gap: 4px; overflow-x: auto; }
+.text-options-row:last-child { gap: 8px; flex-wrap: wrap; }
 .text-options-cluster { display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .text-options-flyout .tool-btn { width: 28px; height: 28px; flex-shrink: 0; }
 .text-options-flyout .toolbar-control { flex-shrink: 0; }
