@@ -1,8 +1,28 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import StepSizeFlyout from '../src/renderer/components/StepSizeFlyout';
+import { ToolOptionsFlyout } from '../src/renderer/components/ToolOptionsFlyout';
 
 afterEach(() => { cleanup(); document.body.replaceChildren(); });
+
+it('measures a larger panel and clamps it inside the viewport without taking focus', () => {
+  const anchor = document.createElement('span');
+  document.body.append(anchor);
+  anchor.getBoundingClientRect = () => ({ left: 1000, width: 32, bottom: 750 }) as DOMRect;
+  const rect = vi.spyOn(HTMLDivElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 360, height: 100 } as DOMRect);
+  const input = document.createElement('input');
+  document.body.append(input);
+  input.focus();
+  render(<ToolOptionsFlyout anchorRef={{ current: anchor }} label="Text options"><button>Bold</button></ToolOptionsFlyout>);
+  const panel = screen.getByRole('group', { name: 'Text options' });
+  expect(panel.style.left).toBe(`${window.innerWidth - 184}px`);
+  expect(panel.style.top).toBe(`${window.innerHeight - 104}px`);
+  expect(document.activeElement).toBe(input);
+  fireEvent.keyDown(document, { key: 'Escape' });
+  fireEvent.mouseDown(document.body);
+  expect(panel).toBeInTheDocument();
+  rect.mockRestore();
+});
 
 it('tracks its icon across resize and sidebar movement and stays below wrapped toolbar buttons', () => {
   const dock = document.createElement('div');
